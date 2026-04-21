@@ -2,6 +2,8 @@
 
 > 대상 프로젝트: `client/LostMemory`  
 > 목적: 팀원이 새 파일을 만들 때 위치와 이름을 일관되게 판단할 수 있도록 한다.
+> 관련 문서: 씬 소유권과 공용 프리팹 수정 권한은 `docs/commonness/scene-ownership-and-prefab-edit-rules.md`를 따른다.
+> 관련 문서: CLI, Codex, AI 에이전트의 Unity 파일 수정 안전 규칙은 `docs/commonness/agent-unity-safety-rules.md`를 따른다.
 
 ## 1. 기본 원칙
 
@@ -371,4 +373,3 @@ Assets/CodeRespawn
 - 테스트용이면 `Test` 폴더에 있는가?
 - ScriptableObject라면 타입별 폴더에 있는가?
 - TopDownEngine에 직접 의존한다면 `Integrations/TopDownEngine`에 둘 수 있는가?
-
