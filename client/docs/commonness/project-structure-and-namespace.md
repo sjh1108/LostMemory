@@ -4,6 +4,7 @@
 > 목적: 팀원이 새 파일을 만들 때 위치와 이름을 일관되게 판단할 수 있도록 한다.
 > 관련 문서: 씬 소유권과 공용 프리팹 수정 권한은 `docs/commonness/scene-ownership-and-prefab-edit-rules.md`를 따른다.
 > 관련 문서: CLI, Codex, AI 에이전트의 Unity 파일 수정 안전 규칙은 `docs/commonness/agent-unity-safety-rules.md`를 따른다.
+> 관련 문서: TopDown Engine 확장 방식과 원본 보호 규칙은 `docs/commonness/topdown-engine-extension-and-original-protection.md`를 따른다.
 
 ## 1. 기본 원칙
 
