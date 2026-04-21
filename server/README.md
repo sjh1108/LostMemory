@@ -1,6 +1,7 @@
 # Server
 
 백엔드 및 서비스 API 프로젝트 폴더.
+
 아래는 개발 계획입니다.
 
 # Roguelike Co-op Game — 백엔드/인프라 개발 계획
