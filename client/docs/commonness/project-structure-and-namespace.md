@@ -5,6 +5,7 @@
 > 관련 문서: 씬 소유권과 공용 프리팹 수정 권한은 `docs/commonness/scene-ownership-and-prefab-edit-rules.md`를 따른다.
 > 관련 문서: CLI, Codex, AI 에이전트의 Unity 파일 수정 안전 규칙은 `docs/commonness/agent-unity-safety-rules.md`를 따른다.
 > 관련 문서: TopDown Engine 확장 방식과 원본 보호 규칙은 `docs/commonness/topdown-engine-extension-and-original-protection.md`를 따른다.
+> 관련 문서: 공용 부트스트랩 씬과 초기화 흐름은 `docs/commonness/bootstrap-scene-and-initialization-flow.md`를 따른다.
 
 ## 1. 기본 원칙
 
@@ -68,6 +69,7 @@ Assets/
       Managers/
 
     Scenes/
+      Bootstrap/
       Lobby/
       Stages/
       Test/
@@ -103,6 +105,7 @@ Assets/
 | 폴더 | 역할 |
 |---|---|
 | `_Project/Scripts/Runtime/Core` | 게임 공통 기반, 이벤트, 공통 유틸 |
+| `_Project/Scripts/Runtime/SceneFlow` | 씬 이동, 부트스트랩 이후 진입 흐름 |
 | `_Project/Scripts/Runtime/Characters` | 플레이어/캐릭터 관련 게임 로직 |
 | `_Project/Scripts/Runtime/Combat` | 피해 계산, 전투 판정, 스탯 적용 |
 | `_Project/Scripts/Runtime/Weapons` | 우리 게임의 무기 선택, 강화, 무기 데이터 |
@@ -127,6 +130,7 @@ Assets/
 
 ```csharp
 namespace LostMemory.Core
+namespace LostMemory.SceneFlow
 namespace LostMemory.Characters
 namespace LostMemory.Combat
 namespace LostMemory.Weapons
@@ -240,6 +244,7 @@ Manager_Run.prefab
 
 ```text
 Lobby.unity
+Bootstrap.unity
 Stage01.unity
 Stage_Test_CombatRoom.unity
 Test_RelicReward.unity
