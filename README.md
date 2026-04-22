@@ -34,6 +34,7 @@
 - [전체 개발 계획](docs/12_development_plan.md)
 - [클라이언트 세부 계획](docs/13_client_detailed_plan.md)
 - [클라이언트 지라 스토리 목록](docs/14_client_jira_story_backlog.md)
+- [ComfyUI 작업 문서](tools/docs/README.md)
 
 ## 폴더 구조
 

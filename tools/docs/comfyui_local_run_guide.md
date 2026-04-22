@@ -1,0 +1,168 @@
+# ComfyUI 로컬 실행 가이드
+
+## 목적
+
+- 팀 프로젝트 기준 ComfyUI를 로컬에서 다시 띄우는 방법을 남긴다.
+- Windows + NVIDIA GPU 기준으로 `img2img` 실습까지 바로 이어질 수 있게 한다.
+
+## 기준 경로
+
+- ComfyUI 루트: `C:\Users\SSAFY\Desktop\2학기 3PJT\S14P31C201\tools\ComfyUI`
+- 체크포인트 경로: `tools/ComfyUI/models/checkpoints`
+- 입력 이미지 경로: `tools/ComfyUI/input`
+- 출력 이미지 경로: `tools/ComfyUI/output`
+
+## 현재 확인된 상태
+
+- 체크포인트 파일 있음: `v1-5-pruned-emaonly-fp16.safetensors`
+- 입력 예시 이미지 있음: `tools/ComfyUI/input/example.png`
+- `output` 폴더는 아직 없을 수 있으며, 첫 실행 후 생성되거나 수동 생성해도 된다.
+
+## 검증 기준 환경
+
+- Python: `3.13.12`
+- torch: `2.11.0+cu130`
+- torchvision: `0.26.0+cu130`
+- torchaudio: `2.11.0+cu130`
+
+위 조합은 기존 테스트 저장소의 `.venv_local`에서 실제 확인한 값이다.
+
+## 1회 세팅
+
+### 1. ComfyUI 폴더로 이동
+
+```powershell
+cd "C:\Users\SSAFY\Desktop\2학기 3PJT\S14P31C201\tools\ComfyUI"
+```
+
+### 2. 로컬 가상환경 생성
+
+```powershell
+py -3.13 -m venv .venv_local
+```
+
+`py -3.13`이 안 되면 설치된 Python 경로 기준으로 `python -m venv .venv_local`을 사용한다.
+
+### 3. pip 업데이트
+
+```powershell
+.\.venv_local\Scripts\python.exe -m pip install --upgrade pip
+```
+
+### 4. NVIDIA용 torch 설치
+
+ComfyUI upstream README의 수동 설치 기준을 따라 CUDA wheel을 먼저 설치한다.
+
+```powershell
+.\.venv_local\Scripts\python.exe -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130
+```
+
+### 5. ComfyUI 의존성 설치
+
+```powershell
+.\.venv_local\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+## 실행
+
+### 1. 서버 시작
+
+```powershell
+.\.venv_local\Scripts\python.exe main.py --listen 127.0.0.1 --port 8188 --disable-auto-launch --preview-method auto
+```
+
+### 2. 브라우저 접속
+
+```text
+http://127.0.0.1:8188
+```
+
+### 3. 정상 기동 확인
+
+- ComfyUI 화면이 열린다.
+- 체크포인트 드롭다운에서 `v1-5-pruned-emaonly-fp16.safetensors`가 보인다.
+- 필요하면 브라우저에서 `R`을 눌러 모델 목록을 새로고침한다.
+
+## 첫 img2img 실행 절차
+
+### 1. 입력 이미지 확인
+
+- 바로 테스트할 때는 `tools/ComfyUI/input/example.png`를 써도 된다.
+- 다른 이미지를 쓰려면 `tools/ComfyUI/input`에 파일을 넣는다.
+
+### 2. 최소 노드 구성
+
+1. `Load Image`
+2. `CheckpointLoaderSimple`
+3. `CLIP Text Encode (Prompt)` 2개
+4. 한 개는 positive prompt, 한 개는 negative prompt 용도로 쓴다
+5. `VAE Encode`
+6. `KSampler`
+7. `VAE Decode`
+8. `Save Image`
+
+`CLIP Text Encode (Negative)`라는 별도 노드는 없고, 같은 `CLIP Text Encode (Prompt)` 노드를 하나 더 추가해서 negative 입력에 연결한다.
+
+### 3. 권장 시작값
+
+- checkpoint: `v1-5-pruned-emaonly-fp16.safetensors`
+- steps: `20`
+- cfg: `7`
+- sampler: `euler`
+- scheduler: `normal`
+- denoise: `0.45`
+
+### 4. 실행
+
+- `Queue Prompt`를 누르거나 `Ctrl + Enter`를 누른다.
+- 결과 이미지는 `tools/ComfyUI/output`에 저장된다.
+
+## 확인 포인트
+
+- 첫 실행 후 `output` 폴더가 생성되는지 본다.
+- 이미지가 저장되면 경로와 파일명을 기록한다.
+- 원본 보존이 너무 약하면 `denoise`를 `0.35` 쪽으로 낮춘다.
+- 변화가 약하면 `denoise`를 `0.55` 이상으로 올린다.
+
+## 종료
+
+서버를 띄운 PowerShell 창에서 `Ctrl + C`를 눌러 종료한다.
+
+## 자주 막히는 지점
+
+### `RuntimeError: query is not correctly aligned (strideM)`
+
+- 증상: `VAE Encode` 또는 샘플링 중 attention 관련 런타임 오류가 난다.
+- 원인: Windows + NVIDIA 환경에서 pytorch SDPA/cudnn attention 경로가 깨지는 경우가 있다.
+- 1차 대응: ComfyUI를 `split cross attention` 모드로 다시 실행한다.
+
+```powershell
+.\.venv_local\Scripts\python.exe main.py --listen 127.0.0.1 --port 8188 --disable-auto-launch --preview-method auto --use-split-cross-attention
+```
+
+- 2차 대응: 입력 이미지를 `512x512` 이하로 줄여서 다시 테스트한다.
+- 3차 대응: 그래도 안 되면 `--fp32-vae` 또는 `--cpu-vae`를 추가해서 VAE 경로를 더 보수적으로 돌린다.
+
+```powershell
+.\.venv_local\Scripts\python.exe main.py --listen 127.0.0.1 --port 8188 --disable-auto-launch --preview-method auto --use-split-cross-attention --fp32-vae
+```
+
+### Torch CUDA 인식 실패
+
+- 증상: `Torch not compiled with CUDA enabled`
+- 대응: 기존 torch를 지우고 CUDA wheel로 다시 설치한다.
+
+```powershell
+.\.venv_local\Scripts\python.exe -m pip uninstall -y torch torchvision torchaudio
+.\.venv_local\Scripts\python.exe -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130
+```
+
+### 모델이 안 보임
+
+- `models/checkpoints` 아래에 safetensors 파일이 있는지 확인한다.
+- UI에서 `R` 새로고침 또는 서버 재시작을 한다.
+
+### output 폴더가 없음
+
+- 첫 generation 후 자동 생성되는지 확인한다.
+- 필요하면 `tools/ComfyUI/output` 폴더를 직접 만든다.
