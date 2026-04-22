@@ -37,4 +37,10 @@ out/
 .vscode/
 
 ### env ###
+### server/.gitignore
 .env
+.env.dev
+.env.local
+.env.*.local
+!.env.example
+!.env.dev.example
