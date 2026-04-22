@@ -44,3 +44,32 @@ out/
 .env.*.local
 !.env.example
 !.env.dev.example
+
+### 인증서 / 키 ###
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.ppk
+nginx/ssl/
+!nginx/ssl/.gitkeep
+
+### Docker 볼륨 데이터 ###
+postgres/data/
+redis/data/
+
+### 로그 ###
+logs/
+*.log
+
+### OS ###
+.DS_Store
+Thumbs.db
+desktop.ini
+
+### 임시 파일 ###
+*.tmp
+*.bak
+*.swp
+*.swo
