@@ -1,0 +1,448 @@
+# 내부용 ComfyUI 웹 개발 프로젝트 - Spring Boot API 명세 반영본 v2
+
+## 문서 상태
+
+- 기준 원본: `C:/Users/SSAFY/Downloads/internal_comfyui_spring_api_draft_v1.md`
+- 반영 기준: 2026-04-21까지 이 저장소에서 확정된 문서와 실제 ComfyUI 로컬 검증 결과
+- 편집 원칙: v1의 API 범위는 유지하되, 현재 구현 상태와 문서 간 불일치를 줄이는 방향으로 보정
+
+---
+
+## 1. 문서 목적
+
+이 문서는 Spring Boot 백엔드가 내부용 ComfyUI 서비스를 어떻게 중계하고, 어떤 API를 제공할지 정리한 현재 기준 반영본이다.
+
+현재 목표는 아래 4가지다.
+
+1. 프론트엔드가 호출할 자체 API를 정리한다.
+2. Spring Boot가 ComfyUI에 직접 호출할 API를 정리한다.
+3. S3 업로드와 SQLite 기록 흐름을 정리한다.
+4. 아직 구현 전인 항목과 이미 검증된 항목을 구분한다.
+
+---
+
+## 2. 기본 구조
+
+### 2.1 아키텍처
+
+- 사용자 -> AWS 도메인
+- AWS -> Spring Boot
+- Spring Boot -> ComfyUI API (GPU 데스크탑)
+- GPU 데스크탑 -> S3 업로드
+- Spring Boot -> SQLite 메타데이터 기록
+
+### 2.2 핵심 원칙
+
+- ComfyUI 원본 UI는 최대한 유지
+- Spring Boot는 인증, 결과 조회, 공유, 메타데이터 기록 담당
+- 생성 자체는 ComfyUI가 수행
+- MVP는 폴링 방식으로 구현
+- WebSocket은 후속 고도화로 미룸
+
+### 2.3 현재 구현 상태
+
+- ComfyUI 로컬 서버 기동 확인 완료
+- `GET /queue` 로컬 응답 확인 완료
+- Spring Boot 프로젝트 자체는 아직 생성 전
+- 따라서 이 문서는 구현 명세라기보다 `구현 직전 합의 문서`에 가깝다
+
+---
+
+## 3. MVP 고정안
+
+### 포함
+
+- ComfyUI 원본 UI 접속
+- GPU 데스크탑 추론 연결
+- S3 저장
+- 최근 생성물 목록
+- 결과 상세 보기
+- 이미지 다운로드
+- 기본 인증
+- 간단 로그인
+- 최소 로그 구조
+
+### 후순위
+
+- WebSocket 실시간 진행 상태
+- img2img
+- 고급 필터
+- 외부 공개 링크
+- Kafka 작업 큐
+
+---
+
+## 4. ComfyUI 직접 호출 API
+
+### 4.1 MVP 필수
+
+#### `POST /prompt`
+
+- 목적: workflow 실행 요청
+- 호출 주체: Spring Boot
+- 설명: workflow JSON을 ComfyUI에 제출하고 `prompt_id`를 받는다
+- 현재 상태: 체크포인트 확보 후 end-to-end 검증 예정
+
+#### `GET /history/{prompt_id}`
+
+- 목적: 특정 생성 결과 이력 조회
+- 호출 주체: Spring Boot
+- 설명: `prompt_id` 기준으로 완료 여부와 결과 파일 경로를 확인한다
+- 현재 상태: 첫 generation 성공 이후 검증 예정
+
+### 4.2 운영 보조
+
+#### `GET /queue`
+
+- 목적: 현재 큐 상태 확인
+- 사용 시점: 운영/디버깅
+- 현재 상태: 로컬 응답 확인 완료
+
+#### `POST /interrupt`
+
+- 목적: 실행 중인 workflow 중단
+- 사용 시점: 관리자 기능 확장 시
+
+#### `GET /system_stats`
+
+- 목적: 시스템 상태, VRAM 등 점검
+- 사용 시점: 관리자 상태 확인 시
+
+#### `GET /models`
+
+- 목적: 모델 목록 조회
+- 사용 시점: 운영 확인 또는 모델 상태 점검
+
+#### `GET /object_info`
+
+- 목적: 노드/입출력 정의 조회
+- 사용 시점: workflow validation 확장 시
+
+### 4.3 후속 고도화
+
+#### `WS /ws`
+
+- 목적: 실시간 실행 상태 수신
+- 현재 상태: MVP 제외
+- 향후 사용 시점: 진행률 표시, 실시간 상태 반영
+
+---
+
+## 5. Spring Boot 외부 제공 API 초안
+
+### 5.1 인증
+
+#### `POST /api/auth/login`
+
+- 목적: 앱 로그인
+- 요청: `username`, `password`
+- 응답: 로그인 성공 여부, 사용자 기본 정보
+
+#### `POST /api/auth/logout`
+
+- 목적: 로그아웃
+
+#### `GET /api/auth/me`
+
+- 목적: 현재 로그인 사용자 정보 조회
+
+### 5.2 생성 요청
+
+#### `POST /api/generations`
+
+- 목적: 생성 요청 시작
+
+처리 흐름:
+
+1. 사용자 정보 확인
+2. workflow snapshot 저장 또는 연결
+3. ComfyUI `POST /prompt` 호출
+4. generation row 생성
+5. `prompt_id` 저장
+
+요청 예시:
+
+```json
+{
+  "workflowName": "text-to-image-basic",
+  "workflowSnapshotJson": "{...}",
+  "promptSummary": "pixel topdown enemy sprite",
+  "fullPrompt": "...",
+  "modelName": "v1-5-pruned-emaonly-fp16.safetensors"
+}
+```
+
+응답 예시:
+
+```json
+{
+  "generationId": 101,
+  "promptId": "abc123",
+  "status": "queued"
+}
+```
+
+반영 메모:
+
+- `prompt_id`는 ERD에도 명시적으로 반영하는 것이 맞다.
+- `fullPrompt`는 상세 페이지 접이식 표시용으로 generation 단위 저장 후보로 본다.
+
+### 5.3 생성 상태 조회
+
+#### `GET /api/generations/{generationId}`
+
+- 목적: 생성 상태 / 결과 상세 조회
+- 반환 항목:
+  - generation_id
+  - status
+  - created_by
+  - created_at
+  - workflow_name
+  - model_name
+  - prompt_summary
+  - full_prompt
+  - workflow JSON 다운로드 가능 여부
+  - image_url
+  - generator_host
+  - error_message
+
+#### `GET /api/generations/{generationId}/status`
+
+- 목적: 상태만 간단 조회
+- 사용 시점: 프론트의 폴링
+
+#### `POST /api/generations/{generationId}/sync`
+
+- 목적: Spring Boot가 ComfyUI history를 다시 조회해 상태 동기화
+- 사용 시점: 수동 복구/운영 용도
+
+### 5.4 결과 목록 / 상세 / 다운로드
+
+#### `GET /api/results`
+
+- 목적: 최근 생성 결과 목록 조회
+- 기본 정렬: 최신순
+- 기본 필터: `createdBy`
+- 상태 필터는 구조만 열어두고 후순위로 둔다
+
+#### `GET /api/results/{resultId}`
+
+- 목적: 결과 상세 조회
+
+#### `GET /api/results/{resultId}/download`
+
+- 목적: 이미지 다운로드
+
+#### `GET /api/results/{resultId}/workflow`
+
+- 목적: workflow JSON 다운로드
+
+### 5.5 관리자 실패 확인 페이지용 API
+
+#### `GET /api/admin/failures`
+
+- 목적: 실패 목록 테이블 조회
+- 관리자 전용
+- 기본 정렬: 최신순
+
+#### `GET /api/admin/failures/{generationId}`
+
+- 목적: 실패 상세 조회
+- 관리자 전용
+
+권장 컬럼:
+
+- occurredAt
+- username
+- generationId
+- status
+- failedStage
+- errorSummary
+- generatorHost
+- workflowName
+- modelName
+- retryable
+
+---
+
+## 6. 내부 처리 흐름
+
+### 6.1 생성 성공 흐름
+
+1. 프론트가 `/api/generations` 호출
+2. Spring Boot가 generation row 생성
+3. Spring Boot가 ComfyUI `/prompt` 호출
+4. `prompt_id` 저장
+5. 프론트가 `/api/generations/{id}/status` 폴링
+6. Spring Boot가 내부적으로 `/history/{prompt_id}` 조회
+7. GPU 데스크탑이 S3 업로드 완료
+8. Spring Boot가 image URL 등 메타데이터 기록
+9. 상태를 `success`로 변경
+
+### 6.2 생성 실패 흐름
+
+1. 생성 실패
+2. 상태를 `failed` 또는 `upload_failed` 또는 `metadata_failed`로 기록
+3. `error_message` 저장
+4. 필요 시 `failed_stage` 저장
+5. `audit_logs` 기록
+6. 관리자 실패 목록에 노출
+
+### 6.3 현재 반영 메모
+
+- 이 처리 흐름은 아직 구현되지 않았고 문서 단계다.
+- 현재 실제로 검증된 것은 ComfyUI 서버가 로컬에서 떠 있고 `/queue`가 응답한다는 점까지다.
+- 첫 generation 검증 이후 `/prompt -> /history -> output` 흐름을 다시 고정해야 한다.
+
+---
+
+## 7. 데이터 저장 정책
+
+### 7.1 이미지 저장
+
+- 저장소: AWS S3
+- 업로드 주체: GPU 데스크탑
+- 조회 기준: S3 URL
+
+### 7.2 메타데이터 저장
+
+- 저장소: SQLite
+- 기록 주체: Spring Boot
+- 핵심 테이블:
+  - `users`
+  - `workflow_snapshots`
+  - `generations`
+  - `generation_outputs`
+  - `audit_logs`
+
+### 7.3 반영 필요 항목
+
+- `generations.prompt_id`
+- `generations.full_prompt` 또는 이에 준하는 값
+- `generations.failed_stage`
+
+---
+
+## 8. 상태값 권장안
+
+### `generation.status`
+
+- `queued`
+- `running`
+- `success`
+- `failed`
+- `upload_failed`
+- `metadata_failed`
+
+### `audit_logs.status`
+
+- `success`
+- `failed`
+- `warning`
+
+반영 메모:
+
+- 기존 v1 ERD의 `pending / uploaded`보다 현재 API 명세 쪽 상태값이 더 운영 친화적이다.
+- 실제 구현 전 ERD와 API의 상태값을 하나로 맞추는 작업이 필요하다.
+
+---
+
+## 9. 관리자 실패 페이지 설계
+
+### 목적
+
+- 실패한 이미지 생성 건을 빠르게 찾는다
+- 실패 지점을 추적한다
+- 필요하면 재시도 판단을 한다
+
+### 테이블 컬럼
+
+- 발생 시각
+- 사용자명
+- generation_id
+- 상태
+- 실패 단계
+- 오류 요약 메시지
+- generator_host
+- workflow_name
+- model_name
+- 재시도 가능 여부
+
+### 상세 화면 추천
+
+- full prompt 펼치기
+- workflow JSON 다운로드
+- error_message 전문
+- started_at / finished_at
+- S3 업로드 단계 여부
+
+---
+
+## 10. 보안 / 인증
+
+### 10.1 진입 보호
+
+- 도메인 앞단 Basic Auth
+- 앱 내부 로그인
+
+### 10.2 권한
+
+- 일반 사용자: 생성 / 조회 / 다운로드
+- 관리자: 실패 목록 / 오류 상세 / 운영 로그 조회
+
+### 10.3 추론 서버 보호
+
+- ComfyUI 서버는 가능한 한 제한된 접근으로 유지
+- AWS(Spring Boot)만 직접 호출하도록 제한 검토
+
+---
+
+## 11. Kafka / WebSocket에 대한 판단
+
+### Kafka
+
+- MVP에는 사용하지 않음
+- 이유: ComfyUI 자체 queue와 polling으로도 충분함
+
+### WebSocket
+
+- 지금은 미룸
+- 이유: MVP에서 우선순위는 안정적인 생성/저장/조회 흐름
+- 이후 고도화 때 `/ws` 연결로 진행률 표시 가능
+
+---
+
+## 12. 추후 확장 포인트
+
+- img2img 지원
+- WebSocket 실시간 진행률
+- 상태 필터 강화
+- 재시도 API
+- 관리자 로그 화면 개선
+- seed / steps / cfg / sampler 저장 확대
+
+---
+
+## 13. 현재 기준 구현 우선순위
+
+1. 체크포인트 적용 후 ComfyUI end-to-end 생성 성공 검증
+2. `/prompt`, `/history/{prompt_id}` 실제 응답 구조 확인
+3. Spring Boot 초기 세팅
+4. `generations` / `generation_outputs` / `workflow_snapshots` 저장 구조 구현
+5. 결과 목록 / 상세 / 다운로드 API 구현
+6. 실패 조회 API 구현
+
+---
+
+## 14. 최종 정리
+
+현재 기준으로 Spring Boot는 여전히 “생성 엔진”이 아니라 “서비스 조정자” 역할을 맡는다.
+
+즉,
+
+- 생성은 ComfyUI
+- 저장은 S3
+- 기록은 SQLite
+- 조정/인증/조회는 Spring Boot
+
+다만 아직은 문서와 로컬 검증 단계가 중심이므로, 실제 구현 전 `prompt_id`, 상태값, 실패 단계 필드만 먼저 명확히 맞추는 것이 중요하다.
