@@ -14,7 +14,9 @@ namespace LostMemory.TestKhi
         [SerializeField] private KhiMeleeHitbox hitbox;
         [SerializeField] private KhiAttackVisualPresenter visualPresenter;
         [SerializeField] private float baseDamage = 10f;
-        [SerializeField] private float comboInputWindow = 0.6f;
+        [SerializeField, Min(0f)] private float comboInputWindow = 0.6f;
+        [SerializeField, Min(0f)] private float minimumChainInputDelay = 0.12f;
+        [SerializeField, Min(0f)] private float inputBufferDuration = 0.25f;
         [SerializeField] private bool allowInputDuringRecovery = true;
         [SerializeField] private bool disableTdeHandleWeapon = true;
         [SerializeField] private bool logHitsToConsole = false;
@@ -24,11 +26,13 @@ namespace LostMemory.TestKhi
         private readonly List<Health> _hitsThisSample = new List<Health>(8);
 
         private CharacterHandleWeapon _tdeHandleWeapon;
-        private bool _queuedAttack;
         private bool _isAttacking;
         private int _nextComboStep = 1;
+        private int _currentComboStep;
         private int _sequenceId;
         private float _comboExpiresAt = -1f;
+        private float _chainInputAllowedAt = -1f;
+        private float _bufferedAttackExpiresAt = -1f;
 
         public event Action<KhiAttackRequest, KhiMeleeAttackStep> AttackStarted;
         public event Action<KhiAttackRequest, KhiMeleeAttackStep> AttackActiveStarted;
@@ -73,11 +77,7 @@ namespace LostMemory.TestKhi
         {
             if (_isAttacking)
             {
-                if (allowInputDuringRecovery)
-                {
-                    _queuedAttack = true;
-                }
-
+                TryBufferAttack();
                 return;
             }
 
@@ -92,10 +92,11 @@ namespace LostMemory.TestKhi
         private IEnumerator RunAttack(int comboStep)
         {
             _isAttacking = true;
-            _queuedAttack = false;
+            ClearBufferedAttack();
             _alreadyHitThisSwing.Clear();
 
             KhiMeleeAttackStep step = GetStep(comboStep);
+            _currentComboStep = step.ComboStep;
             KhiAttackDirection direction = aim != null ? aim.GetCardinalDirection() : KhiAttackDirection.Right;
             Vector2 directionVector = KhiPlayerAim.ToVector(direction);
             KhiAttackRequest request = new KhiAttackRequest
@@ -110,6 +111,9 @@ namespace LostMemory.TestKhi
             };
 
             AttackStarted?.Invoke(request, step);
+            _chainInputAllowedAt = Mathf.Max(
+                request.StartedAt + minimumChainInputDelay,
+                request.StartedAt + step.StartupDuration + step.ActiveDuration * 0.5f);
 
             if (step.StartupDuration > 0f)
             {
@@ -153,14 +157,41 @@ namespace LostMemory.TestKhi
                 yield return null;
             }
 
+            bool shouldChainBufferedAttack = HasValidBufferedAttack(step.ComboStep);
+            ClearBufferedAttack();
             AdvanceCombo(step.ComboStep);
             _isAttacking = false;
+            _currentComboStep = 0;
 
-            if (_queuedAttack)
+            if (shouldChainBufferedAttack)
             {
-                _queuedAttack = false;
                 RequestAttack();
             }
+        }
+
+        private void TryBufferAttack()
+        {
+            if (!allowInputDuringRecovery || Time.time < _chainInputAllowedAt)
+            {
+                return;
+            }
+
+            if (_currentComboStep >= 3)
+            {
+                return;
+            }
+
+            _bufferedAttackExpiresAt = Time.time + inputBufferDuration;
+        }
+
+        private bool HasValidBufferedAttack(int completedStep)
+        {
+            return completedStep < 3 && _bufferedAttackExpiresAt >= Time.time;
+        }
+
+        private void ClearBufferedAttack()
+        {
+            _bufferedAttackExpiresAt = -1f;
         }
 
         private void AdvanceCombo(int completedStep)
@@ -237,9 +268,9 @@ namespace LostMemory.TestKhi
             {
                 ComboStep = 1,
                 DamageMultiplier = 1f,
-                StartupDuration = 0.05f,
-                ActiveDuration = 0.07f,
-                RecoveryDuration = 0.08f,
+                StartupDuration = 0.1f,
+                ActiveDuration = 0.1f,
+                RecoveryDuration = 0.15f,
                 AnimatorTrigger = "Attack_1",
                 Right = new KhiDirectionalHitbox(new Vector2(1.05f, -0.2f), new Vector2(1.7f, 1.1f)),
                 Up = new KhiDirectionalHitbox(new Vector2(0.2f, 1.05f), new Vector2(1.1f, 1.7f)),
@@ -254,9 +285,9 @@ namespace LostMemory.TestKhi
             {
                 ComboStep = 2,
                 DamageMultiplier = 1.1f,
-                StartupDuration = 0.06f,
-                ActiveDuration = 0.08f,
-                RecoveryDuration = 0.11f,
+                StartupDuration = 0.12f,
+                ActiveDuration = 0.12f,
+                RecoveryDuration = 0.2f,
                 AnimatorTrigger = "Attack_2",
                 Right = new KhiDirectionalHitbox(new Vector2(1.05f, 0.2f), new Vector2(1.8f, 1.2f)),
                 Up = new KhiDirectionalHitbox(new Vector2(-0.2f, 1.05f), new Vector2(1.2f, 1.8f)),
@@ -271,9 +302,9 @@ namespace LostMemory.TestKhi
             {
                 ComboStep = 3,
                 DamageMultiplier = 1.5f,
-                StartupDuration = 0.1f,
-                ActiveDuration = 0.12f,
-                RecoveryDuration = 0.18f,
+                StartupDuration = 0.2f,
+                ActiveDuration = 0.2f,
+                RecoveryDuration = 0.3f,
                 AnimatorTrigger = "Attack_3",
                 Right = new KhiDirectionalHitbox(new Vector2(1.25f, 0f), new Vector2(2.5f, 1.8f)),
                 Up = new KhiDirectionalHitbox(new Vector2(0f, 1.25f), new Vector2(1.8f, 2.5f)),
