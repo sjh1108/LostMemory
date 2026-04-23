@@ -1922,6 +1922,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1843242030}
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1843242031}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!28 &925854694
 Texture2D:
@@ -3015,7 +3019,7 @@ MonoBehaviour:
   meleeCombo: {fileID: 1843242007}
   characterMovement: {fileID: 1843242018}
   hitStun: {fileID: 1843242028}
-  parryController: {fileID: 0}
+  parryController: {fileID: 1843242031}
   animator: {fileID: 0}
   downDuration: 10
   downHealthFloor: 1
@@ -3042,12 +3046,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerStateAggregator
   character: {fileID: 1843242026}
-  parryController: {fileID: 0}
+  parryController: {fileID: 1843242031}
   hitStunController: {fileID: 1843242028}
   dashController: {fileID: 1843242020}
   downController: {fileID: 1843242029}
   meleeCombo: {fileID: 1843242007}
   logStateChanges: 0
+--- !u!114 &1843242031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1843242005}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e91b5caa1ec5f7a428fe2e32f2b348d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiParryController
+  handleWeapon: {fileID: 1843242012}
+  dashController: {fileID: 1843242020}
+  meleeCombo: {fileID: 1843242007}
+  health: {fileID: 1843242013}
+  parryAction: {fileID: 0}
+  parryWindow: 0.16
+  parryFailureRecovery: 0.45
+  parryCooldown: 0.45
+  successfulParryInvulnerability: 0.12
+  failedParryDamageRatio: 0.2
+  minFailedParryDamage: 1
+  allowParryDuringAttack: 0
+  allowParryDuringAttackRecovery: 0
+  allowParryDuringDash: 0
+  logStateTransitions: 0
 --- !u!213 &1870920841
 Sprite:
   m_ObjectHideFlags: 0
