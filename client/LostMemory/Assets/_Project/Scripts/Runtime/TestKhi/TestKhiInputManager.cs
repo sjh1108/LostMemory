@@ -40,10 +40,12 @@ namespace LostMemory.TestKhi
         [SerializeField] private string moveActionName = "Move";
         [SerializeField] private string interactActionName = "Interact";
         [SerializeField] private string attackActionName = "Attack";
+        [SerializeField] private string dashActionName = "Dash";
         [SerializeField] private bool enableDebugLogs = false;
         [SerializeField] private bool logMovementSourceToConsole = false;
         [SerializeField] private bool logInteractSourceToConsole = false;
         [SerializeField] private bool logAttackSourceToConsole = false;
+        [SerializeField] private bool logDashSourceToConsole = false;
         [SerializeField] private float movementLogInterval = 1f;
         [SerializeField] private bool configureSceneForMovement = true;
         [SerializeField] private bool followPlayerWithMainCamera = true;
@@ -57,6 +59,7 @@ namespace LostMemory.TestKhi
         private InputAction _moveAction;
         private InputAction _interactAction;
         private InputAction _attackAction;
+        private InputAction _dashAction;
         private bool _charactersLinked;
         private bool _bindingStatusLogged;
         private bool _sceneMovementConfigured;
@@ -65,6 +68,7 @@ namespace LostMemory.TestKhi
         private MovementInputSource _lastLoggedMovementSource = MovementInputSource.None;
         private ButtonInputSource _lastLoggedInteractSource = ButtonInputSource.None;
         private ButtonInputSource _lastLoggedAttackSource = ButtonInputSource.None;
+        private ButtonInputSource _lastLoggedDashSource = ButtonInputSource.None;
         private Transform _followTarget;
         private Camera _mainCamera;
         private Vector3 _cameraVelocity;
@@ -160,6 +164,7 @@ namespace LostMemory.TestKhi
             BindActions();
             EnsureActionsEnabled();
             ProcessAttackButton();
+            ProcessDashButton();
             ProcessInteractButton();
         }
 
@@ -170,7 +175,7 @@ namespace LostMemory.TestKhi
 
         private void BindActions()
         {
-            if (_moveAction != null && _interactAction != null && _attackAction != null)
+            if (_moveAction != null && _interactAction != null && _attackAction != null && _dashAction != null)
             {
                 EnsureActionsEnabled();
                 return;
@@ -186,6 +191,7 @@ namespace LostMemory.TestKhi
             _moveAction = _actionMap?.FindAction(moveActionName, false);
             _interactAction = _actionMap?.FindAction(interactActionName, false);
             _attackAction = _actionMap?.FindAction(attackActionName, false);
+            _dashAction = _actionMap?.FindAction(dashActionName, false);
             EnsureActionsEnabled();
             LogBindingStatus();
         }
@@ -266,13 +272,13 @@ namespace LostMemory.TestKhi
                 return;
             }
 
-            if (_moveAction == null || _interactAction == null || _attackAction == null)
+            if (_moveAction == null || _interactAction == null || _attackAction == null || _dashAction == null)
             {
-                Debug.LogWarning($"[TestKhiInput] Actions bound with fallback. Move found={_moveAction != null}, Interact found={_interactAction != null}, Attack found={_attackAction != null}.");
+                Debug.LogWarning($"[TestKhiInput] Actions bound with fallback. Move found={_moveAction != null}, Interact found={_interactAction != null}, Attack found={_attackAction != null}, Dash found={_dashAction != null}.");
                 return;
             }
 
-            Debug.Log($"[TestKhiInput] Bound actions '{actionMapName}/{moveActionName}', '{actionMapName}/{interactActionName}', and '{actionMapName}/{attackActionName}'.");
+            Debug.Log($"[TestKhiInput] Bound actions '{actionMapName}/{moveActionName}', '{actionMapName}/{interactActionName}', '{actionMapName}/{attackActionName}', and '{actionMapName}/{dashActionName}'.");
         }
 
         private void LogMovementSource(MovementInputSource source, Vector2 movement)
@@ -350,6 +356,34 @@ namespace LostMemory.TestKhi
             }
         }
 
+        private void ProcessDashButton()
+        {
+            if (DashButton == null)
+            {
+                return;
+            }
+
+            ButtonInputState state = ReadDash();
+            if (state.WasPressedThisFrame)
+            {
+                DashButtonDown();
+                LogDashSource(state.Source, "Down");
+                return;
+            }
+
+            if (state.WasReleasedThisFrame)
+            {
+                DashButtonUp();
+                LogDashSource(state.Source, "Up");
+                return;
+            }
+
+            if (state.IsPressed)
+            {
+                DashButtonPressed();
+            }
+        }
+
         private ButtonInputState ReadAttack()
         {
             ButtonInputState state = default;
@@ -393,6 +427,54 @@ namespace LostMemory.TestKhi
                 state.IsPressed |= gamepad.buttonWest.isPressed;
                 state.WasPressedThisFrame |= gamepad.buttonWest.wasPressedThisFrame;
                 state.WasReleasedThisFrame |= gamepad.buttonWest.wasReleasedThisFrame;
+            }
+
+            return state;
+        }
+
+        private ButtonInputState ReadDash()
+        {
+            ButtonInputState state = default;
+            if (_dashAction != null)
+            {
+                state.IsPressed = _dashAction.IsPressed();
+                state.WasPressedThisFrame = _dashAction.WasPressedThisFrame();
+                state.WasReleasedThisFrame = _dashAction.WasReleasedThisFrame();
+                if (state.IsPressed || state.WasPressedThisFrame || state.WasReleasedThisFrame)
+                {
+                    state.Source = ButtonInputSource.ActionMap;
+                    return state;
+                }
+            }
+
+            state = ReadDirectDash();
+            if (state.IsPressed || state.WasPressedThisFrame || state.WasReleasedThisFrame)
+            {
+                state.Source = ButtonInputSource.DirectFallback;
+                return state;
+            }
+
+            state.Source = ButtonInputSource.None;
+            return state;
+        }
+
+        private static ButtonInputState ReadDirectDash()
+        {
+            ButtonInputState state = default;
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                state.IsPressed |= keyboard.spaceKey.isPressed;
+                state.WasPressedThisFrame |= keyboard.spaceKey.wasPressedThisFrame;
+                state.WasReleasedThisFrame |= keyboard.spaceKey.wasReleasedThisFrame;
+            }
+
+            Gamepad gamepad = Gamepad.current;
+            if (gamepad != null)
+            {
+                state.IsPressed |= gamepad.buttonEast.isPressed;
+                state.WasPressedThisFrame |= gamepad.buttonEast.wasPressedThisFrame;
+                state.WasReleasedThisFrame |= gamepad.buttonEast.wasReleasedThisFrame;
             }
 
             return state;
@@ -476,6 +558,22 @@ namespace LostMemory.TestKhi
 
             _lastLoggedAttackSource = source;
             Debug.Log($"[TestKhiInput] Attack source={source}, phase={phase}");
+        }
+
+        private void LogDashSource(ButtonInputSource source, string phase)
+        {
+            if (!enableDebugLogs || !logDashSourceToConsole)
+            {
+                return;
+            }
+
+            if (source == ButtonInputSource.None && source == _lastLoggedDashSource)
+            {
+                return;
+            }
+
+            _lastLoggedDashSource = source;
+            Debug.Log($"[TestKhiInput] Dash source={source}, phase={phase}");
         }
 
         private void ConfigureMovementScene()
