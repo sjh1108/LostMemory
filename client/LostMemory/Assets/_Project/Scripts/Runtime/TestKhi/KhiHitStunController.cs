@@ -28,6 +28,7 @@ namespace LostMemory.TestKhi
         [SerializeField] private KhiMeleeComboController meleeCombo;
         [SerializeField] private CharacterMovement characterMovement;
         [SerializeField] private KhiParryController parryController;
+        [SerializeField] private KhiDownController downController;
         [SerializeField] private Animator animator;
 
         [Header("Timings")]
@@ -70,6 +71,7 @@ namespace LostMemory.TestKhi
             meleeCombo ??= GetComponent<KhiMeleeComboController>();
             characterMovement ??= GetComponent<CharacterMovement>();
             parryController ??= GetComponent<KhiParryController>();
+            downController ??= GetComponent<KhiDownController>();
 
             if (animator == null)
             {
@@ -206,7 +208,30 @@ namespace LostMemory.TestKhi
                 return false;
             }
 
+            if (downController != null && (downController.IsDown || downController.IsDefeated))
+            {
+                return false;
+            }
+
             return true;
+        }
+
+        /// <summary>
+        /// 외부 시스템(예: KhiDownController)이 진행 중인 경직을 강제 종료해야 할 때 사용한다.
+        /// Idle이면 no-op. permits는 idempotent 복원.
+        /// </summary>
+        public void ForceExit()
+        {
+            if (_state == KhiHitStunState.Idle)
+            {
+                RestorePermits();
+                return;
+            }
+
+            RestorePermits();
+            _state = KhiHitStunState.Idle;
+            LogTransition("ForceExit (external request)");
+            HitStunEnded?.Invoke();
         }
 
         private void EnterHitStun(float duration)
