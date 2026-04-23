@@ -56,8 +56,10 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       TZ: ${TZ}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - backend
       - frontend
