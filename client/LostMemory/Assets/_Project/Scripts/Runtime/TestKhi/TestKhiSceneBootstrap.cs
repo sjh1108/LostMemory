@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
+using UnityEngine.U2D;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -799,6 +800,34 @@ namespace LostMemory.TestKhi
             camera.orthographic = true;
             camera.orthographicSize = 6f;
             camera.transform.position = new Vector3(0f, 0f, -10f);
+
+            EnsurePlayerCameraRig(camera);
+        }
+
+        private static void EnsurePlayerCameraRig(Camera camera)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            if (camera.GetComponent<KhiPlayerCamera>() == null)
+            {
+                camera.gameObject.AddComponent<KhiPlayerCamera>();
+            }
+
+            PixelPerfectCamera ppc = camera.GetComponent<PixelPerfectCamera>();
+            if (ppc == null)
+            {
+                ppc = camera.gameObject.AddComponent<PixelPerfectCamera>();
+            }
+
+            ppc.assetsPPU = 16;
+            ppc.refResolutionX = 320;
+            ppc.refResolutionY = 180;
+            ppc.upscaleRT = false;
+            ppc.cropFrameX = false;
+            ppc.cropFrameY = false;
         }
     }
 }

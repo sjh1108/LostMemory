@@ -73,6 +73,7 @@ namespace LostMemory.TestKhi
         private Camera _mainCamera;
         private Vector3 _cameraVelocity;
         private bool _cameraSnappedToTarget;
+        private KhiPlayerCamera _overrideCamera;
 
         public void Configure(InputActionAsset actions, string mapName)
         {
@@ -620,6 +621,21 @@ namespace LostMemory.TestKhi
             if (_mainCamera == null)
             {
                 EnsureMainCamera();
+            }
+
+            if (_overrideCamera == null && _mainCamera != null)
+            {
+                _overrideCamera = _mainCamera.GetComponent<KhiPlayerCamera>();
+            }
+
+            if (_overrideCamera != null)
+            {
+                if (_overrideCamera.FollowTarget != _followTarget)
+                {
+                    _overrideCamera.SetFollowTarget(_followTarget);
+                }
+
+                return;
             }
 
             Vector3 targetPosition = _followTarget.position + cameraOffset;
