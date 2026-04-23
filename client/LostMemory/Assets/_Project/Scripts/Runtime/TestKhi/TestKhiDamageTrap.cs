@@ -63,11 +63,43 @@ namespace LostMemory.TestKhi
             }
 
             _nextDamageTimes[targetHealth] = Time.time + damageInterval;
-            targetHealth.Damage(damage, gameObject, 0f, 0f, Vector3.zero);
+
+            float appliedDamage = damage;
+            KhiParryController parry = targetHealth.GetComponent<KhiParryController>();
+            if (parry == null)
+            {
+                parry = targetHealth.GetComponentInParent<KhiParryController>();
+            }
+
+            if (parry != null)
+            {
+                Vector2 incomingDir = (Vector2)(targetHealth.transform.position - transform.position);
+                if (parry.TryResolveIncomingDamage(gameObject, incomingDir, damage, out float resolved))
+                {
+                    if (resolved <= 0f)
+                    {
+                        // 패링 성공: 피해 적용 스킵
+                        if (logDamageToConsole)
+                        {
+                            Debug.Log($"[TestKhiDamageTrap] Parry SUCCESS on {targetHealth.name}, damage skipped.");
+                        }
+                        return;
+                    }
+
+                    // 실패 후딜 중: 감쇠 피해
+                    appliedDamage = resolved;
+                    if (logDamageToConsole)
+                    {
+                        Debug.Log($"[TestKhiDamageTrap] Parry REDUCED on {targetHealth.name}, damage={appliedDamage}.");
+                    }
+                }
+            }
+
+            targetHealth.Damage(appliedDamage, gameObject, 0f, 0f, Vector3.zero);
 
             if (logDamageToConsole)
             {
-                Debug.Log($"[TestKhiDamageTrap] Damage attempted on {targetHealth.name}, invulnerable={targetHealth.Invulnerable}, health={targetHealth.CurrentHealth}.");
+                Debug.Log($"[TestKhiDamageTrap] Damage attempted on {targetHealth.name}, amount={appliedDamage}, invulnerable={targetHealth.Invulnerable}, health={targetHealth.CurrentHealth}.");
             }
         }
 
