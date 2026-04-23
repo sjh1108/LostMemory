@@ -59,6 +59,7 @@ namespace LostMemory.TestKhi
             }
 
             EnsureCamera();
+            EnsureHitStopController();
 
             if (createTilemapOnAwake)
             {
@@ -802,6 +803,17 @@ namespace LostMemory.TestKhi
             camera.transform.position = new Vector3(0f, 0f, -10f);
 
             EnsurePlayerCameraRig(camera);
+        }
+
+        private static void EnsureHitStopController()
+        {
+            if (KhiHitStopController.Instance != null)
+            {
+                return;
+            }
+
+            GameObject host = new GameObject("KhiHitStopController");
+            host.AddComponent<KhiHitStopController>();
         }
 
         private static void EnsurePlayerCameraRig(Camera camera)
