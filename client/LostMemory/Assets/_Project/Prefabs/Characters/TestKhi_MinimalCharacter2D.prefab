@@ -60,6 +60,7 @@ GameObject:
   - component: {fileID: 114910001000000002}
   - component: {fileID: 114910001000000003}
   - component: {fileID: 114910001000000004}
+  - component: {fileID: 114910001000000005}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -274,7 +275,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1790328835693532}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cde870ae7090b974bb115e88bfbf8320, type: 3}
+  m_Script: {fileID: 11500000, guid: 9f47b34d4ea84fbfba2cb67c6db59740, type: 3}
   m_Name:
   m_EditorClassIdentifier: 
   AbilityStartSfx: {fileID: 0}
@@ -286,11 +287,11 @@ MonoBehaviour:
   BlockingMovementStates: 
   BlockingConditionStates: 
   BlockingWeaponStates: 
-  DashMode: 1
+  DashMode: 4
   DashSpace: 0
-  DashDirection: {x: 0, y: 0, z: 1}
-  DashDistance: 6
-  DashDuration: 0.2
+  DashDirection: {x: 1, y: 0, z: 0}
+  DashDistance: 3.5
+  DashDuration: 0.18
   DashCurve:
     serializedVersion: 2
     m_Curve:
@@ -317,14 +318,19 @@ MonoBehaviour:
     m_RotationOrder: 4
   Cooldown:
     Unlimited: 0
-    ConsumptionDuration: 2
-    PauseOnEmptyDuration: 1
-    RefillDuration: 1
+    ConsumptionDuration: 0.8
+    PauseOnEmptyDuration: 0
+    RefillDuration: 0.01
     CanInterruptRefill: 1
     CooldownState: 0
     CurrentDurationLeft: 0
-  InvincibleWhileDashing: 0
+  InvincibleWhileDashing: 1
   DashFeedback: {fileID: 0}
+  aim: {fileID: 114910001000000001}
+  meleeCombo: {fileID: 114910001000000004}
+  allowDashDuringAttack: 0
+  allowDashDuringAttackRecovery: 0
+  logBlockedDashToConsole: 0
 --- !u!114 &114583920634094340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -681,12 +687,35 @@ MonoBehaviour:
   aim: {fileID: 114910001000000001}
   hitbox: {fileID: 114910001000000002}
   visualPresenter: {fileID: 114910001000000003}
+  dash: {fileID: 114646620809325970}
   baseDamage: 10
   comboInputWindow: 0.6
+  minimumChainInputDelay: 0.12
+  inputBufferDuration: 0.25
   allowInputDuringRecovery: 1
+  allowAttackDuringDash: 0
+  bufferAttackDuringDash: 0
   disableTdeHandleWeapon: 1
   logHitsToConsole: 0
   attackSteps: []
+--- !u!114 &114910001000000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74a148f51c3e47f8ad3d9515e29931d2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiDashAfterimagePresenter
+  dash: {fileID: 114646620809325970}
+  sourceRenderer: {fileID: 212503738640729348}
+  spawnInterval: 0.035
+  lifetime: 0.22
+  afterimageColor: {r: 0.45, g: 0.9, b: 1, a: 0.42}
+  sortingOrderOffset: -1
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0

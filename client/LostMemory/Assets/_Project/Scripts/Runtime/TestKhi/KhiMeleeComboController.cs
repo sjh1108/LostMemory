@@ -13,11 +13,14 @@ namespace LostMemory.TestKhi
         [SerializeField] private KhiPlayerAim aim;
         [SerializeField] private KhiMeleeHitbox hitbox;
         [SerializeField] private KhiAttackVisualPresenter visualPresenter;
+        [SerializeField] private KhiDashController dash;
         [SerializeField] private float baseDamage = 10f;
         [SerializeField, Min(0f)] private float comboInputWindow = 0.6f;
         [SerializeField, Min(0f)] private float minimumChainInputDelay = 0.12f;
         [SerializeField, Min(0f)] private float inputBufferDuration = 0.25f;
         [SerializeField] private bool allowInputDuringRecovery = true;
+        [SerializeField] private bool allowAttackDuringDash = false;
+        [SerializeField] private bool bufferAttackDuringDash = false;
         [SerializeField] private bool disableTdeHandleWeapon = true;
         [SerializeField] private bool logHitsToConsole = false;
         [SerializeField] private KhiMeleeAttackStep[] attackSteps;
@@ -27,6 +30,7 @@ namespace LostMemory.TestKhi
 
         private CharacterHandleWeapon _tdeHandleWeapon;
         private bool _isAttacking;
+        private bool _isInAttackRecovery;
         private int _nextComboStep = 1;
         private int _currentComboStep;
         private int _sequenceId;
@@ -40,11 +44,16 @@ namespace LostMemory.TestKhi
         public event Action<KhiAttackRequest, KhiMeleeAttackStep, Health> TargetHit;
         public event Action<KhiAttackRequest, KhiMeleeAttackStep> FinisherHit;
 
+        public bool IsAttacking => _isAttacking;
+        public bool IsInAttackRecovery => _isInAttackRecovery;
+        public bool BlocksDash => _isAttacking;
+
         private void Awake()
         {
             aim ??= GetComponent<KhiPlayerAim>();
             hitbox ??= GetComponent<KhiMeleeHitbox>();
             visualPresenter ??= GetComponent<KhiAttackVisualPresenter>();
+            dash ??= GetComponent<KhiDashController>();
             _tdeHandleWeapon = GetComponent<CharacterHandleWeapon>();
             EnsureDefaultSteps();
         }
@@ -75,6 +84,11 @@ namespace LostMemory.TestKhi
 
         public void RequestAttack()
         {
+            if (ShouldBlockAttackForDash())
+            {
+                return;
+            }
+
             if (_isAttacking)
             {
                 TryBufferAttack();
@@ -92,6 +106,7 @@ namespace LostMemory.TestKhi
         private IEnumerator RunAttack(int comboStep)
         {
             _isAttacking = true;
+            _isInAttackRecovery = false;
             ClearBufferedAttack();
             _alreadyHitThisSwing.Clear();
 
@@ -151,6 +166,7 @@ namespace LostMemory.TestKhi
                 }
             }
 
+            _isInAttackRecovery = true;
             float recoveryEndsAt = Time.time + step.RecoveryDuration;
             while (Time.time < recoveryEndsAt)
             {
@@ -161,12 +177,28 @@ namespace LostMemory.TestKhi
             ClearBufferedAttack();
             AdvanceCombo(step.ComboStep);
             _isAttacking = false;
+            _isInAttackRecovery = false;
             _currentComboStep = 0;
 
             if (shouldChainBufferedAttack)
             {
                 RequestAttack();
             }
+        }
+
+        private bool ShouldBlockAttackForDash()
+        {
+            if (dash == null || !dash.IsDashing || allowAttackDuringDash)
+            {
+                return false;
+            }
+
+            if (bufferAttackDuringDash && _isAttacking)
+            {
+                TryBufferAttack();
+            }
+
+            return true;
         }
 
         private void TryBufferAttack()

@@ -19,6 +19,7 @@ namespace LostMemory.TestKhi
         private const string InteractableObjectName = "TestKhi Interaction Test";
         private const string DoorObjectName = "TestKhi Door Block";
         private const string DamageDummyPrefix = "TestKhi Damage Dummy";
+        private const string DamageTrapObjectName = "TestKhi Damage Trap";
 
         [SerializeField] private InputActionAsset inputActions;
         [SerializeField] private string inputActionsAssetPath = "Assets/InputSystem_Actions.inputactions";
@@ -30,11 +31,13 @@ namespace LostMemory.TestKhi
         [SerializeField] private bool createPersistentInteractableInEditMode = true;
         [SerializeField] private bool createInteractableOnAwake = true;
         [SerializeField] private bool createDamageDummiesOnAwake = true;
+        [SerializeField] private bool createDamageTrapOnAwake = true;
         [SerializeField] private string characterPrefabPath = "Assets/_Project/Prefabs/Characters/TestKhi_MinimalCharacter2D.prefab";
         [SerializeField] private int mapWidth = 18;
         [SerializeField] private int mapHeight = 10;
         [SerializeField] private Vector2 playerStart = Vector2.zero;
         [SerializeField] private Vector2 interactablePosition = new Vector2(2f, 0f);
+        [SerializeField] private Vector2 damageTrapPosition = new Vector2(0f, -2.5f);
 
         private void Awake()
         {
@@ -61,6 +64,11 @@ namespace LostMemory.TestKhi
             if (createDamageDummiesOnAwake)
             {
                 EnsureDamageDummies();
+            }
+
+            if (createDamageTrapOnAwake)
+            {
+                EnsureDamageTrap();
             }
         }
 
@@ -161,6 +169,11 @@ namespace LostMemory.TestKhi
                 changed |= CreateInteractableObject();
             }
 
+            if (createDamageTrapOnAwake)
+            {
+                changed |= EnsureDamageTrap();
+            }
+
 #if UNITY_EDITOR
             if (changed && gameObject.scene.IsValid())
             {
@@ -252,6 +265,31 @@ namespace LostMemory.TestKhi
             dummyObject.transform.rotation = Quaternion.identity;
             dummyObject.transform.localScale = Vector3.one;
             dummyObject.AddComponent<TestKhiDamageDummy>();
+        }
+
+        private bool EnsureDamageTrap()
+        {
+            bool changed = false;
+            GameObject trapObject = FindObjectInScene(DamageTrapObjectName);
+            if (trapObject == null)
+            {
+                trapObject = new GameObject(DamageTrapObjectName);
+                SceneManager.MoveGameObjectToScene(trapObject, gameObject.scene);
+                trapObject.transform.position = damageTrapPosition;
+                trapObject.transform.rotation = Quaternion.identity;
+                trapObject.transform.localScale = Vector3.one;
+                changed = true;
+            }
+
+            TestKhiDamageTrap trap = trapObject.GetComponent<TestKhiDamageTrap>();
+            if (trap == null)
+            {
+                trap = trapObject.AddComponent<TestKhiDamageTrap>();
+                changed = true;
+            }
+
+            trap.ConfigureForTest();
+            return changed;
         }
 
         private bool EnsureSingleInteractableObject()
