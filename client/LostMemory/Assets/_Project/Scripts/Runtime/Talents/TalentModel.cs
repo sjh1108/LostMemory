@@ -13,7 +13,7 @@ namespace LostMemory.Talents
         private readonly Dictionary<TalentType, TalentData> _dataMap;
         // 재능 종류 -> 현재 투자 포인트
         private readonly Dictionary<TalentType, int> _invested;
-        // 남은 포인ㅌ느
+        // 남은 포인트
         private int _remainingPoints;
 
         /// <summary>현재 남은 투자 가능 포인트</summary>
@@ -21,7 +21,9 @@ namespace LostMemory.Talents
 
         /// <param name="talentDatas">재능 5종의 설정 데이터 (ScriptableObject)</param>
         /// <param name="totalPoints">이번 런에서 사용할 수 있는 총 포인트</param>
-        public TalentModel(IEnumerable<TalentData> talentDatas, int totalPoints)
+        /// <param name="savedInvestments">저장된 투자값 (TalentSaveService.LoadInvested()). null이면 전부 0으로 초기화</param>
+        public TalentModel(IEnumerable<TalentData> talentDatas, int totalPoints,
+            Dictionary<TalentType, int> savedInvestments = null)
         {
             _dataMap = new Dictionary<TalentType, TalentData>();
             _invested = new Dictionary<TalentType, int>();
@@ -29,10 +31,14 @@ namespace LostMemory.Talents
             foreach (var data in talentDatas)
             {
                 _dataMap[data.TalentType] = data;
-                _invested[data.TalentType] = 0;
+                var initial = savedInvestments != null && savedInvestments.TryGetValue(data.TalentType, out var v) ? v : 0;
+                _invested[data.TalentType] = initial;
             }
 
-            _remainingPoints = totalPoints;
+            // 저장된 값이 있으면 이미 쓴 포인트를 차감
+            var spent = 0;
+            foreach (var v in _invested.Values) spent += v;
+            _remainingPoints = totalPoints - spent;
         }
 
         /// <summary>특정 재능에 현재 투자된 포인트 반환</summary>
