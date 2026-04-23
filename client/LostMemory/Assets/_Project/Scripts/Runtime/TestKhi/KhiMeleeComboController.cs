@@ -31,6 +31,7 @@ namespace LostMemory.TestKhi
         private CharacterHandleWeapon _tdeHandleWeapon;
         private bool _isAttacking;
         private bool _isInAttackRecovery;
+        private bool _externalAbortRequested;
         private int _nextComboStep = 1;
         private int _currentComboStep;
         private int _sequenceId;
@@ -54,6 +55,19 @@ namespace LostMemory.TestKhi
         /// 기본값 false이며, 설정한 시스템이 반드시 false로 복원해야 한다.
         /// </summary>
         public bool ExternalBlock { get; set; }
+
+        /// <summary>
+        /// 진행 중인 공격 코루틴을 즉시 중단 요청한다. (CL-013 피격 경직용)
+        /// 공격 중이 아니면 아무 일도 하지 않는다.
+        /// 중단 시 콤보 상태는 초기화되고 버퍼된 공격은 폐기된다.
+        /// </summary>
+        public void AbortCurrentAttack()
+        {
+            if (_isAttacking)
+            {
+                _externalAbortRequested = true;
+            }
+        }
 
         private void Awake()
         {
@@ -119,6 +133,7 @@ namespace LostMemory.TestKhi
         {
             _isAttacking = true;
             _isInAttackRecovery = false;
+            _externalAbortRequested = false;
             ClearBufferedAttack();
             _alreadyHitThisSwing.Clear();
 
@@ -147,11 +162,17 @@ namespace LostMemory.TestKhi
                 yield return new WaitForSeconds(step.StartupDuration);
             }
 
+            if (_externalAbortRequested)
+            {
+                FinalizeAbortedAttack();
+                yield break;
+            }
+
             bool hitAnyTarget = false;
             float activeEndsAt = Time.time + step.ActiveDuration;
             AttackActiveStarted?.Invoke(request, step);
 
-            while (Time.time < activeEndsAt)
+            while (Time.time < activeEndsAt && !_externalAbortRequested)
             {
                 KhiAttackRequest sampleRequest = request;
                 sampleRequest.Origin = transform.position;
@@ -169,6 +190,12 @@ namespace LostMemory.TestKhi
             AttackActiveEnded?.Invoke(request, step);
             hitbox?.HideRuntimePreview();
 
+            if (_externalAbortRequested)
+            {
+                FinalizeAbortedAttack();
+                yield break;
+            }
+
             if (hitAnyTarget && step.ComboStep == 3)
             {
                 FinisherHit?.Invoke(request, step);
@@ -180,9 +207,15 @@ namespace LostMemory.TestKhi
 
             _isInAttackRecovery = true;
             float recoveryEndsAt = Time.time + step.RecoveryDuration;
-            while (Time.time < recoveryEndsAt)
+            while (Time.time < recoveryEndsAt && !_externalAbortRequested)
             {
                 yield return null;
+            }
+
+            if (_externalAbortRequested)
+            {
+                FinalizeAbortedAttack();
+                yield break;
             }
 
             bool shouldChainBufferedAttack = HasValidBufferedAttack(step.ComboStep);
@@ -196,6 +229,17 @@ namespace LostMemory.TestKhi
             {
                 RequestAttack();
             }
+        }
+
+        private void FinalizeAbortedAttack()
+        {
+            ClearBufferedAttack();
+            _nextComboStep = 1;
+            _comboExpiresAt = -1f;
+            _isAttacking = false;
+            _isInAttackRecovery = false;
+            _currentComboStep = 0;
+            _externalAbortRequested = false;
         }
 
         private bool ShouldBlockAttackForDash()
