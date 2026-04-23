@@ -1475,6 +1475,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &518582242
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 518582244}
+  - component: {fileID: 518582243}
+  m_Layer: 0
+  m_Name: KhiPlayerStateDebugOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &518582243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518582242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31b5fe1efab284a45b71cd6ab7c0bcbd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerStateDebugOverlay
+  aggregator: {fileID: 0}
+  toggleKey: 284
+  visibleOnStart: 1
+  historyCapacity: 10
+  panelOrigin: {x: 10, y: 10}
+  panelSize: {x: 260, y: 240}
+  fontSize: 12
+--- !u!4 &518582244
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518582242}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 9.91016, y: -1.90033, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &531027861
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1867,6 +1918,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1843242029}
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1843242030}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!28 &925854694
 Texture2D:
@@ -2974,6 +3029,25 @@ MonoBehaviour:
   setAnimatorTriggers: 0
   downAnimatorTriggerName: Down
   reviveAnimatorTriggerName: Revive
+--- !u!114 &1843242030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1843242005}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ce249ab02704ff4ab08dddf7901fad5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerStateAggregator
+  character: {fileID: 1843242026}
+  parryController: {fileID: 0}
+  hitStunController: {fileID: 1843242028}
+  dashController: {fileID: 1843242020}
+  downController: {fileID: 1843242029}
+  meleeCombo: {fileID: 1843242007}
+  logStateChanges: 0
 --- !u!213 &1870920841
 Sprite:
   m_ObjectHideFlags: 0
@@ -5617,7 +5691,7 @@ MonoBehaviour:
   reviveZonePosition: {x: 2.5, y: -2.5}
   reviveZoneSize: {x: 1.5, y: 1.5}
   reviveZoneHoldDuration: 0
-  enableDebugRespawnKey: 1
+  enableDebugRespawnKey: 0
   debugRespawnKey: 112
 --- !u!4 &382782365607596358
 Transform:
@@ -5770,3 +5844,4 @@ SceneRoots:
   - {fileID: 2041357599}
   - {fileID: 1129161349}
   - {fileID: 404946520}
+  - {fileID: 518582244}
