@@ -1,13 +1,12 @@
 spring:
   jpa:
     hibernate:
-      ddl-auto: update      # 로컬은 자동 스키마 갱신
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+      ddl-auto: validate    # 운영은 검증만 (스키마 변경 금지)
+    show-sql: false
 
 logging:
   level:
-    org.hibernate.SQL: debug
-    com.yourpackage: debug
+    root: info
+    com.yourpackage: info
+  file:
+    name: /var/log/app/application.log
