@@ -40,6 +40,11 @@ namespace LostMemory.TestKhi
         private Vector3 _velocity;
         private bool _hasSnapped;
 
+        private Vector2 _currentImpulseOffset;
+        private float _impulseEndUnscaled;
+        private float _impulseDuration;
+        private float _impulseIntensity;
+
         /// <summary>코드에서 직접 주입하는 lookahead 값. (0,0)이면 무효.</summary>
         public Vector2 ExternalLookahead { get; set; }
 
@@ -71,10 +76,31 @@ namespace LostMemory.TestKhi
             }
         }
 
+        /// <summary>
+        /// CL-017 카메라 임펄스. intensity(world units) 크기의 랜덤 오프셋을 duration(unscaled)
+        /// 동안 적용하며 선형 ease-out. 중첩 호출 시 덮어쓴다(가장 최근 이벤트 우선).
+        /// Hit stop 중에도 동작하도록 unscaledTime 기준.
+        /// </summary>
+        public void ApplyImpulse(float intensity, float duration)
+        {
+            if (intensity <= 0f || duration <= 0f)
+            {
+                return;
+            }
+
+            _impulseIntensity = intensity;
+            _impulseDuration = duration;
+            _impulseEndUnscaled = Time.unscaledTime + duration;
+        }
+
         private void LateUpdate()
         {
+            // 이전 프레임 impulse offset 제거 → 순수 follow base position 복원
+            Vector3 basePos = transform.position - (Vector3)_currentImpulseOffset;
+
             if (followTarget == null)
             {
+                transform.position = basePos + (Vector3)UpdateImpulseOffset();
                 return;
             }
 
@@ -83,19 +109,37 @@ namespace LostMemory.TestKhi
 
             if (!_hasSnapped)
             {
-                transform.position = new Vector3(followPoint.x, followPoint.y, offset.z);
+                basePos = new Vector3(followPoint.x, followPoint.y, offset.z);
                 _velocity = Vector3.zero;
                 _hasSnapped = true;
-                return;
+            }
+            else
+            {
+                Vector2 currentCam = basePos;
+                Vector2 desiredCam = ResolveDesiredPosition(currentCam, followPoint);
+                Vector3 target3 = new Vector3(desiredCam.x, desiredCam.y, offset.z);
+
+                basePos = Vector3.SmoothDamp(basePos, target3, ref _velocity, smoothTime, maxSpeed, Time.deltaTime);
+                basePos.z = offset.z;
             }
 
-            Vector2 currentCam = transform.position;
-            Vector2 desiredCam = ResolveDesiredPosition(currentCam, followPoint);
-            Vector3 target3 = new Vector3(desiredCam.x, desiredCam.y, offset.z);
+            transform.position = basePos + (Vector3)UpdateImpulseOffset();
+        }
 
-            Vector3 next = Vector3.SmoothDamp(transform.position, target3, ref _velocity, smoothTime, maxSpeed, Time.deltaTime);
-            next.z = offset.z;
-            transform.position = next;
+        private Vector2 UpdateImpulseOffset()
+        {
+            if (Time.unscaledTime >= _impulseEndUnscaled || _impulseDuration <= 0f)
+            {
+                _currentImpulseOffset = Vector2.zero;
+                return _currentImpulseOffset;
+            }
+
+            float remaining = (_impulseEndUnscaled - Time.unscaledTime) / _impulseDuration;
+            float mag = _impulseIntensity * Mathf.Clamp01(remaining);
+            _currentImpulseOffset = new Vector2(
+                (UnityEngine.Random.value - 0.5f) * 2f * mag,
+                (UnityEngine.Random.value - 0.5f) * 2f * mag);
+            return _currentImpulseOffset;
         }
 
         private Vector2 ResolveDesiredPosition(Vector2 cam, Vector2 followPoint)
