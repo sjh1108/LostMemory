@@ -1,17 +1,45 @@
-# Tools Docs
+# 도구 문서 목록
+
+## 이번 변경 요약
+
+### 중대 변경
+
+- `tools/docs` 안의 ComfyUI 문서명을 한글 기준으로 정리했다.
+- LoRA 실험 정리와 `Z-Image` 전환 계획 문서를 별도 문서로 분리했다.
+
+### 마이너 변경
+
+- 문서 분류를 `실행`, `설계`, `모델 운영`으로 다시 나눴다.
+- 이후 MR 설명은 이 폴더의 문서만 기준으로 작성하도록 정리했다.
 
 ComfyUI 및 내부 AI 툴링 관련 문서를 `tools/docs` 아래에서 관리한다.
 
-## ComfyUI 문서
+## 기본 실행 문서
 
-- [ComfyUI 로컬 실행 가이드](comfyui_local_run_guide.md)
-- [ComfyUI img2img 빠른 시작](comfyui_img2img_quickstart.md)
-- [ComfyUI 제안서 초안](internal_comfyui_proposal_v2_project-aligned.md)
-- [ComfyUI Spring API 초안](internal_comfyui_spring_api_draft_v2_project-aligned.md)
-- [ComfyUI ERD 초안](internal_comfyui_erd_v2_project-aligned.md)
-- [ComfyUI GPU 셋업 가이드](internal_comfyui_gpu_setup_guide_v2_project-aligned.md)
+- [컴피유아이 로컬 실행 가이드](컴피유아이-로컬-실행-가이드.md)
+- [컴피유아이 이미지투이미지 빠른 시작](컴피유아이-이미지투이미지-빠른-시작.md)
+- [컴피유아이 지피유 운영 가이드](컴피유아이-지피유-운영-가이드.md)
+
+## 설계 문서
+
+- [컴피유아이 프로젝트 제안서](컴피유아이-프로젝트-제안서.md)
+- [컴피유아이 백엔드 에이피아이 초안](컴피유아이-백엔드-에이피아이-초안.md)
+- [컴피유아이 데이터 구조 초안](컴피유아이-데이터-구조-초안.md)
+
+## 모델 운영 문서
+
+- [로라 실험 정리와 지이미지 전환 계획](로라-실험-정리와-지이미지-전환-계획.md)
 
 ## 운영 원칙
 
-- ComfyUI 관련 문서는 상위 `docs/`가 아니라 `tools/docs/`에서 지속 관리한다.
-- 기존 `comfy_UI_Test`에서 작성한 초안 문서도 팀 프로젝트 기준으로 이 위치에서 이어서 갱신한다.
+- 팀 프로젝트 기준 ComfyUI 문서는 `tools/docs`에서만 최신본을 유지한다.
+- 개인 실험 저장소에서 만든 초안은 참고 자료로만 보고, 최종 정리는 이 위치에 반영한다.
+- 문서 상단에는 이번 변경 요약을, 문서 하단에는 상세 변경 기록을 남긴다.
+
+## 변경 상세 기록
+
+### 2026-04-23
+
+- 한글 파일명 기준으로 문서 링크 체계를 재정리했다.
+- 문서 역할을 실행 문서, 설계 문서, 모델 운영 문서로 분리했다.
+- `Z-Image` 전환 계획과 LoRA 실험 문서를 이번 작업 범위에 맞게 별도 관리 대상으로 추가했다.
