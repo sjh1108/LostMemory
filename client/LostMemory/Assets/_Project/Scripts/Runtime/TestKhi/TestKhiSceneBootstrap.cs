@@ -20,6 +20,7 @@ namespace LostMemory.TestKhi
         private const string DoorObjectName = "TestKhi Door Block";
         private const string DamageDummyPrefix = "TestKhi Damage Dummy";
         private const string DamageTrapObjectName = "TestKhi Damage Trap";
+        private const string ReviveZoneObjectName = "TestKhi Revive Zone";
 
         [SerializeField] private InputActionAsset inputActions;
         [SerializeField] private string inputActionsAssetPath = "Assets/InputSystem_Actions.inputactions";
@@ -38,6 +39,15 @@ namespace LostMemory.TestKhi
         [SerializeField] private Vector2 playerStart = Vector2.zero;
         [SerializeField] private Vector2 interactablePosition = new Vector2(2f, 0f);
         [SerializeField] private Vector2 damageTrapPosition = new Vector2(0f, -2.5f);
+        [Header("Revive Zone (MVP debug)")]
+        [SerializeField] private bool createReviveZoneOnAwake = false;
+        [SerializeField] private Vector2 reviveZonePosition = new Vector2(2.5f, -2.5f);
+        [SerializeField] private Vector2 reviveZoneSize = new Vector2(1.5f, 1.5f);
+        [SerializeField, Min(0f)] private float reviveZoneHoldDuration = 0f;
+
+        [Header("Debug Respawn (Defeated 상태 플레이어 재활성)")]
+        [SerializeField] private bool enableDebugRespawnKey = true;
+        [SerializeField] private KeyCode debugRespawnKey = KeyCode.P;
 
         private void Awake()
         {
@@ -69,6 +79,37 @@ namespace LostMemory.TestKhi
             if (createDamageTrapOnAwake)
             {
                 EnsureDamageTrap();
+            }
+
+            if (createReviveZoneOnAwake)
+            {
+                EnsureReviveZone();
+            }
+        }
+
+        private void Update()
+        {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            if (enableDebugRespawnKey && Input.GetKeyDown(debugRespawnKey))
+            {
+                TryDebugRespawnAnyDefeatedPlayer();
+            }
+        }
+
+        private void TryDebugRespawnAnyDefeatedPlayer()
+        {
+            KhiDownController[] all = FindObjectsByType<KhiDownController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < all.Length; i++)
+            {
+                KhiDownController ctrl = all[i];
+                if (ctrl != null && ctrl.IsDefeated)
+                {
+                    ctrl.DebugRespawn();
+                }
             }
         }
 
@@ -172,6 +213,11 @@ namespace LostMemory.TestKhi
             if (createDamageTrapOnAwake)
             {
                 changed |= EnsureDamageTrap();
+            }
+
+            if (createReviveZoneOnAwake)
+            {
+                changed |= EnsureReviveZone();
             }
 
 #if UNITY_EDITOR
@@ -290,6 +336,57 @@ namespace LostMemory.TestKhi
 
             trap.ConfigureForTest();
             return changed;
+        }
+
+        private bool EnsureReviveZone()
+        {
+            bool changed = false;
+            GameObject zoneObject = FindObjectInScene(ReviveZoneObjectName);
+            if (zoneObject == null)
+            {
+                zoneObject = new GameObject(ReviveZoneObjectName);
+                SceneManager.MoveGameObjectToScene(zoneObject, gameObject.scene);
+                zoneObject.transform.position = reviveZonePosition;
+                zoneObject.transform.rotation = Quaternion.identity;
+                zoneObject.transform.localScale = Vector3.one;
+                changed = true;
+            }
+
+            BoxCollider2D boxCollider = zoneObject.GetComponent<BoxCollider2D>();
+            if (boxCollider == null)
+            {
+                boxCollider = zoneObject.AddComponent<BoxCollider2D>();
+                changed = true;
+            }
+            boxCollider.isTrigger = true;
+            boxCollider.size = reviveZoneSize;
+
+            TestKhiReviveZone zone = zoneObject.GetComponent<TestKhiReviveZone>();
+            if (zone == null)
+            {
+                zone = zoneObject.AddComponent<TestKhiReviveZone>();
+                changed = true;
+            }
+
+            SerializedFieldSet(zone, "holdDuration", reviveZoneHoldDuration);
+            return changed;
+        }
+
+        private static void SerializedFieldSet(UnityEngine.Object target, string fieldName, object value)
+        {
+            if (target == null || string.IsNullOrEmpty(fieldName))
+            {
+                return;
+            }
+
+            System.Reflection.FieldInfo field = target.GetType().GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+
+            if (field != null)
+            {
+                field.SetValue(target, value);
+            }
         }
 
         private bool EnsureSingleInteractableObject()

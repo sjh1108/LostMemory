@@ -200,6 +200,24 @@ namespace LostMemory.TestKhi
         /// resolvedDamage가 0이면 피해 적용 스킵, 0보다 크면 감쇠 피해 적용.
         /// false이면 피해 소스는 기존 기본 경로를 그대로 실행한다.
         /// </returns>
+        /// <summary>
+        /// 외부 시스템(예: KhiDownController)이 패링 상태를 강제로 Idle로 되돌려야 할 때 사용한다.
+        /// permits 복원까지 idempotent하게 수행. 이미 Idle이면 no-op.
+        /// </summary>
+        public void ForceIdle()
+        {
+            if (_state == KhiParryState.Idle)
+            {
+                RestorePermits();
+                return;
+            }
+
+            RestorePermits();
+            _state = KhiParryState.Idle;
+            LogTransition("ForceIdle (external request)");
+            ParryEnded?.Invoke();
+        }
+
         public bool TryResolveIncomingDamage(
             GameObject instigator,
             Vector2 incomingDirection,
