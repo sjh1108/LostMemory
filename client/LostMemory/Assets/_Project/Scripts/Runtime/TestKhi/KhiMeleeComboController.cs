@@ -48,6 +48,13 @@ namespace LostMemory.TestKhi
         public bool IsInAttackRecovery => _isInAttackRecovery;
         public bool BlocksDash => _isAttacking;
 
+        /// <summary>
+        /// 외부 시스템(예: KhiParryController)이 공격 입력을 일시적으로 차단하기 위한 플래그.
+        /// true인 동안 Update의 공격 입력 감지와 RequestAttack 진입을 모두 무시한다.
+        /// 기본값 false이며, 설정한 시스템이 반드시 false로 복원해야 한다.
+        /// </summary>
+        public bool ExternalBlock { get; set; }
+
         private void Awake()
         {
             aim ??= GetComponent<KhiPlayerAim>();
@@ -71,7 +78,7 @@ namespace LostMemory.TestKhi
 
         private void Update()
         {
-            if (WasAttackPressedThisFrame())
+            if (!ExternalBlock && WasAttackPressedThisFrame())
             {
                 RequestAttack();
             }
@@ -84,6 +91,11 @@ namespace LostMemory.TestKhi
 
         public void RequestAttack()
         {
+            if (ExternalBlock)
+            {
+                return;
+            }
+
             if (ShouldBlockAttackForDash())
             {
                 return;
