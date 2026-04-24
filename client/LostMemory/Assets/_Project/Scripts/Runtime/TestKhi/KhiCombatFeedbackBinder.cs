@@ -29,10 +29,10 @@ namespace LostMemory.TestKhi
         [SerializeField, Min(0f)] private float hitShakeDuration = 0.12f;
 
         [Header("ParrySucceeded")]
-        [SerializeField, Min(0f)] private float hitStopOnParry = 0.08f;
+        [SerializeField, Min(0f)] private float hitStopOnParry = 0.10f;
         [SerializeField] private Color parryFlashColor = new Color(0.5f, 0.85f, 1f);
         [SerializeField, Min(0f)] private float parryFlashDuration = 0.15f;
-        [SerializeField, Min(0f)] private float parryShakeIntensity = 0.10f;
+        [SerializeField, Min(0f)] private float parryShakeIntensity = 0.14f;
         [SerializeField, Min(0f)] private float parryShakeDuration = 0.10f;
 
         [Header("TargetHit (플레이어 공격 적중)")]
