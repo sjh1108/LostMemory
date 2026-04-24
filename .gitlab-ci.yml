@@ -12,9 +12,9 @@ notify_develop_merge:
     - |
       PAYLOAD=$(jq -n \
         --arg text "✅ **develop** 브랜치에 새 커밋이 머지되었습니다
-• 커밋: [$CI_COMMIT_TITLE]($CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA)
-• 작성자: $GITLAB_USER_NAME (@$GITLAB_USER_LOGIN)
-• 프로젝트: [$CI_PROJECT_PATH]($CI_PROJECT_URL)" \
+      • 커밋: [$CI_COMMIT_TITLE]($CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA)
+      • 작성자: $GITLAB_USER_NAME (@$GITLAB_USER_LOGIN)
+      • 프로젝트: [$CI_PROJECT_PATH]($CI_PROJECT_URL)" \
         '{text: $text}')
       curl -X POST -H "Content-Type: application/json" \
         -d "$PAYLOAD" \
