@@ -12,6 +12,7 @@ services:
       TZ: ${TZ}
       JENKINS_HOME: /srv/jenkins
       JENKINS_OPTS: "--prefix=/jenkins"
+      GIT_LFS_SKIP_SMUDGE: "1"
     volumes:
       - /srv/jenkins:/srv/jenkins
       - /var/run/docker.sock:/var/run/docker.sock
