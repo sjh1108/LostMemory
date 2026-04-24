@@ -23,6 +23,9 @@ pipeline {
   environment {
     // Secret file 타입 credential — Jenkins 가 임시 파일로 풀어 경로를 ENV_FILE 에 주입
     ENV_FILE = credentials('lostmemory-env')
+    // 서버 빌드에는 Unity 클라이언트용 LFS 바이너리(png/mp3/psd 등)가 전혀 필요 없음.
+    // smudge 필터가 checkout 마다 LFS 서버로 다운로드하러 가서 10분 timeout 으로 죽었음.
+    GIT_LFS_SKIP_SMUDGE = '1'
   }
 
   stages {
