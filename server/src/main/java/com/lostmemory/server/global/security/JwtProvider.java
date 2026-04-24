@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -14,6 +15,7 @@ import java.util.Date;
 import java.util.HexFormat;
 import java.util.UUID;
 
+@Slf4j
 @Component
 public class JwtProvider {
 
@@ -27,6 +29,9 @@ public class JwtProvider {
     public JwtProvider(JwtProperties properties) {
         this.properties = properties;
         this.key = Keys.hmacShaKeyFor(properties.secret().getBytes(StandardCharsets.UTF_8));
+        log.debug("[JWT] accessExp=" + properties.accessExpiration()
+                + "s, refreshExp=" + properties.refreshExpiration()
+                + "s, secretLen=" + properties.secret().length());
     }
 
     /** userId를 sub에 담은 Access 토큰 발급 */
