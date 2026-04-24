@@ -16,6 +16,8 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api   # 모든 endpoint 가 /api/* 로 서빙 — nginx /api/ 프록시와 경로 일치
 
 jwt:
   secret: ${JWT_SECRET}
