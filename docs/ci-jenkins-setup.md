@@ -6,11 +6,38 @@ Spring Boot 앱을 Docker 이미지로 빌드하고 EC2 에 `docker compose` 로
 
 ## 전제 조건
 
-- Jenkins 가 SSAFY EC2 (`k14c201.p.ssafy.io`) 에 컨테이너로 실행 중이어야 함 (별도 티켓 `S14P31C201-110 Jenkins 컨테이너 구성` 에서 구축)
+- Jenkins 가 SSAFY EC2 (`k14c201.p.ssafy.io`) 에 컨테이너로 실행 중이어야 함 (아래 "Jenkins 컨테이너 최초 부트" 섹션, 티켓 `S14P31C201-115`)
 - Jenkins 컨테이너에 `/var/run/docker.sock` 이 마운트되어 있어야 함 (DooD — Docker outside of Docker)
 - Jenkins 가 이 GitLab 레포를 읽을 수 있어야 함
 
-## 최초 셋업 (관리자 1회만 수행)
+## Jenkins 컨테이너 최초 부트 (S14P31C201-115)
+
+### 1. 호스트 준비 (EC2)
+```bash
+ssh -i <pem> ubuntu@k14c201.p.ssafy.io
+sudo mkdir -p /srv/jenkins
+sudo chown -R root:root /srv/jenkins     # 컨테이너가 root 로 동작 (현재 구성), 추후 docker-group gid 로 refine 예정
+```
+
+### 2. 컨테이너 기동
+레포 체크아웃된 서버 작업 디렉터리에서 (예: `/home/ubuntu/lostmemory/server`):
+```bash
+docker compose -f docker-compose.yml -f docker-compose.jenkins.yml up -d jenkins
+```
+`app`/`postgres`/`redis`/`nginx` 는 기존 스택 그대로 유지, `jenkins` 서비스만 추가로 기동.
+
+### 3. 초기 admin 비밀번호 확인
+```bash
+docker exec jenkins cat /srv/jenkins/secrets/initialAdminPassword
+```
+
+### 4. 브라우저 접속
+`https://k14c201.p.ssafy.io/jenkins/` (nginx `/jenkins/` 서브패스 프록시 경유) → 초기 세팅 진행:
+- "Install suggested plugins" 선택
+- Admin 계정 생성
+- Jenkins URL 확인 (`https://k14c201.p.ssafy.io/jenkins/` 로 자동 감지되어야 함)
+
+## 최초 셋업 (관리자 1회만 수행 — Jenkins UI 에서)
 
 ### 1. 필요한 플러그인 설치
 Manage Jenkins → Plugins → Available 에서 다음 설치 후 Jenkins 재시작:
@@ -76,7 +103,7 @@ Job 설정:
 
 ## 트러블슈팅
 
-- **`docker: permission denied`** — Jenkins 컨테이너 유저가 host docker group gid 로 실행되어야 함. Ticket S14P31C201-110 의 `docker-compose.jenkins.yml` 참고.
+- **`docker: permission denied`** — Jenkins 컨테이너 유저가 host docker group gid 로 실행되어야 함. 현재는 `user: root` 로 단순 해결 (`server/docker-compose.jenkins.yml` 참고), 추후 `user: "1000:<docker_gid>"` 로 refine 예정.
 - **`credentials('lostmemory-env') not found`** — Credential ID 가 정확히 `lostmemory-env` 인지 재확인 (오타/대소문자).
 - **Smoke Test timeout** — 앱이 healthy 안 되는 상황. 로그에서 DB 연결 / 환경변수 누락 여부 확인. `.env` 에 `POSTGRES_HOST=postgres`, `REDIS_HOST=redis` 로 컨테이너 네트워크 호스트명 쓰고 있는지 확인 (로컬 IDE 실행용 `.env.dev` 와 혼동 주의).
 - **Jenkins 에서 `docker compose` 명령 없음** — 구버전 `docker-compose` (v1) 가 아니라 Docker Compose v2 (`docker compose` 띄어쓰기) 가 필요. EC2 의 Docker 29.4.1 + Compose v2 사용 전제.
