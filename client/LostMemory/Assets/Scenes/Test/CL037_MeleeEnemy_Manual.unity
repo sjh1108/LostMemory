@@ -15889,6 +15889,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: OrcRider_CL039
       objectReference: {fileID: 0}
+    - target: {fileID: 1561694053617324, guid: 10a499f2549be90408a882be64399050, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4736116768674126, guid: 10a499f2549be90408a882be64399050, type: 3}
       propertyPath: m_LocalPosition.x
       value: 65
@@ -16312,6 +16316,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6abda689f332ce6438d919d49f40873e, type: 3}
+--- !u!4 &590403311 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55,
+    type: 3}
+  m_PrefabInstance: {fileID: 975246330}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &598334956
 GameObject:
   m_ObjectHideFlags: 0
@@ -41034,6 +41044,63 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 6633555450980926871}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &975246330
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1303778239}
+    m_Modifications:
+    - target: {fileID: 1561694053617324, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_Name
+      value: SkeletonArcher_CL041
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.21601
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -29.72147
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736116768674126, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
 --- !u!1001 &995193092
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -47791,6 +47858,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 590403311}
   - {fileID: 1903819495}
   - {fileID: 2035044683}
   - {fileID: 2020398415}
