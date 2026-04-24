@@ -3,11 +3,11 @@ stages:
 
 notify_develop_merge:
   stage: notify
-  image: curlimages/curl:latest
+  image: alpine:latest
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push"'
   before_script:
-    - apk add --no-cache jq
+    - apk add --no-cache curl jq
   script:
     - |
       PAYLOAD=$(jq -n \
