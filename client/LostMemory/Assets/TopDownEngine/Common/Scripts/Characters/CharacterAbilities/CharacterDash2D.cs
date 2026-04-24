@@ -217,6 +217,8 @@ namespace MoreMountains.TopDownEngine
 				}
 				else
 				{
+					_newPosition = _dashDestination;
+					_controller.MovePosition(_dashDestination);
 					DashStop();
 				}
 			}
