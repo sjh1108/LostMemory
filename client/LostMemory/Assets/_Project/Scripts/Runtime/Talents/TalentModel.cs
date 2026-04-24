@@ -48,6 +48,13 @@ namespace LostMemory.Talents
             return _invested.TryGetValue(type, out var val) ? val : 0;
         }
 
+        /// <summary>특정 재능의 투자 포인트를 실제 스탯 수치로 변환 (투자 × IncreasePerPoint)</summary>
+        public float GetStatValue(TalentType type)
+        {
+            if (!_dataMap.TryGetValue(type, out var data)) return 0f;
+            return _invested[type] * data.IncreasePerPoint;
+        }
+
         /// <summary>포인트를 1 추가할 수 있는지 검사 (포인트 부족 또는 최대치 도달 시 false)</summary>
         public bool CanAdd(TalentType type)
         {
