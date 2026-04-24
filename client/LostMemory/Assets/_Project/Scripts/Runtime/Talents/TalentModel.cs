@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using LostMemory.Data;
 
 namespace LostMemory.Talents
@@ -82,7 +83,8 @@ namespace LostMemory.Talents
         /// <summary>모든 투자를 초기화하고 포인트를 전액 환불</summary>
         public void Reset()
         {
-            foreach (var type in _invested.Keys)
+            // ToList()로 키를 미리 복사해야 순회 중 Dictionary 수정 예외를 피할 수 있다.
+            foreach (var type in _invested.Keys.ToList())
             {
                 _remainingPoints += _invested[type];
                 _invested[type] = 0;
