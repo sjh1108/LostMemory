@@ -18,10 +18,12 @@ public enum ErrorCode {
         this.message = message;
     }
 
+    /** 해당 에러에 매핑된 HTTP 상태 코드 */
     public HttpStatus status() {
         return status;
     }
 
+    /** 클라이언트에 노출할 기본 에러 메시지 */
     public String message() {
         return message;
     }

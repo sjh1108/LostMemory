@@ -21,4 +21,5 @@ server:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:3600}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:3600}       # 1시간 (초)
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:1209600}  # 14일 (초)

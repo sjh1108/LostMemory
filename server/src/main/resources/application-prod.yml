@@ -16,6 +16,13 @@ management:
         enabled: true
       show-details: never
 
+# Swagger / OpenAPI — 운영에선 API 스펙 노출 차단
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 logging:
   level:
     root: info
