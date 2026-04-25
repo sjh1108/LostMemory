@@ -1,23 +1,16 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace LostMemory.TestKhi
 {
-    public enum KhiAttackDirection
-    {
-        Right = 0,
-        Up = 1,
-        Left = 2,
-        Down = 3
-    }
-
     [Serializable]
     public struct KhiAttackRequest
     {
         public int SequenceId;
         public int ComboStep;
-        public KhiAttackDirection Direction;
-        public Vector2 DirectionVector;
+        public Vector2 AimDirection;      // 정규화된 aim 벡터 (360° 연속)
+        public float AimAngleDegrees;     // atan2(AimDirection.y, AimDirection.x) * Rad2Deg
         public Vector3 Origin;
         public float StartedAt;
         public GameObject Attacker;
@@ -46,20 +39,9 @@ namespace LostMemory.TestKhi
         public float RecoveryDuration = 0.08f;
         public string AnimatorTrigger = "Attack_1";
 
-        public KhiDirectionalHitbox Right;
-        public KhiDirectionalHitbox Up;
-        public KhiDirectionalHitbox Left;
-        public KhiDirectionalHitbox Down;
-
-        public KhiDirectionalHitbox GetHitbox(KhiAttackDirection direction)
-        {
-            return direction switch
-            {
-                KhiAttackDirection.Up => Up,
-                KhiAttackDirection.Left => Left,
-                KhiAttackDirection.Down => Down,
-                _ => Right
-            };
-        }
+        // Right 기준 baseline hitbox. 런타임에서 aim 각도로 회전시켜 사용.
+        // 기존 Right 필드에서 자동 마이그레이션 (FormerlySerializedAs).
+        [FormerlySerializedAs("Right")]
+        public KhiDirectionalHitbox Baseline;
     }
 }

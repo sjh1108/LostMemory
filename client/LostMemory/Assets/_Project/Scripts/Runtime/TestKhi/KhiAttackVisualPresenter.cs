@@ -13,14 +13,54 @@ namespace LostMemory.TestKhi
         [SerializeField] private Color thirdSlashColor = new Color(1f, 0.28f, 0.08f, 0.85f);
         [SerializeField] private float slashAreaScale = 0.95f;
 
+        [Header("External Slash Sprites (optional — slot 비면 기존 procedural fallback)")]
+        [SerializeField] private Sprite externalThinSlashSprite;
+        [SerializeField] private Sprite externalWideSlashSprite;
+
+        [Header("Trail (optional)")]
+        [SerializeField] private bool useTrailRenderer = false;
+        [SerializeField] private Transform trailAttachPoint;
+        [SerializeField, Min(0f)] private float trailTime = 0.18f;
+        [SerializeField, Min(0.001f)] private float trailWidth = 0.05f;
+        [SerializeField] private Color trailStartColor = new Color(1f, 1f, 1f, 0.85f);
+        [SerializeField] private Color trailEndColor = new Color(1f, 1f, 1f, 0f);
+
         private KhiMeleeComboController _comboController;
         private Sprite _thinSlashSprite;
         private Sprite _wideSlashSprite;
+        private TrailRenderer _attachedTrail;
 
         private void Awake()
         {
             animator ??= GetComponentInChildren<Animator>();
             _comboController = GetComponent<KhiMeleeComboController>();
+            EnsureTrailRenderer();
+        }
+
+        private void EnsureTrailRenderer()
+        {
+            if (!useTrailRenderer || trailAttachPoint == null)
+            {
+                return;
+            }
+
+            _attachedTrail = trailAttachPoint.GetComponent<TrailRenderer>();
+            if (_attachedTrail == null)
+            {
+                _attachedTrail = trailAttachPoint.gameObject.AddComponent<TrailRenderer>();
+            }
+
+            _attachedTrail.time = trailTime;
+            _attachedTrail.startWidth = trailWidth;
+            _attachedTrail.endWidth = 0f;
+            _attachedTrail.startColor = trailStartColor;
+            _attachedTrail.endColor = trailEndColor;
+            _attachedTrail.minVertexDistance = 0.01f;
+
+            if (_attachedTrail.material == null || _attachedTrail.material.shader == null)
+            {
+                _attachedTrail.material = new Material(Shader.Find("Sprites/Default"));
+            }
         }
 
         private void OnEnable()
@@ -71,9 +111,10 @@ namespace LostMemory.TestKhi
             }
 
             TemporarySlashSpec spec = GetSlashSpec(step.ComboStep);
-            KhiDirectionalHitbox hitbox = step.GetHitbox(request.Direction);
-            float directionAngle = GetDirectionAngle(request.Direction);
-            Vector2 center = (Vector2)request.Origin + hitbox.Offset;
+            KhiDirectionalHitbox hitbox = step.Baseline;
+            float directionAngle = request.AimAngleDegrees;
+            Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, directionAngle) * (Vector3)hitbox.Offset);
+            Vector2 center = (Vector2)request.Origin + rotatedOffset;
             Vector2 areaSize = hitbox.Size * slashAreaScale;
 
             GameObject slashObject = new GameObject($"Khi_TemporarySlash_{step.ComboStep}");
@@ -148,10 +189,18 @@ namespace LostMemory.TestKhi
         {
             if (spriteKind == TemporarySlashSpriteKind.Wide)
             {
+                if (externalWideSlashSprite != null)
+                {
+                    return externalWideSlashSprite;
+                }
                 _wideSlashSprite ??= CreateSlashSprite("Khi_TemporaryWideSlash", 96, 96, true);
                 return _wideSlashSprite;
             }
 
+            if (externalThinSlashSprite != null)
+            {
+                return externalThinSlashSprite;
+            }
             _thinSlashSprite ??= CreateSlashSprite("Khi_TemporaryThinSlash", 128, 64, false);
             return _thinSlashSprite;
         }
@@ -236,17 +285,6 @@ namespace LostMemory.TestKhi
             }
 
             targetRenderer.sortingLayerID = ownerRenderer.sortingLayerID;
-        }
-
-        private static float GetDirectionAngle(KhiAttackDirection direction)
-        {
-            return direction switch
-            {
-                KhiAttackDirection.Up => 90f,
-                KhiAttackDirection.Left => 180f,
-                KhiAttackDirection.Down => -90f,
-                _ => 0f
-            };
         }
 
         private static float DeterministicNoise(int x, int y)

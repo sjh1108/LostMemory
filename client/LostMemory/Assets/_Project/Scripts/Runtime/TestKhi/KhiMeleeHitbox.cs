@@ -20,6 +20,7 @@ namespace LostMemory.TestKhi
         private bool _hasDebugHitbox;
         private Vector2 _debugCenter;
         private Vector2 _debugSize;
+        private float _debugAngleDeg;
         private SpriteRenderer _runtimePreviewRenderer;
         private Sprite _runtimePreviewSprite;
 
@@ -34,14 +35,18 @@ namespace LostMemory.TestKhi
             EnsureOverlapBuffer();
             hitsThisSample?.Clear();
 
-            KhiDirectionalHitbox hitbox = step.GetHitbox(request.Direction);
-            Vector2 center = (Vector2)request.Origin + hitbox.Offset;
+            KhiDirectionalHitbox hitbox = step.Baseline;
+            float aimAngleDeg = request.AimAngleDegrees;
+            // baseline offset(Right 기준)을 현재 aim 각도로 회전시켜 실제 center 계산.
+            Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, aimAngleDeg) * (Vector3)hitbox.Offset);
+            Vector2 center = (Vector2)request.Origin + rotatedOffset;
             _debugCenter = center;
             _debugSize = hitbox.Size;
+            _debugAngleDeg = aimAngleDeg;
             _hasDebugHitbox = true;
-            ShowRuntimePreview(center, hitbox.Size);
+            ShowRuntimePreview(center, hitbox.Size, aimAngleDeg);
 
-            int hitCount = Physics2D.OverlapBoxNonAlloc(center, hitbox.Size, 0f, _overlapResults, targetLayers);
+            int hitCount = Physics2D.OverlapBoxNonAlloc(center, hitbox.Size, aimAngleDeg, _overlapResults, targetLayers);
             int appliedHits = 0;
 
             for (int i = 0; i < hitCount; i++)
@@ -64,7 +69,7 @@ namespace LostMemory.TestKhi
                 }
 
                 alreadyHit.Add(health);
-                health.Damage(damage, request.Attacker, targetFlickerDuration, targetInvincibilityDuration, request.DirectionVector);
+                health.Damage(damage, request.Attacker, targetFlickerDuration, targetInvincibilityDuration, request.AimDirection);
                 hitsThisSample?.Add(health);
                 appliedHits++;
             }
@@ -128,7 +133,7 @@ namespace LostMemory.TestKhi
             return _runtimePreviewSprite;
         }
 
-        private void ShowRuntimePreview(Vector2 center, Vector2 size)
+        private void ShowRuntimePreview(Vector2 center, Vector2 size, float angleDeg)
         {
             if (!showRuntimePreview)
             {
@@ -141,7 +146,9 @@ namespace LostMemory.TestKhi
                 return;
             }
 
-            _runtimePreviewRenderer.transform.position = new Vector3(center.x, center.y, transform.position.z);
+            _runtimePreviewRenderer.transform.SetPositionAndRotation(
+                new Vector3(center.x, center.y, transform.position.z),
+                Quaternion.Euler(0f, 0f, angleDeg));
             _runtimePreviewRenderer.transform.localScale = new Vector3(size.x, size.y, 1f);
             _runtimePreviewRenderer.color = runtimePreviewColor;
             CopySortingLayerFromOwner(_runtimePreviewRenderer);
@@ -177,10 +184,13 @@ namespace LostMemory.TestKhi
                 return;
             }
 
+            Matrix4x4 prevMatrix = Gizmos.matrix;
+            Gizmos.matrix = Matrix4x4.TRS(_debugCenter, Quaternion.Euler(0f, 0f, _debugAngleDeg), Vector3.one);
             Gizmos.color = debugGizmoColor;
-            Gizmos.DrawCube(_debugCenter, _debugSize);
+            Gizmos.DrawCube(Vector3.zero, _debugSize);
             Gizmos.color = new Color(debugGizmoColor.r, debugGizmoColor.g, debugGizmoColor.b, 0.9f);
-            Gizmos.DrawWireCube(_debugCenter, _debugSize);
+            Gizmos.DrawWireCube(Vector3.zero, _debugSize);
+            Gizmos.matrix = prevMatrix;
         }
     }
 }

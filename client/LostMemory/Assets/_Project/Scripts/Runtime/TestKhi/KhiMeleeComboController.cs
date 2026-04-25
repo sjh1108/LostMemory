@@ -139,14 +139,18 @@ namespace LostMemory.TestKhi
 
             KhiMeleeAttackStep step = GetStep(comboStep);
             _currentComboStep = step.ComboStep;
-            KhiAttackDirection direction = aim != null ? aim.GetCardinalDirection() : KhiAttackDirection.Right;
-            Vector2 directionVector = KhiPlayerAim.ToVector(direction);
+            Vector2 aimDirection = aim != null ? aim.GetAimDirection() : Vector2.right;
+            if (aimDirection.sqrMagnitude <= Mathf.Epsilon)
+            {
+                aimDirection = Vector2.right;
+            }
+            float aimAngleDeg = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
             KhiAttackRequest request = new KhiAttackRequest
             {
                 SequenceId = ++_sequenceId,
                 ComboStep = step.ComboStep,
-                Direction = direction,
-                DirectionVector = directionVector,
+                AimDirection = aimDirection,
+                AimAngleDegrees = aimAngleDeg,
                 Origin = transform.position,
                 StartedAt = Time.time,
                 Attacker = gameObject
@@ -170,6 +174,8 @@ namespace LostMemory.TestKhi
 
             bool hitAnyTarget = false;
             float activeEndsAt = Time.time + step.ActiveDuration;
+            // active 시작 시점의 위치를 request.Origin에 반영 (windup 중 플레이어 이동 보정).
+            request.Origin = transform.position;
             AttackActiveStarted?.Invoke(request, step);
 
             while (Time.time < activeEndsAt && !_externalAbortRequested)
@@ -360,10 +366,7 @@ namespace LostMemory.TestKhi
                 ActiveDuration = 0.1f,
                 RecoveryDuration = 0.15f,
                 AnimatorTrigger = "Attack_1",
-                Right = new KhiDirectionalHitbox(new Vector2(1.05f, -0.2f), new Vector2(1.7f, 1.1f)),
-                Up = new KhiDirectionalHitbox(new Vector2(0.2f, 1.05f), new Vector2(1.1f, 1.7f)),
-                Left = new KhiDirectionalHitbox(new Vector2(-1.05f, 0.2f), new Vector2(1.7f, 1.1f)),
-                Down = new KhiDirectionalHitbox(new Vector2(-0.2f, -1.05f), new Vector2(1.1f, 1.7f))
+                Baseline = new KhiDirectionalHitbox(new Vector2(1.05f, -0.2f), new Vector2(1.7f, 1.1f))
             };
         }
 
@@ -377,10 +380,7 @@ namespace LostMemory.TestKhi
                 ActiveDuration = 0.12f,
                 RecoveryDuration = 0.2f,
                 AnimatorTrigger = "Attack_2",
-                Right = new KhiDirectionalHitbox(new Vector2(1.05f, 0.2f), new Vector2(1.8f, 1.2f)),
-                Up = new KhiDirectionalHitbox(new Vector2(-0.2f, 1.05f), new Vector2(1.2f, 1.8f)),
-                Left = new KhiDirectionalHitbox(new Vector2(-1.05f, -0.2f), new Vector2(1.8f, 1.2f)),
-                Down = new KhiDirectionalHitbox(new Vector2(0.2f, -1.05f), new Vector2(1.2f, 1.8f))
+                Baseline = new KhiDirectionalHitbox(new Vector2(1.05f, 0.2f), new Vector2(1.8f, 1.2f))
             };
         }
 
@@ -394,10 +394,7 @@ namespace LostMemory.TestKhi
                 ActiveDuration = 0.2f,
                 RecoveryDuration = 0.3f,
                 AnimatorTrigger = "Attack_3",
-                Right = new KhiDirectionalHitbox(new Vector2(1.25f, 0f), new Vector2(2.5f, 1.8f)),
-                Up = new KhiDirectionalHitbox(new Vector2(0f, 1.25f), new Vector2(1.8f, 2.5f)),
-                Left = new KhiDirectionalHitbox(new Vector2(-1.25f, 0f), new Vector2(2.5f, 1.8f)),
-                Down = new KhiDirectionalHitbox(new Vector2(0f, -1.25f), new Vector2(1.8f, 2.5f))
+                Baseline = new KhiDirectionalHitbox(new Vector2(1.25f, 0f), new Vector2(2.5f, 1.8f))
             };
         }
     }
