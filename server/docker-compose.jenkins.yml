@@ -1,0 +1,23 @@
+# Jenkins 컨테이너 — Spring Boot 빌드/배포 파이프라인 실행 주체
+# 사용법: docker compose -f docker-compose.yml -f docker-compose.jenkins.yml up -d
+# JENKINS_HOME 은 호스트/컨테이너 동일 경로로 마운트 — 이유: Jenkinsfile 이 workspace 에서
+# `docker compose` 실행 시 호스트 docker daemon 이 동일 절대경로를 찾을 수 있어야 bind mount 가 정상 동작
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    image: lostmemory-jenkins:latest
+    container_name: jenkins
+    restart: unless-stopped
+    user: root
+    environment:
+      TZ: ${TZ}
+      JENKINS_HOME: /srv/jenkins
+      JENKINS_OPTS: "--prefix=/jenkins"
+      GIT_LFS_SKIP_SMUDGE: "1"
+    volumes:
+      - /srv/jenkins:/srv/jenkins
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - frontend
