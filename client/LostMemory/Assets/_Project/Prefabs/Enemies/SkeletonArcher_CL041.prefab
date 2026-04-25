@@ -151,6 +151,10 @@ GameObject:
   - component: {fileID: 7946302869967692293}
   - component: {fileID: 1752598229907923340}
   - component: {fileID: 3308386248995881181}
+  - component: {fileID: 1195054533049496650}
+  - component: {fileID: 5080981940864639101}
+  - component: {fileID: 8462157311149912200}
+  - component: {fileID: 8462157311149912201}
   m_Layer: 13
   m_Name: SkeletonArcher_CL041
   m_TagString: Enemy
@@ -561,6 +565,42 @@ MonoBehaviour:
       array:
       - {fileID: 114472236543704332}
       - {fileID: 6726437670042269150}
+      - {fileID: 1195054533049496650}
+    Transitions:
+      array:
+      - Decision: {fileID: 2233445566778899011}
+        TrueState: Attack
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: Attack
+    Actions:
+      array:
+      - {fileID: 114472236543704332}
+      - {fileID: 6726437670042269150}
+      - {fileID: 1195054533049496650}
+      - {fileID: 5080981940864639101}
+    Transitions:
+      array:
+      - Decision: {fileID: 2233445566778899012}
+        TrueState: Recover
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: Recover
+    Actions:
+      array:
+      - {fileID: 114472236543704332}
+      - {fileID: 6726437670042269150}
+    Transitions:
+      array:
+      - Decision: {fileID: 2233445566778899013}
+        TrueState: Reposition
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: Reposition
+    Actions:
+      array:
+      - {fileID: 114472236543704332}
+      - {fileID: 6726437670042269150}
     Transitions:
       array:
       - Decision: {fileID: 114631777180868210}
@@ -577,6 +617,14 @@ MonoBehaviour:
         LastDecisionEvaluation: 0
       - Decision: {fileID: 6218444265588485442}
         TrueState: Approach
+        FalseState: 
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 259105739234694277}
+        TrueState: AimReady
+        FalseState: 
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 530997533276128623}
+        TrueState: AimReady
         FalseState: 
         LastDecisionEvaluation: 0
   - StateName: Reset
@@ -919,11 +967,12 @@ MonoBehaviour:
   BlockingMovementStates: 
   BlockingConditionStates: 
   BlockingWeaponStates: 
-  InitialWeapon: {fileID: 0}
+  InitialWeapon: {fileID: 114317679573123918, guid: 9a623786c08e3db42b331c45df778fdc,
+    type: 3}
   CanPickupWeapons: 1
   WeaponUseFeedback: {fileID: 0}
   WeaponAttachment: {fileID: 2776650933307352783}
-  ProjectileSpawn: {fileID: 0}
+  ProjectileSpawn: {fileID: 3679135862572679633}
   AutomaticallyBindAnimator: 1
   AmmoDisplayID: 0
   AutoIK: 1
@@ -1055,6 +1104,135 @@ MonoBehaviour:
   Label: TooFarToChase
   ComparisonMode: 3
   Distance: 9
+--- !u!114 &1195054533049496650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c03bbff1027bbd4cb419eb2f6e11da7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionAimWeaponAtTarget2D
+  InitializationMode: 0
+  Label: 
+  TargetHandleWeaponAbility: {fileID: 0}
+  AimOrigin: 0
+  FaceTarget: 1
+  AimAtTarget: 1
+--- !u!114 &5080981940864639101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b1affdc8ddb97d40b6a8b805c494909, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionShoot2D
+  InitializationMode: 0
+  Label: 
+  TargetHandleWeaponAbility: {fileID: 0}
+  AimOrigin: 0
+  FaceTarget: 1
+  AimAtTarget: 0
+  ShootOffset: {x: 0, y: 0, z: 0}
+  OnlyAimWhenInState: 0
+--- !u!114 &2233445566778899011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: AimFinished
+  AfterTimeMin: 2
+  AfterTimeMax: 2
+--- !u!114 &2233445566778899012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: AttackFinished
+  AfterTimeMin: 0.1
+  AfterTimeMax: 0.1
+--- !u!114 &2233445566778899013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: RecoverFinished
+  AfterTimeMin: 2
+  AfterTimeMax: 2
+--- !u!114 &8462157311149912200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6c7a273e1ea4f149fa4534d4480e5c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  previewObjectName: AttackTelegraphPreview
+  previewParent: {fileID: 4736116768674126}
+  sortingReference: {fileID: 212797044214329334}
+  sortingOrder: -5
+  defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
+  pulseSpeed: 8
+  pulseAlphaStrength: 0.18
+  positionOffset: {x: 0, y: 0.02, z: 0}
+--- !u!114 &8462157311149912201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5699cd34e5ee4eff9cd886a4237d03a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  brain: {fileID: 114675271368606418}
+  character: {fileID: 114184945564206620}
+  handleWeapon: {fileID: 3841032822885868042}
+  telegraphOrigin: {fileID: 3679135862572679633}
+  telegraphView: {fileID: 8462157311149912200}
+  telegraphStateName: AimReady
+  telegraphColor: {r: 1, g: 0.34, b: 0.08, a: 0.32}
+  fallbackLength: 5.5
+  maximumLength: 6.5
+  lengthPadding: 0.35
+  width: 0.35
+  startOffset: 0.1
+  useLastKnownTargetPosition: 1
+  lockDirectionOnTelegraphStart: 0
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
