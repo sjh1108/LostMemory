@@ -32,31 +32,5 @@ namespace LostMemory.TestKhi
             _lastDirection = direction.normalized;
             return _lastDirection;
         }
-
-        public KhiAttackDirection GetCardinalDirection()
-        {
-            return ToCardinalDirection(GetAimDirection());
-        }
-
-        public static KhiAttackDirection ToCardinalDirection(Vector2 direction)
-        {
-            if (Mathf.Abs(direction.x) >= Mathf.Abs(direction.y))
-            {
-                return direction.x >= 0f ? KhiAttackDirection.Right : KhiAttackDirection.Left;
-            }
-
-            return direction.y >= 0f ? KhiAttackDirection.Up : KhiAttackDirection.Down;
-        }
-
-        public static Vector2 ToVector(KhiAttackDirection direction)
-        {
-            return direction switch
-            {
-                KhiAttackDirection.Up => Vector2.up,
-                KhiAttackDirection.Left => Vector2.left,
-                KhiAttackDirection.Down => Vector2.down,
-                _ => Vector2.right
-            };
-        }
     }
 }

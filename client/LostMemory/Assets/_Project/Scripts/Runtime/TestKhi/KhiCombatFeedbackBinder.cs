@@ -43,6 +43,13 @@ namespace LostMemory.TestKhi
         [SerializeField] private Color landingFlashColor = new Color(1f, 0.95f, 0.7f);
         [SerializeField, Min(0f)] private float landingFlashDuration = 0.08f;
 
+        [Header("Finisher Hit (3타 적중 전용 — 기본 TargetHit 대신 적용)")]
+        [SerializeField] private bool enableFinisherFeedback = true;
+        [SerializeField] private int finisherComboStep = 3;
+        [SerializeField, Min(0f)] private float finisherHitStop = 0.08f;
+        [SerializeField, Min(0f)] private float finisherShakeIntensity = 0.28f;
+        [SerializeField, Min(0f)] private float finisherShakeDuration = 0.18f;
+
         [Header("Debug")]
         [SerializeField] private bool logFeedback = false;
 
@@ -115,8 +122,20 @@ namespace LostMemory.TestKhi
             Log("ParrySucceeded feedback");
         }
 
-        private void HandleTargetHit(KhiAttackRequest _, KhiMeleeAttackStep __, Health ___)
+        private void HandleTargetHit(KhiAttackRequest _, KhiMeleeAttackStep step, Health ___)
         {
+            if (enableFinisherFeedback && step != null && step.ComboStep == finisherComboStep)
+            {
+                RequestFreeze(finisherHitStop);
+                playerCamera?.ApplyImpulse(finisherShakeIntensity, finisherShakeDuration);
+                if (flashOnLanding)
+                {
+                    flashPresenter?.Flash(landingFlashColor, landingFlashDuration);
+                }
+                Log($"Finisher({finisherComboStep}) hit feedback");
+                return;
+            }
+
             RequestFreeze(hitStopOnLanding);
             playerCamera?.ApplyImpulse(landingShakeIntensity, landingShakeDuration);
 
