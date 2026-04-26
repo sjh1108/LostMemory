@@ -213,3 +213,43 @@ Output 이미지:
 - 완료여부: `N`
 - 상태: `설정/절차 준비 완료, 실제 도메인 검증 대기`
 - 후속 작업: `AI-206`, 도메인 구매 후 `AI-205-01`~`AI-205-05` 실검증
+
+## AI-206. 도메인 앞단 Basic Auth 적용
+
+### 작업 범위
+
+- Basic Auth 보호 대상과 예외 경로 확정
+- Nginx Basic Auth 설정 반영
+- `.htpasswd` 파일 마운트와 Git 제외 규칙 반영
+- 팀 공유용 계정 생성, 전달, 교체 기준 문서화
+
+### 결정 내용
+
+- `COMFYUI_DOMAIN`은 전체 경로를 Basic Auth로 보호한다.
+- `PUBLIC_DOMAIN`은 현재 백엔드 진입점인 `/api/`를 Basic Auth로 보호한다.
+- `/.well-known/acme-challenge/`는 Let's Encrypt HTTP-01 검증을 위해 인증 예외로 둔다.
+- `/nginx-health`는 운영 health check를 위해 인증 예외로 둔다.
+- 실제 계정 파일은 `tools/infra/nginx/auth/.htpasswd`에 만들고 Git에는 올리지 않는다.
+
+### 산출물
+
+- `tools/infra/docker-compose.yml`
+- `tools/infra/.env.example`
+- `tools/infra/README.md`
+- `tools/infra/nginx/README.md`
+- `tools/infra/nginx/auth/README.md`
+- `tools/infra/nginx/templates/ai-tool.conf.template`
+- `산출물/AI-206-basic-auth/README.md`
+- `산출물/AI-206-basic-auth/mr-description.md`
+
+### 현재 판정
+
+2026-04-27 기준 구매 도메인과 실제 인증서가 아직 없으므로 브라우저에서 실제 Basic Auth 팝업, 401 응답, 인증 성공 후 ComfyUI UI/API 접근은 검증하지 않는다.
+
+이번 작업에서는 AI-206의 설정과 운영 절차를 준비한 상태로 둔다. 실제 도메인과 인증서가 준비되면 `.htpasswd`를 생성하고 Nginx를 재시작한 뒤 실검증한다.
+
+### 상태
+
+- 완료여부: `N`
+- 상태: `설정/절차 준비 완료, 실제 도메인 검증 대기`
+- 후속 작업: 도메인/인증서 준비 후 `AI-206-01`, `AI-206-03` 실검증

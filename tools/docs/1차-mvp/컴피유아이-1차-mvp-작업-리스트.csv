@@ -19,7 +19,7 @@
 "18","1차 MVP","2차","Epic E. 공용 ComfyUI 서버화","Infra/Proxy","AI-203","Reverse Proxy 기본 경로 설계","AI1","P0","프록시 설정 초안","2","외부에서 ComfyUI 원본 UI와 결과 조회 페이지에 접근할 수 있도록 프록시 경로와 포트를 설계한다.","AI-201","",""
 "19","1차 MVP","2차","Epic E. 공용 ComfyUI 서버화","Infra/UI","AI-204","ComfyUI 원본 UI 내부 주소 연결","AI1","P0","내부 접속 가능한 ComfyUI 주소","2","로컬 전용 127.0.0.1 주소가 아니라 팀 내부에서 접근 가능한 주소로 ComfyUI UI를 노출한다.","AI-203","",""
 "20","1차 MVP","2차","Epic E. 공용 ComfyUI 서버화","Infra/Security","AI-205","도메인 및 HTTPS 적용","AI1","P0","HTTPS 접속 경로","2","내부 공유용 주소에 HTTPS를 붙여 브라우저 경고 없이 접근 가능하게 한다.","AI-204","",""
-"21","1차 MVP","2차","Epic E. 공용 ComfyUI 서버화","Infra/Security","AI-206","도메인 앞단 Basic Auth 적용","AI1","P0","Basic Auth 설정","2","내부 도구 접근을 1차로 제한하기 위해 Reverse Proxy 앞단 Basic Auth를 적용한다.","AI-205","",""
+"21","1차 MVP","2차","Epic E. 공용 ComfyUI 서버화","Infra/Security","AI-206","도메인 앞단 Basic Auth 적용","AI1","P0","Basic Auth 설정","2","내부 도구 접근을 1차로 제한하기 위해 Reverse Proxy 앞단 Basic Auth를 적용한다.","AI-205","N","설정/절차 준비 완료, 실제 도메인 검증 대기"
 "22","1차 MVP","1차","Epic F. ComfyUI API 실측","Baseline/API","AI-301","POST /prompt 요청 샘플 확보","AI1","P0","prompt 요청 예제 JSON","1","실제로 동작하는 요청 body를 저장해 이후 서버 연동의 기준 샘플로 사용한다.","AI-202","",""
 "23","1차 MVP","1차","Epic F. ComfyUI API 실측","Baseline/API","AI-302","GET /history/{prompt_id} 응답 샘플 확보","AI1","P0","history 응답 예제 JSON","1","prompt_id 기준으로 어떤 응답 구조와 output 정보가 오는지 실제 샘플을 저장한다.","AI-301","",""
 "24","1차 MVP","1차","Epic F. ComfyUI API 실측","Baseline/API","AI-303","prompt_id와 output 파일 매핑 규칙 정리","AI1","P0","매핑 규칙 문서","1","history 응답, 생성 시각, output 파일명을 어떻게 연결할지 규칙을 정리한다.","AI-302","",""

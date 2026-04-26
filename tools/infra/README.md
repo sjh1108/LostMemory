@@ -8,7 +8,7 @@
 
 ## 현재 범위
 
-`AI-205` 기준으로 이 폴더에서 다루는 범위는 Reverse Proxy에 도메인과 HTTPS를 붙이는 운영 초안이다.
+`AI-206` 기준으로 이 폴더에서 다루는 범위는 Reverse Proxy에 도메인, HTTPS, Basic Auth를 붙이는 운영 초안이다.
 
 - 구매 예정 도메인 기준 EC2 Nginx 진입점
 - AI 도구 백엔드 upstream 초안
@@ -16,12 +16,13 @@
 - Postgres 컨테이너 초안
 - Let's Encrypt HTTP-01 challenge용 webroot
 - HTTPS 443 server block과 HTTP -> HTTPS redirect
+- Basic Auth용 `htpasswd` 파일 마운트와 보호 경로 설정
 
 아직 이 폴더에서 하지 않는 일은 아래와 같다.
 
 - 실제 도메인 구매
 - DNS 레코드 생성
-- Basic Auth 계정 생성
+- 실제 Basic Auth 계정 파일 커밋
 - 실제 AI 도구 백엔드 프로젝트 생성
 - ComfyUI Docker 이미지화
 - EC2와 운영/GPU 데스크탑 사이 네트워크 개통 검증
@@ -35,6 +36,8 @@ tools/infra/
   .env.example
   nginx/
     README.md
+    auth/
+      README.md
     nginx.conf
     templates/
       README.md
@@ -72,11 +75,14 @@ ComfyUI도 compose service로 넣지 않았다. 모델 파일, GPU 드라이버,
 - `PUBLIC_DOMAIN`
 - `COMFYUI_DOMAIN`
 - `LETSENCRYPT_EMAIL`
+- `BASIC_AUTH_REALM`
 - `AI_BACKEND_UPSTREAM`
 - `COMFYUI_UPSTREAM`
 - `POSTGRES_*`
 
 실제 `.env` 파일에는 비밀번호가 들어가므로 Git에 올리지 않는다.
+
+Basic Auth 계정 파일은 `tools/infra/nginx/auth/.htpasswd`에 별도로 만든다. 이 파일도 비밀번호 해시가 들어가므로 Git에 올리지 않는다.
 
 ### `nginx/`
 
@@ -112,5 +118,6 @@ Postgres 데이터베이스 초기화 파일을 둘 자리다.
 
 ## 205 이후 후속 작업
 
-- `AI-206`: Basic Auth 적용
+- 도메인 구매 후 `AI-205`: DNS, 인증서 발급, 자동 갱신 실검증
+- `AI-206`: 실제 도메인 기준 Basic Auth 브라우저 검증
 - `AI-401` 이후: AI 도구 백엔드 구현
