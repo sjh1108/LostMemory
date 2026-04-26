@@ -1,4 +1,5 @@
 using System;
+using LostMemory.Stage.Data;
 using UnityEngine;
 
 namespace LostMemory.Stage
@@ -11,12 +12,14 @@ namespace LostMemory.Stage
         [SerializeField] private BossEntryRequirementMode bossEntryRequirementMode = BossEntryRequirementMode.Auto;
         [SerializeField] private bool isVisited;
         [SerializeField] private bool isCompleted;
+        [SerializeField] private RoomData sourceData;
 
         public string RoomId => roomId;
         public StageRoomType RoomType => roomType;
         public BossEntryRequirementMode BossEntryRequirementMode => bossEntryRequirementMode;
         public bool IsVisited => isVisited;
         public bool IsCompleted => isCompleted;
+        public RoomData SourceData => sourceData;
 
         public bool CountsAsBossRequirement
         {
@@ -39,9 +42,19 @@ namespace LostMemory.Stage
             StageRoomType type,
             BossEntryRequirementMode requirementMode = BossEntryRequirementMode.Auto)
         {
+            Configure(id, type, requirementMode, null);
+        }
+
+        public void Configure(
+            string id,
+            StageRoomType type,
+            BossEntryRequirementMode requirementMode,
+            RoomData data)
+        {
             roomId = id ?? string.Empty;
             roomType = type;
             bossEntryRequirementMode = requirementMode;
+            sourceData = data;
         }
 
         public bool MarkVisited()
