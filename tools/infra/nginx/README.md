@@ -15,6 +15,9 @@ Nginx는 사용자의 HTTP 요청을 직접 처리하지 않고, 요청 목적�
 ```text
 tools/infra/nginx/
   README.md
+  auth/
+    README.md
+    .htpasswd        # local only
   nginx.conf
   templates/
     README.md
@@ -85,6 +88,16 @@ COMFYUI_UPSTREAM=http://192.168.100.77:8188
 - 인증서는 Let's Encrypt HTTP-01 challenge를 기준으로 발급한다.
 - challenge 파일은 `/var/www/certbot/.well-known/acme-challenge/` 아래에서 제공한다.
 - 인증서 파일은 `/etc/letsencrypt/live/${PUBLIC_DOMAIN}`과 `/etc/letsencrypt/live/${COMFYUI_DOMAIN}`을 참조한다.
-- Basic Auth는 `AI-206`에서 계정 파일과 인증 설정을 추가한다.
+- Basic Auth는 `AI-206`에서 계정 파일 마운트와 인증 설정을 추가한다.
 
-다만 `COMFYUI_DOMAIN` server block을 분리해 두었으므로, 이후 ComfyUI에만 Basic Auth를 붙이거나 전체 도메인에 붙이는 선택이 가능하다.
+Basic Auth 보호 대상은 아래와 같다.
+
+- `COMFYUI_DOMAIN` 전체
+- `PUBLIC_DOMAIN`의 `/api/`
+
+Basic Auth 예외 대상은 아래와 같다.
+
+- `/.well-known/acme-challenge/`
+- `/nginx-health`
+
+실제 계정 파일은 `tools/infra/nginx/auth/.htpasswd`에 만들고 Git에는 올리지 않는다. 생성 절차는 `auth/README.md`에서 본다.

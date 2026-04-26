@@ -3,7 +3,7 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     command: >
-      sh -c "envsubst '$$PUBLIC_DOMAIN $$COMFYUI_DOMAIN $$AI_BACKEND_UPSTREAM $$COMFYUI_UPSTREAM'
+      sh -c "envsubst '$$PUBLIC_DOMAIN $$COMFYUI_DOMAIN $$AI_BACKEND_UPSTREAM $$COMFYUI_UPSTREAM $$BASIC_AUTH_REALM'
       < /etc/nginx/templates/ai-tool.conf.template
       > /etc/nginx/conf.d/ai-tool.conf
       && rm -f /etc/nginx/conf.d/default.conf
@@ -17,9 +17,11 @@ services:
       COMFYUI_DOMAIN: ${COMFYUI_DOMAIN}
       AI_BACKEND_UPSTREAM: ${AI_BACKEND_UPSTREAM}
       COMFYUI_UPSTREAM: ${COMFYUI_UPSTREAM}
+      BASIC_AUTH_REALM: ${BASIC_AUTH_REALM:-LostMemory AI Tool}
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/auth/.htpasswd:/etc/nginx/auth/.htpasswd:ro
       - certbot_webroot:/var/www/certbot:ro
       - certbot_etc:/etc/letsencrypt:ro
     extra_hosts:

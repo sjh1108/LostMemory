@@ -21,6 +21,9 @@ Desktop.ini
 .env.*
 !.env.example
 
+# Local Basic Auth secrets
+/tools/infra/nginx/auth/.htpasswd
+
 # Common build/output directories
 build/
 dist/
@@ -57,4 +60,3 @@ node_modules/
 /tools/ComfyUI/output/
 /tools/ComfyUI/temp/
 /tools/ComfyUI/**/__pycache__/
-
