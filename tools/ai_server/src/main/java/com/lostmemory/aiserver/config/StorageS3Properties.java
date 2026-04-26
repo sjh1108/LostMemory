@@ -1,14 +1,25 @@
 package com.lostmemory.aiserver.config;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import java.time.Duration;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 @ConfigurationProperties(prefix = "storage.s3")
+@Validated
 public class StorageS3Properties {
 
-    private String region = "ap-northeast-2";
-    private String bucket = "";
-    private String accessKeyId = "";
-    private String secretAccessKey = "";
+    @NotBlank
+    private String region;
+    @NotBlank
+    private String bucket;
+    @NotBlank
+    private String accessKeyId;
+    @NotBlank
+    private String secretAccessKey;
+    @Positive
     private long signedUrlTtlSeconds = 86400;
 
     public String getRegion() {
@@ -49,5 +60,9 @@ public class StorageS3Properties {
 
     public void setSignedUrlTtlSeconds(long signedUrlTtlSeconds) {
         this.signedUrlTtlSeconds = signedUrlTtlSeconds;
+    }
+
+    public Duration getSignedUrlTtl() {
+        return Duration.ofSeconds(signedUrlTtlSeconds);
     }
 }

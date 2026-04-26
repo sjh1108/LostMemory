@@ -27,6 +27,8 @@ dependencies {
     implementation platform('software.amazon.awssdk:bom:2.25.67')
     implementation 'software.amazon.awssdk:s3'
 
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
     runtimeOnly 'org.postgresql:postgresql'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

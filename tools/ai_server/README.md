@@ -16,6 +16,19 @@ This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. T
 - `GET /api/actuator/health`
 - `GET /api/swagger-ui/index.html`
 
+## Environment
+
+Copy `.env.example` to `.env` before running the app. `AI-402` now treats the following values as required runtime configuration:
+
+- `COMFYUI_BASE_URL`
+- `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+
+Optional profile override files:
+
+- `.env.dev`
+- `.env.prod`
+
 ## Run
 
 ```bash
@@ -51,5 +64,5 @@ tools/ai_server/
 ## Notes
 
 - `spring-boot-starter-data-jpa` and PostgreSQL dependencies are already included, but datasource/JPA auto-configuration is intentionally excluded for now. Actual DB wiring starts in `AI-402` and `AI-501`.
-- ComfyUI, S3, and Postgres values are already reserved in `application.yml` and `.env.example` as skeleton configuration only.
+- `AI-402` adds typed configuration properties, startup validation, and a reusable ComfyUI HTTP client bean.
 - This project is intentionally separate from the root `server/` project.
