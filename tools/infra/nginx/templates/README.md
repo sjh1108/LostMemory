@@ -81,9 +81,18 @@ http://192.168.100.77:8188
 
 ## 주의
 
-이 template은 HTTP 80 기준 초안이다.
+이 template은 `AI-205` 기준으로 HTTP 80과 HTTPS 443을 함께 둔다.
 
-HTTPS 인증서 경로와 443 server block은 `AI-205`에서 추가한다. Basic Auth 설정은 `AI-206`에서 추가한다.
+HTTP 80은 Let's Encrypt HTTP-01 challenge와 `/nginx-health`를 제외하고 HTTPS로 리다이렉트한다. HTTPS server block은 아래 인증서 경로가 존재해야 정상 기동된다.
+
+```text
+/etc/letsencrypt/live/${PUBLIC_DOMAIN}/fullchain.pem
+/etc/letsencrypt/live/${PUBLIC_DOMAIN}/privkey.pem
+/etc/letsencrypt/live/${COMFYUI_DOMAIN}/fullchain.pem
+/etc/letsencrypt/live/${COMFYUI_DOMAIN}/privkey.pem
+```
+
+최초 발급 전에는 `AI-205` 산출물의 bootstrap 절차대로 임시 인증서를 만든 뒤 certbot 발급으로 교체한다. Basic Auth 설정은 `AI-206`에서 추가한다.
 
 로컬 smoke test에서는 아직 실제 도메인이 없으므로 `localhost`로 접근하게 된다. 이때도 health check가 동작하도록 `PUBLIC_DOMAIN` server block을 `default_server`로 둔다.
 

@@ -173,3 +173,43 @@ Output 이미지:
 - MR에 남길 기준 이미지는 `tools/docs/1차-mvp/산출물` 아래에 별도로 복사해야 한다.
 - 이번 AI-202는 “생성 가능 여부와 기준 workflow 확정”까지이며, 프로젝트 전용 LoRA 학습은 2차 이후 별도 작업으로 분리한다.
 - AI 도구 인프라는 `tools/infra` 기준으로 새로 관리하며, 기존 루트 `server/` 설정과 섞지 않는다.
+
+## AI-205. 도메인 및 HTTPS 적용
+
+### 작업 범위
+
+- AI 도구용 대표 도메인과 ComfyUI subdomain 기준 정리
+- 80, 443 포트 외부 접근 체크리스트 작성
+- Let's Encrypt HTTP-01 challenge용 Nginx webroot 설정
+- HTTPS 443 server block과 HTTP -> HTTPS redirect 초안 작성
+- certbot service, 인증서 volume, 갱신 검증 절차 작성
+
+### 결정 내용
+
+- ComfyUI 공개 경로는 기존 AI-203 결정대로 `comfy.<구매한-도메인>` subdomain 방식을 유지한다.
+- 인증서는 Let's Encrypt HTTP-01 challenge와 certbot webroot 방식으로 발급한다.
+- Nginx는 `/.well-known/acme-challenge/`와 `/nginx-health`를 제외한 HTTP 요청을 HTTPS로 리다이렉트한다.
+- Basic Auth는 AI-206에서 별도로 적용한다.
+
+### 산출물
+
+- `tools/infra/docker-compose.yml`
+- `tools/infra/.env.example`
+- `tools/infra/nginx/templates/ai-tool.conf.template`
+- `산출물/AI-205-domain-https/README.md`
+- `산출물/AI-205-domain-https/dns-and-port-checklist.md`
+- `산출물/AI-205-domain-https/letsencrypt-nginx-runbook.md`
+- `산출물/AI-205-domain-https/renewal-check-result.md`
+- `산출물/AI-205-domain-https/mr-description.md`
+
+### 현재 판정
+
+2026-04-27 기준 구매 도메인이 아직 없으므로 실제 DNS A 레코드 생성, Let's Encrypt 인증서 발급, `certbot renew --dry-run` 검증은 수행하지 않는다.
+
+이번 작업에서는 AI-205의 설정과 운영 절차를 준비한 상태로 둔다. AI-204에서 내부망/로컬 프록시 기준 ComfyUI UI, WebSocket, 생성 smoke test가 통과했으므로, 도메인 구매 전에는 이 상태를 AI-206 Basic Auth 작업의 선행 조건으로 사용한다.
+
+### 상태
+
+- 완료여부: `N`
+- 상태: `설정/절차 준비 완료, 실제 도메인 검증 대기`
+- 후속 작업: `AI-206`, 도메인 구매 후 `AI-205-01`~`AI-205-05` 실검증

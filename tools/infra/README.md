@@ -8,19 +8,19 @@
 
 ## 현재 범위
 
-`AI-203` 기준으로 이 폴더에서 다루는 범위는 Reverse Proxy 기본 설계다.
+`AI-205` 기준으로 이 폴더에서 다루는 범위는 Reverse Proxy에 도메인과 HTTPS를 붙이는 운영 초안이다.
 
 - 구매 예정 도메인 기준 EC2 Nginx 진입점
 - AI 도구 백엔드 upstream 초안
 - 운영/GPU 데스크탑 ComfyUI upstream 초안
 - Postgres 컨테이너 초안
-- HTTPS와 Basic Auth를 나중에 붙일 수 있는 구조
+- Let's Encrypt HTTP-01 challenge용 webroot
+- HTTPS 443 server block과 HTTP -> HTTPS redirect
 
 아직 이 폴더에서 하지 않는 일은 아래와 같다.
 
 - 실제 도메인 구매
 - DNS 레코드 생성
-- Let's Encrypt 인증서 발급
 - Basic Auth 계정 생성
 - 실제 AI 도구 백엔드 프로젝트 생성
 - ComfyUI Docker 이미지화
@@ -51,9 +51,10 @@ tools/infra/
 
 EC2 같은 공개 진입 서버에서 띄울 최소 인프라 초안이다.
 
-현재 포함 서비스는 아래 두 개다.
+현재 포함 서비스는 아래 세 개다.
 
 - `nginx`: 외부 HTTP 요청을 받아 백엔드와 ComfyUI로 전달한다.
+- `certbot`: Let's Encrypt 인증서 발급과 갱신을 수행한다. 기본 실행 대상에서는 제외하고 `certbot` profile로 필요할 때만 실행한다.
 - `postgres`: 생성 이력, output 메타데이터, workflow snapshot 메타데이터를 저장한다.
 
 `nginx` service는 시작 시 `envsubst`로 template을 `/etc/nginx/conf.d/ai-tool.conf`로 생성하고, 공식 이미지에 기본 포함된 `/etc/nginx/conf.d/default.conf`를 제거한다. 이 기본 파일이 남아 있으면 `server_name localhost`가 local smoke test 요청을 먼저 받아 `/nginx-health`가 404로 보일 수 있기 때문이다.
@@ -70,6 +71,7 @@ ComfyUI도 compose service로 넣지 않았다. 모델 파일, GPU 드라이버,
 
 - `PUBLIC_DOMAIN`
 - `COMFYUI_DOMAIN`
+- `LETSENCRYPT_EMAIL`
 - `AI_BACKEND_UPSTREAM`
 - `COMFYUI_UPSTREAM`
 - `POSTGRES_*`
@@ -108,9 +110,7 @@ Postgres 데이터베이스 초기화 파일을 둘 자리다.
 
 집 인터넷이 CGNAT이거나 포트포워딩이 어렵다면 2번 또는 3번 방식이 더 현실적이다.
 
-## 203 이후 후속 작업
+## 205 이후 후속 작업
 
-- `AI-204`: 실제 ComfyUI HTTP/WebSocket 연결 확인
-- `AI-205`: 구매 도메인 DNS, 80/443 접근, HTTPS 설정
 - `AI-206`: Basic Auth 적용
 - `AI-401` 이후: AI 도구 백엔드 구현

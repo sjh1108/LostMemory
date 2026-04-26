@@ -14,6 +14,8 @@
 - `컴피유아이-1차-mvp-진행-기록.md`
 - `산출물/AI-202-Z-Image-Turbo/`
 - `산출물/AI-203-reverse-proxy/`
+- `산출물/AI-204-comfyui-ui-internal-address/`
+- `산출물/AI-205-domain-https/`
 
 ## 사용 기준
 
@@ -23,3 +25,5 @@
 - 시작 순서와 해석 기준은 `컴피유아이-1차-mvp-진행-가이드.md`
 - 실제 완료 근거와 산출물 위치는 `컴피유아이-1차-mvp-진행-기록.md`
 - Reverse Proxy 결정 문서와 체크리스트는 `산출물/AI-203-reverse-proxy/`에서 본다.
+- ComfyUI UI 내부 주소 연결 결과는 `산출물/AI-204-comfyui-ui-internal-address/`에서 본다.
+- 도메인과 HTTPS 적용 절차는 `산출물/AI-205-domain-https/`에서 본다.

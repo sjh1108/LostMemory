@@ -80,9 +80,11 @@ COMFYUI_UPSTREAM=http://192.168.100.77:8188
 
 ## HTTPS와 Basic Auth
 
-`AI-203`에서는 HTTPS와 Basic Auth를 실제로 적용하지 않는다.
+`AI-205`에서 HTTPS server block과 HTTP -> HTTPS redirect를 적용한다.
 
-- HTTPS는 `AI-205`에서 도메인 DNS와 인증서 발급 후 적용한다.
+- 인증서는 Let's Encrypt HTTP-01 challenge를 기준으로 발급한다.
+- challenge 파일은 `/var/www/certbot/.well-known/acme-challenge/` 아래에서 제공한다.
+- 인증서 파일은 `/etc/letsencrypt/live/${PUBLIC_DOMAIN}`과 `/etc/letsencrypt/live/${COMFYUI_DOMAIN}`을 참조한다.
 - Basic Auth는 `AI-206`에서 계정 파일과 인증 설정을 추가한다.
 
 다만 `COMFYUI_DOMAIN` server block을 분리해 두었으므로, 이후 ComfyUI에만 Basic Auth를 붙이거나 전체 도메인에 붙이는 선택이 가능하다.
