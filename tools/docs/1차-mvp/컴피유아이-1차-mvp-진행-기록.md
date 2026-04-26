@@ -91,16 +91,15 @@ Workflow JSON:
 
 Output 이미지:
 
-- `산출물/AI-202-Z-Image-Turbo/outputs/AI202_ZImageTurbo_PixelArt_00001.png`
-- `산출물/AI-202-Z-Image-Turbo/outputs/AI202_ZImageTurbo_PixelArt_00002.png`
-- `산출물/AI-202-Z-Image-Turbo/outputs/AI202_ZImageTurbo_PixelArt_00003.png`
+- 생성 이미지는 로컬 보관 대상으로 전환
+- 저장소에는 `산출물/AI-202-Z-Image-Turbo/outputs/README.md`만 유지
 
 ### 완료 근거
 
 - Z-Image-Turbo workflow에서 이미지 생성 성공
 - pixel-art LoRA를 붙인 상태에서 output 이미지 3개 생성
 - 프롬프트 구체화 후 캐릭터 속성 반영 방향 확인
-- 생성 output은 `tools/ComfyUI/output`이 gitignore 대상이므로, MR 검토용 산출물은 `tools/docs/1차-mvp/산출물/AI-202-Z-Image-Turbo/` 아래로 복사해 보존
+- 생성 output 이미지는 Git LFS pointer 충돌 방지를 위해 저장소에서 제외하고 로컬 보관
 
 ### 상태
 

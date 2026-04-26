@@ -61,6 +61,9 @@ node_modules/
 /tools/ComfyUI/temp/
 /tools/ComfyUI/**/__pycache__/
 
+# Generated artifact images under docs are kept out of Git.
+/tools/docs/1차-mvp/산출물/**/outputs/*.png
+
 # Unity - auto-generated IDE solution files
 *.sln
 *.csproj
