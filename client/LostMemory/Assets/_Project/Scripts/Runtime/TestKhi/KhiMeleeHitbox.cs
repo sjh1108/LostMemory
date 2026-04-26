@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LostMemory.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -30,23 +31,22 @@ namespace LostMemory.TestKhi
             EnsureRuntimePreview();
         }
 
-        public int Sample(KhiAttackRequest request, KhiMeleeAttackStep step, float damage, HashSet<Health> alreadyHit, List<Health> hitsThisSample)
+        public int Sample(KhiAttackRequest request, AttackStepData step, float damage, HashSet<Health> alreadyHit, List<Health> hitsThisSample)
         {
             EnsureOverlapBuffer();
             hitsThisSample?.Clear();
 
-            KhiDirectionalHitbox hitbox = step.Baseline;
             float aimAngleDeg = request.AimAngleDegrees;
             // baseline offset(Right 기준)을 현재 aim 각도로 회전시켜 실제 center 계산.
-            Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, aimAngleDeg) * (Vector3)hitbox.Offset);
+            Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, aimAngleDeg) * (Vector3)step.hitboxOffset);
             Vector2 center = (Vector2)request.Origin + rotatedOffset;
             _debugCenter = center;
-            _debugSize = hitbox.Size;
+            _debugSize = step.hitboxSize;
             _debugAngleDeg = aimAngleDeg;
             _hasDebugHitbox = true;
-            ShowRuntimePreview(center, hitbox.Size, aimAngleDeg);
+            ShowRuntimePreview(center, step.hitboxSize, aimAngleDeg);
 
-            int hitCount = Physics2D.OverlapBoxNonAlloc(center, hitbox.Size, aimAngleDeg, _overlapResults, targetLayers);
+            int hitCount = Physics2D.OverlapBoxNonAlloc(center, step.hitboxSize, aimAngleDeg, _overlapResults, targetLayers);
             int appliedHits = 0;
 
             for (int i = 0; i < hitCount; i++)

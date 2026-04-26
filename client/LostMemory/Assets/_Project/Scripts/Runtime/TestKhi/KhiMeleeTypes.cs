@@ -1,9 +1,12 @@
 using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace LostMemory.TestKhi
 {
+    /// <summary>
+    /// 한 attack 코루틴 동안 유지되는 런타임 공격 정보.
+    /// SO 데이터 (`AttackStepData`) 와 분리된 일시 상태 — 매 공격마다 새로 생성.
+    /// </summary>
     [Serializable]
     public struct KhiAttackRequest
     {
@@ -14,34 +17,5 @@ namespace LostMemory.TestKhi
         public Vector3 Origin;
         public float StartedAt;
         public GameObject Attacker;
-    }
-
-    [Serializable]
-    public struct KhiDirectionalHitbox
-    {
-        public Vector2 Offset;
-        public Vector2 Size;
-
-        public KhiDirectionalHitbox(Vector2 offset, Vector2 size)
-        {
-            Offset = offset;
-            Size = size;
-        }
-    }
-
-    [Serializable]
-    public class KhiMeleeAttackStep
-    {
-        public int ComboStep = 1;
-        public float DamageMultiplier = 1f;
-        public float StartupDuration = 0.05f;
-        public float ActiveDuration = 0.07f;
-        public float RecoveryDuration = 0.08f;
-        public string AnimatorTrigger = "Attack_1";
-
-        // Right 기준 baseline hitbox. 런타임에서 aim 각도로 회전시켜 사용.
-        // 기존 Right 필드에서 자동 마이그레이션 (FormerlySerializedAs).
-        [FormerlySerializedAs("Right")]
-        public KhiDirectionalHitbox Baseline;
     }
 }

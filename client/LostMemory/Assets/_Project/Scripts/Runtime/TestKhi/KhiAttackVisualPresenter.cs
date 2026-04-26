@@ -1,4 +1,5 @@
 using System.Collections;
+using LostMemory.Data;
 using UnityEngine;
 
 namespace LostMemory.TestKhi
@@ -84,15 +85,15 @@ namespace LostMemory.TestKhi
             _comboController.AttackStarted -= HandleAttackStarted;
         }
 
-        private void HandleAttackStarted(KhiAttackRequest request, KhiMeleeAttackStep step)
+        private void HandleAttackStarted(KhiAttackRequest request, AttackStepData step)
         {
             ShowTemporarySlash(request, step);
             PlayAnimatorTrigger(step);
         }
 
-        private void PlayAnimatorTrigger(KhiMeleeAttackStep step)
+        private void PlayAnimatorTrigger(AttackStepData step)
         {
-            if (animator == null || string.IsNullOrEmpty(step.AnimatorTrigger))
+            if (animator == null || string.IsNullOrEmpty(step.animatorTrigger))
             {
                 return;
             }
@@ -100,24 +101,23 @@ namespace LostMemory.TestKhi
             animator.ResetTrigger("Attack_1");
             animator.ResetTrigger("Attack_2");
             animator.ResetTrigger("Attack_3");
-            animator.SetTrigger(step.AnimatorTrigger);
+            animator.SetTrigger(step.animatorTrigger);
         }
 
-        private void ShowTemporarySlash(KhiAttackRequest request, KhiMeleeAttackStep step)
+        private void ShowTemporarySlash(KhiAttackRequest request, AttackStepData step)
         {
             if (!showTemporarySlash)
             {
                 return;
             }
 
-            TemporarySlashSpec spec = GetSlashSpec(step.ComboStep);
-            KhiDirectionalHitbox hitbox = step.Baseline;
+            TemporarySlashSpec spec = GetSlashSpec(step.comboStep);
             float directionAngle = request.AimAngleDegrees;
-            Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, directionAngle) * (Vector3)hitbox.Offset);
+            Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, directionAngle) * (Vector3)step.hitboxOffset);
             Vector2 center = (Vector2)request.Origin + rotatedOffset;
-            Vector2 areaSize = hitbox.Size * slashAreaScale;
+            Vector2 areaSize = step.hitboxSize * slashAreaScale;
 
-            GameObject slashObject = new GameObject($"Khi_TemporarySlash_{step.ComboStep}");
+            GameObject slashObject = new GameObject($"Khi_TemporarySlash_{step.comboStep}");
             slashObject.transform.position = new Vector3(center.x, center.y, request.Origin.z);
             slashObject.transform.rotation = Quaternion.Euler(0f, 0f, directionAngle + spec.Angle);
             slashObject.transform.localScale = new Vector3(areaSize.x * spec.SizeMultiplier.x, areaSize.y * spec.SizeMultiplier.y, 1f);

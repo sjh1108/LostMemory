@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,16 +15,13 @@ namespace LostMemory.TestKhi
         [SerializeField] private KhiMeleeHitbox hitbox;
         [SerializeField] private KhiAttackVisualPresenter visualPresenter;
         [SerializeField] private KhiDashController dash;
-        [SerializeField] private float baseDamage = 10f;
-        [SerializeField, Min(0f)] private float comboInputWindow = 0.6f;
-        [SerializeField, Min(0f)] private float minimumChainInputDelay = 0.12f;
-        [SerializeField, Min(0f)] private float inputBufferDuration = 0.25f;
+        [Tooltip("무기 데이터 SO. 필수. baseDamage / 콤보 윈도우 / 콤보 step 데이터를 모두 담음.")]
+        [SerializeField] private WeaponData weaponData;
         [SerializeField] private bool allowInputDuringRecovery = true;
         [SerializeField] private bool allowAttackDuringDash = false;
         [SerializeField] private bool bufferAttackDuringDash = false;
         [SerializeField] private bool disableTdeHandleWeapon = true;
         [SerializeField] private bool logHitsToConsole = false;
-        [SerializeField] private KhiMeleeAttackStep[] attackSteps;
 
         private readonly HashSet<Health> _alreadyHitThisSwing = new HashSet<Health>();
         private readonly List<Health> _hitsThisSample = new List<Health>(8);
@@ -39,15 +37,21 @@ namespace LostMemory.TestKhi
         private float _chainInputAllowedAt = -1f;
         private float _bufferedAttackExpiresAt = -1f;
 
-        public event Action<KhiAttackRequest, KhiMeleeAttackStep> AttackStarted;
-        public event Action<KhiAttackRequest, KhiMeleeAttackStep> AttackActiveStarted;
-        public event Action<KhiAttackRequest, KhiMeleeAttackStep> AttackActiveEnded;
-        public event Action<KhiAttackRequest, KhiMeleeAttackStep, Health> TargetHit;
-        public event Action<KhiAttackRequest, KhiMeleeAttackStep> FinisherHit;
+        public event Action<KhiAttackRequest, AttackStepData> AttackStarted;
+        public event Action<KhiAttackRequest, AttackStepData> AttackActiveStarted;
+        public event Action<KhiAttackRequest, AttackStepData> AttackActiveEnded;
+        public event Action<KhiAttackRequest, AttackStepData, Health> TargetHit;
+        public event Action<KhiAttackRequest, AttackStepData> FinisherHit;
 
         public bool IsAttacking => _isAttacking;
         public bool IsInAttackRecovery => _isInAttackRecovery;
         public bool BlocksDash => _isAttacking;
+
+        /// <summary>
+        /// 외부 시스템에서 본 컨트롤러가 참조하는 WeaponData를 읽기 위한 getter.
+        /// 예: KhiSlashAnimator 가 같은 SO를 공유하고 싶을 때.
+        /// </summary>
+        public WeaponData WeaponData => weaponData;
 
         /// <summary>
         /// 외부 시스템(예: KhiParryController)이 공격 입력을 일시적으로 차단하기 위한 플래그.
@@ -76,7 +80,19 @@ namespace LostMemory.TestKhi
             visualPresenter ??= GetComponent<KhiAttackVisualPresenter>();
             dash ??= GetComponent<KhiDashController>();
             _tdeHandleWeapon = GetComponent<CharacterHandleWeapon>();
-            EnsureDefaultSteps();
+
+            if (weaponData == null)
+            {
+                Debug.LogError($"[KhiMeleeComboController] WeaponData 가 할당되지 않음. {name} 의 Inspector 에서 SO 자산을 드래그하세요.", this);
+                enabled = false;
+                return;
+            }
+
+            if (weaponData.Steps == null || weaponData.Steps.Length == 0)
+            {
+                Debug.LogError($"[KhiMeleeComboController] WeaponData '{weaponData.name}' 의 Steps 가 비어있음.", this);
+                enabled = false;
+            }
         }
 
         private IEnumerator Start()
@@ -137,8 +153,8 @@ namespace LostMemory.TestKhi
             ClearBufferedAttack();
             _alreadyHitThisSwing.Clear();
 
-            KhiMeleeAttackStep step = GetStep(comboStep);
-            _currentComboStep = step.ComboStep;
+            AttackStepData step = GetStep(comboStep);
+            _currentComboStep = step.comboStep;
             Vector2 aimDirection = aim != null ? aim.GetAimDirection() : Vector2.right;
             if (aimDirection.sqrMagnitude <= Mathf.Epsilon)
             {
@@ -148,7 +164,7 @@ namespace LostMemory.TestKhi
             KhiAttackRequest request = new KhiAttackRequest
             {
                 SequenceId = ++_sequenceId,
-                ComboStep = step.ComboStep,
+                ComboStep = step.comboStep,
                 AimDirection = aimDirection,
                 AimAngleDegrees = aimAngleDeg,
                 Origin = transform.position,
@@ -158,12 +174,12 @@ namespace LostMemory.TestKhi
 
             AttackStarted?.Invoke(request, step);
             _chainInputAllowedAt = Mathf.Max(
-                request.StartedAt + minimumChainInputDelay,
-                request.StartedAt + step.StartupDuration + step.ActiveDuration * 0.5f);
+                request.StartedAt + weaponData.MinimumChainInputDelay,
+                request.StartedAt + step.startupDuration + step.activeDuration * 0.5f);
 
-            if (step.StartupDuration > 0f)
+            if (step.startupDuration > 0f)
             {
-                yield return new WaitForSeconds(step.StartupDuration);
+                yield return new WaitForSeconds(step.startupDuration);
             }
 
             if (_externalAbortRequested)
@@ -173,7 +189,7 @@ namespace LostMemory.TestKhi
             }
 
             bool hitAnyTarget = false;
-            float activeEndsAt = Time.time + step.ActiveDuration;
+            float activeEndsAt = Time.time + step.activeDuration;
             // active 시작 시점의 위치를 request.Origin에 반영 (windup 중 플레이어 이동 보정).
             request.Origin = transform.position;
             AttackActiveStarted?.Invoke(request, step);
@@ -182,7 +198,7 @@ namespace LostMemory.TestKhi
             {
                 KhiAttackRequest sampleRequest = request;
                 sampleRequest.Origin = transform.position;
-                int sampledHitCount = hitbox != null ? hitbox.Sample(sampleRequest, step, baseDamage * step.DamageMultiplier, _alreadyHitThisSwing, _hitsThisSample) : 0;
+                int sampledHitCount = hitbox != null ? hitbox.Sample(sampleRequest, step, weaponData.BaseDamage * step.damageMultiplier, _alreadyHitThisSwing, _hitsThisSample) : 0;
                 hitAnyTarget |= sampledHitCount > 0;
 
                 for (int i = 0; i < _hitsThisSample.Count; i++)
@@ -202,7 +218,7 @@ namespace LostMemory.TestKhi
                 yield break;
             }
 
-            if (hitAnyTarget && step.ComboStep == 3)
+            if (hitAnyTarget && step.comboStep == 3)
             {
                 FinisherHit?.Invoke(request, step);
                 if (logHitsToConsole)
@@ -212,7 +228,7 @@ namespace LostMemory.TestKhi
             }
 
             _isInAttackRecovery = true;
-            float recoveryEndsAt = Time.time + step.RecoveryDuration;
+            float recoveryEndsAt = Time.time + step.recoveryDuration;
             while (Time.time < recoveryEndsAt && !_externalAbortRequested)
             {
                 yield return null;
@@ -224,9 +240,9 @@ namespace LostMemory.TestKhi
                 yield break;
             }
 
-            bool shouldChainBufferedAttack = HasValidBufferedAttack(step.ComboStep);
+            bool shouldChainBufferedAttack = HasValidBufferedAttack(step.comboStep);
             ClearBufferedAttack();
-            AdvanceCombo(step.ComboStep);
+            AdvanceCombo(step.comboStep);
             _isAttacking = false;
             _isInAttackRecovery = false;
             _currentComboStep = 0;
@@ -275,7 +291,7 @@ namespace LostMemory.TestKhi
                 return;
             }
 
-            _bufferedAttackExpiresAt = Time.time + inputBufferDuration;
+            _bufferedAttackExpiresAt = Time.time + weaponData.InputBufferDuration;
         }
 
         private bool HasValidBufferedAttack(int completedStep)
@@ -298,22 +314,21 @@ namespace LostMemory.TestKhi
             }
 
             _nextComboStep = completedStep + 1;
-            _comboExpiresAt = Time.time + comboInputWindow;
+            _comboExpiresAt = Time.time + weaponData.ComboInputWindow;
         }
 
-        private KhiMeleeAttackStep GetStep(int comboStep)
+        private AttackStepData GetStep(int comboStep)
         {
-            EnsureDefaultSteps();
-
-            for (int i = 0; i < attackSteps.Length; i++)
+            AttackStepData[] steps = weaponData.Steps;
+            for (int i = 0; i < steps.Length; i++)
             {
-                if (attackSteps[i] != null && attackSteps[i].ComboStep == comboStep)
+                if (steps[i] != null && steps[i].comboStep == comboStep)
                 {
-                    return attackSteps[i];
+                    return steps[i];
                 }
             }
-
-            return attackSteps[0];
+            // Fallback: 첫 번째 step 사용 (Awake 검증으로 null 보장됨)
+            return steps[0];
         }
 
         private void DisableTdeWeaponHandling()
@@ -339,63 +354,6 @@ namespace LostMemory.TestKhi
 
             Gamepad gamepad = Gamepad.current;
             return gamepad != null && gamepad.buttonWest.wasPressedThisFrame;
-        }
-
-        private void EnsureDefaultSteps()
-        {
-            if (attackSteps != null && attackSteps.Length == 3 && attackSteps[0] != null && attackSteps[1] != null && attackSteps[2] != null)
-            {
-                return;
-            }
-
-            attackSteps = new[]
-            {
-                CreateStep1(),
-                CreateStep2(),
-                CreateStep3()
-            };
-        }
-
-        private static KhiMeleeAttackStep CreateStep1()
-        {
-            return new KhiMeleeAttackStep
-            {
-                ComboStep = 1,
-                DamageMultiplier = 1f,
-                StartupDuration = 0.1f,
-                ActiveDuration = 0.1f,
-                RecoveryDuration = 0.15f,
-                AnimatorTrigger = "Attack_1",
-                Baseline = new KhiDirectionalHitbox(new Vector2(1.05f, -0.2f), new Vector2(1.7f, 1.1f))
-            };
-        }
-
-        private static KhiMeleeAttackStep CreateStep2()
-        {
-            return new KhiMeleeAttackStep
-            {
-                ComboStep = 2,
-                DamageMultiplier = 1.1f,
-                StartupDuration = 0.12f,
-                ActiveDuration = 0.12f,
-                RecoveryDuration = 0.2f,
-                AnimatorTrigger = "Attack_2",
-                Baseline = new KhiDirectionalHitbox(new Vector2(1.05f, 0.2f), new Vector2(1.8f, 1.2f))
-            };
-        }
-
-        private static KhiMeleeAttackStep CreateStep3()
-        {
-            return new KhiMeleeAttackStep
-            {
-                ComboStep = 3,
-                DamageMultiplier = 1.5f,
-                StartupDuration = 0.2f,
-                ActiveDuration = 0.2f,
-                RecoveryDuration = 0.3f,
-                AnimatorTrigger = "Attack_3",
-                Baseline = new KhiDirectionalHitbox(new Vector2(1.25f, 0f), new Vector2(2.5f, 1.8f))
-            };
         }
     }
 }

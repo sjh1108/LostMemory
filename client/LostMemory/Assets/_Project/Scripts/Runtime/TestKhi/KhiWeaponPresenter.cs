@@ -1,4 +1,5 @@
 using System.Collections;
+using LostMemory.Data;
 using UnityEngine;
 
 namespace LostMemory.TestKhi
@@ -101,7 +102,7 @@ namespace LostMemory.TestKhi
             }
         }
 
-        private void HandleAttackActiveStarted(KhiAttackRequest request, KhiMeleeAttackStep step)
+        private void HandleAttackActiveStarted(KhiAttackRequest request, AttackStepData step)
         {
             if (hideWeaponDuringActive && weaponSprite != null)
             {
@@ -117,7 +118,7 @@ namespace LostMemory.TestKhi
             float arc;
             float direction; // +1 = ccw (-→+), -1 = cw (+→-)
             float duration;
-            switch (step.ComboStep)
+            switch (step.comboStep)
             {
                 case 2: arc = swingArcDegrees;        direction = +1f; duration = swingDuration;        break; // 좌→우 올려치기
                 case 3: arc = swingArcDegrees * 1.6f; direction = -1f; duration = swingDuration * 1.3f; break; // 큰 회전 마무리
@@ -127,7 +128,7 @@ namespace LostMemory.TestKhi
             _swingCoroutine = StartCoroutine(SwingArc(arc, direction, duration));
         }
 
-        private void HandleAttackActiveEnded(KhiAttackRequest request, KhiMeleeAttackStep step)
+        private void HandleAttackActiveEnded(KhiAttackRequest request, AttackStepData step)
         {
             // HLD-style: active 종료 시 검 다시 표시 + swing offset 즉시 reset (snap 복귀)
             if (hideWeaponDuringActive && weaponSprite != null)

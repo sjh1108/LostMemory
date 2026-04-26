@@ -50,8 +50,8 @@
 ### Epic F & Epic I & Epic K (추가 연동 및 QA)
 - **CL-056**: 보상·상점 최소 네트워크 동기화 구현
 - **CL-071 ~ CL-072**: 통합 테스트 및 데모 빌드 후보 정리
-- **CL-090**: WeaponData SO + 라이브 튠 (MVP critical, 5~6h) — CL-067 후속, 전투 밸런스/느낌 폴리시 iteration enabler. 상세: [cl090_weapon_data_so_and_designer_tool.md](cl090_weapon_data_so_and_designer_tool.md)
-- **CL-103**: 디자이너 친화 툴 폴리시 (MVP 후, 4~6h) — Custom Inspector + Scene Gizmo. 포트폴리오 가치 ★★★★★. 시작 신호: MVP 끝난 후 또는 디자이너/밸런스 담당자 합류.
+- **CL-090**: WeaponData SO + Save & Auto-revert 안전망 (MVP critical, 3~3.5h 실측). CL-067 후속, 전투 밸런스/느낌 폴리시 iteration enabler. 2026-04-27 plan refinement 로 Auto-revert 흡수 (CL-103에서 이전, 카테고리 재분류). 상세: [cl090_weapon_data_so_and_designer_tool.md](cl090_weapon_data_so_and_designer_tool.md)
+- **CL-103**: 디자이너 UX 폴리시 (MVP 후, 3~4h) — Custom Inspector + Scene Gizmo. Auto-revert 는 CL-090 으로 이전됨. 포트폴리오 가치 ★★★★★. 시작 신호: MVP 끝난 후 또는 디자이너/밸런스 담당자 합류.
 - **CL-104**: 데이터 카테고리 확장 (MVP 후, 카테고리당 2~3h) — EnemyData (Orc Rider 등), CharacterData (Khi 스탯). 시작 신호: 두 번째 무기/적 추가 시점, WeaponData 패턴 검증 완료 후.
 
 ---

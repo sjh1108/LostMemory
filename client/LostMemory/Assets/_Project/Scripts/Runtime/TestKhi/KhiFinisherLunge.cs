@@ -1,3 +1,4 @@
+using LostMemory.Data;
 using UnityEngine;
 
 namespace LostMemory.TestKhi
@@ -56,14 +57,14 @@ namespace LostMemory.TestKhi
             }
         }
 
-        private void HandleAttackActiveStarted(KhiAttackRequest request, KhiMeleeAttackStep step)
+        private void HandleAttackActiveStarted(KhiAttackRequest request, AttackStepData step)
         {
             if (!enabledToggle || dashController == null || playerAim == null)
             {
                 return;
             }
 
-            if (!IsTargetStep(step.ComboStep))
+            if (!IsTargetStep(step.comboStep))
             {
                 return;
             }
