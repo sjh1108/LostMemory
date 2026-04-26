@@ -36,7 +36,7 @@ CSV는 완료 여부를 빠르게 보기 위한 표이고, 이 문서는 왜 완
 - GPU PC에서 `http://192.168.100.77:8188` 접속 확인
 - 팀원 PC에서 `http://192.168.100.77:8188` 접속 확인
 - `tools/ComfyUI/run/start_comfyui_readme.md`에 실행 기준 정리
-- `tools/BE/.env.example`에 `COMFYUI_BASE_URL` 기준 추가
+- `tools/ai_server/.env.example`에 `COMFYUI_BASE_URL` 기준 추가
 
 ### 상태
 
@@ -173,6 +173,7 @@ Output 이미지:
 - MR에 남길 기준 이미지는 `tools/docs/1차-mvp/산출물` 아래에 별도로 복사해야 한다.
 - 이번 AI-202는 “생성 가능 여부와 기준 workflow 확정”까지이며, 프로젝트 전용 LoRA 학습은 2차 이후 별도 작업으로 분리한다.
 - AI 도구 인프라는 `tools/infra` 기준으로 새로 관리하며, 기존 루트 `server/` 설정과 섞지 않는다.
+- AI 도구 백엔드 실제 구현 위치는 `tools/ai_server`를 기준으로 유지한다.
 
 ## AI-205. 도메인 및 HTTPS 적용
 
@@ -253,3 +254,55 @@ Output 이미지:
 - 완료여부: `N`
 - 상태: `설정/절차 준비 완료, 실제 도메인 검증 대기`
 - 후속 작업: 도메인/인증서 준비 후 `AI-206-01`, `AI-206-03` 실검증
+
+## AI-401. AI 도구 백엔드 프로젝트 부트스트랩
+
+### 작업 범위
+
+- AI 도구 백엔드 실제 구현 위치 확정
+- `GET /health`와 공통 응답 포맷 추가
+- 패키지 구조와 기본 설정 파일 뼈대 생성
+- `build.gradle` 의존성과 기본 패키지 정리
+- Dockerfile과 jar 빌드 경로 정리
+
+### 결정 내용
+
+- 실제 구현 위치는 루트 `server/`가 아니라 `tools/ai_server`로 고정한다.
+- 기존 게임 서버와 AI 도구 백엔드는 코드와 배포 단위를 분리한다.
+- Spring Boot base package는 `com.lostmemory.aiserver`를 사용한다.
+- 외부 진입 경로는 프록시 기준을 맞추기 위해 `/api` context path를 유지한다.
+- health check endpoint는 `GET /api/health`로 두고, 공통 응답 포맷은 `ApiResponse` record로 통일한다.
+- OpenAPI 확인용 `swagger-ui`와 actuator health endpoint를 같이 연다.
+- JPA/Postgres 의존성은 먼저 넣되, 실제 DB 연결 전까지는 datasource/JPA auto-configuration을 제외해 부트스트랩 단계에서도 서버가 뜨게 한다.
+
+### 산출물
+
+- `tools/ai_server/README.md`
+- `tools/ai_server/.env.example`
+- `tools/ai_server/build.gradle`
+- `tools/ai_server/settings.gradle`
+- `tools/ai_server/Dockerfile`
+- `tools/ai_server/gradlew`
+- `tools/ai_server/gradlew.bat`
+- `tools/ai_server/gradle/wrapper/`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/`
+- `tools/ai_server/src/main/resources/application.yml`
+- `tools/ai_server/src/main/resources/application-dev.yml`
+- `tools/ai_server/src/main/resources/application-prod.yml`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/`
+
+### 완료 근거
+
+- `tools/ai_server` 아래에 독립 Gradle/Spring Boot 프로젝트 생성
+- `GET /api/health`용 controller, service, `ApiResponse` 공통 응답 추가
+- `config`, `health`, `repository`, `common` 패키지 뼈대 생성
+- ComfyUI, Postgres, S3 환경변수 skeleton을 `application.yml`과 `.env.example`에 반영
+- `ai-server.jar` 고정 파일명과 Dockerfile build path를 정리
+- `tools/ai_server`에서 `GRADLE_USER_HOME=.gradle-home ./gradlew test bootJar` 검증 성공
+- `tools/ai_server/build/libs/ai-server.jar` 생성 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-402`, `AI-403`, `AI-501`

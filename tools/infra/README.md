@@ -23,7 +23,7 @@
 - 실제 도메인 구매
 - DNS 레코드 생성
 - 실제 Basic Auth 계정 파일 커밋
-- 실제 AI 도구 백엔드 프로젝트 생성
+- 실제 AI 도구 백엔드의 배포 연동
 - ComfyUI Docker 이미지화
 - EC2와 운영/GPU 데스크탑 사이 네트워크 개통 검증
 
@@ -62,7 +62,7 @@ EC2 같은 공개 진입 서버에서 띄울 최소 인프라 초안이다.
 
 `nginx` service는 시작 시 `envsubst`로 template을 `/etc/nginx/conf.d/ai-tool.conf`로 생성하고, 공식 이미지에 기본 포함된 `/etc/nginx/conf.d/default.conf`를 제거한다. 이 기본 파일이 남아 있으면 `server_name localhost`가 local smoke test 요청을 먼저 받아 `/nginx-health`가 404로 보일 수 있기 때문이다.
 
-AI 도구 백엔드는 아직 실제 프로젝트가 없으므로 compose service로 넣지 않았다. 백엔드가 만들어지면 `ai-backend` service를 추가하거나, 운영 데스크탑 host에서 실행한 백엔드로 `AI_BACKEND_UPSTREAM`을 연결한다.
+AI 도구 백엔드 초안은 `tools/ai_server`에 생성했다. 아직 compose service로 붙이지는 않았으므로, 다음 단계에서는 `ai-backend` service를 추가하거나 운영 데스크탑 host에서 실행한 백엔드로 `AI_BACKEND_UPSTREAM`을 연결한다.
 
 ComfyUI도 compose service로 넣지 않았다. 모델 파일, GPU 드라이버, Python 가상환경 기준이 커서 `AI-203` 범위에서는 운영 데스크탑 또는 GPU 데스크탑에서 실행되는 외부 upstream으로 둔다.
 
