@@ -91,16 +91,15 @@ Workflow JSON:
 
 Output 이미지:
 
-- `산출물/AI-202-Z-Image-Turbo/outputs/AI202_ZImageTurbo_PixelArt_00001.png`
-- `산출물/AI-202-Z-Image-Turbo/outputs/AI202_ZImageTurbo_PixelArt_00002.png`
-- `산출물/AI-202-Z-Image-Turbo/outputs/AI202_ZImageTurbo_PixelArt_00003.png`
+- 생성 이미지는 로컬 보관 대상으로 전환
+- 저장소에는 `산출물/AI-202-Z-Image-Turbo/outputs/README.md`만 유지
 
 ### 완료 근거
 
 - Z-Image-Turbo workflow에서 이미지 생성 성공
 - pixel-art LoRA를 붙인 상태에서 output 이미지 3개 생성
 - 프롬프트 구체화 후 캐릭터 속성 반영 방향 확인
-- 생성 output은 `tools/ComfyUI/output`이 gitignore 대상이므로, MR 검토용 산출물은 `tools/docs/1차-mvp/산출물/AI-202-Z-Image-Turbo/` 아래로 복사해 보존
+- 생성 output 이미지는 Git LFS pointer 충돌 방지를 위해 저장소에서 제외하고 로컬 보관
 
 ### 상태
 
@@ -306,3 +305,49 @@ Output 이미지:
 - 완료여부: `Y`
 - 상태: `완료`
 - 후속 작업: `AI-402`, `AI-403`, `AI-501`
+
+## AI-402. ComfyUI·S3·Postgres 연동 설정값 구현
+
+### 작업 범위
+
+- `.env.example`와 profile별 환경파일 기준 정리
+- ComfyUI HTTP client bean과 timeout 설정 구현
+- S3, Postgres, ComfyUI 설정 객체 분리
+- 필수 환경변수 누락 시 시작 단계 fail-fast 검증 추가
+- dev/prod 환경 매핑표 문서화
+
+### 결정 내용
+
+- ComfyUI 연결값은 `COMFYUI_BASE_URL`을 canonical 값으로 두고, host/port는 코드에서 파생해서 사용한다.
+- `application.yml`은 공통 `.env`를 읽고, profile별로 `.env.dev`, `.env.prod`를 override로 읽는다.
+- Postgres와 S3는 각각 별도 `@ConfigurationProperties` 클래스로 분리한다.
+- `COMFYUI_BASE_URL`, `POSTGRES_*`, `AWS_*`는 필수값으로 보고 누락 시 애플리케이션 시작을 중단한다.
+- 로그인 관련 env는 아직 기능은 없지만 `JWT_SECRET`, `JWT_EXPIRATION` 이름으로 먼저 예약한다.
+
+### 산출물
+
+- `tools/ai_server/.env.example`
+- `tools/ai_server/src/main/resources/application.yml`
+- `tools/ai_server/src/main/resources/application-dev.yml`
+- `tools/ai_server/src/main/resources/application-prod.yml`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/config/ComfyUiProperties.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/config/PostgresProperties.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/config/StorageS3Properties.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/config/ComfyUiClientConfig.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/comfyui/ComfyUiClient.java`
+- `tools/docs/1차-mvp/산출물/AI-402-config/README.md`
+
+### 완료 근거
+
+- `.env.example`에 ComfyUI timeout, Postgres password, S3, JWT 예약 env까지 정리
+- `application.yml`에서 ComfyUI, S3, Postgres 필수값을 placeholder로 읽도록 변경
+- `application-prod.yml`에 `.env.prod` override import 추가
+- ComfyUI `RestClient` bean과 `/prompt`, `/history/{promptId}` 호출용 `ComfyUiClient` 추가
+- `ComfyUiProperties`, `PostgresProperties`, `StorageS3Properties`에 validation과 helper 메서드 추가
+- 테스트 profile과 startup validation test를 추가해 fail-fast 동작을 검증
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-403`, `AI-404`, `AI-501`

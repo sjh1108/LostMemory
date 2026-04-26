@@ -28,24 +28,32 @@ springdoc:
     path: /swagger-ui/index.html
 
 comfyui:
-  base-url: ${COMFYUI_BASE_URL:http://host.docker.internal:8188}
+  base-url: ${COMFYUI_BASE_URL}
   output-dir: ${COMFYUI_OUTPUT_DIR:}
   models-dir: ${COMFYUI_MODELS_DIR:}
   loras-dir: ${COMFYUI_LORAS_DIR:}
+  connect-timeout-ms: ${COMFYUI_CONNECT_TIMEOUT_MS:5000}
+  read-timeout-seconds: ${COMFYUI_READ_TIMEOUT_SECONDS:30}
   history-poll-interval-ms: ${COMFYUI_HISTORY_POLL_INTERVAL_MS:1000}
   history-poll-timeout-seconds: ${COMFYUI_HISTORY_POLL_TIMEOUT_SECONDS:300}
 
 database:
   postgres:
-    host: ${POSTGRES_HOST:localhost}
-    port: ${POSTGRES_PORT:5432}
-    name: ${POSTGRES_DB:ai_tool}
-    username: ${POSTGRES_USER:ai_tool}
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
+    name: ${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
 
 storage:
   s3:
-    region: ${AWS_REGION:ap-northeast-2}
-    bucket: ${AWS_S3_BUCKET:}
-    access-key-id: ${AWS_ACCESS_KEY_ID:}
-    secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+    region: ${AWS_REGION}
+    bucket: ${AWS_S3_BUCKET}
+    access-key-id: ${AWS_ACCESS_KEY_ID}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY}
     signed-url-ttl-seconds: ${S3_SIGNED_URL_TTL_SECONDS:86400}
+
+auth:
+  jwt:
+    secret: ${JWT_SECRET:}
+    expiration-seconds: ${JWT_EXPIRATION:3600}
