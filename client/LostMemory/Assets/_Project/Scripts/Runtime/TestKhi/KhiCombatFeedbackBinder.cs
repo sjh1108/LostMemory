@@ -1,3 +1,4 @@
+using LostMemory.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -122,9 +123,9 @@ namespace LostMemory.TestKhi
             Log("ParrySucceeded feedback");
         }
 
-        private void HandleTargetHit(KhiAttackRequest _, KhiMeleeAttackStep step, Health ___)
+        private void HandleTargetHit(KhiAttackRequest _, AttackStepData step, Health ___)
         {
-            if (enableFinisherFeedback && step != null && step.ComboStep == finisherComboStep)
+            if (enableFinisherFeedback && step != null && step.comboStep == finisherComboStep)
             {
                 RequestFreeze(finisherHitStop);
                 playerCamera?.ApplyImpulse(finisherShakeIntensity, finisherShakeDuration);

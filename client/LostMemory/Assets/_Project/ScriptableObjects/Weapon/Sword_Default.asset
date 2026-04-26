@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fa85e99a8db704408e068ebd3983cd2, type: 3}
+  m_Name: Sword_Default
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Data.WeaponData
+  _displayName: Sword
+  _baseDamage: 10
+  _comboInputWindow: 0.6
+  _minimumChainInputDelay: 0.12
+  _inputBufferDuration: 0.25
+  _autoMirrorOnLeftAim: 1
+  _frameInterval: 0.04
+  _steps:
+  - label: "1\uD0C0: \uBE60\uB978 \uC0AC\uC1201"
+    comboStep: 1
+    damageMultiplier: 1
+    startupDuration: 0.1
+    activeDuration: 0.1
+    recoveryDuration: 0.15
+    animatorTrigger: Attack_1
+    hitboxOffset: {x: 1.05, y: -0.2}
+    hitboxSize: {x: 1.7, y: 1.1}
+    slashFrames:
+    - {fileID: 21300000, guid: 3315fa77b6b2a0443a9d6132d25fe5c6, type: 3}
+    - {fileID: 21300000, guid: fa8fe33f866ff6549a4eb08bb95b6953, type: 3}
+    - {fileID: 21300000, guid: f2f431929a478ce468061acac0a29dd2, type: 3}
+    - {fileID: 21300000, guid: e359e862df8ba0d41a26d0a8160180cf, type: 3}
+    slashTint: {r: 1, g: 1, b: 1, a: 1}
+  - label: "2\uD0C0: \uBC18\uB300 \uC0AC\uC120"
+    comboStep: 2
+    damageMultiplier: 1.1
+    startupDuration: 0.12
+    activeDuration: 0.12
+    recoveryDuration: 0.2
+    animatorTrigger: Attack_2
+    hitboxOffset: {x: 1.05, y: 0.2}
+    hitboxSize: {x: 1.8, y: 1.2}
+    slashFrames:
+    - {fileID: 21300000, guid: c54fcf8661bb3a847a25c22335f99996, type: 3}
+    - {fileID: 21300000, guid: f904720a0f40cb248b966fdfbee89340, type: 3}
+    - {fileID: 21300000, guid: 9d6d18258d92c2e448362a957074a2c2, type: 3}
+    - {fileID: 21300000, guid: 39c38546086981e41b817d8b9b5ccb3c, type: 3}
+    - {fileID: 21300000, guid: 0ecd2cd7af6d0db468907b23afffab0e, type: 3}
+    slashTint: {r: 1, g: 1, b: 1, a: 1}
+  - label: "3\uD0C0: \uB9C8\uBB34\uB9AC"
+    comboStep: 3
+    damageMultiplier: 1.5
+    startupDuration: 0.2
+    activeDuration: 0.2
+    recoveryDuration: 0.3
+    animatorTrigger: 'Attack_3 '
+    hitboxOffset: {x: 1.25, y: 0}
+    hitboxSize: {x: 2.5, y: 1.8}
+    slashFrames:
+    - {fileID: 21300000, guid: 0ee1089f27d4cef428e5431f2aff4165, type: 3}
+    - {fileID: 21300000, guid: 47b59f4a1043e61408188625dcf2a0cc, type: 3}
+    - {fileID: 21300000, guid: 075365eb8fa575b40a585cfca724bae3, type: 3}
+    - {fileID: 21300000, guid: bfe26ec3fd10a754fb0ed1d2ee42fda5, type: 3}
+    - {fileID: 21300000, guid: 43ccb6ef7332ed24cb093b76efa53a12, type: 3}
+    - {fileID: 21300000, guid: cb84c09afcbc8d3468b827857c53418b, type: 3}
+    - {fileID: 21300000, guid: a4465c5c3c09b8441bf89c0a760c55e7, type: 3}
+    - {fileID: 21300000, guid: 251f582c19676ea46a0275c17aa4d620, type: 3}
+    - {fileID: 21300000, guid: c01505fbcf4e6e945a5356948b288d66, type: 3}
+    slashTint: {r: 1, g: 1, b: 1, a: 1}
