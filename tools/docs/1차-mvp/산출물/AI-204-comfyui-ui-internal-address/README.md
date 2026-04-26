@@ -27,18 +27,11 @@ AI-204-comfyui-ui-internal-address/
 | AI-204-05 | ComfyUI 백그라운드 실행과 재기동 기준 정리 | `run-and-restart-memo.md` |
 | AI-204-06 | 프록시 주소 기준 생성 1회 smoke test | `connection-checklist.md` |
 
-## 현재 판정
+## 최종 판정
 
-2026-04-27 첫 확인 기준으로 Nginx 컨테이너는 실행 중이지만 ComfyUI upstream이 꺼져 있었다.
+2026-04-27 기준 운영 데스크탑 역할의 현재 노트북에서 ComfyUI를 실행하고 로컬 Nginx 프록시 검증을 수행했다.
 
-- `http://127.0.0.1:8188`: 연결 실패
-- `http://192.168.100.77:8188`: 연결 실패
-- `Host: comfy.example.com`으로 Nginx 경유 요청: `502 Bad Gateway`
-- Nginx 로그: `connect() failed (111: Connection refused) while connecting to upstream`
-
-이후 운영 데스크탑 역할의 현재 노트북에서 ComfyUI를 실행하고 로컬 프록시 검증을 다시 수행했다.
-
-재확인 결과:
+확인 결과:
 
 - direct HTTP: `http://127.0.0.1:8188` `200`
 - proxy HTTP: `http://localhost` `200`
