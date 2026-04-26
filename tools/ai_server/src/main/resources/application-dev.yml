@@ -1,0 +1,8 @@
+spring:
+  config:
+    import: optional:file:.env.dev[.properties]
+
+logging:
+  level:
+    com.lostmemory.aiserver: debug
+    org.springframework.web: info

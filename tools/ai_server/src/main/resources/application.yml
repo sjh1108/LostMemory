@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: ai-server
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  config:
+    import: optional:file:.env[.properties]
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui/index.html
+
+comfyui:
+  base-url: ${COMFYUI_BASE_URL:http://host.docker.internal:8188}
+  output-dir: ${COMFYUI_OUTPUT_DIR:}
+  models-dir: ${COMFYUI_MODELS_DIR:}
+  loras-dir: ${COMFYUI_LORAS_DIR:}
+  history-poll-interval-ms: ${COMFYUI_HISTORY_POLL_INTERVAL_MS:1000}
+  history-poll-timeout-seconds: ${COMFYUI_HISTORY_POLL_TIMEOUT_SECONDS:300}
+
+database:
+  postgres:
+    host: ${POSTGRES_HOST:localhost}
+    port: ${POSTGRES_PORT:5432}
+    name: ${POSTGRES_DB:ai_tool}
+    username: ${POSTGRES_USER:ai_tool}
+
+storage:
+  s3:
+    region: ${AWS_REGION:ap-northeast-2}
+    bucket: ${AWS_S3_BUCKET:}
+    access-key-id: ${AWS_ACCESS_KEY_ID:}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+    signed-url-ttl-seconds: ${S3_SIGNED_URL_TTL_SECONDS:86400}
