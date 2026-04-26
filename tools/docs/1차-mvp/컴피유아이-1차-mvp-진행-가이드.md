@@ -52,7 +52,7 @@
 - HTTPS와 Basic Auth 실제 적용
 - `/prompt`, `/history` 샘플 JSON 정리
 - AI 도구 백엔드 구현
-- S3 업로드와 SQLite 메타데이터 저장
+- S3 업로드와 Postgres 메타데이터 저장
 - 결과 목록/상세/다운로드 화면
 - 앱 로그인
 - end-to-end 통합 검증
@@ -159,7 +159,7 @@
 
 주요 내용:
 
-- SQLite 초기화 방식과 DB 파일 위치 정리
+- Postgres 초기화 방식과 volume/백업 위치 정리
 - users / workflow_snapshots / generations / generation_outputs / audit_logs 스키마 확정
 - generation 시작 시 메타데이터 저장
 - workflow snapshot 저장
@@ -174,7 +174,7 @@
 핵심 포인트:
 
 - 이 에픽은 이미지 파일 저장뿐 아니라 나중에 다시 조회할 수 있는 메타데이터 구조까지 포함한다.
-- S3 정책과 SQLite 운영 메모를 같이 정리해두는 편이 좋다.
+- S3 정책과 Postgres 운영 메모를 같이 정리해두는 편이 좋다.
 
 완료 기준:
 
@@ -346,4 +346,3 @@
 `공용 ComfyUI 접속 -> 생성 실행 -> S3 저장 -> 메타데이터 기록 -> 결과 조회`
 
 에픽은 8개 수준으로 나누고, 실제 구현은 통합 작업표에서 `차수 = 1차`를 먼저 닫은 뒤 `2차`, `3차`로 넓혀가면 된다.
-

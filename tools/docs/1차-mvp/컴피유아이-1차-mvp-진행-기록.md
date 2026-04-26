@@ -108,8 +108,68 @@ Output 이미지:
 - 상태: `완료`
 - 후속 작업: `AI-301`, `AI-302`, `AI-303`
 
+## AI-203. Reverse Proxy 기본 경로 설계
+
+### 작업 범위
+
+- 구매 예정 도메인 기준 공개 경로 전략 선택
+- 운영 데스크탑, GPU 데스크탑, S3, Postgres 역할 확정
+- `tools` 하위 AI 도구 전용 Nginx 설정 초안 작성
+- ComfyUI WebSocket 프록시 기준 포함
+- `tools/infra` 기준 Docker Compose와 디렉터리 구조 작성
+- Nginx 단독 smoke test 절차 문서화
+
+### 결정 내용
+
+- 기존 프로젝트 루트의 `server/`, `client/`는 이번 작업에서 수정하지 않는다.
+- AI 도구 인프라는 `tools/infra`에 새로 둔다.
+- 도메인은 직접 구매할 예정이며, 최종 도메인 이름은 추후 확정한다.
+- ComfyUI 공개 경로는 `comfy.<구매한-도메인>` 형태의 subdomain 방식으로 한다.
+- 작은 EC2를 도메인이 가리키는 공개 진입 서버로 두는 방향을 우선한다.
+- EC2는 Nginx, AI 도구 백엔드, Postgres, S3 연동, 결과 조회를 맡는다.
+- 운영 데스크탑은 ComfyUI 이미지 생성 worker 후보로 둔다.
+- 운영 데스크탑에서 이미지 생성이 어렵거나 학습이 필요하면 GPU 데스크탑을 ComfyUI 추론 또는 학습용으로 쓴다.
+- EC2와 운영/GPU 데스크탑이 다른 네트워크에 있어도 가능하지만, 포트포워딩, VPN/mesh network, SSH reverse tunnel 같은 연결 통로가 필요하다.
+- DB는 SQLite가 아니라 Postgres로 고정한다.
+- S3는 결과 이미지와 workflow snapshot JSON 저장 후보로 둔다.
+
+### 산출물
+
+인프라 초안:
+
+- `tools/infra/docker-compose.yml`
+- `tools/infra/.env.example`
+- `tools/infra/nginx/nginx.conf`
+- `tools/infra/nginx/templates/ai-tool.conf.template`
+- `tools/infra/postgres/`
+
+결정 문서:
+
+- `산출물/AI-203-reverse-proxy/proxy-path-decision.md`
+- `산출물/AI-203-reverse-proxy/deployment-role-memo.md`
+- `산출물/AI-203-reverse-proxy/proxy-checklist.md`
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-203-07`, `AI-204`, `AI-205`, `AI-206`
+
+### AI-203-07 smoke test 결과
+
+- Docker Desktop 실행 후 `docker compose up -d nginx` 성공
+- `nginx:1.27-alpine` image pull 성공
+- `infra-nginx-1` container 생성 성공
+- `docker compose exec nginx nginx -t` 성공
+- `Host: example.com`, `Host: comfy.example.com` 기준 `/nginx-health` 응답 200 확인
+- `localhost` Host 요청은 공식 nginx 이미지의 기본 `default.conf`가 잡아 404가 발생했으므로, compose에서 시작 시 기본 `default.conf`를 제거하도록 보강
+- 공식 entrypoint template 자동 생성은 `command: sh -c ...`일 때 실행되지 않아 `/etc/nginx/conf.d`가 비는 문제가 있었고, compose command에서 `envsubst`로 `ai-tool.conf`를 직접 생성하도록 보강
+- 최종 재검증에서 `/etc/nginx/conf.d/ai-tool.conf`만 남는 것을 확인
+- `localhost`, `Host: example.com`, `Host: comfy.example.com` 기준 `/nginx-health` 응답 200 확인
+
 ## 현재 주의사항
 
 - `tools/ComfyUI/output`은 런타임 산출물이라 Git 추적 대상이 아니다.
 - MR에 남길 기준 이미지는 `tools/docs/1차-mvp/산출물` 아래에 별도로 복사해야 한다.
 - 이번 AI-202는 “생성 가능 여부와 기준 workflow 확정”까지이며, 프로젝트 전용 LoRA 학습은 2차 이후 별도 작업으로 분리한다.
+- AI 도구 인프라는 `tools/infra` 기준으로 새로 관리하며, 기존 루트 `server/` 설정과 섞지 않는다.
