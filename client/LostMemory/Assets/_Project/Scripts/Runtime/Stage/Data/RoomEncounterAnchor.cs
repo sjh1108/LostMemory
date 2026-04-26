@@ -1,0 +1,58 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace LostMemory.Stage.Data
+{
+    // Layout prefab 루트에 붙어 자식 RoomEncounterSpawnPoint 들을 일괄 노출.
+    // CL-034 가 GetSpawnPoints(groupFilter) 로 후보를 받아간다.
+    public sealed class RoomEncounterAnchor : MonoBehaviour
+    {
+        [SerializeField] private RoomEncounterSpawnPoint[] cachedSpawnPoints = Array.Empty<RoomEncounterSpawnPoint>();
+
+        private static readonly RoomEncounterSpawnPoint[] EmptyArray = Array.Empty<RoomEncounterSpawnPoint>();
+
+        public IReadOnlyList<RoomEncounterSpawnPoint> AllSpawnPoints =>
+            cachedSpawnPoints ?? EmptyArray;
+
+        private void Awake()
+        {
+            if (cachedSpawnPoints == null || cachedSpawnPoints.Length == 0)
+            {
+                RefreshSpawnPoints();
+            }
+        }
+
+        // 빈 문자열 filter 면 전체 반환, 아니면 groupTag 정확 일치만 반환.
+        public IReadOnlyList<RoomEncounterSpawnPoint> GetSpawnPoints(string groupFilter)
+        {
+            if (cachedSpawnPoints == null || cachedSpawnPoints.Length == 0)
+            {
+                return EmptyArray;
+            }
+
+            if (string.IsNullOrEmpty(groupFilter))
+            {
+                return cachedSpawnPoints;
+            }
+
+            List<RoomEncounterSpawnPoint> matched = new List<RoomEncounterSpawnPoint>(cachedSpawnPoints.Length);
+            for (int i = 0; i < cachedSpawnPoints.Length; i++)
+            {
+                RoomEncounterSpawnPoint point = cachedSpawnPoints[i];
+                if (point != null && point.GroupTag == groupFilter)
+                {
+                    matched.Add(point);
+                }
+            }
+
+            return matched;
+        }
+
+        [ContextMenu("Refresh Spawn Points")]
+        public void RefreshSpawnPoints()
+        {
+            cachedSpawnPoints = GetComponentsInChildren<RoomEncounterSpawnPoint>(includeInactive: true);
+        }
+    }
+}
