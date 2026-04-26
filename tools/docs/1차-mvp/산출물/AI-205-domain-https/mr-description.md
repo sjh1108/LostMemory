@@ -1,12 +1,12 @@
 ## 관련 이슈
 
-Related Issue: AI-205
+Related Issue: [S14P31C201-304](https://ssafy.atlassian.net/browse/S14P31C201-304)
 
 ## 작업 목적
 
-내부 공유용 ComfyUI 접근 경로에 추후 실제 도메인과 HTTPS를 적용할 수 있도록 Nginx, certbot, 운영 절차를 준비한다.
+내부 공유용 ComfyUI 접근 경로에 추후 실제 도메인과 HTTPS를 적용할 수 있도록 Nginx, certbot, 운영 절차를 준비합니다.
 
-현재 실제 구매 도메인은 아직 없으므로, 이번 MR에서는 HTTPS 적용 준비와 검증 runbook을 반영하고 실제 DNS/Let's Encrypt 검증은 도메인 구매 후 진행 대상으로 남긴다.
+현재 실제 구매 도메인은 아직 없으므로, 이번 MR에서는 HTTPS 적용 준비와 검증 runbook을 반영하고 실제 DNS/Let's Encrypt 검증은 도메인 구매 후 진행 대상으로 남깁니다.
 
 ## 주요 변경 사항
 
@@ -22,10 +22,8 @@ Related Issue: AI-205
 ## 테스트 여부
 
 - [x] compose 설정 렌더링 확인
-- [x] AI-205 산출물 문서 작성
-- [ ] 실제 DNS A 레코드 생성
-- [ ] 실제 Let's Encrypt 인증서 발급
-- [ ] `certbot renew --dry-run` 검증
+- [ ] 유닛 테스트 작성
+- [ ] 통합 테스트 확인
 
 ## 검증 결과
 
