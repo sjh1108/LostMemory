@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using MoreMountains.TopDownEngine;
@@ -12,11 +13,20 @@ namespace LostMemory.Stage
         [SerializeField] private BossRoomDoorController doorController;
         [SerializeField] private BossRoomEntryPoint[] entryPoints = System.Array.Empty<BossRoomEntryPoint>();
         [SerializeField] private bool freezePlayersDuringTransition = true;
+        [SerializeField] private bool autoUnfreezePlayers = true;
         [SerializeField, Min(0f)] private float unfreezeDelay = 0.1f;
         [SerializeField] private bool alignFacingDirection = true;
         [SerializeField] private bool debugLogging;
 
         private Coroutine _pendingUnfreezeRoutine;
+
+        public event Action<BossRoomTransitionCompletedContext> TransitionCompleted;
+
+        public bool AutoUnfreezePlayers
+        {
+            get => autoUnfreezePlayers;
+            set => autoUnfreezePlayers = value;
+        }
 
         private void Reset()
         {
@@ -76,7 +86,7 @@ namespace LostMemory.Stage
                 return;
             }
 
-            TeleportPlayers(players, entryPoint);
+            TeleportPlayers(request, players, entryPoint);
         }
 
         private List<Character> CollectOrderedPlayers(BossRoomEntryTransitionRequest request)
@@ -118,7 +128,10 @@ namespace LostMemory.Stage
             return players;
         }
 
-        private void TeleportPlayers(IReadOnlyList<Character> players, BossRoomEntryPoint entryPoint)
+        private void TeleportPlayers(
+            BossRoomEntryTransitionRequest request,
+            IReadOnlyList<Character> players,
+            BossRoomEntryPoint entryPoint)
         {
             if (_pendingUnfreezeRoutine != null)
             {
@@ -142,15 +155,18 @@ namespace LostMemory.Stage
                 TeleportCharacter(character, entryPoint, i);
             }
 
-            if (freezePlayersDuringTransition)
+            Character[] playerSnapshot = CopyPlayers(players);
+            TransitionCompleted?.Invoke(new BossRoomTransitionCompletedContext(request, entryPoint, playerSnapshot));
+
+            if (freezePlayersDuringTransition && autoUnfreezePlayers)
             {
                 if (unfreezeDelay <= 0f)
                 {
-                    UnfreezePlayers(players);
+                    UnfreezePlayers(playerSnapshot);
                 }
                 else
                 {
-                    _pendingUnfreezeRoutine = StartCoroutine(UnfreezePlayersAfterDelay(players, unfreezeDelay));
+                    _pendingUnfreezeRoutine = StartCoroutine(UnfreezePlayersAfterDelay(playerSnapshot, unfreezeDelay));
                 }
             }
 
@@ -198,6 +214,22 @@ namespace LostMemory.Stage
             yield return new WaitForSecondsRealtime(delay);
             _pendingUnfreezeRoutine = null;
             UnfreezePlayers(players);
+        }
+
+        private static Character[] CopyPlayers(IReadOnlyList<Character> players)
+        {
+            if (players == null || players.Count == 0)
+            {
+                return System.Array.Empty<Character>();
+            }
+
+            Character[] copiedPlayers = new Character[players.Count];
+            for (int i = 0; i < players.Count; i++)
+            {
+                copiedPlayers[i] = players[i];
+            }
+
+            return copiedPlayers;
         }
 
         private static void UnfreezePlayers(IReadOnlyList<Character> players)

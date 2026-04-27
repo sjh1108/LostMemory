@@ -20,6 +20,17 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private ComparisonModes comparisonMode = ComparisonModes.LowerThan;
         [SerializeField] private float distance = 4.5f;
 
+        protected override void Awake()
+        {
+            base.Awake();
+            dashAbility ??= GetComponent<CharacterDash2D>();
+        }
+
+        private void OnEnable()
+        {
+            dashAbility ??= GetComponent<CharacterDash2D>();
+        }
+
         private void Reset()
         {
             dashAbility = GetComponent<CharacterDash2D>();
@@ -32,6 +43,8 @@ namespace LostMemory.Combat.Telegraph
 
         public override bool Decide()
         {
+            dashAbility ??= GetComponent<CharacterDash2D>();
+
             if (_brain.Target == null || dashAbility == null || !dashAbility.Cooldown.Ready())
             {
                 return false;
@@ -48,6 +61,13 @@ namespace LostMemory.Combat.Telegraph
                 ComparisonModes.StrictlyGreaterThan => targetDistance > distance,
                 _ => false
             };
+        }
+
+        public void Configure(CharacterDash2D configuredDashAbility, ComparisonModes configuredComparisonMode, float configuredDistance)
+        {
+            dashAbility = configuredDashAbility;
+            comparisonMode = configuredComparisonMode;
+            distance = configuredDistance;
         }
     }
 }
