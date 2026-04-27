@@ -11,6 +11,10 @@ namespace LostMemory.Combat
     // RoomData.Encounter 를 읽어 wave / entry / spawn point 매칭 후 적 prefab 을 Instantiate.
     // 결정적 순차 선택 (modulo). 시드 무작위는 후속 CL.
     // RoomEntryRuntimeController 가 owner — 같은 GameObject 에 붙여 사용한다.
+    //
+    // CL-035 변경: Begin 시 모든 wave 의 startDelay 타이머 큐 + wave 별 idempotent 보장.
+    //   외부에서 SpawnNextWave() 호출 시 가장 작은 미시작 wave 를 *조기 spawn*.
+    //   둘 중 먼저 도착하는 쪽이 spawn — 사망률 트리거(tracker)와 시간 트리거(자체)의 OR 동작.
     [DisallowMultipleComponent]
     [AddComponentMenu("Lost Memory/Combat/Enemy Encounter Spawner")]
     public sealed class EnemyEncounterSpawner : MonoBehaviour
@@ -20,7 +24,14 @@ namespace LostMemory.Combat
 
         private readonly List<GameObject> spawnedEnemies = new List<GameObject>();
 
+        private string activeRoomId;
+        private RoomEncounterSpec activeSpec;
+        private RoomEncounterAnchor activeAnchor;
+        private EnemyCatalog activeCatalog;
+        private bool[] waveStarted = Array.Empty<bool>();
+
         public IReadOnlyList<GameObject> SpawnedEnemies => spawnedEnemies;
+        public int WaveCount => activeSpec != null ? activeSpec.Waves.Count : 0;
 
         public void Begin(string roomId, RoomEncounterSpec spec, RoomEncounterAnchor anchor, EnemyCatalog catalog)
         {
@@ -29,17 +40,68 @@ namespace LostMemory.Combat
                 return;
             }
 
+            activeRoomId = roomId;
+            activeSpec = spec;
+            activeAnchor = anchor;
+            activeCatalog = catalog;
+
             IReadOnlyList<RoomEncounterWave> waves = spec.Waves;
-            for (int waveIndex = 0; waveIndex < waves.Count; waveIndex++)
+            waveStarted = new bool[waves.Count];
+
+            for (int i = 0; i < waves.Count; i++)
             {
-                RoomEncounterWave wave = waves[waveIndex];
+                RoomEncounterWave wave = waves[i];
                 if (wave == null)
+                {
+                    waveStarted[i] = true;
+                    continue;
+                }
+
+                StartCoroutine(ScheduleWave(i, wave));
+            }
+        }
+
+        // 외부 강제 트리거. 가장 작은 미시작 wave 1개 즉시 spawn (startDelay 무시).
+        // tracker 가 사망률 임계 도달 시 호출.
+        public bool SpawnNextWave()
+        {
+            if (activeSpec == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<RoomEncounterWave> waves = activeSpec.Waves;
+            for (int i = 0; i < waves.Count; i++)
+            {
+                if (waveStarted[i])
                 {
                     continue;
                 }
 
-                StartCoroutine(RunWave(roomId, waveIndex, wave, anchor, catalog));
+                StartWaveOnce(i, waves[i]);
+                return true;
             }
+
+            return false;
+        }
+
+        private IEnumerator ScheduleWave(int waveIndex, RoomEncounterWave wave)
+        {
+            if (wave.StartDelay > 0f)
+            {
+                yield return new WaitForSeconds(wave.StartDelay);
+            }
+            StartWaveOnce(waveIndex, wave);
+        }
+
+        private void StartWaveOnce(int waveIndex, RoomEncounterWave wave)
+        {
+            if (waveStarted[waveIndex])
+            {
+                return;
+            }
+            waveStarted[waveIndex] = true;
+            StartCoroutine(RunWave(activeRoomId, waveIndex, wave, activeAnchor, activeCatalog));
         }
 
         private IEnumerator RunWave(
@@ -49,11 +111,7 @@ namespace LostMemory.Combat
             RoomEncounterAnchor anchor,
             EnemyCatalog catalog)
         {
-            if (wave.StartDelay > 0f)
-            {
-                yield return new WaitForSeconds(wave.StartDelay);
-            }
-
+            // startDelay 는 ScheduleWave 가 이미 처리함 (CL-035 변경).
             int spawnedCount = 0;
             RoomEncounterEnemyEntry[] entries = wave.Enemies;
             for (int i = 0; i < entries.Length; i++)

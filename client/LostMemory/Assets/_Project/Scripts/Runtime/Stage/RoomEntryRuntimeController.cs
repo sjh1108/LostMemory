@@ -33,11 +33,18 @@ namespace LostMemory.Stage
         [SerializeField] private EnemyEncounterSpawner encounterSpawner;
         [SerializeField] private RoomEntryAnchor[] entryAnchors = Array.Empty<RoomEntryAnchor>();
 
+        [Header("Optional Refs")]
+        // CL-035: tracker 가 OnRoomCleared 발행 시 자동으로 TryMarkRoomCompleted(roomId) 호출.
+        // null 허용 — 보스 의존성 없는 단독 검증 씬에서는 비워둠.
+        [SerializeField] private BossRoomEntryTracker bossTracker;
+
         public event Action<RoomEnteredPayload> RoomEntered;
         public event Action<RoomCombatStartedPayload> RoomCombatStarted;
         public event Action<EnemySpawnedPayload> EnemySpawned;
         public event Action<WaveSpawnedPayload> WaveSpawned;
         public event Action<ExitDoorsLockRequestPayload> ExitDoorsLockRequested;
+        // CL-035: tracker 가 모든 wave + 모든 적 사망을 판정하면 1회 발행.
+        public event Action<RoomClearedPayload> RoomCleared;
 
         private readonly StageRoomProgress progress = new StageRoomProgress();
         private IRoomClearConditionTracker clearTracker;
@@ -194,7 +201,9 @@ namespace LostMemory.Stage
 
         private void BeginEncounter()
         {
-            clearTracker = new StubRoomClearConditionTracker();
+            clearTracker = CreateTrackerFor(roomData.ClearCondition);
+            clearTracker.OnNextWaveReady += HandleNextWaveReady;
+            clearTracker.OnRoomCleared += HandleRoomCleared;
             clearTracker.Begin(roomData);
 
             if (encounterSpawner != null && encounterAnchor != null && enemyCatalog != null && roomData.Encounter != null)
@@ -214,15 +223,47 @@ namespace LostMemory.Stage
             RoomCombatStarted?.Invoke(new RoomCombatStartedPayload(roomData.RoomId, waveCount));
         }
 
+        private static IRoomClearConditionTracker CreateTrackerFor(RoomClearConditionType clearCondition)
+        {
+            switch (clearCondition)
+            {
+                case RoomClearConditionType.AllEnemiesDefeated:
+                    return new AllEnemiesDefeatedTracker();
+                default:
+                    // InteractionComplete / Custom 분기는 후속 CL 가 채울 때까지 stub.
+                    return new StubRoomClearConditionTracker();
+            }
+        }
+
         private void HandleSpawned(EnemySpawnedPayload payload)
         {
-            clearTracker?.RegisterEnemy(payload.Enemy);
+            clearTracker?.RegisterEnemy(payload);
             EnemySpawned?.Invoke(payload);
         }
 
         private void HandleWaveCompleted(WaveSpawnedPayload payload)
         {
+            clearTracker?.NotifyWaveSpawned(payload);
             WaveSpawned?.Invoke(payload);
+        }
+
+        private void HandleNextWaveReady(int nextWaveIndex)
+        {
+            if (encounterSpawner == null)
+            {
+                return;
+            }
+            encounterSpawner.SpawnNextWave();
+        }
+
+        private void HandleRoomCleared(RoomClearedPayload payload)
+        {
+            RoomCleared?.Invoke(payload);
+
+            if (bossTracker != null && !string.IsNullOrEmpty(payload.RoomId))
+            {
+                bossTracker.TryMarkRoomCompleted(payload.RoomId);
+            }
         }
 
         private void OnDestroy()
@@ -231,6 +272,11 @@ namespace LostMemory.Stage
             {
                 encounterSpawner.Spawned -= HandleSpawned;
                 encounterSpawner.WaveCompleted -= HandleWaveCompleted;
+            }
+            if (clearTracker != null)
+            {
+                clearTracker.OnNextWaveReady -= HandleNextWaveReady;
+                clearTracker.OnRoomCleared -= HandleRoomCleared;
             }
         }
     }
