@@ -28,12 +28,17 @@ MonoBehaviour:
     waves:
     - label: Wave 1
       startDelay: 0
+      triggerNextWaveDeathRatio: 0.5
       enemies:
       - enemyId: enemy_melee_basic
-        count: 2
+        count: 4
         spawnGroupFilter: near_door
+      - enemyId: enemy_ranged_basic
+        count: 1
+        spawnGroupFilter: far
     - label: Wave 2
       startDelay: 5
+      triggerNextWaveDeathRatio: 0.5
       enemies:
       - enemyId: enemy_ranged_basic
         count: 1
