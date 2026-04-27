@@ -172,6 +172,38 @@ Output 이미지:
 - 상태: `완료`
 - 후속 작업: `AI-303`, `AI-404`, `AI-405`
 
+## AI-303. prompt_id와 output 파일 매핑 규칙 정리
+
+### 작업 범위
+
+- `prompt_id`, 생성 시각, output 파일명을 서로 어떻게 연결할지 규칙 문서화
+- DB에 저장할 workflow 이름과 모델명을 어디서 읽을지 기준 정리
+
+### 결정 내용
+
+- 1차 추적 키는 `/prompt` 응답의 `prompt_id`를 그대로 사용한다.
+- output 파일명은 `/history/{prompt_id}`의 `outputs[*].images[*].filename`에서 읽는다.
+- 생성 시각은 `/history` raw JSON에 없으므로 1차 MVP에서는 output 파일의 filesystem timestamp를 사용한다.
+- workflow 이름은 `/history` 응답에서 읽지 않고, 1차 MVP에서는 source workflow 파일명 stem을 그대로 저장한다.
+- 모델명은 `/history`가 아니라 workflow/request body 안의 loader node에서 읽는다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-303-prompt-output-mapping/README.md`
+- `tools/docs/1차-mvp/산출물/AI-303-prompt-output-mapping/prompt-output-mapping-table.md`
+
+### 완료 근거
+
+- `prompt_id = d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6`와 output 파일 `AI301_Test3_PromptSample_00001_.png`의 연결 규칙 정리
+- `CreationTime = 2026-04-27 14:38:30 +09:00`를 1차 생성 시각 기준으로 문서화
+- source workflow `Z-Image-turbo-test3-ksampler-change.json` 기준 workflow 이름을 `Z-Image-turbo-test3-ksampler-change`로 고정하고 UNET/LoRA/CLIP/VAE 추출 위치 정리
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-304`, `AI-404`, `AI-405`, `AI-507`
+
 ## AI-203. Reverse Proxy 기본 경로 설계
 
 ### 작업 범위
