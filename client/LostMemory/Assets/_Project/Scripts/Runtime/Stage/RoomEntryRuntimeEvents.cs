@@ -1,3 +1,4 @@
+using LostMemory.Stage.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -67,5 +68,18 @@ namespace LostMemory.Stage
         }
 
         public string RoomId { get; }
+    }
+
+    // CL-035 가 발행. 후속 시스템 (CL-036 문 흐름, 보상 UI 브랜치) 이 구독.
+    public readonly struct RoomClearedPayload
+    {
+        public RoomClearedPayload(string roomId, RoomData data)
+        {
+            RoomId = roomId;
+            Data = data;
+        }
+
+        public string RoomId { get; }
+        public RoomData Data { get; }
     }
 }
