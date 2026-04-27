@@ -32,6 +32,8 @@ namespace LostMemory.Stage
         [SerializeField] private RoomEncounterAnchor encounterAnchor;
         [SerializeField] private EnemyEncounterSpawner encounterSpawner;
         [SerializeField] private RoomEntryAnchor[] entryAnchors = Array.Empty<RoomEntryAnchor>();
+        // CL-036: 진입 시 활성화 (player 못 나감), 클리어 시 비활성화 (다음 방 통과 가능).
+        [SerializeField] private RoomExitWall[] exitWalls = Array.Empty<RoomExitWall>();
 
         [Header("Optional Refs")]
         // CL-035: tracker 가 OnRoomCleared 발행 시 자동으로 TryMarkRoomCompleted(roomId) 호출.
@@ -79,6 +81,10 @@ namespace LostMemory.Stage
             {
                 entryAnchors = GetComponentsInChildren<RoomEntryAnchor>(includeInactive: true);
             }
+            if (exitWalls == null || exitWalls.Length == 0)
+            {
+                exitWalls = GetComponentsInChildren<RoomExitWall>(includeInactive: true);
+            }
         }
 
         private void Reset()
@@ -86,6 +92,7 @@ namespace LostMemory.Stage
             encounterAnchor = GetComponentInChildren<RoomEncounterAnchor>(includeInactive: true);
             encounterSpawner = GetComponentInChildren<EnemyEncounterSpawner>(includeInactive: true);
             entryAnchors = GetComponentsInChildren<RoomEntryAnchor>(includeInactive: true);
+            exitWalls = GetComponentsInChildren<RoomExitWall>(includeInactive: true);
         }
 
         public void BeginRoomEntry(Character initiator)
@@ -132,6 +139,7 @@ namespace LostMemory.Stage
 
             if (init.LockExitDoors)
             {
+                SetExitWallsActive(true);
                 ExitDoorsLockRequested?.Invoke(new ExitDoorsLockRequestPayload(roomData.RoomId));
             }
 
@@ -258,11 +266,29 @@ namespace LostMemory.Stage
 
         private void HandleRoomCleared(RoomClearedPayload payload)
         {
+            SetExitWallsActive(false);
             RoomCleared?.Invoke(payload);
 
             if (bossTracker != null && !string.IsNullOrEmpty(payload.RoomId))
             {
                 bossTracker.TryMarkRoomCompleted(payload.RoomId);
+            }
+        }
+
+        // CL-036: 모든 출구 벽 일괄 토글. 출구별 다른 정책 (LockPolicy 등) 은 후속 CL.
+        private void SetExitWallsActive(bool active)
+        {
+            if (exitWalls == null)
+            {
+                return;
+            }
+            for (int i = 0; i < exitWalls.Length; i++)
+            {
+                RoomExitWall wall = exitWalls[i];
+                if (wall != null)
+                {
+                    wall.gameObject.SetActive(active);
+                }
             }
         }
 
