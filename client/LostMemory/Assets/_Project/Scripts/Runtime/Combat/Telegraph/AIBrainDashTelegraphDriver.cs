@@ -34,7 +34,10 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private string chargeStateName = "Charge";
         [SerializeField] private bool useLastKnownTargetPosition = true;
 
+        private Vector2 _previewDirection = Vector2.right;
+        private float _previewDashDistance = 0.01f;
         private Vector2 _lockedDirection = Vector2.right;
+        private float _lockedDashDistance = 0.01f;
         private Quaternion _chargeDamageAreaDefaultLocalRotation = Quaternion.identity;
         private bool _chargeDamageAreaDefaultCached;
 
@@ -65,6 +68,7 @@ namespace LostMemory.Combat.Telegraph
             telegraphView?.Hide();
             RestoreChargeDamageAreaRotationIfNeeded();
             RestoreLocomotionAnimationIfNeeded();
+            ClearDashPlan();
         }
 
         private void Update()
@@ -73,6 +77,28 @@ namespace LostMemory.Combat.Telegraph
             {
                 telegraphView?.Hide();
                 RestoreChargeDamageAreaRotationIfNeeded();
+                ClearDashPlan();
+                return;
+            }
+
+            if (IsInState(telegraphStateName))
+            {
+                UpdatePreviewFromTarget();
+                ApplyPreviewDashPlan();
+                ApplyFacing(_previewDirection);
+
+                if (telegraphView != null && telegraphView.IsVisible)
+                {
+                    RefreshTelegraph();
+                }
+
+                return;
+            }
+
+            if (IsInState(chargeStateName))
+            {
+                ApplyLockedDashPlanToDash();
+                ApplyFacing(_lockedDirection);
                 return;
             }
 
@@ -80,15 +106,8 @@ namespace LostMemory.Combat.Telegraph
             {
                 RestoreChargeDamageAreaRotationIfNeeded();
                 RestoreLocomotionAnimationIfNeeded();
+                ClearDashPlan();
                 return;
-            }
-
-            ApplyLockedDirectionToDash();
-            ApplyLockedFacing();
-
-            if (IsInState(telegraphStateName) && telegraphView != null && telegraphView.IsVisible)
-            {
-                RefreshTelegraph();
             }
         }
 
@@ -105,6 +124,7 @@ namespace LostMemory.Combat.Telegraph
             {
                 telegraphView?.Hide();
                 RestoreChargeDamageAreaRotationIfNeeded();
+                ClearDashPlan();
                 return;
             }
 
@@ -113,17 +133,19 @@ namespace LostMemory.Combat.Telegraph
 
             if (enteringState == telegraphStateName)
             {
-                LockDirectionFromTarget();
-                ApplyLockedFacing();
+                UpdatePreviewFromTarget();
+                ApplyPreviewDashPlan();
+                ApplyFacing(_previewDirection);
                 PlayTelegraphAnimation();
-                RefreshTelegraph();
+                telegraphView?.Show(BuildTelegraphRequest());
                 return;
             }
 
             if (enteringState == chargeStateName)
             {
-                ApplyLockedDirectionToDash();
-                ApplyLockedFacing();
+                LockDashPlanFromPreview();
+                ApplyLockedDashPlanToDash();
+                ApplyFacing(_lockedDirection);
                 telegraphView?.Hide();
                 return;
             }
@@ -131,6 +153,11 @@ namespace LostMemory.Combat.Telegraph
             if (exitingState == telegraphStateName)
             {
                 telegraphView?.Hide();
+            }
+
+            if (exitingState == chargeStateName)
+            {
+                RestoreChargeDamageAreaRotationIfNeeded();
             }
         }
 
@@ -140,7 +167,7 @@ namespace LostMemory.Combat.Telegraph
             character ??= GetComponent<Character>();
             dashAbility ??= GetComponent<CharacterDash2D>();
             orientationAbility ??= GetComponent<CharacterOrientation2D>();
-            animator ??= GetComponentInChildren<Animator>();
+            animator ??= ResolveAnimator();
             dashAction ??= GetComponent<AIActionDash>();
             telegraphOrigin ??= transform;
             telegraphView ??= GetComponent<AttackTelegraph2DView>();
@@ -161,49 +188,68 @@ namespace LostMemory.Combat.Telegraph
             }
         }
 
-        private void LockDirectionFromTarget()
+        private void UpdatePreviewFromTarget()
         {
             Vector2 origin = ResolveOriginPosition();
             Vector2 targetPosition = ResolveTargetPosition(origin);
             Vector2 targetDirection = targetPosition - origin;
+            float targetDistance = targetDirection.magnitude;
 
             if (targetDirection.sqrMagnitude <= 0.0001f)
             {
                 targetDirection = ResolveFallbackDirection();
+                targetDistance = 0.01f;
             }
 
-            _lockedDirection = targetDirection.sqrMagnitude > 0.0001f
+            _previewDirection = targetDirection.sqrMagnitude > 0.0001f
                 ? targetDirection.normalized
                 : Vector2.right;
-
-            ApplyLockedDirectionToDash();
+            _previewDashDistance = Mathf.Max(0.01f, targetDistance);
         }
 
-        private void ApplyLockedDirectionToDash()
+        private void LockDashPlanFromPreview()
+        {
+            _lockedDirection = _previewDirection.sqrMagnitude > 0.0001f ? _previewDirection.normalized : Vector2.right;
+            _lockedDashDistance = Mathf.Max(0.01f, _previewDashDistance);
+        }
+
+        private void ApplyPreviewDashPlan()
+        {
+            ApplyDashPlanToDash(_previewDirection, _previewDashDistance);
+        }
+
+        private void ApplyLockedDashPlanToDash()
+        {
+            ApplyDashPlanToDash(_lockedDirection, _lockedDashDistance);
+        }
+
+        private void ApplyDashPlanToDash(Vector2 dashDirection, float dashDistance)
         {
             if (dashAbility == null)
             {
                 return;
             }
 
+            Vector2 normalizedDirection = dashDirection.sqrMagnitude > 0.0001f ? dashDirection.normalized : Vector2.right;
             dashAbility.DashMode = CharacterDash2D.DashModes.Script;
-            dashAbility.DashDirection = new Vector3(_lockedDirection.x, _lockedDirection.y, 0f);
-            RotateChargeDamageAreaToLockedDirection();
+            dashAbility.DashDirection = new Vector3(normalizedDirection.x, normalizedDirection.y, 0f);
+            dashAbility.DashDistance = Mathf.Max(0.01f, dashDistance);
+            RotateChargeDamageAreaToDirection(normalizedDirection);
         }
 
-        private void ApplyLockedFacing()
+        private void ApplyFacing(Vector2 facingDirection)
         {
             if (orientationAbility == null)
             {
                 return;
             }
 
-            if (Mathf.Abs(_lockedDirection.x) < horizontalFacingThreshold)
+            if (Mathf.Abs(facingDirection.x) < horizontalFacingThreshold)
             {
                 return;
             }
 
-            orientationAbility.FaceDirection(_lockedDirection.x >= 0f ? 1 : -1);
+            orientationAbility.FaceDirection(facingDirection.x >= 0f ? 1 : -1);
         }
 
         private void PlayTelegraphAnimation()
@@ -295,7 +341,9 @@ namespace LostMemory.Combat.Telegraph
 
         private AttackTelegraphRequest2D BuildTelegraphRequest()
         {
-            Vector2 direction = _lockedDirection.sqrMagnitude > 0.0001f ? _lockedDirection.normalized : Vector2.right;
+            Vector2 direction = IsInState(telegraphStateName)
+                ? (_previewDirection.sqrMagnitude > 0.0001f ? _previewDirection.normalized : Vector2.right)
+                : (_lockedDirection.sqrMagnitude > 0.0001f ? _lockedDirection.normalized : Vector2.right);
             Vector2 startCenter = ResolveDamageAreaCenter();
             Vector2 colliderWorldSize = ResolveChargeDamageAreaSize();
             Vector2 localRight = chargeDamageArea != null ? (Vector2)chargeDamageArea.transform.right : Vector2.right;
@@ -304,7 +352,9 @@ namespace LostMemory.Combat.Telegraph
 
             float halfExtentAlongDash = ResolveProjectedHalfExtent(colliderWorldSize, localRight, localUp, direction);
             float halfExtentAcrossDash = ResolveProjectedHalfExtent(colliderWorldSize, localRight, localUp, perpendicular);
-            float dashDistance = Mathf.Max(0.01f, dashAbility.DashDistance);
+            float dashDistance = IsInState(telegraphStateName)
+                ? Mathf.Max(0.01f, _previewDashDistance)
+                : Mathf.Max(0.01f, _lockedDashDistance);
 
             return new AttackTelegraphRequest2D
             {
@@ -400,7 +450,7 @@ namespace LostMemory.Combat.Telegraph
             _chargeDamageAreaDefaultCached = true;
         }
 
-        private void RotateChargeDamageAreaToLockedDirection()
+        private void RotateChargeDamageAreaToDirection(Vector2 dashDirection)
         {
             if (!rotateChargeDamageAreaWithDash || chargeDamageArea == null)
             {
@@ -409,12 +459,12 @@ namespace LostMemory.Combat.Telegraph
 
             CacheChargeDamageAreaDefaults();
 
-            if (_lockedDirection.sqrMagnitude <= 0.0001f)
+            if (dashDirection.sqrMagnitude <= 0.0001f)
             {
                 return;
             }
 
-            float angle = Mathf.Atan2(_lockedDirection.y, _lockedDirection.x) * Mathf.Rad2Deg;
+            float angle = Mathf.Atan2(dashDirection.y, dashDirection.x) * Mathf.Rad2Deg;
             chargeDamageArea.transform.localRotation = Quaternion.AngleAxis(angle, Vector3.forward);
         }
 
@@ -474,6 +524,89 @@ namespace LostMemory.Combat.Telegraph
 
             return Mathf.Abs(Vector2.Dot(axis, right)) * halfWidth
                  + Mathf.Abs(Vector2.Dot(axis, up)) * halfHeight;
+        }
+
+        public void RefreshReferences()
+        {
+            AutoAssignReferences();
+        }
+
+        public void Configure(
+            AIBrain configuredBrain,
+            Character configuredCharacter,
+            CharacterDash2D configuredDashAbility,
+            CharacterOrientation2D configuredOrientationAbility,
+            Animator configuredAnimator,
+            AIActionDash configuredDashAction,
+            BoxCollider2D configuredChargeDamageArea,
+            Transform configuredTelegraphOrigin,
+            AttackTelegraph2DView configuredTelegraphView,
+            string configuredTelegraphStateName,
+            string configuredChargeStateName,
+            bool configuredPlayTelegraphAnimation,
+            bool configuredRestoreLocomotionAnimation,
+            string configuredTelegraphAnimationStateName,
+            string configuredIdleAnimationStateName,
+            string configuredWalkAnimationStateName,
+            int configuredTelegraphAnimationLayer = 0)
+        {
+            brain = configuredBrain;
+            character = configuredCharacter;
+            dashAbility = configuredDashAbility;
+            orientationAbility = configuredOrientationAbility;
+            animator = configuredAnimator;
+            dashAction = configuredDashAction;
+            chargeDamageArea = configuredChargeDamageArea;
+            telegraphOrigin = configuredTelegraphOrigin;
+            telegraphView = configuredTelegraphView;
+            telegraphStateName = configuredTelegraphStateName;
+            chargeStateName = configuredChargeStateName;
+            playTelegraphAnimation = configuredPlayTelegraphAnimation;
+            restoreLocomotionAnimation = configuredRestoreLocomotionAnimation;
+            telegraphAnimationStateName = configuredTelegraphAnimationStateName;
+            idleAnimationStateName = configuredIdleAnimationStateName;
+            walkAnimationStateName = configuredWalkAnimationStateName;
+            telegraphAnimationLayer = configuredTelegraphAnimationLayer;
+            AutoAssignReferences();
+        }
+
+        public void SetAnimationPlayback(bool shouldPlayTelegraphAnimation, bool shouldRestoreLocomotionAnimation)
+        {
+            playTelegraphAnimation = shouldPlayTelegraphAnimation;
+            restoreLocomotionAnimation = shouldRestoreLocomotionAnimation;
+        }
+
+        private void ClearDashPlan()
+        {
+            _previewDirection = Vector2.right;
+            _previewDashDistance = 0.01f;
+            _lockedDirection = Vector2.right;
+            _lockedDashDistance = 0.01f;
+        }
+
+        private Animator ResolveAnimator()
+        {
+            Transform visualRoot = transform.Find("Visual");
+            if (visualRoot != null)
+            {
+                Transform spriteChild = visualRoot.Find("BerthaSprite");
+                if (spriteChild != null)
+                {
+                    Animator spriteAnimator = spriteChild.GetComponent<Animator>();
+                    if (spriteAnimator != null)
+                    {
+                        return spriteAnimator;
+                    }
+                }
+
+                Animator visualAnimator = visualRoot.GetComponentInChildren<Animator>(true);
+                if (visualAnimator != null)
+                {
+                    return visualAnimator;
+                }
+            }
+
+            return GetComponentInChildren<Animator>(true);
         }
     }
 }
