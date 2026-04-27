@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c6b551d9a5b9bb439195e292fd506d7, type: 3}
+  m_Name: EnemyCatalog_Default
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemyCatalog
+  entries:
+  - id: enemy_melee_basic
+    prefab: {fileID: 1561694053617324, guid: 2561a7bd6c4192f4897281bd5e67f688, type: 3}
+  - id: enemy_charger_basic
+    prefab: {fileID: 1561694053617324, guid: 10a499f2549be90408a882be64399050, type: 3}
+  - id: enemy_ranged_basic
+    prefab: {fileID: 1561694053617324, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
