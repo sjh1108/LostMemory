@@ -107,6 +107,71 @@ Output 이미지:
 - 상태: `완료`
 - 후속 작업: `AI-301`, `AI-302`, `AI-303`
 
+## AI-301. POST /prompt 요청 샘플 확보
+
+### 작업 범위
+
+- 실제 성공하는 `/prompt` request body JSON 저장
+- 기준 workflow와 `/prompt` body 차이 정리
+- curl 기준 재현 절차 문서화
+
+### 결정 내용
+
+- 기준 workflow는 `Z-Image-turbo-test3-ksampler-change.json`으로 고정한다.
+- `/prompt` sample은 UI workflow export 전체를 그대로 쓰지 않고, `prompt` map과 `client_id`만 남긴 최소 성공 body를 기준으로 둔다.
+- sample 재현을 위해 `seed`와 `filename_prefix`를 고정한다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-301-prompt-sample/README.md`
+- `tools/docs/1차-mvp/산출물/AI-301-prompt-sample/successful-prompt-request-test3.json`
+- `tools/docs/1차-mvp/산출물/AI-301-prompt-sample/successful-prompt-response-test3.json`
+- `tools/docs/1차-mvp/산출물/AI-301-prompt-sample/reproduce-with-curl.md`
+
+### 완료 근거
+
+- `http://127.0.0.1:8188/prompt`에 실제 POST 요청 성공
+- sample request body로 `prompt_id = d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6` 수신
+- `node_errors`가 비어 있는 성공 응답 저장
+- `curl.exe` 기준 재현 명령과 응답 예시 문서화
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-302`, `AI-303`, `AI-404`
+
+## AI-302. GET /history/{prompt_id} 응답 샘플 확보
+
+### 작업 범위
+
+- `AI-301`에서 받은 `prompt_id` 기준 `/history/{prompt_id}` raw JSON 저장
+- output 파일 정보와 상태 key 해석 기준 정리
+
+### 결정 내용
+
+- 기준 `prompt_id`는 `d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6`으로 둔다.
+- 이번 sample에서 output node는 `8`이고, 이미지 파일 정보는 `outputs["8"].images[0]` 기준으로 읽는다.
+- backend 구현에서는 output node id를 고정하지 않고 `outputs` map 순회 기준으로 파싱하는 쪽이 안전하다고 본다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-302-history-sample/README.md`
+- `tools/docs/1차-mvp/산출물/AI-302-history-sample/history-response-d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6.json`
+
+### 완료 근거
+
+- `http://127.0.0.1:8188/history/d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6` 응답 원본 저장
+- `status.status_str = success`, `status.completed = true` 확인
+- output 파일 `AI301_Test3_PromptSample_00001_.png` 생성 확인
+- output filename, subfolder, type 추출 위치를 문서화
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-303`, `AI-404`, `AI-405`
+
 ## AI-203. Reverse Proxy 기본 경로 설계
 
 ### 작업 범위

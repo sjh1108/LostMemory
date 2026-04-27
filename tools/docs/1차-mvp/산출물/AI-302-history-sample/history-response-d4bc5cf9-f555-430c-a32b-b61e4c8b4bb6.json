@@ -1,0 +1,187 @@
+{
+  "d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6": {
+    "prompt": [
+      2,
+      "d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6",
+      {
+        "1": {
+          "inputs": {
+            "weight_dtype": "default",
+            "unet_name": "z_image_turbo_bf16.safetensors"
+          },
+          "class_type": "UNETLoader"
+        },
+        "3": {
+          "inputs": {
+            "clip": [
+              "10",
+              0
+            ],
+            "model": [
+              "1",
+              0
+            ],
+            "strength_clip": 0.6,
+            "strength_model": 0.6,
+            "lora_name": "pixel_art_style_z_image_turbo.safetensors"
+          },
+          "class_type": "LoraLoader"
+        },
+        "4": {
+          "inputs": {
+            "text": "Pixel art style. a small fantasy game character, full body, front view, yellow spiky hair, pale white skin, green tunic, red scarf, wooden shield, iron sword, brown boots, clean black outline, limited color palette, simple shading, readable silhouette, game sprite, centered, plain white background\n",
+            "clip": [
+              "3",
+              1
+            ]
+          },
+          "class_type": "CLIPTextEncode"
+        },
+        "5": {
+          "inputs": {
+            "batch_size": 1,
+            "width": 512,
+            "height": 512
+          },
+          "class_type": "EmptyLatentImage"
+        },
+        "6": {
+          "inputs": {
+            "denoise": 1.0,
+            "steps": 8,
+            "negative": [
+              "11",
+              0
+            ],
+            "positive": [
+              "4",
+              0
+            ],
+            "sampler_name": "euler",
+            "latent_image": [
+              "5",
+              0
+            ],
+            "seed": 30120260427,
+            "cfg": 1.5,
+            "model": [
+              "3",
+              0
+            ],
+            "scheduler": "simple"
+          },
+          "class_type": "KSampler"
+        },
+        "7": {
+          "inputs": {
+            "samples": [
+              "6",
+              0
+            ],
+            "vae": [
+              "9",
+              0
+            ]
+          },
+          "class_type": "VAEDecode"
+        },
+        "8": {
+          "inputs": {
+            "images": [
+              "7",
+              0
+            ],
+            "filename_prefix": "AI301_Test3_PromptSample"
+          },
+          "class_type": "SaveImage"
+        },
+        "9": {
+          "inputs": {
+            "vae_name": "ae.safetensors"
+          },
+          "class_type": "VAELoader"
+        },
+        "10": {
+          "inputs": {
+            "device": "default",
+            "clip_name": "qwen_3_4b.safetensors",
+            "type": "lumina2"
+          },
+          "class_type": "CLIPLoader"
+        },
+        "11": {
+          "inputs": {
+            "text": "blurry, smooth shading, realistic, 3d render, painterly, noisy background, detailed background, text, watermark, deformed, extra limbs, bad hands, cropped, side view, back view\n",
+            "clip": [
+              "3",
+              1
+            ]
+          },
+          "class_type": "CLIPTextEncode"
+        }
+      },
+      {
+        "client_id": "ai301-test3-sample-client",
+        "create_time": 1777268297422
+      },
+      [
+        "8"
+      ]
+    ],
+    "outputs": {
+      "8": {
+        "images": [
+          {
+            "filename": "AI301_Test3_PromptSample_00001_.png",
+            "subfolder": "",
+            "type": "output"
+          }
+        ]
+      }
+    },
+    "status": {
+      "status_str": "success",
+      "completed": true,
+      "messages": [
+        [
+          "execution_start",
+          {
+            "prompt_id": "d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6",
+            "timestamp": 1777268297424
+          }
+        ],
+        [
+          "execution_cached",
+          {
+            "nodes": [
+              "9",
+              "3",
+              "11",
+              "10",
+              "1",
+              "4",
+              "5"
+            ],
+            "prompt_id": "d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6",
+            "timestamp": 1777268297427
+          }
+        ],
+        [
+          "execution_success",
+          {
+            "prompt_id": "d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6",
+            "timestamp": 1777268310744
+          }
+        ]
+      ]
+    },
+    "meta": {
+      "8": {
+        "node_id": "8",
+        "display_node": "8",
+        "parent_node": null,
+        "real_node_id": "8"
+      }
+    }
+  }
+}
