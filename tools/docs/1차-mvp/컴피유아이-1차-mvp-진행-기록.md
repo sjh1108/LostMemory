@@ -351,3 +351,46 @@ Output 이미지:
 - 완료여부: `Y`
 - 상태: `완료`
 - 후속 작업: `AI-403`, `AI-404`, `AI-501`
+
+## AI-403. 생성 요청용 최소 API 엔드포인트 구현
+
+### 작업 범위
+
+- 생성 요청 DTO와 검증 규칙 정의
+- 최소 `POST` controller 엔드포인트 추가
+- 입력 오류 응답 형식 정리
+- Swagger/OpenAPI에서 요청·응답 초안 노출
+
+### 결정 내용
+
+- 생성 요청 경로는 `POST /api/generation-requests`로 둔다.
+- `AI-403` 단계에서는 ComfyUI `/prompt`를 아직 직접 호출하지 않고, API 계약과 validation, 수락 응답 구조를 먼저 고정한다.
+- 최소 요청 필드는 `workflowId`, `prompt`, `userId`로 둔다.
+- 성공 응답은 `202 Accepted`와 함께 서버 생성 `requestId`, `status=RECEIVED`, `acceptedAt`를 반환한다.
+- 입력 오류는 공통 `ApiResponse.failure(...)` 형식을 유지하고, validation 실패와 malformed JSON body를 구분한다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/CreateGenerationRequest.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationRequestStatus.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationRequestAcceptedResponse.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationController.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/exception/GlobalExceptionHandler.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationControllerTest.java`
+- `tools/docs/1차-mvp/산출물/AI-403-generate-api/README.md`
+
+### 완료 근거
+
+- `CreateGenerationRequest`에 `workflowId`, `prompt`, `userId`와 validation 규칙을 정의
+- `GenerationController`에 `POST /generation-requests` 추가
+- `GenerationService`가 현재 단계용 수락 응답을 생성하고 `requestId`, `status`, `acceptedAt`를 반환
+- validation 실패 시 `INVALID_REQUEST`, malformed JSON body 시 `INVALID_REQUEST_BODY` 응답 형식 정리
+- OpenAPI 문서에 생성 요청 endpoint와 summary가 노출되도록 annotation과 테스트 추가
+- `GenerationControllerTest`에서 정상 요청, validation 오류, malformed JSON, OpenAPI 노출을 검증
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-404`, `AI-405`, `AI-501`
