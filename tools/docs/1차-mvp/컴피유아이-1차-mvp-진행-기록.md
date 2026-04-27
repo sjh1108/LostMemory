@@ -204,6 +204,42 @@ Output 이미지:
 - 상태: `완료`
 - 후속 작업: `AI-304`, `AI-404`, `AI-405`, `AI-507`
 
+## AI-304. 실패 및 timeout 시나리오 샘플 수집
+
+### 작업 범위
+
+- `/prompt` 단계에서 재현 가능한 실패 케이스 1건 이상 수집
+- polling timeout 기준값 초안 작성
+- 사용자 노출 문구와 내부 로그 문구 분리 초안 작성
+
+### 결정 내용
+
+- 실패 샘플은 `모델 없음`, `output node 없음`, `잘못된 node reference`, `malformed JSON` 4종으로 정리한다.
+- polling timeout 초안은 `interval = 2초`, `soft warning = 60초`, `hard timeout = 120초`로 둔다.
+- 실패 메시지는 사용자 문구와 내부 로그 문구를 분리해 관리한다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/README.md`
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/failure-sample-results.md`
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/timeout-draft.md`
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/failure-message-draft.md`
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/requests/*.json`
+
+### 완료 근거
+
+- `invalid-unet-name-request.json`으로 모델 없음 validation 실패 재현
+- `missing-output-node-request.json`으로 `prompt_no_outputs` 실패 재현
+- `invalid-node-reference-request.json`으로 broken graph validation 실패 재현
+- `malformed-json-request.txt`로 JSON parse 실패 재현
+- 최근 성공 실행 시간 `13.32 ~ 51.55초` 기준으로 timeout 초안 정리
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-404`, `AI-405`, `AI-406`, `AI-507`
+
 ## AI-203. Reverse Proxy 기본 경로 설계
 
 ### 작업 범위
