@@ -14,7 +14,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("LostMemory AI Tool API")
-                        .description("ComfyUI internal tool backend bootstrap draft")
+                        .description("ComfyUI internal tool backend bootstrap and draft generation request API")
                         .version("v0.1.0-draft"));
     }
 }

@@ -2,19 +2,21 @@
 
 `tools/ai_server` is the implementation location fixed by `AI-401-01`.
 
-This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. The current draft covers the `AI-401` scope only:
+This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. The current draft now covers `AI-401` through `AI-403`:
 
 - separate project location under `tools/`
 - `GET /api/health` endpoint for deployment and proxy checks
 - common `ApiResponse` format
 - base package/config structure
 - Gradle build file and Dockerfile draft
+- minimal generation request DTO, controller, validation, and Swagger exposure
 
 ## Current endpoints
 
 - `GET /api/health`
 - `GET /api/actuator/health`
 - `GET /api/swagger-ui/index.html`
+- `POST /api/generation-requests`
 
 ## Environment
 
@@ -38,6 +40,8 @@ Optional profile override files:
 
 The server uses `/api` as its servlet context path, so the health check URL is `http://localhost:8080/api/health`.
 
+`POST /api/generation-requests` is the `AI-403` draft endpoint. It validates `workflowId`, `prompt`, and optional `userId`, then returns `202 Accepted` with a server-generated draft request id. Actual ComfyUI `/prompt` integration starts in `AI-404`.
+
 ## Current structure
 
 ```text
@@ -51,6 +55,7 @@ tools/ai_server/
       java/com/lostmemory/aiserver/
         config/
         common/
+        generation/
         health/
         repository/
       resources/
@@ -65,4 +70,5 @@ tools/ai_server/
 
 - `spring-boot-starter-data-jpa` and PostgreSQL dependencies are already included, but datasource/JPA auto-configuration is intentionally excluded for now. Actual DB wiring starts in `AI-402` and `AI-501`.
 - `AI-402` adds typed configuration properties, startup validation, and a reusable ComfyUI HTTP client bean.
+- `AI-403` adds the minimal generation request API contract before actual ComfyUI submission logic.
 - This project is intentionally separate from the root `server/` project.

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import com.lostmemory.aiserver.common.response.ApiResponse;
 
@@ -21,13 +22,22 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
 
-        return ResponseEntity.badRequest()
-                .body(ApiResponse.failure("INVALID_REQUEST", message));
+        return badRequest("INVALID_REQUEST", message);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnreadableBody(HttpMessageNotReadableException exception) {
+        return badRequest("INVALID_REQUEST_BODY", "Request body must be valid JSON.");
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(Exception exception) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.failure("INTERNAL_SERVER_ERROR", exception.getMessage()));
+    }
+
+    private ResponseEntity<ApiResponse<Void>> badRequest(String code, String message) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(code, message));
     }
 }
