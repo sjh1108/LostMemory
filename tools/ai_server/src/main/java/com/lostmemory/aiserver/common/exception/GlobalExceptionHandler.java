@@ -30,6 +30,12 @@ public class GlobalExceptionHandler {
         return badRequest("INVALID_REQUEST_BODY", "Request body must be valid JSON.");
     }
 
+    @ExceptionHandler(ApiRequestException.class)
+    public ResponseEntity<ApiResponse<Void>> handleApiRequestException(ApiRequestException exception) {
+        return ResponseEntity.status(exception.getStatus())
+                .body(ApiResponse.failure(exception.getCode(), exception.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(Exception exception) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -240,6 +240,41 @@ Output 이미지:
 - 상태: `완료`
 - 후속 작업: `AI-404`, `AI-405`, `AI-406`, `AI-507`
 
+## AI-404. 서버에서 ComfyUI /prompt 호출 구현
+
+### 작업 범위
+
+- Controller 입력을 실제 ComfyUI `/prompt` request body로 조립
+- `/prompt` submit 수행
+- 응답의 `prompt_id`를 API 응답으로 반환
+- 실패 분석용 debug logging 지점 추가
+
+### 결정 내용
+
+- 실행 template는 `AI-301` 성공 sample을 classpath resource로 옮겨 사용한다.
+- 1차 MVP 기준 지원 workflow는 `pixel-art-character-v1` 1종으로 제한한다.
+- prompt는 현재 sample 기준 positive prompt node `4`에 주입한다.
+- `workflow_name` 기준은 이미 `AI-303` 문서에서 확정한 source workflow 파일명 stem 규칙을 유지한다.
+- ComfyUI submit 실패는 `502`, unsupported workflow는 `400`으로 응답한다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-404-prompt-submit/README.md`
+
+### 완료 근거
+
+- `PromptAssemblyService` 추가
+- `pixel-art-character-v1` template resource 추가
+- `GenerationService`에서 실제 `ComfyUiClient.submitPrompt(...)` 호출
+- 응답 DTO에 `promptId`, `status = SUBMITTED` 반영
+- controller/integration test와 assembly service unit test 통과
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-405`, `AI-406`, `AI-505`
+
 ## AI-203. Reverse Proxy 기본 경로 설계
 
 ### 작업 범위
