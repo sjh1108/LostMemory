@@ -27,16 +27,20 @@ public class GenerationController {
 
     @PostMapping
     @Operation(
-            summary = "Accept a minimal generation request",
-            description = "AI-403 draft endpoint. This step validates the request contract and returns an accepted response before ComfyUI /prompt integration.",
+            summary = "Submit a generation request to ComfyUI",
+            description = "AI-404 endpoint. This step validates the request contract, assembles a ComfyUI /prompt body, submits it, and returns the received prompt_id.",
             responses = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "202",
-                            description = "Generation request accepted",
+                            description = "Generation request submitted to ComfyUI",
                             content = @Content(schema = @Schema(implementation = ApiResponse.class))),
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid request payload",
+                            content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "502",
+                            description = "ComfyUI /prompt submission failed",
                             content = @Content(schema = @Schema(implementation = ApiResponse.class)))
             }
     )
