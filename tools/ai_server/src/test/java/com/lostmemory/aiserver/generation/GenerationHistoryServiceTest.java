@@ -15,7 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lostmemory.aiserver.comfyui.ComfyUiClient;
+import com.lostmemory.aiserver.common.audit.AuditActionType;
 import com.lostmemory.aiserver.common.audit.AuditRecorder;
+import com.lostmemory.aiserver.common.audit.AuditStatus;
 
 @ExtendWith(MockitoExtension.class)
 class GenerationHistoryServiceTest {
@@ -92,8 +94,8 @@ class GenerationHistoryServiceTest {
         assertThat(response.failureReason()).isEqualTo(GenerationFailureReason.POLL_TIMEOUT);
         assertThat(response.completed()).isFalse();
         assertThat(response.message()).isEqualTo("생성 시간이 예상보다 오래 걸려 요청을 종료했습니다.");
-        verify(auditRecorder).record(org.mockito.ArgumentMatchers.eq("generation"),
-                org.mockito.ArgumentMatchers.eq("terminal_failure"),
+        verify(auditRecorder).record(org.mockito.ArgumentMatchers.eq(AuditActionType.GENERATE),
+                org.mockito.ArgumentMatchers.eq(AuditStatus.FAILED),
                 org.mockito.ArgumentMatchers.anyMap());
     }
 
