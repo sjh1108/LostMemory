@@ -49,6 +49,22 @@
 - `AI-406-status-handling`
   - timeout / failed 상태 처리, execution status, failure reason, audit hook
 
+### DB 스키마 / 메타데이터
+
+- `AI-501-postgres-min-schema`
+  - Docker Postgres, init SQL, 최소 스키마, backup 기준
+- `AI-502-503-detailed-schema`
+  - users / workflow_snapshots / generations / generation_outputs 상세 컬럼과 인덱스 기준
+- `AI-504-audit-log-standard`
+  - audit_logs action_type / status 표준값과 helper 설계 기준
+
+### 최종 그림 / 종합 설계
+
+- `MVP-ERD-overview`
+  - `AI-801`까지 완료됐을 때의 목표 ERD와 상태 / 저장 모델 분리 기준
+- `MVP-API-overview`
+  - 로그인, 생성, polling, 결과 조회, 다운로드, 실패 로그까지 포함한 목표 API 세트
+
 ## AI-501에서 다시 봐야 하는 문서
 
 ### 필수 재참조
@@ -61,17 +77,25 @@
    - 어떤 메타데이터를 DB에 남겨야 하는지
 4. `AI-406-status-handling`
    - `execution_status`, `failure_reason` 기준
+5. `AI-502-503-detailed-schema`
+   - `full_prompt`, `failed_stage`, `workflow_hash`, `model_metadata_json` 등 상세 컬럼 기준
+6. `AI-504-audit-log-standard`
+   - `audit_logs.action_type`, `audit_logs.status`, audit helper 기준
 
 ### AI-501 이후 DB에 바로 이어질 값
 
 - `prompt_id`
 - `workflow_name`
+- `workflow_hash`
 - `execution_status`
 - `failure_reason`
+- `failed_stage`
 - `prompt_summary`
+- `full_prompt`
 - `output filename`
 - `output subfolder`
 - `output type`
+- `mime_type`
 - 이후 `image_url`
 
 ## AI-501 기준 권장 진행 순서

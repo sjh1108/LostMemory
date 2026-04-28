@@ -742,3 +742,115 @@ Output 이미지:
 - 완료여부: `Y`
 - 상태: `완료`
 - 후속 작업: `AI-502`, `AI-503`, `AI-504`, `AI-505`
+
+## AI-502. users 및 workflow_snapshots 테이블 상세 필드 구현
+
+### 작업 범위
+
+- `users` 상세 컬럼 확정
+- `workflow_snapshots` 상세 컬럼 확정
+- workflow snapshot 재현성과 upsert 기준이 되는 hash / metadata 컬럼 반영
+
+### 결정 내용
+
+- `users`는 `username`, `display_name`, `is_active`, `last_login_at`, timestamps 기준으로 확정한다.
+- `password_hash`, `role` 같은 로그인 상세 필드는 `AI-701`로 넘긴다.
+- `workflow_snapshots`는 immutable snapshot으로 보고 `updated_at`은 두지 않는다.
+- `workflow_hash`를 `UNIQUE` 기준으로 두고, 이후 `AI-505-02`의 upsert 기준으로 사용한다.
+- 모델 정보는 고정 컬럼 여러 개보다 `primary_model_name` + `model_metadata_json` 조합으로 먼저 정리한다.
+- raw workflow는 `workflow_json` JSONB 컬럼 하나로 보관한다.
+
+### 산출물
+
+- `tools/infra/postgres/init/001_init_schema.sql`
+- `tools/docs/1차-mvp/산출물/AI-502-503-detailed-schema/README.md`
+
+### 완료 근거
+
+- `users`에 `is_active`, `last_login_at`, username 공백 방지 constraint를 추가
+- `workflow_snapshots`에 `workflow_version`, `workflow_hash UNIQUE`, `primary_model_name`, `model_metadata_json`, `workflow_json`을 추가
+- `workflow_snapshots`를 immutable snapshot으로 보는 이유와 필드 경계를 README에 문서화
+- fresh DB init 후 `\d+ users`, `\d+ workflow_snapshots`로 컬럼 / constraint / index 생성 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-503`, `AI-505`
+
+## AI-503. generations 및 generation_outputs 테이블 상세 필드 구현
+
+### 작업 범위
+
+- `generations` 상세 컬럼 확정
+- `generation_outputs` 상세 컬럼 확정
+- 조회와 후속 업로드 작업을 고려한 핵심 인덱스 검토
+
+### 결정 내용
+
+- `generations`에는 `execution_status`, `failure_reason`, `failed_stage`, `prompt_summary`, `full_prompt`, `user_message`, `internal_message`, `completed_at`을 포함한다.
+- 성공/실패 상태 값과 실패 사유는 `AI-406`에서 확정한 enum 기준을 SQL constraint로 같이 고정한다.
+- `failed_stage`는 `PROMPT_SUBMIT`, `GENERATION`, `HISTORY_POLL`, `OUTPUT_DISCOVERY`, `S3_UPLOAD`, `METADATA_SAVE` 여섯 단계로 고정한다.
+- `generation_outputs`는 1장 고정이 아니라 여러 결과를 열어두기 위해 `output_index`를 둔다.
+- `local_path`는 장기 저장 기준으로 보지 않고 DB에서 제외한다.
+- 인덱스는 `prompt_id`, `execution_status`, `created_at`, `created_by + created_at`, `generation_id + output_index` 기준으로 확정한다.
+
+### 산출물
+
+- `tools/infra/postgres/init/001_init_schema.sql`
+- `tools/docs/1차-mvp/산출물/AI-502-503-detailed-schema/README.md`
+
+### 완료 근거
+
+- `generations`에 `workflow_snapshot_id NOT NULL`, `failed_stage`, `full_prompt`, `completed_at`, status/failure/stage check constraint를 반영
+- `generation_outputs`에 `output_index`, `mime_type`, `(generation_id, output_index)` unique constraint를 반영
+- `idx_generations_created_at_desc`, `idx_generations_created_by_created_at_desc`, `idx_workflow_snapshots_workflow_name` 인덱스를 추가
+- output/image 저장 기준과 deferred storage 필드를 README에 문서화
+- fresh DB init 후 `\d+ generations`, `\d+ generation_outputs`로 상세 컬럼과 check/unique constraint 생성 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-504`, `AI-505`, `AI-507`, `AI-508`
+
+## AI-504. audit_logs 테이블 구현
+
+### 작업 범위
+
+- `audit_logs` action_type / status 표준값 확정
+- audit helper 구조를 현재 코드 기준으로 정리
+- timeout과 failed가 audit_logs에서 어떻게 표현되는지 기준 고정
+
+### 결정 내용
+
+- `audit_logs.action_type`은 `LOGIN`, `GENERATE`, `UPLOAD`, `DOWNLOAD` 네 값만 허용한다.
+- `audit_logs.status`는 `SUCCESS`, `FAILED` 두 값만 허용한다.
+- timeout은 별도 status가 아니라 `FAILED`로 기록하고, 세부 사유는 payload의 `failureReason`으로 분리한다.
+- 공통 helper는 `common/audit` 패키지에 두고, 현재 구현은 `LoggingAuditRecorder`로 유지한다.
+- 현재 `AuditRecorder` 시그니처도 `actionType`, `status`, `payload` 기준으로 바꿔 DB 컬럼 구조와 의미를 맞춘다.
+
+### 산출물
+
+- `tools/infra/postgres/init/001_init_schema.sql`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/AuditActionType.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/AuditStatus.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/AuditRecorder.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/LoggingAuditRecorder.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryService.java`
+- `tools/docs/1차-mvp/산출물/AI-504-audit-log-standard/README.md`
+
+### 완료 근거
+
+- `audit_logs`에 action_type / status check constraint를 추가
+- `AuditActionType`, `AuditStatus` enum을 추가해 helper와 DB 값 기준을 일치시킴
+- `GenerationHistoryService`가 실패 시 `GENERATE + FAILED` 형태로 audit recorder를 호출하도록 정리
+- timeout을 별도 status로 두지 않고 `FAILED + failureReason=POLL_TIMEOUT`로 남기는 기준을 README에 문서화
+- `./gradlew.bat --no-daemon test`, `./gradlew.bat --no-daemon bootJar`로 audit helper 시그니처 변경 후 컴파일/패키징 검증
+- fresh DB init 후 `\d+ audit_logs`로 action/status constraint 생성 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-505`, `AI-702`

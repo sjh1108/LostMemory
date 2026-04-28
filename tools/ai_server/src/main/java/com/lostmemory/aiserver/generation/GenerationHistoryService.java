@@ -15,7 +15,9 @@ import org.springframework.web.client.RestClientResponseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lostmemory.aiserver.comfyui.ComfyUiClient;
+import com.lostmemory.aiserver.common.audit.AuditActionType;
 import com.lostmemory.aiserver.common.audit.AuditRecorder;
+import com.lostmemory.aiserver.common.audit.AuditStatus;
 import com.lostmemory.aiserver.common.exception.ApiRequestException;
 
 @Service
@@ -212,8 +214,8 @@ public class GenerationHistoryService {
             GenerationHistoryDecision decision
     ) {
         auditRecorder.record(
-                "generation",
-                "terminal_failure",
+                AuditActionType.GENERATE,
+                AuditStatus.FAILED,
                 Map.of(
                         "promptId", snapshot.promptId(),
                         "executionStatus", decision.executionStatus().name(),

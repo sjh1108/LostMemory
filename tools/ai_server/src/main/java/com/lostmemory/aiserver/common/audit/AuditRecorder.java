@@ -8,5 +8,5 @@ import java.util.Map;
  */
 public interface AuditRecorder {
 
-    void record(String category, String eventType, Map<String, Object> payload);
+    void record(AuditActionType actionType, AuditStatus status, Map<String, Object> payload);
 }

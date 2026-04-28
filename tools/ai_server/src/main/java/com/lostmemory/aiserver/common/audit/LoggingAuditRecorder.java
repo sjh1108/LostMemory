@@ -24,8 +24,8 @@ public class LoggingAuditRecorder implements AuditRecorder {
     }
 
     @Override
-    public void record(String category, String eventType, Map<String, Object> payload) {
-        log.info("AUDIT category={}, event={}, payload={}", category, eventType, toJson(payload));
+    public void record(AuditActionType actionType, AuditStatus status, Map<String, Object> payload) {
+        log.info("AUDIT actionType={}, status={}, payload={}", actionType, status, toJson(payload));
     }
 
     private String toJson(Map<String, Object> payload) {
