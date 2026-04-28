@@ -2,7 +2,7 @@
 
 `tools/ai_server` is the implementation location fixed by `AI-401-01`.
 
-This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. The current draft now covers `AI-401` through `AI-405`:
+This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. The current draft now covers `AI-401` through `AI-406`:
 
 - separate project location under `tools/`
 - `GET /api/health` endpoint for deployment and proxy checks
@@ -12,6 +12,7 @@ This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. T
 - minimal generation request DTO, controller, validation, and Swagger exposure
 - ComfyUI `/prompt` template assembly and submit flow with `prompt_id` return
 - ComfyUI `/history/{promptId}` polling and first output metadata parsing
+- timeout, failed, audit logging hook, and execution status resolution
 
 ## Current endpoints
 
@@ -45,7 +46,7 @@ The server uses `/api` as its servlet context path, so the health check URL is `
 
 `POST /api/generation-requests` now performs the `AI-404` submit flow. It validates `workflowId`, assembles a ComfyUI `/prompt` body from the current classpath template, submits it, and returns `202 Accepted` with both a server-side `requestId` and the ComfyUI `promptId`.
 
-`GET /api/generation-requests/{promptId}` now performs the `AI-405` polling flow. It polls ComfyUI `/history/{promptId}` until the execution is completed, then returns the parsed first output image metadata and observed message types.
+`GET /api/generation-requests/{promptId}` now performs the `AI-406` polling flow. It polls ComfyUI `/history/{promptId}`, resolves `SUCCEEDED`, `FAILED`, or `TIMED_OUT` as business statuses, and returns the parsed first output image metadata when available.
 
 ## Current structure
 
@@ -78,4 +79,5 @@ tools/ai_server/
 - `AI-403` adds the minimal generation request API contract before actual ComfyUI submission logic.
 - `AI-404` adds `PromptAssemblyService`, a classpath prompt template, real `/prompt` submit, `promptId` extraction, and debug logging for request/response payloads.
 - `AI-405` adds `GenerationHistoryService`, `GenerationHistoryParser`, `/history` polling constants, and a success-path parser that reads the first output image by iterating the `outputs` map instead of hardcoding a node id.
+- `AI-406` separates submit status from execution status, adds `GenerationExecutionStatus` and `GenerationFailureReason`, converts timeout/failure handling into `200 OK + body status`, and leaves a reusable audit logging hook under `common/audit`.
 - This project is intentionally separate from the root `server/` project.

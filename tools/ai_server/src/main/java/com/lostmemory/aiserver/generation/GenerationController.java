@@ -59,20 +59,16 @@ public class GenerationController {
 
     @GetMapping("/{promptId}")
     @Operation(
-            summary = "Poll ComfyUI history until generation completes",
-            description = "AI-405 endpoint. This step polls ComfyUI /history/{promptId} until the execution is completed and returns the parsed first output image metadata.",
+            summary = "Poll ComfyUI history and resolve generation state",
+            description = "AI-406 endpoint. This step polls ComfyUI /history/{promptId}, resolves success, failure, or timeout as a business status, and returns the first output image metadata when available.",
             responses = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
-                            description = "Generation history completed and parsed",
+                            description = "Generation state resolved as success, failure, timeout, or in-progress business status",
                             content = @Content(schema = @Schema(implementation = ApiResponse.class))),
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "502",
-                            description = "ComfyUI /history polling failed",
-                            content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "504",
-                            description = "ComfyUI /history polling timed out",
+                            responseCode = "500",
+                            description = "Unexpected polling interruption or internal server error",
                             content = @Content(schema = @Schema(implementation = ApiResponse.class)))
             }
     )

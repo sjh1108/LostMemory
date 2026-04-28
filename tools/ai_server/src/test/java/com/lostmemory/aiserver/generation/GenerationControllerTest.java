@@ -1,6 +1,7 @@
 package com.lostmemory.aiserver.generation;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -83,11 +84,52 @@ class GenerationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.promptId").value("test-prompt-id-001"))
+                .andExpect(jsonPath("$.data.executionStatus").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.data.failureReason").value(nullValue()))
                 .andExpect(jsonPath("$.data.completed").value(true))
                 .andExpect(jsonPath("$.data.statusText").value("success"))
+                .andExpect(jsonPath("$.data.message").value("이미지 생성이 완료되었습니다."))
                 .andExpect(jsonPath("$.data.outputImage.filename").value("AI405_Test_00001_.png"))
                 .andExpect(jsonPath("$.data.messageTypes[0]").value("execution_start"))
                 .andExpect(jsonPath("$.data.messageTypes[1]").value("execution_success"));
+    }
+
+    @Test
+    void getGenerationHistoryReturnsBusinessFailureResponseWhenOutputIsMissing() throws Exception {
+        given(comfyUiClient.fetchHistory("test-prompt-id-002"))
+                .willReturn(Map.of(
+                        "test-prompt-id-002", Map.of(
+                                "outputs", Map.of(),
+                                "status", Map.of(
+                                        "completed", true,
+                                        "status_str", "success",
+                                        "messages", java.util.List.of(
+                                                java.util.List.of("execution_success", Map.of()))))));
+
+        mockMvc.perform(get("/generation-requests/test-prompt-id-002"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.promptId").value("test-prompt-id-002"))
+                .andExpect(jsonPath("$.data.executionStatus").value("FAILED"))
+                .andExpect(jsonPath("$.data.failureReason").value("OUTPUT_MISSING"))
+                .andExpect(jsonPath("$.data.completed").value(true))
+                .andExpect(jsonPath("$.data.message").value("생성은 완료되었지만 결과 파일을 찾지 못했습니다."))
+                .andExpect(jsonPath("$.data.outputImage").isEmpty());
+    }
+
+    @Test
+    void getGenerationHistoryReturnsTimedOutBusinessResponse() throws Exception {
+        given(comfyUiClient.fetchHistory("test-prompt-id-003"))
+                .willReturn(Map.of());
+
+        mockMvc.perform(get("/generation-requests/test-prompt-id-003"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.promptId").value("test-prompt-id-003"))
+                .andExpect(jsonPath("$.data.executionStatus").value("TIMED_OUT"))
+                .andExpect(jsonPath("$.data.failureReason").value("POLL_TIMEOUT"))
+                .andExpect(jsonPath("$.data.completed").value(false))
+                .andExpect(jsonPath("$.data.message").value("생성 시간이 예상보다 오래 걸려 요청을 종료했습니다."));
     }
 
     @Test
@@ -160,6 +202,6 @@ class GenerationControllerTest {
                 .andExpect(jsonPath("$.paths['/generation-requests'].post.summary")
                         .value("Submit a generation request to ComfyUI"))
                 .andExpect(jsonPath("$.paths['/generation-requests/{promptId}'].get.summary")
-                        .value("Poll ComfyUI history until generation completes"));
+                        .value("Poll ComfyUI history and resolve generation state"));
     }
 }
