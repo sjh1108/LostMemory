@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1717593438315529282}
   - component: {fileID: 5665802052371369666}
   - component: {fileID: 884511603616373635}
+  - component: {fileID: 1326582478875418029}
   m_Layer: 0
   m_Name: MapMaker_LM
   m_TagString: Untagged
@@ -64,20 +65,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0abe472f19a42d4e8f6efec44ea3dbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Seed: 1169625637
+  Seed: 417251614
   Modules:
-  - module: {fileID: 842737748510188072, guid: 788af027f83653540b4d96d64d1094df, type: 3}
-    category: Room
-  - module: {fileID: 1172037746277699369, guid: a984d6e983d080340afeffbbb4d04306,
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
       type: 3}
     category: Room
-  - module: {fileID: 6418301402336183476, guid: 80743fe0ea3e8824ca3ca5ebc97abcbd,
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
       type: 3}
     category: Room
-  snapFlow: {fileID: 11400000, guid: 611703f8e84c70442a0c9b4921e85d76, type: 2}
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  snapFlow: {fileID: 11400000, guid: 22ed9cd54efc8e24eab1748c237ebe0b, type: 2}
   runGraphGenerationScripts: 0
   RotateModulesToFit: 1
-  CollisionTestContraction: 2
+  CollisionTestContraction: 1
   hideDuplicateDoors: 0
   MaxProcessingPower: 1000000
 --- !u!114 &1685423237894597832
@@ -93,13 +116,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nrandom:
-    seed: 1169625637
+    seed: 417251614
   random:
-    seed: 1169625637
+    seed: 417251614
   asyncBuild: 0
   maxBuildTimePerFrame: 32
   asyncBuildStartPosition: {fileID: 0}
-  isLayoutBuilt: 1
+  isLayoutBuilt: 0
 --- !u!114 &1717593438315529282
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -112,154 +135,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efb7ca94bb2e6e140bdc9938b596d66a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  modules:
-  - InstanceID: NODE-SNAPMOD-9700f19b-2d77-42f6-abfe-45af2afe20d9
-    WorldTransform:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    WorldBounds:
-      m_Center: {x: -2, y: 3.5, z: 0}
-      m_Extent: {x: 6, y: 9.5, z: 0.5}
-  - InstanceID: NODE-SNAPMOD-235e101b-2319-4c32-8778-6844b65420ca
-    WorldTransform:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 19
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    WorldBounds:
-      m_Center: {x: -2, y: 22.5, z: 0}
-      m_Extent: {x: 6, y: 9.5, z: 0.5}
-  - InstanceID: NODE-SNAPMOD-62db090b-d546-4345-a5d5-9f7ded8fa26e
-    WorldTransform:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 38
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    WorldBounds:
-      m_Center: {x: -2, y: 41.5, z: 0}
-      m_Extent: {x: 6, y: 9.5, z: 0.5}
-  - InstanceID: NODE-SNAPMOD-5a56f6d0-85b3-429c-80dc-20374342bf50
-    WorldTransform:
-      e00: -1
-      e01: 0
-      e02: 0
-      e03: -16
-      e10: -0
-      e11: 1
-      e12: 0
-      e13: 19
-      e20: -0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    WorldBounds:
-      m_Center: {x: -14, y: 22.5, z: 0}
-      m_Extent: {x: 6, y: 9.5, z: 0.5}
-  - InstanceID: NODE-SNAPMOD-9d35f078-af8c-46a8-a3a7-8f2c4ab81cb4
-    WorldTransform:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: -18
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    WorldBounds:
-      m_Center: {x: -18, y: 0.5, z: 0}
-      m_Extent: {x: 10, y: 8.5, z: 0.5}
-  - InstanceID: NODE-SNAPMOD-d3061605-b553-403a-86bb-a91848972964
-    WorldTransform:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: -32
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    WorldBounds:
-      m_Center: {x: -34, y: 3.5, z: 0}
-      m_Extent: {x: 6, y: 9.5, z: 0.5}
-  connections:
-  - ModuleAInstanceID: NODE-SNAPMOD-235e101b-2319-4c32-8778-6844b65420ca
-    DoorAIndex: 1
-    ModuleBInstanceID: NODE-SNAPMOD-9700f19b-2d77-42f6-abfe-45af2afe20d9
-    DoorBIndex: 0
-  - ModuleAInstanceID: NODE-SNAPMOD-62db090b-d546-4345-a5d5-9f7ded8fa26e
-    DoorAIndex: 1
-    ModuleBInstanceID: NODE-SNAPMOD-235e101b-2319-4c32-8778-6844b65420ca
-    DoorBIndex: 0
-  - ModuleAInstanceID: NODE-SNAPMOD-5a56f6d0-85b3-429c-80dc-20374342bf50
-    DoorAIndex: 2
-    ModuleBInstanceID: NODE-SNAPMOD-235e101b-2319-4c32-8778-6844b65420ca
-    DoorBIndex: 2
-  - ModuleAInstanceID: NODE-SNAPMOD-9d35f078-af8c-46a8-a3a7-8f2c4ab81cb4
-    DoorAIndex: 0
-    ModuleBInstanceID: NODE-SNAPMOD-9700f19b-2d77-42f6-abfe-45af2afe20d9
-    DoorBIndex: 2
-  - ModuleAInstanceID: NODE-SNAPMOD-d3061605-b553-403a-86bb-a91848972964
-    DoorAIndex: 3
-    ModuleBInstanceID: NODE-SNAPMOD-9d35f078-af8c-46a8-a3a7-8f2c4ab81cb4
-    DoorBIndex: 1
+  modules: []
+  connections: []
 --- !u!114 &5665802052371369666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -285,192 +162,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f137194ce2e2ab2448b5f482deeca829, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DungeonArchitect.Builders::DungeonArchitect.Builders.Snap.SnapQuery
-  modules:
-  - instanceInfo:
-      InstanceID: NODE-SNAPMOD-d3061605-b553-403a-86bb-a91848972964
-      WorldTransform:
-        e00: 1
-        e01: 0
-        e02: 0
-        e03: -32
-        e10: 0
-        e11: 1
-        e12: 0
-        e13: 0
-        e20: 0
-        e21: 0
-        e22: 1
-        e23: 0
-        e30: 0
-        e31: 0
-        e32: 0
-        e33: 1
-      WorldBounds:
-        m_Center: {x: -34, y: 3.5, z: 0}
-        m_Extent: {x: 6, y: 9.5, z: 0.5}
-    moduleGameObject: {fileID: 0}
-    connections:
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-  - instanceInfo:
-      InstanceID: NODE-SNAPMOD-9d35f078-af8c-46a8-a3a7-8f2c4ab81cb4
-      WorldTransform:
-        e00: 1
-        e01: 0
-        e02: 0
-        e03: -18
-        e10: 0
-        e11: 1
-        e12: 0
-        e13: 0
-        e20: 0
-        e21: 0
-        e22: 1
-        e23: 0
-        e30: 0
-        e31: 0
-        e32: 0
-        e33: 1
-      WorldBounds:
-        m_Center: {x: -18, y: 0.5, z: 0}
-        m_Extent: {x: 10, y: 8.5, z: 0.5}
-    moduleGameObject: {fileID: 0}
-    connections:
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-  - instanceInfo:
-      InstanceID: NODE-SNAPMOD-5a56f6d0-85b3-429c-80dc-20374342bf50
-      WorldTransform:
-        e00: -1
-        e01: 0
-        e02: 0
-        e03: -16
-        e10: -0
-        e11: 1
-        e12: 0
-        e13: 19
-        e20: -0
-        e21: 0
-        e22: 1
-        e23: 0
-        e30: 0
-        e31: 0
-        e32: 0
-        e33: 1
-      WorldBounds:
-        m_Center: {x: -14, y: 22.5, z: 0}
-        m_Extent: {x: 6, y: 9.5, z: 0.5}
-    moduleGameObject: {fileID: 0}
-    connections:
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-  - instanceInfo:
-      InstanceID: NODE-SNAPMOD-62db090b-d546-4345-a5d5-9f7ded8fa26e
-      WorldTransform:
-        e00: 1
-        e01: 0
-        e02: 0
-        e03: 0
-        e10: 0
-        e11: 1
-        e12: 0
-        e13: 38
-        e20: 0
-        e21: 0
-        e22: 1
-        e23: 0
-        e30: 0
-        e31: 0
-        e32: 0
-        e33: 1
-      WorldBounds:
-        m_Center: {x: -2, y: 41.5, z: 0}
-        m_Extent: {x: 6, y: 9.5, z: 0.5}
-    moduleGameObject: {fileID: 0}
-    connections:
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-  - instanceInfo:
-      InstanceID: NODE-SNAPMOD-235e101b-2319-4c32-8778-6844b65420ca
-      WorldTransform:
-        e00: 1
-        e01: 0
-        e02: 0
-        e03: 0
-        e10: 0
-        e11: 1
-        e12: 0
-        e13: 19
-        e20: 0
-        e21: 0
-        e22: 1
-        e23: 0
-        e30: 0
-        e31: 0
-        e32: 0
-        e33: 1
-      WorldBounds:
-        m_Center: {x: -2, y: 22.5, z: 0}
-        m_Extent: {x: 6, y: 9.5, z: 0.5}
-    moduleGameObject: {fileID: 0}
-    connections:
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-  - instanceInfo:
-      InstanceID: NODE-SNAPMOD-9700f19b-2d77-42f6-abfe-45af2afe20d9
-      WorldTransform:
-        e00: 1
-        e01: 0
-        e02: 0
-        e03: 0
-        e10: 0
-        e11: 1
-        e12: 0
-        e13: 0
-        e20: 0
-        e21: 0
-        e22: 1
-        e23: 0
-        e30: 0
-        e31: 0
-        e32: 0
-        e33: 1
-      WorldBounds:
-        m_Center: {x: -2, y: 3.5, z: 0}
-        m_Extent: {x: 6, y: 9.5, z: 0.5}
-    moduleGameObject: {fileID: 0}
-    connections:
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
-    - connectionGameObject: {fileID: 0}
-      isDoor: 1
-    - connectionGameObject: {fileID: 0}
-      isDoor: 0
+  modules: []
+--- !u!114 &1326582478875418029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19fe98f618cd9974e9318408f58bead1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.DungeonRunBootstrap
+  dungeon: {fileID: 2772023875146963655}
+  player: {fileID: 0}
+  randomizeSeedOnStart: 0
+  fixedSeed: 417251614
+  autoBuildOnStart: 0
+  warpPlayerToFirstRoom: 1
