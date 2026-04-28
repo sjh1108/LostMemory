@@ -23,10 +23,17 @@ public class PromptAssemblyService {
     };
 
     private static final String SUPPORTED_WORKFLOW_ID = "pixel-art-character-v1";
+    private static final String WORKFLOW_NAME = "Z-Image-turbo-test3-ksampler-change";
+    private static final String WORKFLOW_VERSION = "v1";
+    private static final String SOURCE_FILENAME = "Z-Image-turbo-test3-ksampler-change.json";
     private static final String TEMPLATE_PATH = "comfyui/prompt-templates/pixel-art-character-v1.json";
     private static final String PROMPT_NODE_ID = "4";
     private static final String SEED_NODE_ID = "6";
     private static final String SAVE_IMAGE_NODE_ID = "8";
+    private static final String UNET_NODE_ID = "1";
+    private static final String LORA_NODE_ID = "3";
+    private static final String CLIP_NODE_ID = "10";
+    private static final String VAE_NODE_ID = "9";
 
     private final ObjectMapper objectMapper;
 
@@ -34,7 +41,7 @@ public class PromptAssemblyService {
         this.objectMapper = objectMapper;
     }
 
-    public Map<String, Object> assemble(CreateGenerationRequest request, String requestId) {
+    public PromptAssemblyResult assemble(CreateGenerationRequest request, String requestId) {
         if (!SUPPORTED_WORKFLOW_ID.equals(request.workflowId())) {
             throw new ApiRequestException(
                     HttpStatus.BAD_REQUEST,
@@ -42,13 +49,25 @@ public class PromptAssemblyService {
                     "workflowId is not supported yet: " + request.workflowId());
         }
 
-        JsonNode template = loadTemplate();
-        updatePrompt(template, request.prompt());
-        updateSeed(template);
-        updateFilenamePrefix(template, request.workflowId(), requestId);
-        updateClientId(template, requestId);
+        // sourceTemplate은 DB snapshot/hash 기준으로 쓴다.
+        // requestId, random seed, filename_prefix를 섞지 않은 원본 template여야 같은 workflow를 재사용할 수 있다.
+        JsonNode sourceTemplate = loadTemplate();
 
-        return objectMapper.convertValue(template, MAP_TYPE);
+        // ComfyUI submit용 payload는 source template를 복사한 뒤 request별 실행값만 주입한다.
+        JsonNode submitPayload = sourceTemplate.deepCopy();
+        updatePrompt(submitPayload, request.prompt());
+        updateSeed(submitPayload);
+        updateFilenamePrefix(submitPayload, request.workflowId(), requestId);
+        updateClientId(submitPayload, requestId);
+
+        return new PromptAssemblyResult(
+                objectMapper.convertValue(submitPayload, MAP_TYPE),
+                sourceTemplate,
+                WORKFLOW_NAME,
+                WORKFLOW_VERSION,
+                SOURCE_FILENAME,
+                extractPrimaryModelName(sourceTemplate),
+                extractModelMetadata(sourceTemplate));
     }
 
     private JsonNode loadTemplate() {
@@ -78,6 +97,24 @@ public class PromptAssemblyService {
 
     private void updateClientId(JsonNode template, String requestId) {
         ((ObjectNode) template).put("client_id", "ai-server-" + requestId);
+    }
+
+    private String extractPrimaryModelName(JsonNode template) {
+        return readText(template, "/prompt/" + UNET_NODE_ID + "/inputs/unet_name");
+    }
+
+    private JsonNode extractModelMetadata(JsonNode template) {
+        ObjectNode metadata = objectMapper.createObjectNode();
+        metadata.put("unetName", readText(template, "/prompt/" + UNET_NODE_ID + "/inputs/unet_name"));
+        metadata.put("loraName", readText(template, "/prompt/" + LORA_NODE_ID + "/inputs/lora_name"));
+        metadata.put("clipName", readText(template, "/prompt/" + CLIP_NODE_ID + "/inputs/clip_name"));
+        metadata.put("vaeName", readText(template, "/prompt/" + VAE_NODE_ID + "/inputs/vae_name"));
+        return metadata;
+    }
+
+    private String readText(JsonNode template, String pointer) {
+        JsonNode node = template.at(pointer);
+        return node.isMissingNode() || node.isNull() ? null : node.asText();
     }
 
     private String sanitize(String value) {

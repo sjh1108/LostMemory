@@ -854,3 +854,53 @@ Output 이미지:
 - 완료여부: `Y`
 - 상태: `완료`
 - 후속 작업: `AI-505`, `AI-702`
+
+## AI-505. generation 메타데이터 저장 구현
+
+### 작업 범위
+
+- workflow snapshot upsert 구현
+- `/prompt` 성공 직후 generation row insert 구현
+- `prompt_summary` 추출 규칙 구현
+- JPA / datasource 활성화와 test profile 정비
+
+### 결정 내용
+
+- `workflow_hash`는 runtime payload가 아니라 source workflow template JSON 기준으로 계산한다.
+- hash 방식은 canonicalized JSON 기준 `SHA-256`으로 고정한다.
+- `created_by`는 로그인 전 단계라 현재 nullable로 유지한다.
+- `prompt_summary`는 workflow JSON 일부가 아니라 사람이 목록에서 읽는 짧은 텍스트로 만든다.
+- `prompt_summary`는 공백 normalize, trim, 최대 100자, 빈 값 fallback 기준으로 만든다.
+- `workflow_snapshots`는 `/prompt` submit 전에 저장 또는 재사용하고, `generations`는 `prompt_id`를 받은 직후 `SUBMITTED` 상태로 insert한다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/PromptAssemblyResult.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/WorkflowHashCalculator.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/PromptSummaryExtractor.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/WorkflowSnapshotEntity.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationEntity.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/WorkflowSnapshotService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationMetadataService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/repository/WorkflowSnapshotRepository.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/repository/GenerationRepository.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/PromptSummaryExtractorTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/WorkflowHashCalculatorTest.java`
+- `tools/docs/1차-mvp/산출물/AI-505-generation-metadata-persistence/README.md`
+
+### 완료 근거
+
+- `PromptAssemblyService`가 source template와 submit payload를 분리하고, source template 기준으로 workflow snapshot 메타데이터를 돌려주도록 변경
+- `WorkflowHashCalculator`에서 canonicalized workflow JSON 기준 `SHA-256` hash 계산 구현
+- `WorkflowSnapshotService`가 `workflow_hash` 기준으로 snapshot 재사용 또는 insert 수행
+- `GenerationMetadataService`가 `/prompt` 성공 직후 `generations` row를 `SUBMITTED` 상태로 insert
+- `application.yml`에서 datasource / JPA validate 설정을 활성화하고, `application-test.yml`에 H2 test datasource를 추가
+- `GenerationControllerTest`에서 `/generation-requests` 호출 후 실제 `workflow_snapshots`, `generations` 저장 확인
+- `./gradlew.bat --no-daemon test`, `./gradlew.bat --no-daemon bootJar` 통과
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-507`, `AI-508`

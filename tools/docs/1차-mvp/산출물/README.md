@@ -57,6 +57,8 @@
   - users / workflow_snapshots / generations / generation_outputs 상세 컬럼과 인덱스 기준
 - `AI-504-audit-log-standard`
   - audit_logs action_type / status 표준값과 helper 설계 기준
+- `AI-505-generation-metadata-persistence`
+  - workflow snapshot upsert, `SUBMITTED` generation insert, `workflow_hash` / `created_by` / `prompt_summary` 선택 기준
 
 ### 최종 그림 / 종합 설계
 
@@ -81,6 +83,8 @@
    - `full_prompt`, `failed_stage`, `workflow_hash`, `model_metadata_json` 등 상세 컬럼 기준
 6. `AI-504-audit-log-standard`
    - `audit_logs.action_type`, `audit_logs.status`, audit helper 기준
+7. `AI-505-generation-metadata-persistence`
+   - workflow snapshot upsert, generation 메타데이터 insert, summary / hash 기준
 
 ### AI-501 이후 DB에 바로 이어질 값
 

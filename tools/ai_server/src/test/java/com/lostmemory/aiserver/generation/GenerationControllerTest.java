@@ -1,5 +1,6 @@
 package com.lostmemory.aiserver.generation;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpClientErrorException;
 
 import com.lostmemory.aiserver.comfyui.ComfyUiClient;
+import com.lostmemory.aiserver.repository.GenerationRepository;
+import com.lostmemory.aiserver.repository.WorkflowSnapshotRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -34,6 +38,18 @@ class GenerationControllerTest {
 
     @MockBean
     private ComfyUiClient comfyUiClient;
+
+    @Autowired
+    private GenerationRepository generationRepository;
+
+    @Autowired
+    private WorkflowSnapshotRepository workflowSnapshotRepository;
+
+    @AfterEach
+    void cleanDatabase() {
+        generationRepository.deleteAll();
+        workflowSnapshotRepository.deleteAll();
+    }
 
     @Test
     void createGenerationRequestReturnsAcceptedResponse() throws Exception {
@@ -60,6 +76,17 @@ class GenerationControllerTest {
                 .andExpect(jsonPath("$.data.promptId").value("test-prompt-id-001"))
                 .andExpect(jsonPath("$.data.requestId").isNotEmpty())
                 .andExpect(jsonPath("$.data.submittedAt").isNotEmpty());
+
+        GenerationEntity generation = generationRepository.findByPromptId("test-prompt-id-001").orElseThrow();
+
+        assertThat(generation.getExecutionStatus()).isEqualTo(GenerationExecutionStatus.SUBMITTED);
+        assertThat(generation.getPromptSummary()).isEqualTo("pixel art mage girl, blue robe, idle pose");
+        assertThat(generation.getFullPrompt()).isEqualTo("pixel art mage girl, blue robe, idle pose");
+        assertThat(generation.getUserMessage()).isEqualTo("생성 요청을 접수했습니다.");
+        assertThat(generation.getInternalMessage()).isEqualTo("Prompt submitted to ComfyUI.");
+        assertThat(workflowSnapshotRepository.findAll()).hasSize(1);
+        assertThat(workflowSnapshotRepository.findAll().get(0).getWorkflowName())
+                .isEqualTo("Z-Image-turbo-test3-ksampler-change");
     }
 
     @Test
