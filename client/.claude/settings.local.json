@@ -3,7 +3,9 @@
     "allow": [
       "Bash(dotnet build *)",
       "Bash(ffmpeg -version)",
-      "WebFetch(domain:frostwindz.itch.io)"
+      "WebFetch(domain:frostwindz.itch.io)",
+      "Bash(git check-ignore *)",
+      "Bash(git -C \"C:/ssafy/free_project/S14P31C201\" log --oneline -10)"
     ]
   }
 }

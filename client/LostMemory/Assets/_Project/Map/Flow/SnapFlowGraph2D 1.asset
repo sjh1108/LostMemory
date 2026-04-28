@@ -1,0 +1,743 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7906759793837900156
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _OutputPin
+  m_EditorClassIdentifier: DungeonArchitect.Modules.Grammar::DungeonArchitect.Grammar.GrammarNodePin
+  pinType: 1
+  node: {fileID: -3215603475600771645}
+  position: {x: 35.22, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -35.22
+    y: -23.2625
+    width: 70.44
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 12, y: 12}
+--- !u!114 &-7034402993907425897
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 203eefb4297a2ff42ababc4aef51b488, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DungeonArchitect.Modules.Grammar::DungeonArchitect.Grammar.GrammarTaskNode
+  id: 4869aa14-3bdb-4115-870a-096cb6031525
+  caption: 
+  bounds:
+    serializedVersion: 2
+    x: 4.380188
+    y: 59.220154
+    width: 83.604996
+    height: 46.525
+  canBeDeleted: 1
+  canBeSelected: 1
+  canBeMoved: 1
+  selected: 1
+  zIndex: 34
+  inputPins:
+  - {fileID: -5642323807645148722}
+  outputPins:
+  - {fileID: 2159367818773279225}
+  graph: {fileID: 2467479294743854522}
+  NodeType: {fileID: -4617292677769568897}
+  executionIndex: 0
+  DisplayExecutionIndex: 1
+--- !u!114 &-6880387420718318497
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8eeb3b688372924d9ad762e86c59f6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: 654d70a6-80c9-4b84-9261-44d543db5794
+  caption: 
+  bounds:
+    serializedVersion: 2
+    x: 120
+    y: 0
+    width: 99.65
+    height: 58.629997
+  canBeDeleted: 1
+  canBeSelected: 1
+  canBeMoved: 1
+  selected: 0
+  zIndex: 0
+  inputPins:
+  - {fileID: 5680548746518828525}
+  outputPins:
+  - {fileID: 2412036254862627748}
+  graph: {fileID: -2542787757260270790}
+  rule: {fileID: -1974901062855484562}
+  runMode: 0
+  runProbability: 1
+  iterateCount: 3
+  minIterateCount: 3
+  maxIterateCount: 5
+--- !u!114 &-6788924944083050226
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d2dbc7fa0f12f64192800f194618d4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  indexCounter:
+    index: 0
+  topZIndex:
+    index: 1
+  nodes:
+  - {fileID: 2367509413746210665}
+  links: []
+  useProceduralScript: 0
+  generatorScriptClass: 
+  editorData:
+    dataFloat:
+    - key: panelSize
+      value: 128.00002
+    dataInt: []
+    dataString: []
+    dataVector3: []
+    dataVector2: []
+--- !u!114 &-6131180743772424343
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1eddb6531018ac43a863bd4d650174a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nodeName: S
+  description: 
+  nodeColor: {r: 0.2, g: 0.3, b: 0.3, a: 1}
+  wildcard: 0
+--- !u!114 &-5827396780890790695
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _InputPin
+  m_EditorClassIdentifier: DungeonArchitect.Modules.Grammar::DungeonArchitect.Grammar.GrammarNodePin
+  pinType: 0
+  node: {fileID: -3215603475600771645}
+  position: {x: 35.22, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -35.22
+    y: -23.2625
+    width: 70.44
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 10, y: 10}
+--- !u!114 &-5642323807645148722
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _InputPin
+  m_EditorClassIdentifier: DungeonArchitect.Modules.Grammar::DungeonArchitect.Grammar.GrammarNodePin
+  pinType: 0
+  node: {fileID: -7034402993907425897}
+  position: {x: 41.802498, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -41.802498
+    y: -23.2625
+    width: 83.604996
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 10, y: 10}
+--- !u!114 &-4985458721998457866
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1eddb6531018ac43a863bd4d650174a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nodeName: '*'
+  description: 
+  nodeColor: {r: 0.2, g: 0.3, b: 0.3, a: 1}
+  wildcard: 1
+--- !u!114 &-4617292677769568897
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1eddb6531018ac43a863bd4d650174a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nodeName: Room
+  description: 
+  nodeColor: {r: 0.2, g: 0.3, b: 0.3, a: 1}
+  wildcard: 0
+--- !u!114 &-3226002270276166429
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _OutputPin
+  m_EditorClassIdentifier: 
+  pinType: 1
+  node: {fileID: 485224109714384793}
+  position: {x: 34.627502, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -34.627502
+    y: -23.2625
+    width: 69.255005
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 12, y: 12}
+--- !u!114 &-3215603475600771645
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 203eefb4297a2ff42ababc4aef51b488, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DungeonArchitect.Modules.Grammar::DungeonArchitect.Grammar.GrammarTaskNode
+  id: e8f5da06-31a9-422c-8bf9-744161e0d3c4
+  caption: 
+  bounds:
+    serializedVersion: 2
+    x: -40
+    y: -22.5
+    width: 70.44
+    height: 46.525
+  canBeDeleted: 1
+  canBeSelected: 1
+  canBeMoved: 1
+  selected: 0
+  zIndex: 71
+  inputPins:
+  - {fileID: -5827396780890790695}
+  outputPins:
+  - {fileID: -7906759793837900156}
+  graph: {fileID: -1088792839701330132}
+  NodeType: {fileID: -4617292677769568897}
+  executionIndex: 0
+  DisplayExecutionIndex: 0
+--- !u!114 &-2875156500344082754
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _InputPin
+  m_EditorClassIdentifier: 
+  pinType: 0
+  node: {fileID: 2367509413746210665}
+  position: {x: 27.9, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -27.9
+    y: -23.2625
+    width: 55.8
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 10, y: 10}
+--- !u!114 &-2542787757260270790
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 224f5510e82b54445b0d9d2328419ea2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  indexCounter:
+    index: 1
+  topZIndex:
+    index: 0
+  nodes:
+  - {fileID: 485224109714384793}
+  - {fileID: -6880387420718318497}
+  links:
+  - {fileID: -1821497922151996931}
+  entryNode: {fileID: 485224109714384793}
+--- !u!114 &-2345512380130508415
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _InputPin
+  m_EditorClassIdentifier: 
+  pinType: 0
+  node: {fileID: 485224109714384793}
+  position: {x: 34.627502, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -34.627502
+    y: -23.2625
+    width: 69.255005
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 10, y: 10}
+--- !u!114 &-1974901062855484562
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2cd9e3a86ecdf04bb7c40f2c63a2a0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ruleName: Start Rule
+  LHSGraph: {fileID: -6788924944083050226}
+  RHSGraphs:
+  - {fileID: -956512594128013895}
+--- !u!114 &-1821497922151996931
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1574844e380142bb9f5e4a8003b85a1, type: 3}
+  m_Name: Link_1
+  m_EditorClassIdentifier: 
+  id: 1
+  input: {fileID: 5680548746518828525}
+  output: {fileID: -3226002270276166429}
+  graph: {fileID: -2542787757260270790}
+--- !u!114 &-1088792839701330132
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d2dbc7fa0f12f64192800f194618d4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  indexCounter:
+    index: 52
+  topZIndex:
+    index: 71
+  nodes:
+  - {fileID: -3215603475600771645}
+  links: []
+  useProceduralScript: 0
+  generatorScriptClass: 
+  editorData:
+    dataFloat:
+    - key: spring.interNodeDistance
+      value: 120
+    - key: spring.interNodeTension
+      value: 0.5
+    - key: spring.springDistance
+      value: 30
+    - key: spring.springTension
+      value: 0.1
+    - key: spring.timeStep
+      value: 1
+    dataInt:
+    - key: layoutType
+      value: 0
+    - key: spring.iterations
+      value: 200
+    dataString: []
+    dataVector3: []
+    dataVector2:
+    - key: layered.separation
+      value: {x: 130, y: 100}
+--- !u!114 &-956512594128013895
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e9890da11ee6f94a88fc22475c1ce3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weight: 1
+  graph: {fileID: 2467479294743854522}
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53176f84d5f9d3540ae874880f0403d3, type: 3}
+  m_Name: SnapFlowGraph2D 1
+  m_EditorClassIdentifier: 
+  executionGraph: {fileID: -2542787757260270790}
+  productionRules:
+  - {fileID: -1974901062855484562}
+  nodeTypes:
+  - {fileID: -6131180743772424343}
+  - {fileID: -4617292677769568897}
+  - {fileID: 8067367562951391671}
+  wildcardNodeType: {fileID: -4985458721998457866}
+  resultGraph: {fileID: -1088792839701330132}
+--- !u!114 &485224109714384793
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25aa1911fef757e4da8e1f6814b1eeef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: 525e01e8-bad1-40ff-b725-990ac7964b59
+  caption: Entry
+  bounds:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 69.255005
+    height: 46.525
+  canBeDeleted: 0
+  canBeSelected: 1
+  canBeMoved: 1
+  selected: 0
+  zIndex: 0
+  inputPins:
+  - {fileID: -2345512380130508415}
+  outputPins:
+  - {fileID: -3226002270276166429}
+  graph: {fileID: -2542787757260270790}
+--- !u!114 &1531077409974332609
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _OutputPin
+  m_EditorClassIdentifier: 
+  pinType: 1
+  node: {fileID: 5081992107527521942}
+  position: {x: 41.802498, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -41.802498
+    y: -23.2625
+    width: 83.604996
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 12, y: 12}
+--- !u!114 &2159367818773279225
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _OutputPin
+  m_EditorClassIdentifier: DungeonArchitect.Modules.Grammar::DungeonArchitect.Grammar.GrammarNodePin
+  pinType: 1
+  node: {fileID: -7034402993907425897}
+  position: {x: 41.802498, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -41.802498
+    y: -23.2625
+    width: 83.604996
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 12, y: 12}
+--- !u!114 &2367509413746210665
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 203eefb4297a2ff42ababc4aef51b488, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: 547d9385-2579-4b64-a945-162cc9be5a68
+  caption: 
+  bounds:
+    serializedVersion: 2
+    x: 10
+    y: 10
+    width: 55.8
+    height: 46.525
+  canBeDeleted: 1
+  canBeSelected: 1
+  canBeMoved: 1
+  selected: 1
+  zIndex: 1
+  inputPins:
+  - {fileID: -2875156500344082754}
+  outputPins:
+  - {fileID: 7788296921898645221}
+  graph: {fileID: -6788924944083050226}
+  NodeType: {fileID: -6131180743772424343}
+  executionIndex: 0
+  DisplayExecutionIndex: 1
+--- !u!114 &2412036254862627748
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _OutputPin
+  m_EditorClassIdentifier: 
+  pinType: 1
+  node: {fileID: -6880387420718318497}
+  position: {x: 49.825, y: 29.314999}
+  boundsOffset:
+    serializedVersion: 2
+    x: -49.825
+    y: -29.314999
+    width: 99.65
+    height: 58.629997
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 12, y: 12}
+--- !u!114 &2467479294743854522
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d2dbc7fa0f12f64192800f194618d4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  indexCounter:
+    index: 9
+  topZIndex:
+    index: 34
+  nodes:
+  - {fileID: 5081992107527521942}
+  - {fileID: -7034402993907425897}
+  links: []
+  useProceduralScript: 0
+  generatorScriptClass: 
+  editorData:
+    dataFloat:
+    - key: panelSize
+      value: 300.0001
+    dataInt: []
+    dataString: []
+    dataVector3: []
+    dataVector2: []
+--- !u!114 &5081992107527521942
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 203eefb4297a2ff42ababc4aef51b488, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: 29e8e082-40c4-4f8e-8543-b80dd83c66a6
+  caption: 
+  bounds:
+    serializedVersion: 2
+    x: -143.4187
+    y: 54.542427
+    width: 83.604996
+    height: 46.525
+  canBeDeleted: 1
+  canBeSelected: 1
+  canBeMoved: 1
+  selected: 0
+  zIndex: 32
+  inputPins:
+  - {fileID: 5892971696621641904}
+  outputPins:
+  - {fileID: 1531077409974332609}
+  graph: {fileID: 2467479294743854522}
+  NodeType: {fileID: -4617292677769568897}
+  executionIndex: 0
+  DisplayExecutionIndex: 1
+--- !u!114 &5680548746518828525
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _InputPin
+  m_EditorClassIdentifier: 
+  pinType: 0
+  node: {fileID: -6880387420718318497}
+  position: {x: 49.825, y: 29.314999}
+  boundsOffset:
+    serializedVersion: 2
+    x: -49.825
+    y: -29.314999
+    width: 99.65
+    height: 58.629997
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 10, y: 10}
+--- !u!114 &5892971696621641904
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _InputPin
+  m_EditorClassIdentifier: 
+  pinType: 0
+  node: {fileID: 5081992107527521942}
+  position: {x: 41.802498, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -41.802498
+    y: -23.2625
+    width: 83.604996
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 10, y: 10}
+--- !u!114 &7788296921898645221
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0dc75c75d8b04ba2ace2e5a5f7626, type: 3}
+  m_Name: _OutputPin
+  m_EditorClassIdentifier: 
+  pinType: 1
+  node: {fileID: 2367509413746210665}
+  position: {x: 27.9, y: 23.2625}
+  boundsOffset:
+    serializedVersion: 2
+    x: -27.9
+    y: -23.2625
+    width: 55.8
+    height: 46.525
+  tangent: {x: 0, y: -1}
+  tangentStrength: 50
+  Padding: {x: 12, y: 12}
+--- !u!114 &8067367562951391671
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1eddb6531018ac43a863bd4d650174a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DungeonArchitect.Modules.Grammar::DungeonArchitect.Grammar.GrammarNodeType
+  nodeName: Task
+  description: 
+  nodeColor: {r: 0.2, g: 0.3, b: 0.3, a: 1}
+  wildcard: 0
