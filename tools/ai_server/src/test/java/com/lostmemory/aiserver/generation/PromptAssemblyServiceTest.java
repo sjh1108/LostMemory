@@ -22,9 +22,9 @@ class PromptAssemblyServiceTest {
                 "pixel art archer, green hood, idle pose",
                 "ssafy-user-01");
 
-        Map<String, Object> assembled = promptAssemblyService.assemble(request, "test-request-1234");
+        PromptAssemblyResult assembled = promptAssemblyService.assemble(request, "test-request-1234");
 
-        Map<String, Object> prompt = nestedMap(assembled, "prompt");
+        Map<String, Object> prompt = nestedMap(assembled.promptRequest(), "prompt");
         Map<String, Object> promptNode = nestedMap(prompt, "4");
         Map<String, Object> promptInputs = nestedMap(promptNode, "inputs");
         Map<String, Object> seedNode = nestedMap(prompt, "6");
@@ -33,9 +33,13 @@ class PromptAssemblyServiceTest {
         Map<String, Object> saveInputs = nestedMap(saveNode, "inputs");
 
         assertThat(promptInputs.get("text")).isEqualTo("pixel art archer, green hood, idle pose");
-        assertThat(assembled.get("client_id")).isEqualTo("ai-server-test-request-1234");
+        assertThat(assembled.promptRequest().get("client_id")).isEqualTo("ai-server-test-request-1234");
         assertThat(saveInputs.get("filename_prefix")).isEqualTo("AI404_pixel-art-character-v1_test-req");
         assertThat(((Number) seedInputs.get("seed")).longValue()).isPositive();
+        assertThat(assembled.workflowName()).isEqualTo("Z-Image-turbo-test3-ksampler-change");
+        assertThat(assembled.sourceFilename()).isEqualTo("Z-Image-turbo-test3-ksampler-change.json");
+        assertThat(assembled.primaryModelName()).isEqualTo("z_image_turbo_bf16.safetensors");
+        assertThat(assembled.modelMetadataJson().get("clipName").asText()).isEqualTo("qwen_3_4b.safetensors");
     }
 
     @Test

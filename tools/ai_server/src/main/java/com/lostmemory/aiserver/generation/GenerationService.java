@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -14,6 +15,9 @@ import org.springframework.web.client.RestClientResponseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lostmemory.aiserver.comfyui.ComfyUiClient;
+import com.lostmemory.aiserver.common.audit.AuditActionType;
+import com.lostmemory.aiserver.common.audit.AuditRecorder;
+import com.lostmemory.aiserver.common.audit.AuditStatus;
 import com.lostmemory.aiserver.common.exception.ApiRequestException;
 
 @Service
@@ -22,29 +26,39 @@ public class GenerationService {
     private static final Logger log = LoggerFactory.getLogger(GenerationService.class);
 
     private final PromptAssemblyService promptAssemblyService;
+    private final WorkflowSnapshotService workflowSnapshotService;
+    private final GenerationMetadataService generationMetadataService;
     private final ComfyUiClient comfyUiClient;
+    private final AuditRecorder auditRecorder;
     private final ObjectMapper objectMapper;
 
     public GenerationService(
             PromptAssemblyService promptAssemblyService,
+            WorkflowSnapshotService workflowSnapshotService,
+            GenerationMetadataService generationMetadataService,
             ComfyUiClient comfyUiClient,
+            AuditRecorder auditRecorder,
             ObjectMapper objectMapper
     ) {
         this.promptAssemblyService = promptAssemblyService;
+        this.workflowSnapshotService = workflowSnapshotService;
+        this.generationMetadataService = generationMetadataService;
         this.comfyUiClient = comfyUiClient;
+        this.auditRecorder = auditRecorder;
         this.objectMapper = objectMapper;
     }
 
     public GenerationRequestAcceptedResponse accept(CreateGenerationRequest request) {
         String requestId = UUID.randomUUID().toString();
-        Map<String, Object> promptRequest = promptAssemblyService.assemble(request, requestId);
+        PromptAssemblyResult assemblyResult = promptAssemblyService.assemble(request, requestId);
+        WorkflowSnapshotEntity workflowSnapshot = persistWorkflowSnapshot(requestId, assemblyResult);
 
         log.debug("Submitting ComfyUI prompt. requestId={}, workflowId={}, body={}",
-                requestId, request.workflowId(), toJson(promptRequest));
+                requestId, request.workflowId(), toJson(assemblyResult.promptRequest()));
 
         Map<String, Object> promptResponse;
         try {
-            promptResponse = comfyUiClient.submitPrompt(promptRequest);
+            promptResponse = comfyUiClient.submitPrompt(assemblyResult.promptRequest());
         } catch (RestClientResponseException exception) {
             log.warn("ComfyUI /prompt request failed. requestId={}, workflowId={}, status={}, body={}",
                     requestId,
@@ -69,14 +83,74 @@ public class GenerationService {
         log.debug("ComfyUI prompt submitted. requestId={}, workflowId={}, response={}",
                 requestId, request.workflowId(), toJson(promptResponse));
 
+        String promptId = extractPromptId(promptResponse);
+        persistGenerationMetadata(requestId, request, promptId, workflowSnapshot);
+
         return new GenerationRequestAcceptedResponse(
                 requestId,
-                extractPromptId(promptResponse),
+                promptId,
                 GenerationRequestStatus.SUBMITTED,
                 request.workflowId(),
                 normalizeUserId(request.userId()),
                 request.prompt(),
                 Instant.now());
+    }
+
+    private WorkflowSnapshotEntity persistWorkflowSnapshot(String requestId, PromptAssemblyResult assemblyResult) {
+        try {
+            return workflowSnapshotService.getOrCreateSnapshot(assemblyResult);
+        } catch (DataAccessException exception) {
+            log.error("Failed to save workflow snapshot before ComfyUI submit. requestId={}, workflowName={}, message={}",
+                    requestId,
+                    assemblyResult.workflowName(),
+                    exception.getMessage(),
+                    exception);
+
+            auditRecorder.record(
+                    AuditActionType.GENERATE,
+                    AuditStatus.FAILED,
+                    Map.of(
+                            "requestId", requestId,
+                            "failedStage", "METADATA_SAVE",
+                            "workflowName", assemblyResult.workflowName(),
+                            "failureReason", "WORKFLOW_SNAPSHOT_SAVE_FAILED"));
+
+            throw new ApiRequestException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "WORKFLOW_SNAPSHOT_SAVE_FAILED",
+                    "Failed to save workflow metadata before generation submit.");
+        }
+    }
+
+    private void persistGenerationMetadata(
+            String requestId,
+            CreateGenerationRequest request,
+            String promptId,
+            WorkflowSnapshotEntity workflowSnapshot
+    ) {
+        try {
+            generationMetadataService.saveSubmittedGeneration(request, promptId, workflowSnapshot);
+        } catch (DataAccessException exception) {
+            log.error("Failed to save generation metadata after ComfyUI submit. requestId={}, promptId={}, message={}",
+                    requestId,
+                    promptId,
+                    exception.getMessage(),
+                    exception);
+
+            auditRecorder.record(
+                    AuditActionType.GENERATE,
+                    AuditStatus.FAILED,
+                    Map.of(
+                            "requestId", requestId,
+                            "promptId", promptId,
+                            "failedStage", "METADATA_SAVE",
+                            "failureReason", "GENERATION_METADATA_SAVE_FAILED"));
+
+            throw new ApiRequestException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "GENERATION_METADATA_SAVE_FAILED",
+                    "Failed to save generation metadata after ComfyUI submit.");
+        }
     }
 
     private String normalizeUserId(String userId) {
