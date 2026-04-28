@@ -2732,6 +2732,37 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!1 &351660209
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 351660210}
+  m_Layer: 0
+  m_Name: ProjectileSpawnOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &351660210
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 351660209}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 854109348}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!28 &389344166
 Texture2D:
   m_ObjectHideFlags: 0
@@ -3479,7 +3510,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 2
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: e82df48d05eee4045b34868443faef49, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -4018,6 +4049,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2090137900}
+  - {fileID: 1294342961}
+  - {fileID: 351660210}
   m_Father: {fileID: 1014074186}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!28 &925854694
@@ -4127,6 +4160,14 @@ GameObject:
   - component: {fileID: 1014074237}
   - component: {fileID: 1014074236}
   - component: {fileID: 1014074238}
+  - component: {fileID: 1014074241}
+  - component: {fileID: 1014074240}
+  - component: {fileID: 1014074239}
+  - component: {fileID: 1014074246}
+  - component: {fileID: 1014074245}
+  - component: {fileID: 1014074244}
+  - component: {fileID: 1014074243}
+  - component: {fileID: 1014074242}
   m_Layer: 0
   m_Name: BerthaRoot
   m_TagString: Untagged
@@ -4143,7 +4184,7 @@ Transform:
   m_GameObject: {fileID: 1014074185}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -0.69, y: -2.25, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4314,6 +4355,40 @@ MonoBehaviour:
         TrueState: Moving
         FalseState: 
         LastDecisionEvaluation: 0
+  - StateName: NormalDashTelegraph
+    Actions:
+      array:
+      - {fileID: 1014074211}
+    Transitions:
+      array:
+      - Decision: {fileID: 1014074244}
+        TrueState: NormalDashCharge
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: NormalDashCharge
+    Actions:
+      array:
+      - {fileID: 1014074246}
+    Transitions:
+      array:
+      - Decision: {fileID: 1014074243}
+        TrueState: NormalDashRecover
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: NormalDashRecover
+    Actions:
+      array:
+      - {fileID: 1014074211}
+    Transitions:
+      array:
+      - Decision: {fileID: 1014074207}
+        TrueState: 
+        FalseState: Detecting
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 1014074242}
+        TrueState: Moving
+        FalseState: 
+        LastDecisionEvaluation: 0
   - StateName: DashTelegraph
     Actions:
       array:
@@ -4475,6 +4550,8 @@ MonoBehaviour:
   dashCooldown: 1.2
   telegraphDuration: 0.5
   recoverDuration: 0.45
+  playChargeAnimation: 1
+  chargeAnimationStateName: Dash
   chargeDamageAreaOffset: {x: 0, y: 0}
   chargeDamageAreaSize: {x: 0.8, y: 0.8}
   dashDamage: 10
@@ -4506,7 +4583,7 @@ MonoBehaviour:
   DashMode: 1
   DashSpace: 0
   DashDirection: {x: 0, y: 0, z: 1}
-  DashDistance: 4.5
+  DashDistance: 20
   DashDuration: 0.32
   DashCurve:
     serializedVersion: 2
@@ -4555,6 +4632,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3247f4c84dc4c829c4527c8a5cb4bd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AIBrainDashTelegraphDriver
+  driverKey: NormalDash
   brain: {fileID: 1014074188}
   character: {fileID: 1014074198}
   dashAbility: {fileID: 1014074193}
@@ -4572,13 +4650,16 @@ MonoBehaviour:
   playTelegraphAnimation: 0
   telegraphAnimationStateName: Idle
   telegraphAnimationLayer: 0
+  playChargeAnimation: 1
+  chargeAnimationStateName: Dash
+  chargeAnimationLayer: 0
   restoreLocomotionAnimation: 0
   idleAnimationStateName: Idle
   walkAnimationStateName: Walk
   walkingAnimatorParameterName: Walking
   locomotionTransitionDuration: 0.05
-  telegraphStateName: DashTelegraph
-  chargeStateName: DashCharge
+  telegraphStateName: NormalDashTelegraph
+  chargeStateName: NormalDashCharge
   useLastKnownTargetPosition: 1
 --- !u!114 &1014074195
 MonoBehaviour:
@@ -4595,7 +4676,7 @@ MonoBehaviour:
   previewObjectName: AttackTelegraphPreview
   previewParent: {fileID: 1014074186}
   sortingReference: {fileID: 0}
-  sortingOrder: 5
+  sortingOrder: 1
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
@@ -4835,7 +4916,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
+  m_Mass: 10000
   m_LinearDamping: 1
   m_AngularDamping: 0.05
   m_GravityScale: 0
@@ -5024,6 +5105,7 @@ MonoBehaviour:
   attackRange: 2.5
   telegraphDuration: 0.7
   attackDuration: 0.85
+  attackImpactTime: 0.85
   recoverDuration: 0.35
   attackOffset: {x: 1.3, y: 0}
   attackSize: {x: 4, y: 4}
@@ -5032,6 +5114,7 @@ MonoBehaviour:
   lightAttack2Range: 2.5
   lightAttack2TelegraphDuration: 0.5
   lightAttack2Duration: 0.55
+  lightAttack2ImpactTime: 0.55
   lightAttack2RecoverDuration: 0.3
   lightAttack2Offset: {x: 0, y: 0}
   lightAttack2Size: {x: 5, y: 5}
@@ -5039,16 +5122,24 @@ MonoBehaviour:
   lightAttack2InvincibilityDuration: 0.5
   heavyAttackRange: 3.25
   heavyTelegraphDuration: 0.9
-  heavyAttackDuration: 1.8333334
+  heavyAttackDuration: 1
+  heavyAttackImpactTime: 1
   heavyRecoverDuration: 0.55
   heavyAttackOffset: {x: 0, y: 0}
   heavyAttackSize: {x: 6.5, y: 6.5}
   heavyAttackDamage: 16
   heavyAttackInvincibilityDuration: 0.5
+  normalDashMinimumRange: 2.5
+  normalDashRange: 20
+  normalDashDuration: 0.6666667
+  normalDashTelegraphDuration: 0.35
+  normalDashRecoverDuration: 0.35
+  normalDashCooldown: 5
   dashMinimumRange: 3
-  dashRange: 4.5
+  dashRange: 20
   dashDuration: 0.32
   dashAttackDuration: 2.25
+  dashImpactTime: 1
   dashTelegraphDuration: 0.5
   dashRecoverDuration: 0.45
   chargeDamageAreaOffset: {x: 0, y: 0}
@@ -5063,14 +5154,73 @@ MonoBehaviour:
   fullComboRange: 3
   fullComboTelegraphDuration: 0.75
   fullComboDuration: 3.2
+  fullComboImpactTime: 3.2
   fullComboRecoverDuration: 0.65
   fullComboOffset: {x: 0, y: 0}
   fullComboSize: {x: 7, y: 7}
   fullComboDamage: 24
   fullComboInvincibilityDuration: 0.5
+  autoAssignProjectileFxFramesInEditMode: 1
+  comboFxProjectileFrames:
+  - {fileID: 21300000, guid: d9d49c44ea4c53941b159d65fe4121d8, type: 3}
+  - {fileID: 21300000, guid: 5b292dd6e0e333446801cf8de68e143c, type: 3}
+  - {fileID: 21300000, guid: 1d8352517c181874b839dc738d594f75, type: 3}
+  - {fileID: 21300000, guid: 87d8ede1294dd8145bc143b4a1316ba6, type: 3}
+  projectileAnimationFrameRate: 12
+  projectileMaximumHits: 8
+  destroyProjectileOnHit: 1
+  faceProjectileDirection: 1
+  projectileSortingOrderOffset: 1
+  heavyProjectileBursts:
+  - Mode: 0
+    Delay: 0.82
+    ProjectileCount: 8
+    SpreadAngle: 0
+    Speed: 9
+    Lifetime: 2
+    Damage: 8
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  fullComboProjectileBursts:
+  - Mode: 1
+    Delay: 0.58
+    ProjectileCount: 5
+    SpreadAngle: 70
+    Speed: 6
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.72
+    ProjectileCount: 6
+    SpreadAngle: 95
+    Speed: 9
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.78
+    ProjectileCount: 8
+    SpreadAngle: 0
+    Speed: 9
+    Lifetime: 2
+    Damage: 9
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
   lightAttack1Weight: 3
   lightAttack2Weight: 3
   heavyAttackWeight: 2
+  normalDashWeight: 1
   initialHealth: 100
   debugLogging: 0
 --- !u!114 &1014074213
@@ -5171,6 +5321,7 @@ MonoBehaviour:
   attackStateName: LightAttack1
   attackAnimationStateName: LightAtk1
   attackAnimationLayer: 0
+  impactTime: 0.85
   telegraphColor: {r: 1, g: 0.34, b: 0.08, a: 0.32}
   attackOffset: {x: 1.3, y: 0}
   attackSize: {x: 4, y: 4}
@@ -5213,6 +5364,8 @@ MonoBehaviour:
   - DashRecover
   - FullTelegraph
   - FullRecover
+  - NormalDashTelegraph
+  - NormalDashRecover
   idleAnimationStateName: Idle
   walkAnimationStateName: Walk
   animationLayer: 0
@@ -5335,8 +5488,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: HeavyAttackDuration
-  AfterTimeMin: 1.8333334
-  AfterTimeMax: 1.8333334
+  AfterTimeMin: 1
+  AfterTimeMax: 1
 --- !u!114 &1014074228
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5417,20 +5570,25 @@ MonoBehaviour:
   lightAttack1TelegraphStateName: LightTelegraph
   lightAttack2TelegraphStateName: Light2Telegraph
   heavyAttackTelegraphStateName: HeavyTelegraph
+  normalDashTelegraphStateName: NormalDashTelegraph
   dashTelegraphStateName: DashTelegraph
   fullComboTelegraphStateName: FullTelegraph
   lightAttack1Range: 2.5
   lightAttack2Range: 2.5
   heavyAttackRange: 3.25
+  normalDashMinimumRange: 2.5
+  normalDashMaximumRange: 20
   dashMinimumRange: 3
-  dashMaximumRange: 4.5
+  dashMaximumRange: 20
   fullComboRange: 3
   specialUnlockHealthThresholdNormalized: 0.9
+  normalDashCooldown: 5
   dashCooldown: 15
   fullComboCooldown: 15
   lightAttack1Weight: 3
   lightAttack2Weight: 3
   heavyAttackWeight: 2
+  normalDashWeight: 1
   debugLogging: 0
 --- !u!114 &1014074233
 MonoBehaviour:
@@ -5455,6 +5613,7 @@ MonoBehaviour:
   attackStateName: FullComboAttack
   attackAnimationStateName: FullCombo
   attackAnimationLayer: 0
+  impactTime: 3.2
   telegraphColor: {r: 1, g: 0.12, b: 0.05, a: 0.42}
   attackOffset: {x: 0, y: 0}
   attackSize: {x: 7, y: 7}
@@ -5490,6 +5649,7 @@ MonoBehaviour:
   attackStateName: HeavyAttack
   attackAnimationStateName: HeavyAtk
   attackAnimationLayer: 0
+  impactTime: 1
   telegraphColor: {r: 1, g: 0.16, b: 0.05, a: 0.38}
   attackOffset: {x: 0, y: 0}
   attackSize: {x: 6.5, y: 6.5}
@@ -5525,6 +5685,7 @@ MonoBehaviour:
   attackStateName: LightAttack2
   attackAnimationStateName: LightAtk2
   attackAnimationLayer: 0
+  impactTime: 0.55
   telegraphColor: {r: 1, g: 0.44, b: 0.12, a: 0.32}
   attackOffset: {x: 0, y: 0}
   attackSize: {x: 5, y: 5}
@@ -5555,9 +5716,13 @@ MonoBehaviour:
   dashAbility: {fileID: 1014074193}
   animator: {fileID: 680140245}
   introSequenceController: {fileID: 1014074190}
+  telegraphOrigin: {fileID: 1014074186}
+  telegraphView: {fileID: 1014074195}
   attackStateName: DashCharge
   attackAnimationStateName: DashAtk
   attackAnimationLayer: 0
+  impactTime: 1
+  telegraphColor: {r: 1, g: 0.34, b: 0.08, a: 0.32}
   attackOffset: {x: 0, y: 0}
   attackSize: {x: 5, y: 5}
   targetLayerMask:
@@ -5581,43 +5746,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5db735e133a9040a79835361609ea6cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaDashAttackController
-  brain: {fileID: 1014074188}
-  character: {fileID: 1014074198}
-  orientationAbility: {fileID: 1014074196}
-  dashAbility: {fileID: 1014074193}
-  animator: {fileID: 680140245}
-  introSequenceController: {fileID: 1014074190}
-  attackStateName: DashCharge
-  attackAnimationStateName: DashAtk
-  attackAnimationLayer: 0
-  attackOffset: {x: 0, y: 0}
-  attackSize: {x: 5, y: 5}
-  targetLayerMask:
-    m_Bits: 1024
-  maximumHits: 16
-  damage: 10
-  targetInvincibilityDuration: 0.5
-  horizontalFacingThreshold: 0.05
-  debugName: BerthaDashAttack
-  debugLogging: 0
-  _overlapBuffer:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  _hasPendingAttackDamage: 0
 --- !u!114 &1014074238
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5633,6 +5761,230 @@ MonoBehaviour:
   InitializationMode: 0
   Label: BerthaChargeDashOnce
   dashAbility: {fileID: 1014074193}
+  overrideDashDuration: 1
+  dashDuration: 0.32
+  debugLogging: 0
+--- !u!114 &1014074239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bee0f2e2d80e54b1e891c70612563b60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectilePatternDriver
+  driverKey: FullComboProjectiles
+  brain: {fileID: 1014074188}
+  character: {fileID: 1014074198}
+  orientationAbility: {fileID: 1014074196}
+  projectileOrigin: {fileID: 351660210}
+  burstEmitter: {fileID: 1014074241}
+  attackStateName: FullComboAttack
+  burstSequence:
+  - Mode: 1
+    Delay: 0.58
+    ProjectileCount: 5
+    SpreadAngle: 70
+    Speed: 6
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.72
+    ProjectileCount: 6
+    SpreadAngle: 95
+    Speed: 9
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.78
+    ProjectileCount: 8
+    SpreadAngle: 0
+    Speed: 9
+    Lifetime: 2
+    Damage: 9
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  debugLogging: 0
+--- !u!114 &1014074240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bee0f2e2d80e54b1e891c70612563b60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectilePatternDriver
+  driverKey: HeavyProjectiles
+  brain: {fileID: 1014074188}
+  character: {fileID: 1014074198}
+  orientationAbility: {fileID: 1014074196}
+  projectileOrigin: {fileID: 351660210}
+  burstEmitter: {fileID: 1014074241}
+  attackStateName: HeavyAttack
+  burstSequence:
+  - Mode: 0
+    Delay: 0.82
+    ProjectileCount: 8
+    SpreadAngle: 0
+    Speed: 9
+    Lifetime: 2
+    Damage: 8
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  debugLogging: 0
+--- !u!114 &1014074241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74cf48a75e1e6467a9b78375d70ac7a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectileBurstEmitter
+  projectileRoot: {fileID: 1294342961}
+  projectileSpawnOrigin: {fileID: 351660210}
+  sortingReference: {fileID: 680140246}
+  targetLayerMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  obstacleLayerMask:
+    serializedVersion: 2
+    m_Bits: 256
+  projectileAnimationFrames:
+  - {fileID: 21300000, guid: d9d49c44ea4c53941b159d65fe4121d8, type: 3}
+  - {fileID: 21300000, guid: 5b292dd6e0e333446801cf8de68e143c, type: 3}
+  - {fileID: 21300000, guid: 1d8352517c181874b839dc738d594f75, type: 3}
+  - {fileID: 21300000, guid: 87d8ede1294dd8145bc143b4a1316ba6, type: 3}
+  projectileAnimationFrameRate: 12
+  projectileMaximumHits: 8
+  destroyProjectileOnHit: 1
+  faceProjectileDirection: 1
+  sortingOrderOffset: 1
+  debugLogging: 0
+--- !u!114 &1014074242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: NormalDashRecoverDuration
+  AfterTimeMin: 0.35
+  AfterTimeMax: 0.35
+--- !u!114 &1014074243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: NormalDashChargeDuration
+  AfterTimeMin: 0.6666667
+  AfterTimeMax: 0.6666667
+--- !u!114 &1014074244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: NormalDashTelegraphDuration
+  AfterTimeMin: 0.35
+  AfterTimeMax: 0.35
+--- !u!114 &1014074245
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3247f4c84dc4c829c4527c8a5cb4bd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AIBrainDashTelegraphDriver
+  driverKey: DashAttack
+  brain: {fileID: 1014074188}
+  character: {fileID: 1014074198}
+  dashAbility: {fileID: 1014074193}
+  orientationAbility: {fileID: 1014074196}
+  animator: {fileID: 680140245}
+  dashAction: {fileID: 1014074209}
+  chargeDamageArea: {fileID: 2090137902}
+  telegraphOrigin: {fileID: 1014074186}
+  telegraphView: {fileID: 1014074195}
+  rotateChargeDamageAreaWithDash: 1
+  telegraphColor: {r: 1, g: 0.34, b: 0.08, a: 0.3}
+  telegraphLengthPadding: 0
+  telegraphWidthPadding: 0.1
+  horizontalFacingThreshold: 0.05
+  playTelegraphAnimation: 0
+  telegraphAnimationStateName: Idle
+  telegraphAnimationLayer: 0
+  playChargeAnimation: 0
+  chargeAnimationStateName: Dash
+  chargeAnimationLayer: 0
+  restoreLocomotionAnimation: 0
+  idleAnimationStateName: Idle
+  walkAnimationStateName: Walk
+  walkingAnimatorParameterName: Walking
+  locomotionTransitionDuration: 0.05
+  telegraphStateName: DashTelegraph
+  chargeStateName: DashCharge
+  useLastKnownTargetPosition: 1
+--- !u!114 &1014074246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f52d1fd55b04e618be8428207b92637, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaDashStartAction
+  InitializationMode: 0
+  Label: BerthaNormalDashOnce
+  dashAbility: {fileID: 1014074193}
+  overrideDashDuration: 1
+  dashDuration: 0.6666667
   debugLogging: 0
 --- !u!1001 &1129161349
 PrefabInstance:
@@ -5974,6 +6326,37 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1313030007481101386}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1294342960
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1294342961}
+  m_Layer: 0
+  m_Name: ProjectileRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1294342961
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1294342960}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 854109348}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1296288138
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9377,6 +9760,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1389021035063323484, guid: 7b13fb56397ae8f4d8ece5efb234114e,
+        type: 3}
+      propertyPath: m_SortingOrder
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3768444357845783011, guid: 7b13fb56397ae8f4d8ece5efb234114e,
         type: 3}
       propertyPath: m_Size.x

@@ -21,6 +21,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private string attackStateName = "LightAttack1";
         [SerializeField] private string attackAnimationStateName = "LightAtk1";
         [SerializeField, Min(0)] private int attackAnimationLayer;
+        [SerializeField] private float impactTime = -1f;
         [SerializeField] private Color telegraphColor = new Color(1f, 0.34f, 0.08f, 0.32f);
         [SerializeField] private Vector2 attackOffset = Vector2.zero;
         [SerializeField] private Vector2 attackSize = new Vector2(5f, 5f);
@@ -36,7 +37,9 @@ namespace LostMemory.Enemies.Boss.Bertha
         private Collider2D[] _overlapBuffer;
         private Vector2 _lockedDirection = Vector2.right;
         private Vector2 _lockedCenter;
+        private float _attackStateElapsed;
         private bool _hasLockedAttack;
+        private bool _hasExecutedImpact;
         private bool _hasPendingAttackDamage;
 
         public string TelegraphStateName => telegraphStateName;
@@ -74,6 +77,22 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void Update()
         {
+            if (IsDead())
+            {
+                telegraphView?.Hide();
+                ClearLockedAttack();
+                return;
+            }
+
+            if (_hasPendingAttackDamage && !_hasExecutedImpact && impactTime >= 0f)
+            {
+                _attackStateElapsed += Time.deltaTime;
+                if (_attackStateElapsed >= impactTime)
+                {
+                    ExecuteImpactNow();
+                }
+            }
+
             if (!IsInState(telegraphStateName) || telegraphView == null || !_hasLockedAttack)
             {
                 return;
@@ -113,6 +132,13 @@ namespace LostMemory.Enemies.Boss.Bertha
                 ApplyLockedFacing();
                 PlayAttackAnimation();
                 QueueAttackDamage();
+                _attackStateElapsed = 0f;
+                _hasExecutedImpact = false;
+
+                if (impactTime <= 0f && impactTime >= 0f)
+                {
+                    ExecuteImpactNow();
+                }
                 return;
             }
 
@@ -164,6 +190,47 @@ namespace LostMemory.Enemies.Boss.Bertha
             float configuredTargetInvincibilityDuration,
             string configuredDebugName = null)
         {
+            Configure(
+                configuredBrain,
+                configuredCharacter,
+                configuredOrientation,
+                configuredAnimator,
+                configuredTelegraphOrigin,
+                configuredTelegraphView,
+                configuredTelegraphStateName,
+                configuredAttackStateName,
+                configuredAttackAnimationStateName,
+                configuredAttackAnimationLayer,
+                configuredTelegraphColor,
+                configuredTargetLayerMask,
+                configuredAttackOffset,
+                configuredAttackSize,
+                configuredDamage,
+                configuredTargetInvincibilityDuration,
+                -1f,
+                configuredDebugName);
+        }
+
+        public void Configure(
+            AIBrain configuredBrain,
+            Character configuredCharacter,
+            CharacterOrientation2D configuredOrientation,
+            Animator configuredAnimator,
+            Transform configuredTelegraphOrigin,
+            AttackTelegraph2DView configuredTelegraphView,
+            string configuredTelegraphStateName,
+            string configuredAttackStateName,
+            string configuredAttackAnimationStateName,
+            int configuredAttackAnimationLayer,
+            Color configuredTelegraphColor,
+            LayerMask configuredTargetLayerMask,
+            Vector2 configuredAttackOffset,
+            Vector2 configuredAttackSize,
+            float configuredDamage,
+            float configuredTargetInvincibilityDuration,
+            float configuredImpactTime,
+            string configuredDebugName = null)
+        {
             brain = configuredBrain;
             character = configuredCharacter;
             orientationAbility = configuredOrientation;
@@ -180,6 +247,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             attackSize = configuredAttackSize;
             damage = configuredDamage;
             targetInvincibilityDuration = configuredTargetInvincibilityDuration;
+            SetImpactTime(configuredImpactTime);
             if (!string.IsNullOrWhiteSpace(configuredDebugName))
             {
                 debugName = configuredDebugName;
@@ -187,6 +255,11 @@ namespace LostMemory.Enemies.Boss.Bertha
 
             RefreshReferences();
             EnsureBuffer();
+        }
+
+        public void SetImpactTime(float configuredImpactTime)
+        {
+            impactTime = configuredImpactTime;
         }
 
         private Animator ResolveAnimator()
@@ -298,6 +371,17 @@ namespace LostMemory.Enemies.Boss.Bertha
             _hasPendingAttackDamage = true;
         }
 
+        private void ExecuteImpactNow()
+        {
+            if (!_hasPendingAttackDamage || _hasExecutedImpact)
+            {
+                return;
+            }
+
+            _hasExecutedImpact = true;
+            ExecuteQueuedAttackDamage();
+        }
+
         private void ExecuteQueuedAttackDamage()
         {
             if (!_hasPendingAttackDamage)
@@ -376,7 +460,9 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void ClearLockedAttack()
         {
+            _attackStateElapsed = 0f;
             _hasLockedAttack = false;
+            _hasExecutedImpact = false;
             _hasPendingAttackDamage = false;
             _hitTargetsThisAttack.Clear();
         }

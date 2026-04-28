@@ -19,6 +19,8 @@ namespace LostMemory.Enemies.Boss.Bertha
             "Light2Recover",
             "HeavyTelegraph",
             "HeavyRecover",
+            "NormalDashTelegraph",
+            "NormalDashRecover",
             "DashTelegraph",
             "DashRecover",
             "FullTelegraph",
@@ -30,7 +32,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private Animator animator;
         [SerializeField] private BossIntroSequenceController introSequenceController;
         [SerializeField] private string movingStateName = "Moving";
-        [SerializeField] private string[] idleStateNames = { "Detecting", "LightTelegraph", "LightRecover", "Light2Telegraph", "Light2Recover", "HeavyTelegraph", "HeavyRecover", "DashTelegraph", "DashRecover", "FullTelegraph", "FullRecover", "Recover" };
+        [SerializeField] private string[] idleStateNames = { "Detecting", "LightTelegraph", "LightRecover", "Light2Telegraph", "Light2Recover", "HeavyTelegraph", "HeavyRecover", "NormalDashTelegraph", "NormalDashRecover", "DashTelegraph", "DashRecover", "FullTelegraph", "FullRecover", "Recover" };
         [SerializeField] private string idleAnimationStateName = "Idle";
         [SerializeField] private string walkAnimationStateName = "Walk";
         [SerializeField, Min(0)] private int animationLayer;
@@ -131,7 +133,12 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void PlayAnimation(string stateName)
         {
-            if (animator == null || string.IsNullOrWhiteSpace(stateName) || _currentAnimationStateName == stateName)
+            if (animator == null || string.IsNullOrWhiteSpace(stateName))
+            {
+                return;
+            }
+
+            if (_currentAnimationStateName == stateName && IsAnimationStatePlaying(stateName))
             {
                 return;
             }
@@ -139,6 +146,16 @@ namespace LostMemory.Enemies.Boss.Bertha
             animator.Play(stateName, animationLayer, 0f);
             _currentAnimationStateName = stateName;
             Log("Play animation: " + stateName);
+        }
+
+        private bool IsAnimationStatePlaying(string stateName)
+        {
+            if (animator == null || string.IsNullOrWhiteSpace(stateName))
+            {
+                return false;
+            }
+
+            return animator.GetCurrentAnimatorStateInfo(animationLayer).IsName(stateName);
         }
 
         private static bool ContainsState(string[] stateNames, string targetStateName)

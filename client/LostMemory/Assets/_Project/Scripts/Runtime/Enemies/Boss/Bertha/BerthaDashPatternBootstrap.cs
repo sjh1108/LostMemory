@@ -11,6 +11,13 @@ namespace LostMemory.Enemies.Boss.Bertha
     [AddComponentMenu("Lost Memory/Enemies/Boss/Bertha/Bertha Dash Pattern Bootstrap")]
     public sealed class BerthaDashPatternBootstrap : MonoBehaviour
     {
+        private const float DashAnimationDuration = 8f / 12f;
+        private const string DetectingStateName = "Detecting";
+        private const string MovingStateName = "Moving";
+        private const string TelegraphStateName = "Telegraph";
+        private const string ChargeStateName = "Charge";
+        private const string RecoverStateName = "Recover";
+
         [Header("Scene Roots")]
         [SerializeField] private Transform visualRoot;
         [SerializeField] private Transform combatRoot;
@@ -28,10 +35,12 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         [Header("Dash")]
         [SerializeField] private float dashRange = 4.5f;
-        [SerializeField] private float dashDuration = 0.32f;
+        [SerializeField] private float dashDuration = DashAnimationDuration;
         [SerializeField] private float dashCooldown = 1.2f;
         [SerializeField] private float telegraphDuration = 0.5f;
         [SerializeField] private float recoverDuration = 0.45f;
+        [SerializeField] private bool playChargeAnimation = true;
+        [SerializeField] private string chargeAnimationStateName = "Dash";
 
         [Header("Damage Area")]
         [SerializeField] private Vector2 chargeDamageAreaOffset = Vector2.zero;
@@ -152,11 +161,27 @@ namespace LostMemory.Enemies.Boss.Bertha
                 recoverTimer.AfterTimeMin = recoverDuration;
                 recoverTimer.AfterTimeMax = recoverDuration;
 
-                telegraphDriver.RefreshReferences();
-                if (disableTelegraphAnimationUntilAnimatorReady)
-                {
-                    telegraphDriver.SetAnimationPlayback(false, false);
-                }
+                telegraphDriver.Configure(
+                    brain,
+                    GetOrAdd<Character>(gameObject),
+                    dashAbility,
+                    GetOrAdd<CharacterOrientation2D>(gameObject),
+                    animator,
+                    dashAction,
+                    dashHitGate.GetComponent<BoxCollider2D>(),
+                    transform,
+                    telegraphView,
+                    TelegraphStateName,
+                    ChargeStateName,
+                    !disableTelegraphAnimationUntilAnimatorReady,
+                    false,
+                    "Idle",
+                    "Idle",
+                    "Walk",
+                    0,
+                    playChargeAnimation,
+                    chargeAnimationStateName,
+                    0);
 
                 brain.States = BuildDashStates(
                     idleAction,
@@ -186,6 +211,8 @@ namespace LostMemory.Enemies.Boss.Bertha
         private void EnsureCoreCombatComponents(Animator animator)
         {
             Rigidbody2D body = GetOrAdd<Rigidbody2D>(gameObject);
+            body.bodyType = RigidbodyType2D.Dynamic;
+            body.mass = 10000f;
             body.gravityScale = 0f;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -205,8 +232,11 @@ namespace LostMemory.Enemies.Boss.Bertha
             Health health = GetOrAdd<Health>(gameObject);
             health.InitialHealth = initialHealth;
             health.MaximumHealth = initialHealth;
+            health.TargetAnimator = animator;
+            health.DestroyOnDeath = false;
+            health.DelayBeforeDestruction = 0f;
             health.DisableControllerOnDeath = true;
-            health.DisableModelOnDeath = true;
+            health.DisableModelOnDeath = false;
             health.DisableCollisionsOnDeath = true;
 
             Character character = GetOrAdd<Character>(gameObject);
@@ -269,42 +299,42 @@ namespace LostMemory.Enemies.Boss.Bertha
             return new List<AIState>
             {
                 CreateState(
-                    "Detecting",
+                    DetectingStateName,
                     new AIAction[] { idleAction },
                     new[]
                     {
-                        CreateTransition(detectTarget, "Moving", string.Empty)
+                        CreateTransition(detectTarget, MovingStateName, string.Empty)
                     }),
                 CreateState(
-                    "Moving",
+                    MovingStateName,
                     new AIAction[] { moveAction, faceAction },
                     new[]
                     {
-                        CreateTransition(detectTarget, string.Empty, "Detecting"),
-                        CreateTransition(targetIsAlive, string.Empty, "Detecting"),
-                        CreateTransition(dashReady, "Telegraph", string.Empty)
+                        CreateTransition(detectTarget, string.Empty, DetectingStateName),
+                        CreateTransition(targetIsAlive, string.Empty, DetectingStateName),
+                        CreateTransition(dashReady, TelegraphStateName, string.Empty)
                     }),
                 CreateState(
-                    "Telegraph",
+                    TelegraphStateName,
                     new AIAction[] { idleAction },
                     new[]
                     {
-                        CreateTransition(telegraphTimer, "Charge", string.Empty)
+                        CreateTransition(telegraphTimer, ChargeStateName, string.Empty)
                     }),
                 CreateState(
-                    "Charge",
+                    ChargeStateName,
                     new AIAction[] { dashAction },
                     new[]
                     {
-                        CreateTransition(chargeTimer, "Recover", string.Empty)
+                        CreateTransition(chargeTimer, RecoverStateName, string.Empty)
                     }),
                 CreateState(
-                    "Recover",
+                    RecoverStateName,
                     new AIAction[] { idleAction },
                     new[]
                     {
-                        CreateTransition(targetIsAlive, string.Empty, "Detecting"),
-                        CreateTransition(recoverTimer, "Moving", string.Empty)
+                        CreateTransition(targetIsAlive, string.Empty, DetectingStateName),
+                        CreateTransition(recoverTimer, MovingStateName, string.Empty)
                     })
             };
         }

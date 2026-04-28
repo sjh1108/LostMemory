@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace LostMemory.Combat.Telegraph
 {
-    [DisallowMultipleComponent]
     [AddComponentMenu("Lost Memory/Combat/Telegraph/AI Brain Dash Telegraph Driver")]
     public class AIBrainDashTelegraphDriver : MonoBehaviour, MMEventListener<AIStateEvent>
     {
+        [SerializeField] private string driverKey = "DashTelegraph";
         [SerializeField] private AIBrain brain;
         [SerializeField] private Character character;
         [SerializeField] private CharacterDash2D dashAbility;
@@ -25,6 +25,9 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private bool playTelegraphAnimation = true;
         [SerializeField] private string telegraphAnimationStateName = "OrcRider_Blcok";
         [SerializeField] private int telegraphAnimationLayer = 0;
+        [SerializeField] private bool playChargeAnimation;
+        [SerializeField] private string chargeAnimationStateName = "Dash";
+        [SerializeField] private int chargeAnimationLayer;
         [SerializeField] private bool restoreLocomotionAnimation = true;
         [SerializeField] private string idleAnimationStateName = "OrcRider_Idle";
         [SerializeField] private string walkAnimationStateName = "OrcRider_Walk";
@@ -40,6 +43,9 @@ namespace LostMemory.Combat.Telegraph
         private float _lockedDashDistance = 0.01f;
         private Quaternion _chargeDamageAreaDefaultLocalRotation = Quaternion.identity;
         private bool _chargeDamageAreaDefaultCached;
+        private bool _hasActiveDashPlan;
+
+        public string DriverKey => driverKey;
 
         private void Reset()
         {
@@ -76,7 +82,7 @@ namespace LostMemory.Combat.Telegraph
             if (IsDead())
             {
                 telegraphView?.Hide();
-                RestoreChargeDamageAreaRotationIfNeeded();
+                RestoreChargeDamageAreaRotationIfActive();
                 ClearDashPlan();
                 return;
             }
@@ -102,7 +108,7 @@ namespace LostMemory.Combat.Telegraph
                 return;
             }
 
-            if (!ShouldMaintainLock())
+            if (!ShouldMaintainLock() && _hasActiveDashPlan)
             {
                 RestoreChargeDamageAreaRotationIfNeeded();
                 RestoreLocomotionAnimationIfNeeded();
@@ -123,7 +129,7 @@ namespace LostMemory.Combat.Telegraph
             if (IsDead())
             {
                 telegraphView?.Hide();
-                RestoreChargeDamageAreaRotationIfNeeded();
+                RestoreChargeDamageAreaRotationIfActive();
                 ClearDashPlan();
                 return;
             }
@@ -133,6 +139,7 @@ namespace LostMemory.Combat.Telegraph
 
             if (enteringState == telegraphStateName)
             {
+                _hasActiveDashPlan = true;
                 UpdatePreviewFromTarget();
                 ApplyPreviewDashPlan();
                 ApplyFacing(_previewDirection);
@@ -143,9 +150,11 @@ namespace LostMemory.Combat.Telegraph
 
             if (enteringState == chargeStateName)
             {
+                _hasActiveDashPlan = true;
                 LockDashPlanFromPreview();
                 ApplyLockedDashPlanToDash();
                 ApplyFacing(_lockedDirection);
+                PlayChargeAnimation();
                 telegraphView?.Hide();
                 return;
             }
@@ -263,6 +272,19 @@ namespace LostMemory.Combat.Telegraph
             }
 
             animator.Play(telegraphAnimationStateName, telegraphAnimationLayer, 0f);
+        }
+
+        private void PlayChargeAnimation()
+        {
+            if (!playChargeAnimation
+                || animator == null
+                || string.IsNullOrWhiteSpace(chargeAnimationStateName)
+                || IsDead())
+            {
+                return;
+            }
+
+            animator.Play(chargeAnimationStateName, chargeAnimationLayer, 0f);
         }
 
         private void RestoreLocomotionAnimationIfNeeded()
@@ -479,6 +501,14 @@ namespace LostMemory.Combat.Telegraph
             chargeDamageArea.transform.localRotation = _chargeDamageAreaDefaultLocalRotation;
         }
 
+        private void RestoreChargeDamageAreaRotationIfActive()
+        {
+            if (_hasActiveDashPlan)
+            {
+                RestoreChargeDamageAreaRotationIfNeeded();
+            }
+        }
+
         private bool IsDead()
         {
             return character != null
@@ -548,8 +578,17 @@ namespace LostMemory.Combat.Telegraph
             string configuredTelegraphAnimationStateName,
             string configuredIdleAnimationStateName,
             string configuredWalkAnimationStateName,
-            int configuredTelegraphAnimationLayer = 0)
+            int configuredTelegraphAnimationLayer = 0,
+            bool configuredPlayChargeAnimation = false,
+            string configuredChargeAnimationStateName = "Dash",
+            int configuredChargeAnimationLayer = 0,
+            string configuredDriverKey = null)
         {
+            if (!string.IsNullOrWhiteSpace(configuredDriverKey))
+            {
+                driverKey = configuredDriverKey;
+            }
+
             brain = configuredBrain;
             character = configuredCharacter;
             dashAbility = configuredDashAbility;
@@ -567,6 +606,9 @@ namespace LostMemory.Combat.Telegraph
             idleAnimationStateName = configuredIdleAnimationStateName;
             walkAnimationStateName = configuredWalkAnimationStateName;
             telegraphAnimationLayer = configuredTelegraphAnimationLayer;
+            playChargeAnimation = configuredPlayChargeAnimation;
+            chargeAnimationStateName = configuredChargeAnimationStateName;
+            chargeAnimationLayer = configuredChargeAnimationLayer;
             AutoAssignReferences();
         }
 
@@ -576,12 +618,21 @@ namespace LostMemory.Combat.Telegraph
             restoreLocomotionAnimation = shouldRestoreLocomotionAnimation;
         }
 
+        public void SetDriverKey(string configuredDriverKey)
+        {
+            if (!string.IsNullOrWhiteSpace(configuredDriverKey))
+            {
+                driverKey = configuredDriverKey;
+            }
+        }
+
         private void ClearDashPlan()
         {
             _previewDirection = Vector2.right;
             _previewDashDistance = 0.01f;
             _lockedDirection = Vector2.right;
             _lockedDashDistance = 0.01f;
+            _hasActiveDashPlan = false;
         }
 
         private Animator ResolveAnimator()
