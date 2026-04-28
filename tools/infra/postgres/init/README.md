@@ -12,17 +12,23 @@
 
 ## 현재 상태
 
-`AI-203`에서는 초기 SQL을 만들지 않는다.
+`AI-501`부터 최소 스키마를 이 폴더의 SQL 파일로 관리한다.
 
-아직 AI 도구 백엔드의 실제 테이블 스키마가 확정되지 않았기 때문이다. 스키마 확정 전 임의 SQL을 넣으면 이후 백엔드 작업에서 다시 뒤집을 가능성이 높다.
+현재 source of truth는 아래 파일이다.
+
+```text
+001_init_schema.sql
+```
+
+이 파일은 AI 도구용 Docker Postgres가 **처음 초기화될 때만** 자동 실행된다.
 
 ## 나중에 들어갈 수 있는 파일
 
 예시는 아래와 같다.
 
 ```text
-001_create_generation_tables.sql
-002_create_indexes.sql
+001_init_schema.sql
+002_indexes.sql
 003_seed_initial_users.sql
 ```
 
@@ -30,4 +36,10 @@
 
 Postgres 공식 이미지의 init SQL은 데이터 디렉터리가 비어 있는 첫 초기화 시점에만 자동 실행된다.
 
-이미 volume이 만들어진 뒤 SQL을 추가해도 자동 재실행되지 않는다. 운영 중 스키마 변경은 Flyway, Liquibase, 백엔드 migration, 또는 수동 migration 절차로 따로 관리해야 한다.
+이미 volume이 만들어진 뒤 SQL을 수정하거나 추가해도 자동 재실행되지 않는다.
+
+따라서 개발 중 스키마를 처음부터 다시 적용하려면 아래 중 하나가 필요하다.
+
+1. `postgres_data` volume 삭제 후 컨테이너 재생성
+2. 수동 `psql` 적용
+3. 이후 단계에서 migration 도구 도입

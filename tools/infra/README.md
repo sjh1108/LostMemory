@@ -33,6 +33,7 @@
 tools/infra/
   README.md
   docker-compose.yml
+  docker-compose.override.yml
   .env.example
   nginx/
     README.md
@@ -79,10 +80,34 @@ ComfyUI도 compose service로 넣지 않았다. 모델 파일, GPU 드라이버,
 - `AI_BACKEND_UPSTREAM`
 - `COMFYUI_UPSTREAM`
 - `POSTGRES_*`
+- `POSTGRES_DEV_PORT`
 
 실제 `.env` 파일에는 비밀번호가 들어가므로 Git에 올리지 않는다.
 
 Basic Auth 계정 파일은 `tools/infra/nginx/auth/.htpasswd`에 별도로 만든다. 이 파일도 비밀번호 해시가 들어가므로 Git에 올리지 않는다.
+
+### `docker-compose.override.yml`
+
+개발용 override 파일이다.
+
+기본 compose는 Postgres를 외부에 노출하지 않지만, VSCode DB client에서 확인하기 쉽도록 개발 환경에서는 아래 포트만 연다.
+
+```yaml
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_DEV_PORT:-55432}:5432"
+```
+
+기본값을 `55432`로 둔 이유는 게임 서버 쪽 Postgres와 `5432` 충돌 가능성을 줄이기 위해서다.
+
+VSCode 기준 연결 정보는 아래와 같다.
+
+- Host: `localhost`
+- Port: `55432`
+- Database: `ai_tool`
+- Username: `ai_tool`
+- Password: `tools/infra/.env`의 `POSTGRES_PASSWORD`
 
 ### `nginx/`
 
@@ -121,3 +146,4 @@ Postgres 데이터베이스 초기화 파일을 둘 자리다.
 - 도메인 구매 후 `AI-205`: DNS, 인증서 발급, 자동 갱신 실검증
 - `AI-206`: 실제 도메인 기준 Basic Auth 브라우저 검증
 - `AI-401` 이후: AI 도구 백엔드 구현
+- `AI-501` 이후: Postgres 최소 스키마와 init SQL 정리

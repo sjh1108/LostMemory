@@ -696,3 +696,49 @@ Output 이미지:
 - 완료여부: `Y`
 - 상태: `완료`
 - 후속 작업: `AI-501`, `AI-505`, `AI-507`, `AI-702`
+
+## AI-501. Postgres 최소 스키마 생성 및 문서화
+
+### 작업 범위
+
+- AI 도구 DB를 Docker Postgres 기준으로 고정
+- 최소 스키마 source of truth를 SQL 파일로 확정
+- VSCode DB client 접속 기준과 dev 포트 override 정리
+- named volume, `pg_dump` 백업, init SQL 재실행 주의사항 문서화
+- `users`, `workflow_snapshots`, `generations`, `generation_outputs`, `audit_logs` 최소 테이블 생성
+
+### 결정 내용
+
+- 로컬 Windows 설치형 PostgreSQL 대신 `tools/infra/docker-compose.yml`의 Postgres 컨테이너를 사용한다.
+- 게임 서버 DB와는 별도 컨테이너 / 별도 DB 문맥으로 운영한다.
+- 개발 환경에서만 `tools/infra/docker-compose.override.yml`로 `55432:5432`를 연다.
+- 초기 스키마 source of truth는 Spring JPA 자동 생성이 아니라 `tools/infra/postgres/init/001_init_schema.sql`로 둔다.
+- volume은 `postgres_data` named volume을 유지하고, 최소 백업 방식은 `pg_dump`로 통일한다.
+- `docker-entrypoint-initdb.d` SQL은 빈 volume 첫 생성 시점에만 자동 실행된다는 점을 운영 주의사항으로 고정한다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/README.md`
+- `tools/docs/1차-mvp/산출물/AI-501-postgres-min-schema/README.md`
+- `tools/infra/docker-compose.override.yml`
+- `tools/infra/.env.example`
+- `tools/infra/README.md`
+- `tools/infra/postgres/README.md`
+- `tools/infra/postgres/init/README.md`
+- `tools/infra/postgres/init/001_init_schema.sql`
+
+### 완료 근거
+
+- 산출물 전체 지도 문서를 추가해 `AI-202`, `AI-301~304`, `AI-402~406`, `AI-501` 참조 경로를 한 문서에서 찾을 수 있게 정리
+- `docker-compose.override.yml`로 개발용 Postgres 포트를 `55432:5432`로 노출
+- `001_init_schema.sql`에 `users`, `workflow_snapshots`, `generations`, `generation_outputs`, `audit_logs` 최소 테이블과 인덱스를 추가
+- `workflow_name`, `prompt_id`, `execution_status`, `failure_reason`, output 메타데이터가 어느 테이블에 들어가는지 README로 문서화
+- `tools/infra/postgres/README.md`에 VSCode DB client 연결값, `pg_dump` 백업/복구 예시, init SQL 재실행 주의점을 반영
+- `docker compose config` 기준으로 Compose + override 구성이 정상 파싱되는지 검증
+- `docker compose up -d postgres` 후 컨테이너가 `healthy` 상태로 올라왔고, `psql -c "\dt"`로 5개 최소 테이블 생성까지 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-502`, `AI-503`, `AI-504`, `AI-505`
