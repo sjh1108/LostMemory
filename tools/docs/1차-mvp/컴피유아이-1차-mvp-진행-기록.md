@@ -646,3 +646,53 @@ Output 이미지:
 - 완료여부: `Y`
 - 상태: `완료`
 - 후속 작업: `AI-406`, `AI-507`, `AI-508`
+
+## AI-406. timeout 및 failed 상태 처리 구현
+
+### 작업 범위
+
+- `/history` polling의 timeout 및 failed 상태 처리
+- 생성 실행 상태 enum과 전이 규칙 정리
+- 사용자 노출 메시지와 내부 로그 메시지 분리
+- 실패 시 audit logging hook 연결
+- polling 방식 동기 유지 결정
+
+### 결정 내용
+
+- 제출 상태(`GenerationRequestStatus`)와 실행 상태(`GenerationExecutionStatus`)를 분리한다.
+- 실행 상태는 `SUBMITTED`, `RUNNING`, `SUCCEEDED`, `FAILED`, `TIMED_OUT`로 고정한다.
+- 성공 조건은 `completed == true`, `status_str == success`, output image 존재를 모두 만족해야 한다.
+- `/history` fetch는 연속 3회 실패해야 terminal failure로 본다.
+- timeout과 failed는 HTTP 오류가 아니라 `200 OK + body.executionStatus`로 반환한다.
+- audit logging 공통 계약은 `common/audit`에 두고, generation 전용 상태 판정은 `generation` 패키지에 둔다.
+- polling 방식은 초기 MVP에서 동기 유지로 확정한다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/AuditRecorder.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/LoggingAuditRecorder.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationExecutionStatus.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationFailureReason.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationFailureMessageResolver.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationStatusResolver.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryResponse.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationController.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationHistoryServiceTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationControllerTest.java`
+- `tools/docs/1차-mvp/산출물/AI-406-status-handling/README.md`
+
+### 완료 근거
+
+- `GenerationExecutionStatus`, `GenerationFailureReason`를 추가하고 enum 의미를 코드 주석으로 고정
+- `GenerationStatusResolver`가 `completed + status_str + output` 기준으로 success/failure/timeout을 판정
+- `GenerationHistoryService`가 fetch 연속 실패 3회, output missing, terminal non-success, timeout을 비즈니스 상태로 반환
+- `AuditRecorder` / `LoggingAuditRecorder`를 추가해 failed와 timeout 시 구조화된 audit log payload를 남김
+- `GenerationControllerTest`, `GenerationHistoryServiceTest`를 상태 응답 방식으로 갱신
+- `./gradlew.bat --no-daemon test`, `./gradlew.bat --no-daemon bootJar` 검증 성공
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-501`, `AI-505`, `AI-507`, `AI-702`
