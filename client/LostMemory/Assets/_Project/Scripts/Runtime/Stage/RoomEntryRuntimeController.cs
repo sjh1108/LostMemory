@@ -85,6 +85,11 @@ namespace LostMemory.Stage
             {
                 exitWalls = GetComponentsInChildren<RoomExitWall>(includeInactive: true);
             }
+
+            // CL-323: 시작 시 *모든 ExitWall 비활성화* — 진입 전이라 막을 필요 X.
+            // BeginRoomEntry 의 ApplyInitContext 가 lockExitDoors=true 일 때 활성화.
+            // 디자이너 셋업 (prefab 의 active 상태) 무관하게 안전한 기본 상태 보장.
+            SetExitWallsActive(false);
         }
 
         private void Reset()
@@ -266,6 +271,7 @@ namespace LostMemory.Stage
 
         private void HandleRoomCleared(RoomClearedPayload payload)
         {
+            Debug.Log($"[Controller] HandleRoomCleared: roomId='{payload.RoomId}' on '{name}'. Disabling exit walls.");
             SetExitWallsActive(false);
             RoomCleared?.Invoke(payload);
 

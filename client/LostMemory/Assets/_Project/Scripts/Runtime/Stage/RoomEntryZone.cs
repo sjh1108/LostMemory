@@ -22,17 +22,26 @@ namespace LostMemory.Stage
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            Debug.Log($"[Zone] OnTriggerEnter2D on '{name}' by '{(other != null ? other.name : "null")}'");
             if (controller == null || other == null)
             {
+                Debug.Log($"[Zone] skip: controller={controller != null} other={other != null}");
                 return;
             }
 
             Character character = other.GetComponentInParent<Character>();
-            if (character == null || character.CharacterType != Character.CharacterTypes.Player)
+            if (character == null)
             {
+                Debug.Log($"[Zone] skip: no Character on '{other.name}'");
+                return;
+            }
+            if (character.CharacterType != Character.CharacterTypes.Player)
+            {
+                Debug.Log($"[Zone] skip: '{character.name}' type={character.CharacterType} (not Player)");
                 return;
             }
 
+            Debug.Log($"[Zone] forward to controller.BeginRoomEntry");
             controller.BeginRoomEntry(character);
         }
     }
