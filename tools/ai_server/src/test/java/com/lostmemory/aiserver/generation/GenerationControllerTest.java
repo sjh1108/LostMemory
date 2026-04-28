@@ -62,6 +62,35 @@ class GenerationControllerTest {
     }
 
     @Test
+    void getGenerationHistoryReturnsCompletedHistoryResponse() throws Exception {
+        given(comfyUiClient.fetchHistory("test-prompt-id-001"))
+                .willReturn(Map.of(
+                        "test-prompt-id-001", Map.of(
+                                "outputs", Map.of(
+                                        "8", Map.of("images", java.util.List.of(
+                                                Map.of(
+                                                        "filename", "AI405_Test_00001_.png",
+                                                        "subfolder", "",
+                                                        "type", "output")))),
+                                "status", Map.of(
+                                        "completed", true,
+                                        "status_str", "success",
+                                        "messages", java.util.List.of(
+                                                java.util.List.of("execution_start", Map.of()),
+                                                java.util.List.of("execution_success", Map.of()))))));
+
+        mockMvc.perform(get("/generation-requests/test-prompt-id-001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.promptId").value("test-prompt-id-001"))
+                .andExpect(jsonPath("$.data.completed").value(true))
+                .andExpect(jsonPath("$.data.statusText").value("success"))
+                .andExpect(jsonPath("$.data.outputImage.filename").value("AI405_Test_00001_.png"))
+                .andExpect(jsonPath("$.data.messageTypes[0]").value("execution_start"))
+                .andExpect(jsonPath("$.data.messageTypes[1]").value("execution_success"));
+    }
+
+    @Test
     void createGenerationRequestReturnsValidationErrorWhenWorkflowIdIsMissing() throws Exception {
         mockMvc.perform(post("/generation-requests")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -129,6 +158,8 @@ class GenerationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/generation-requests'].post").exists())
                 .andExpect(jsonPath("$.paths['/generation-requests'].post.summary")
-                        .value("Submit a generation request to ComfyUI"));
+                        .value("Submit a generation request to ComfyUI"))
+                .andExpect(jsonPath("$.paths['/generation-requests/{promptId}'].get.summary")
+                        .value("Poll ComfyUI history until generation completes"));
     }
 }

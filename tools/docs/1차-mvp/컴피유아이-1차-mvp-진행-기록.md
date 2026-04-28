@@ -562,3 +562,87 @@ Output 이미지:
 - 완료여부: `Y`
 - 상태: `완료`
 - 후속 작업: `AI-404`, `AI-405`, `AI-501`
+
+## AI-404. 서버에서 ComfyUI /prompt 호출 구현
+
+### 작업 범위
+
+- `workflowId` 기준 prompt template 조립 서비스 구현
+- 실제 ComfyUI `/prompt` submit 호출
+- `prompt_id` 수신 및 응답 계약 반영
+- `/prompt` request/response raw debug logging 추가
+
+### 결정 내용
+
+- 1차 구현에서는 `workflowId = pixel-art-character-v1` 단일 workflow만 지원한다.
+- prompt template source는 classpath resource `pixel-art-character-v1.json`로 둔다.
+- `prompt`는 positive prompt node `4`에 주입하고, seed node `6`, save image node `8`만 최소 변경한다.
+- submit 성공 응답은 `promptId`, `status = SUBMITTED`, `submittedAt`을 반환한다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/PromptAssemblyService.java`
+- `tools/ai_server/src/main/resources/comfyui/prompt-templates/pixel-art-character-v1.json`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationController.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/exception/ApiRequestException.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/exception/GlobalExceptionHandler.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/PromptAssemblyServiceTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationControllerTest.java`
+- `tools/docs/1차-mvp/산출물/AI-404-prompt-submit/README.md`
+
+### 완료 근거
+
+- `PromptAssemblyService`가 `CreateGenerationRequest`를 실제 ComfyUI `/prompt` body로 조립
+- `GenerationService`가 실제 `ComfyUiClient.submitPrompt(...)`를 호출하고 `prompt_id`를 추출
+- `UNSUPPORTED_WORKFLOW`, `COMFYUI_SUBMIT_FAILED`, `INVALID_COMFYUI_RESPONSE` 예외 코드 추가
+- `GenerationControllerTest`, `PromptAssemblyServiceTest`로 success/validation/failure 검증
+- `tools/ai_server`에서 `./gradlew test bootJar` 검증 성공
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-405`, `AI-406`, `AI-505`
+
+## AI-405. /history 폴링 서비스 구현
+
+### 작업 범위
+
+- `/history/{promptId}` polling service 구현
+- polling 간격과 timeout 상수 확정
+- `/history` 응답 파서 구현
+- 조회용 최소 GET endpoint 추가
+
+### 결정 내용
+
+- polling 상수는 `interval = 2초`, `soft warning = 60초`, `hard timeout = 120초`로 고정한다.
+- `AI-405`의 종료 기준은 우선 `history[promptId]` 존재 + `status.completed == true`로 둔다.
+- output image는 `outputs["8"]` 같은 고정 node id를 쓰지 않고 `outputs` map 순회 기준으로 읽는다.
+- `AI-405`는 success-path polling과 parser까지만 다루고, timeout/failed 상태 맵핑은 `AI-406`으로 넘긴다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryParser.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryResponse.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationOutputImage.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationController.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationHistoryParserTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationHistoryServiceTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationControllerTest.java`
+- `tools/docs/1차-mvp/산출물/AI-405-history-polling/README.md`
+
+### 완료 근거
+
+- `GenerationHistoryService`가 `/history/{promptId}`를 polling하고 soft warning / hard timeout 상수를 사용
+- `GenerationHistoryParser`가 `status.completed`, `status.status_str`, `messageTypes`, `outputImage`를 추출
+- `GenerationController`에 `GET /generation-requests/{promptId}` 추가
+- parser가 `outputs` map 순회 방식으로 첫 번째 image 메타데이터를 읽도록 테스트로 검증
+- `GenerationHistoryServiceTest`, `GenerationHistoryParserTest`, `GenerationControllerTest`와 전체 `./gradlew test` 검증 성공
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-406`, `AI-507`, `AI-508`
