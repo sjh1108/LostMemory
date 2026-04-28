@@ -15,8 +15,9 @@ namespace LostMemory.Enemies.Boss.Bertha
             LightAttack1 = 1,
             LightAttack2 = 2,
             HeavyAttack = 3,
-            Dash = 4,
-            FullCombo = 5
+            NormalDash = 4,
+            DashAttack = 5,
+            FullCombo = 6
         }
 
         private readonly List<PatternType> _basicPatternPool = new List<PatternType>(8);
@@ -29,23 +30,29 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private string lightAttack1TelegraphStateName = "LightTelegraph";
         [SerializeField] private string lightAttack2TelegraphStateName = "Light2Telegraph";
         [SerializeField] private string heavyAttackTelegraphStateName = "HeavyTelegraph";
+        [SerializeField] private string normalDashTelegraphStateName = "NormalDashTelegraph";
         [SerializeField] private string dashTelegraphStateName = "DashTelegraph";
         [SerializeField] private string fullComboTelegraphStateName = "FullTelegraph";
         [SerializeField] private float lightAttack1Range = 2.5f;
         [SerializeField] private float lightAttack2Range = 2.5f;
         [SerializeField] private float heavyAttackRange = 3.25f;
+        [SerializeField] private float normalDashMinimumRange = 4.5f;
+        [SerializeField] private float normalDashMaximumRange = 15f;
         [SerializeField] private float dashMinimumRange = 3f;
         [SerializeField] private float dashMaximumRange = 4.5f;
         [SerializeField] private float fullComboRange = 3f;
         [SerializeField, Range(0f, 1f)] private float specialUnlockHealthThresholdNormalized = 0.9f;
+        [SerializeField] private float normalDashCooldown = 10f;
         [SerializeField] private float dashCooldown = 15f;
         [SerializeField] private float fullComboCooldown = 15f;
         [SerializeField, Min(0)] private int lightAttack1Weight = 3;
         [SerializeField, Min(0)] private int lightAttack2Weight = 3;
         [SerializeField, Min(0)] private int heavyAttackWeight = 2;
+        [SerializeField, Min(0)] private int normalDashWeight = 1;
         [SerializeField] private bool debugLogging;
 
         private PatternType _lastBasicPattern = PatternType.None;
+        private float _nextNormalDashReadyTime;
         private float _nextDashReadyTime;
         private float _nextFullComboReadyTime;
 
@@ -59,6 +66,9 @@ namespace LostMemory.Enemies.Boss.Bertha
             lightAttack1Weight = Mathf.Max(0, lightAttack1Weight);
             lightAttack2Weight = Mathf.Max(0, lightAttack2Weight);
             heavyAttackWeight = Mathf.Max(0, heavyAttackWeight);
+            normalDashWeight = Mathf.Max(0, normalDashWeight);
+            normalDashMinimumRange = Mathf.Max(0f, normalDashMinimumRange);
+            normalDashMaximumRange = Mathf.Max(normalDashMinimumRange, normalDashMaximumRange);
             dashMinimumRange = Mathf.Max(0f, dashMinimumRange);
             dashMaximumRange = Mathf.Max(dashMinimumRange, dashMaximumRange);
             specialUnlockHealthThresholdNormalized = Mathf.Clamp01(specialUnlockHealthThresholdNormalized);
@@ -116,15 +126,19 @@ namespace LostMemory.Enemies.Boss.Bertha
             float configuredLightAttack1Range,
             float configuredLightAttack2Range,
             float configuredHeavyAttackRange,
+            float configuredNormalDashMinimumRange,
+            float configuredNormalDashMaximumRange,
             float configuredDashMinimumRange,
             float configuredDashMaximumRange,
             float configuredFullComboRange,
             float configuredSpecialUnlockHealthThresholdNormalized,
+            float configuredNormalDashCooldown,
             float configuredDashCooldown,
             float configuredFullComboCooldown,
             int configuredLightAttack1Weight,
             int configuredLightAttack2Weight,
-            int configuredHeavyAttackWeight)
+            int configuredHeavyAttackWeight,
+            int configuredNormalDashWeight)
         {
             brain = configuredBrain;
             character = configuredCharacter;
@@ -133,15 +147,19 @@ namespace LostMemory.Enemies.Boss.Bertha
             lightAttack1Range = configuredLightAttack1Range;
             lightAttack2Range = configuredLightAttack2Range;
             heavyAttackRange = configuredHeavyAttackRange;
+            normalDashMinimumRange = configuredNormalDashMinimumRange;
+            normalDashMaximumRange = configuredNormalDashMaximumRange;
             dashMinimumRange = configuredDashMinimumRange;
             dashMaximumRange = configuredDashMaximumRange;
             fullComboRange = configuredFullComboRange;
             specialUnlockHealthThresholdNormalized = configuredSpecialUnlockHealthThresholdNormalized;
+            normalDashCooldown = configuredNormalDashCooldown;
             dashCooldown = configuredDashCooldown;
             fullComboCooldown = configuredFullComboCooldown;
             lightAttack1Weight = Mathf.Max(0, configuredLightAttack1Weight);
             lightAttack2Weight = Mathf.Max(0, configuredLightAttack2Weight);
             heavyAttackWeight = Mathf.Max(0, configuredHeavyAttackWeight);
+            normalDashWeight = Mathf.Max(0, configuredNormalDashWeight);
             RefreshReferences();
         }
 
@@ -181,7 +199,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     && Time.time >= _nextDashReadyTime
                     && (dashAbility == null || dashAbility.Cooldown.Ready()))
                 {
-                    return PatternType.Dash;
+                    return PatternType.DashAttack;
                 }
             }
 
@@ -195,6 +213,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             AddBasicPatternIfInRange(PatternType.LightAttack1, targetDistance, lightAttack1Range, lightAttack1Weight);
             AddBasicPatternIfInRange(PatternType.LightAttack2, targetDistance, lightAttack2Range, lightAttack2Weight);
             AddBasicPatternIfInRange(PatternType.HeavyAttack, targetDistance, heavyAttackRange, heavyAttackWeight);
+            AddNormalDashIfReady(targetDistance);
 
             if (_basicPatternPool.Count == 0)
             {
@@ -212,6 +231,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                 AddBasicPatternIfInRange(PatternType.LightAttack1, targetDistance, lightAttack1Range, lightAttack1Weight);
                 AddBasicPatternIfInRange(PatternType.LightAttack2, targetDistance, lightAttack2Range, lightAttack2Weight);
                 AddBasicPatternIfInRange(PatternType.HeavyAttack, targetDistance, heavyAttackRange, heavyAttackWeight);
+                AddNormalDashIfReady(targetDistance);
             }
 
             return _basicPatternPool[Random.Range(0, _basicPatternPool.Count)];
@@ -240,6 +260,23 @@ namespace LostMemory.Enemies.Boss.Bertha
             }
         }
 
+        private void AddNormalDashIfReady(float targetDistance)
+        {
+            if (normalDashWeight <= 0
+                || targetDistance < normalDashMinimumRange
+                || targetDistance > normalDashMaximumRange
+                || Time.time < _nextNormalDashReadyTime
+                || (dashAbility != null && !dashAbility.Cooldown.Ready()))
+            {
+                return;
+            }
+
+            for (int i = 0; i < normalDashWeight; i++)
+            {
+                _basicPatternPool.Add(PatternType.NormalDash);
+            }
+        }
+
         private void ReserveCooldown(PatternType selectedPattern)
         {
             if (!Application.isPlaying)
@@ -249,7 +286,10 @@ namespace LostMemory.Enemies.Boss.Bertha
 
             switch (selectedPattern)
             {
-                case PatternType.Dash:
+                case PatternType.NormalDash:
+                    _nextNormalDashReadyTime = Time.time + normalDashCooldown;
+                    break;
+                case PatternType.DashAttack:
                     _nextDashReadyTime = Time.time + dashCooldown;
                     break;
                 case PatternType.FullCombo:
@@ -265,6 +305,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                 case PatternType.LightAttack1:
                 case PatternType.LightAttack2:
                 case PatternType.HeavyAttack:
+                case PatternType.NormalDash:
                     _lastBasicPattern = selectedPattern;
                     break;
             }
@@ -277,7 +318,8 @@ namespace LostMemory.Enemies.Boss.Bertha
                 PatternType.LightAttack1 => lightAttack1TelegraphStateName,
                 PatternType.LightAttack2 => lightAttack2TelegraphStateName,
                 PatternType.HeavyAttack => heavyAttackTelegraphStateName,
-                PatternType.Dash => dashTelegraphStateName,
+                PatternType.NormalDash => normalDashTelegraphStateName,
+                PatternType.DashAttack => dashTelegraphStateName,
                 PatternType.FullCombo => fullComboTelegraphStateName,
                 _ => string.Empty
             };
@@ -296,6 +338,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             bool hasLight1 = false;
             bool hasLight2 = false;
             bool hasHeavy = false;
+            bool hasNormalDash = false;
 
             for (int i = 0; i < patternPool.Count; i++)
             {
@@ -311,6 +354,10 @@ namespace LostMemory.Enemies.Boss.Bertha
                         break;
                     case PatternType.HeavyAttack when !hasHeavy:
                         hasHeavy = true;
+                        uniqueCount++;
+                        break;
+                    case PatternType.NormalDash when !hasNormalDash:
+                        hasNormalDash = true;
                         uniqueCount++;
                         break;
                 }

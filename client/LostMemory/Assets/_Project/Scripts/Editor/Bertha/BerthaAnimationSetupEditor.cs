@@ -12,7 +12,7 @@ namespace LostMemory.Editor.Bertha
 {
     public static class BerthaAnimationSetupEditor
     {
-        private const string BerthaRootMenu = "LostMemory/Bertha/Build Idle + Walk + Entry + Combo Animator";
+        private const string BerthaRootMenu = "LostMemory/Bertha/Build Bertha Animator Set";
         private const string BaseArtFolder = "Assets/_Project/Art/Enemies/Boss/1_Bertha";
         private const string IdleFramesFolder = BaseArtFolder + "/Idle/NoBite";
         private const string WalkFramesFolder = BaseArtFolder + "/Walk/Walking";
@@ -22,6 +22,12 @@ namespace LostMemory.Editor.Bertha
         private const string HeavyAttackFramesFolder = BaseArtFolder + "/Attacks/ComboAtk/3";
         private const string DashAttackFramesFolder = BaseArtFolder + "/Attacks/DashAtk/Full";
         private const string FullComboFramesFolder = BaseArtFolder + "/Attacks/ComboAtk/Full";
+        private const string DeathFramesFolder = BaseArtFolder + "/Death";
+        private const string TiredFramesFolder = BaseArtFolder + "/Tired";
+        private const string StunToFramesFolder = BaseArtFolder + "/Stun/ToStun";
+        private const string StunedFramesFolder = BaseArtFolder + "/Stun/Stuned";
+        private const string ShakeHeadFramesFolder = BaseArtFolder + "/Stun/ShakeHead";
+        private const string OutStunFramesFolder = BaseArtFolder + "/Stun/OutStun";
         private const string OutputFolder = "Assets/_Project/Art/Animations/Enemies/Boss/Bertha";
         private const string IdleClipPath = OutputFolder + "/BerthaIdle.anim";
         private const string WalkClipPath = OutputFolder + "/BerthaWalk.anim";
@@ -29,12 +35,23 @@ namespace LostMemory.Editor.Bertha
         private const string LightAttack1ClipPath = OutputFolder + "/BerthaLightAtk1.anim";
         private const string LightAttack2ClipPath = OutputFolder + "/BerthaLightAtk2.anim";
         private const string HeavyAttackClipPath = OutputFolder + "/BerthaHeavyAtk.anim";
+        private const string DashClipPath = OutputFolder + "/BerthaDash.anim";
         private const string DashAttackClipPath = OutputFolder + "/BerthaDashAtk.anim";
         private const string FullComboClipPath = OutputFolder + "/BerthaFullCombo.anim";
+        private const string DeathClipPath = OutputFolder + "/BerthaDeath.anim";
+        private const string TiredClipPath = OutputFolder + "/BerthaTired.anim";
+        private const string ToStunClipPath = OutputFolder + "/BerthaToStun.anim";
+        private const string StunedClipPath = OutputFolder + "/BerthaStuned.anim";
+        private const string ShakeHeadClipPath = OutputFolder + "/BerthaShakeHead.anim";
+        private const string OutStunClipPath = OutputFolder + "/BerthaOutStun.anim";
         private const string ControllerPath = OutputFolder + "/Bertha.controller";
+        private const string DeathTriggerParameterName = "Death";
         private const string VisualChildName = "Visual";
         private const string SpriteChildName = "BerthaSprite";
         private const int TargetFrameRate = 12;
+        private const int DeathFrameRate = 8;
+        private const int StunTransitionFrameRate = 8;
+        private const int DashFrameCount = 8;
 
         [MenuItem(BerthaRootMenu)]
         public static void BuildIdleAndEntryAnimator()
@@ -50,7 +67,14 @@ namespace LostMemory.Editor.Bertha
                 List<Sprite> lightAttack2Sprites = ImportSprites(LightAttack2FramesFolder);
                 List<Sprite> heavyAttackSprites = ImportSprites(HeavyAttackFramesFolder);
                 List<Sprite> dashAttackSprites = ImportSprites(DashAttackFramesFolder);
+                List<Sprite> dashSprites = TakeFirstSprites(dashAttackSprites, DashFrameCount);
                 List<Sprite> fullComboSprites = ImportSprites(FullComboFramesFolder);
+                List<Sprite> deathSprites = ImportSprites(DeathFramesFolder);
+                List<Sprite> tiredSprites = ImportSprites(TiredFramesFolder);
+                List<Sprite> toStunSprites = ImportSprites(StunToFramesFolder);
+                List<Sprite> stunedSprites = ImportSprites(StunedFramesFolder);
+                List<Sprite> shakeHeadSprites = ImportSprites(ShakeHeadFramesFolder);
+                List<Sprite> outStunSprites = ImportSprites(OutStunFramesFolder);
 
                 if (idleSprites.Count == 0)
                 {
@@ -94,9 +118,51 @@ namespace LostMemory.Editor.Bertha
                     return;
                 }
 
+                if (dashSprites.Count < DashFrameCount)
+                {
+                    Debug.LogError("[BerthaAnimationSetup] Dash frames 1-8 were not found.");
+                    return;
+                }
+
                 if (fullComboSprites.Count == 0)
                 {
                     Debug.LogError("[BerthaAnimationSetup] Full combo frames were not found.");
+                    return;
+                }
+
+                if (deathSprites.Count == 0)
+                {
+                    Debug.LogError("[BerthaAnimationSetup] Death frames were not found.");
+                    return;
+                }
+
+                if (tiredSprites.Count == 0)
+                {
+                    Debug.LogError("[BerthaAnimationSetup] Tired frames were not found.");
+                    return;
+                }
+
+                if (toStunSprites.Count == 0)
+                {
+                    Debug.LogError("[BerthaAnimationSetup] ToStun frames were not found.");
+                    return;
+                }
+
+                if (stunedSprites.Count == 0)
+                {
+                    Debug.LogError("[BerthaAnimationSetup] Stuned frames were not found.");
+                    return;
+                }
+
+                if (shakeHeadSprites.Count == 0)
+                {
+                    Debug.LogError("[BerthaAnimationSetup] ShakeHead frames were not found.");
+                    return;
+                }
+
+                if (outStunSprites.Count == 0)
+                {
+                    Debug.LogError("[BerthaAnimationSetup] OutStun frames were not found.");
                     return;
                 }
 
@@ -106,8 +172,15 @@ namespace LostMemory.Editor.Bertha
                 AnimationClip lightAttack1Clip = CreateOrUpdateClip(LightAttack1ClipPath, lightAttack1Sprites, loop: false);
                 AnimationClip lightAttack2Clip = CreateOrUpdateClip(LightAttack2ClipPath, lightAttack2Sprites, loop: false);
                 AnimationClip heavyAttackClip = CreateOrUpdateClip(HeavyAttackClipPath, heavyAttackSprites, loop: false);
+                AnimationClip dashClip = CreateOrUpdateClip(DashClipPath, dashSprites, loop: false);
                 AnimationClip dashAttackClip = CreateOrUpdateClip(DashAttackClipPath, dashAttackSprites, loop: false);
                 AnimationClip fullComboClip = CreateOrUpdateClip(FullComboClipPath, fullComboSprites, loop: false);
+                AnimationClip deathClip = CreateOrUpdateClip(DeathClipPath, deathSprites, loop: false, DeathFrameRate);
+                AnimationClip tiredClip = CreateOrUpdateClip(TiredClipPath, tiredSprites, loop: true);
+                AnimationClip toStunClip = CreateOrUpdateClip(ToStunClipPath, toStunSprites, loop: false, StunTransitionFrameRate);
+                AnimationClip stunedClip = CreateOrUpdateClip(StunedClipPath, stunedSprites, loop: true);
+                AnimationClip shakeHeadClip = CreateOrUpdateClip(ShakeHeadClipPath, shakeHeadSprites, loop: true);
+                AnimationClip outStunClip = CreateOrUpdateClip(OutStunClipPath, outStunSprites, loop: false, StunTransitionFrameRate);
                 AnimatorController controller = CreateOrUpdateController(
                     idleClip,
                     walkClip,
@@ -115,8 +188,15 @@ namespace LostMemory.Editor.Bertha
                     lightAttack1Clip,
                     lightAttack2Clip,
                     heavyAttackClip,
+                    dashClip,
                     dashAttackClip,
-                    fullComboClip);
+                    fullComboClip,
+                    deathClip,
+                    tiredClip,
+                    toStunClip,
+                    stunedClip,
+                    shakeHeadClip,
+                    outStunClip);
 
                 if (Selection.activeGameObject != null)
                 {
@@ -126,7 +206,7 @@ namespace LostMemory.Editor.Bertha
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
 
-                Debug.Log("[BerthaAnimationSetup] Built Bertha Idle/Walk/Entry/LightAtk1/LightAtk2/HeavyAtk/DashAtk/FullCombo animator assets.");
+                Debug.Log("[BerthaAnimationSetup] Built Bertha Idle/Walk/Entry/LightAtk1/LightAtk2/HeavyAtk/Dash/DashAtk/FullCombo/Death/Tired/Stun animator assets.");
             }
             catch (Exception exception)
             {
@@ -159,6 +239,18 @@ namespace LostMemory.Editor.Bertha
             }
 
             return sprites;
+        }
+
+        private static List<Sprite> TakeFirstSprites(IReadOnlyList<Sprite> sprites, int count)
+        {
+            int safeCount = Mathf.Min(Mathf.Max(0, count), sprites.Count);
+            List<Sprite> selectedSprites = new List<Sprite>(safeCount);
+            for (int i = 0; i < safeCount; i++)
+            {
+                selectedSprites.Add(sprites[i]);
+            }
+
+            return selectedSprites;
         }
 
         private static void ConfigureSpriteImporter(string assetPath)
@@ -203,6 +295,11 @@ namespace LostMemory.Editor.Bertha
 
         private static AnimationClip CreateOrUpdateClip(string clipPath, IReadOnlyList<Sprite> sprites, bool loop)
         {
+            return CreateOrUpdateClip(clipPath, sprites, loop, TargetFrameRate);
+        }
+
+        private static AnimationClip CreateOrUpdateClip(string clipPath, IReadOnlyList<Sprite> sprites, bool loop, int frameRate)
+        {
             AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
             if (clip == null)
             {
@@ -210,7 +307,8 @@ namespace LostMemory.Editor.Bertha
                 AssetDatabase.CreateAsset(clip, clipPath);
             }
 
-            clip.frameRate = TargetFrameRate;
+            int appliedFrameRate = Mathf.Max(1, frameRate);
+            clip.frameRate = appliedFrameRate;
             SetClipLooping(clip, loop);
 
             EditorCurveBinding binding = new EditorCurveBinding
@@ -225,7 +323,7 @@ namespace LostMemory.Editor.Bertha
             {
                 frames[i] = new ObjectReferenceKeyframe
                 {
-                    time = i / (float)TargetFrameRate,
+                    time = i / (float)appliedFrameRate,
                     value = sprites[i]
                 };
             }
@@ -242,8 +340,15 @@ namespace LostMemory.Editor.Bertha
             AnimationClip lightAttack1Clip,
             AnimationClip lightAttack2Clip,
             AnimationClip heavyAttackClip,
+            AnimationClip dashClip,
             AnimationClip dashAttackClip,
-            AnimationClip fullComboClip)
+            AnimationClip fullComboClip,
+            AnimationClip deathClip,
+            AnimationClip tiredClip,
+            AnimationClip toStunClip,
+            AnimationClip stunedClip,
+            AnimationClip shakeHeadClip,
+            AnimationClip outStunClip)
         {
             AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
             if (controller == null)
@@ -253,6 +358,11 @@ namespace LostMemory.Editor.Bertha
 
             AnimatorControllerLayer layer = controller.layers[0];
             AnimatorStateMachine stateMachine = layer.stateMachine;
+
+            for (int i = stateMachine.anyStateTransitions.Length - 1; i >= 0; i--)
+            {
+                stateMachine.RemoveAnyStateTransition(stateMachine.anyStateTransitions[i]);
+            }
 
             for (int i = stateMachine.states.Length - 1; i >= 0; i--)
             {
@@ -277,18 +387,42 @@ namespace LostMemory.Editor.Bertha
             AnimatorState heavyAttackState = stateMachine.AddState("HeavyAtk");
             heavyAttackState.motion = heavyAttackClip;
 
+            AnimatorState dashState = stateMachine.AddState("Dash");
+            dashState.motion = dashClip;
+
             AnimatorState dashAttackState = stateMachine.AddState("DashAtk");
             dashAttackState.motion = dashAttackClip;
 
             AnimatorState fullComboState = stateMachine.AddState("FullCombo");
             fullComboState.motion = fullComboClip;
 
+            AnimatorState deathState = stateMachine.AddState("Death");
+            deathState.motion = deathClip;
+
+            AnimatorState tiredState = stateMachine.AddState("Tired");
+            tiredState.motion = tiredClip;
+
+            AnimatorState toStunState = stateMachine.AddState("ToStun");
+            toStunState.motion = toStunClip;
+
+            AnimatorState stunedState = stateMachine.AddState("Stuned");
+            stunedState.motion = stunedClip;
+
+            AnimatorState shakeHeadState = stateMachine.AddState("ShakeHead");
+            shakeHeadState.motion = shakeHeadClip;
+
+            AnimatorState outStunState = stateMachine.AddState("OutStun");
+            outStunState.motion = outStunClip;
+
             CreateExitTransition(entryState, idleState);
             CreateExitTransition(lightAttack1State, idleState);
             CreateExitTransition(lightAttack2State, idleState);
             CreateExitTransition(heavyAttackState, idleState);
+            CreateExitTransition(dashState, idleState);
             CreateExitTransition(dashAttackState, idleState);
             CreateExitTransition(fullComboState, idleState);
+            EnsureTriggerParameter(controller, DeathTriggerParameterName);
+            CreateAnyStateTriggerTransition(stateMachine, deathState, DeathTriggerParameterName);
 
             stateMachine.defaultState = idleState;
 
@@ -303,6 +437,34 @@ namespace LostMemory.Editor.Bertha
             transition.exitTime = 1f;
             transition.duration = 0.05f;
             transition.hasFixedDuration = true;
+        }
+
+        private static void CreateAnyStateTriggerTransition(AnimatorStateMachine stateMachine, AnimatorState toState, string triggerParameterName)
+        {
+            AnimatorStateTransition transition = stateMachine.AddAnyStateTransition(toState);
+            transition.hasExitTime = false;
+            transition.exitTime = 0f;
+            transition.duration = 0.02f;
+            transition.hasFixedDuration = true;
+            transition.canTransitionToSelf = false;
+            transition.AddCondition(AnimatorConditionMode.If, 0f, triggerParameterName);
+        }
+
+        private static void EnsureTriggerParameter(AnimatorController controller, string parameterName)
+        {
+            AnimatorControllerParameter[] parameters = controller.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter != null
+                    && parameter.name == parameterName
+                    && parameter.type == AnimatorControllerParameterType.Trigger)
+                {
+                    return;
+                }
+            }
+
+            controller.AddParameter(parameterName, AnimatorControllerParameterType.Trigger);
         }
 
         private static void ApplyAnimatorToSelectedRoot(GameObject selectedObject, AnimatorController controller, Sprite idleSprite)

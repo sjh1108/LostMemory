@@ -176,6 +176,8 @@ namespace LostMemory.Enemies.Boss.Bertha
         private void EnsureCoreCombatComponents(Animator animator)
         {
             Rigidbody2D body = GetOrAdd<Rigidbody2D>(gameObject);
+            body.bodyType = RigidbodyType2D.Dynamic;
+            body.mass = 10000f;
             body.gravityScale = 0f;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -195,8 +197,11 @@ namespace LostMemory.Enemies.Boss.Bertha
             Health health = GetOrAdd<Health>(gameObject);
             health.InitialHealth = initialHealth;
             health.MaximumHealth = initialHealth;
+            health.TargetAnimator = animator;
+            health.DestroyOnDeath = false;
+            health.DelayBeforeDestruction = 0f;
             health.DisableControllerOnDeath = true;
-            health.DisableModelOnDeath = true;
+            health.DisableModelOnDeath = false;
             health.DisableCollisionsOnDeath = true;
 
             Character character = GetOrAdd<Character>(gameObject);
