@@ -45,6 +45,12 @@ namespace LostMemory.Stage
         // 후속 네트워크 CL 이 한 줄만 바꾸면 호스트 권위 분기로 전환된다.
         public bool IsAuthority => true;
 
+        /// <summary>
+        /// DA Build 완료 + module spawn 끝난 직후 발행. CL-048 RunManager 가
+        /// Initializing → InRun 전이 트리거로 구독. 본 bootstrap 의 자체 wiring 은 변경 없음.
+        /// </summary>
+        public event System.Action DungeonBuilt;
+
         private bool buildRequested;
 
         public Dungeon Dungeon => dungeon;
@@ -103,6 +109,10 @@ namespace LostMemory.Stage
         public override void OnSpawnedManagedObjects(Dungeon dungeon, GameObject[] spawnedManagedObjects, DungeonModel activeModel)
         {
             Debug.Log($"[DungeonRunBootstrap] DA spawned {spawnedManagedObjects.Length} managed objects (seed={dungeon.Config?.Seed})");
+
+            // CL-048: RunManager 등 외부 구독자에게 DA build 완료 신호. warp / BeginRoomEntry 보다 *먼저* 발행하여
+            // 외부 시스템이 InRun 전이 후 첫 방 진입 흐름을 관찰할 수 있게 함.
+            DungeonBuilt?.Invoke();
 
             if (!warpPlayerToFirstRoom || player == null)
             {

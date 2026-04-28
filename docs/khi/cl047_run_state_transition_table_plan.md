@@ -151,3 +151,39 @@ CL-047 = 그 빈 명세를 **표(설계 문서)로 채우는 작업**. 짝 티�
 3. **Resulting → None** vs **Resulting → Initializing** — "다시하기" 버튼이 메인메뉴 거치는지 / 바로 새 런 시작인지. UI 명세 영역 의존, 본 표에서는 *Resulting → None* 만 명세 + "다시하기 후속 검토" 메모.
 4. **호스트 권위 가정** — 본 표는 *호스트 권위* 모델 가정. 메시 / P2P / 서버 권위 등 다른 모델 도입 시 Authority 컬럼 값 재해석 필요. 현재 NGO 가 호스트 권위 기본이라 안전.
 5. **이름 컨벤션** — `RunState_None` / `RunState.None` / `None` 등 표기 통일. CL-048 시 enum 이름 확정 → 본 표 retrospective 정합.
+
+---
+
+## v1.1 Retrospective (CL-048 구현 시 결정)
+
+본 spec v1 (분리안: `InRun_Combat / InRun_Bridge / InRun_Boss`) 작성 후, CL-048 ([cl048_run_state_machine_minimal_plan.md](cl048_run_state_machine_minimal_plan.md)) 구현 단계에서 다음 결정이 spec 에 영향.
+
+### 1. 상태 단일화 — 위험 1번 해결
+
+`InRun_Combat / InRun_Bridge / InRun_Boss` 분리 → **`InRun` + sub-info 로 단일화** 결정.
+
+근거:
+- `StageRoomType` enum 에 `Bridge` 가 존재하지 않음 (실제 값: `Unknown / Combat / Shop / Event / Boss`)
+- 즉 Bridge 는 *데이터 모델에 없는 개념* — spec 의 방 종류 표기에 부정합
+- 메인 상태 분리 시 곱집합 폭발 위험 (멀티 시 `InRun_Combat_MemberDown` 등)
+- 외부 트리거 기반 storage 패턴에 단일화가 정합 (CL-048 머신 패턴 결정과 일관)
+
+### 2. CL-048 확정 enum (6개)
+
+```csharp
+public enum RunState {
+    None, Initializing, InRun, RunCleared, RunFailed, Resulting,
+}
+```
+
+방 종류 정보 필요 시 `RoomClearedPayload.Data.RoomType` (`StageRoomType`) 으로 query.
+
+### 3. v1 표와의 관계
+
+본 spec 의 표 자체는 *디자인 의도* 기록으로서 v1 그대로 유지 (재작성 X). CL-048 구현 결정은 본 retrospective 섹션이 권위 있는 reference. 후속 CL 작업자는 본 retrospective 부터 보고 *단일 InRun 모델* 로 작업.
+
+전이 표(섹션 2)의 `InRun_*` 행들은 v1.1 에서 다음으로 매핑:
+- `InRun_Combat → InRun_Combat` → `InRun → InRun` (RoomEntered 시 sub-info 만 변경, 메인 상태 유지)
+- `InRun_* → InRun_Boss` → `InRun → InRun` (sub-info 변경)
+- `InRun_Boss → RunCleared` → `InRun → RunCleared` (가드: `currentRoomType == Boss`)
+- `InRun_* → RunFailed` → `InRun → RunFailed`
