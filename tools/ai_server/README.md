@@ -2,7 +2,7 @@
 
 `tools/ai_server` is the implementation location fixed by `AI-401-01`.
 
-This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. The current draft now covers `AI-401` through `AI-404`:
+This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. The current draft now covers `AI-401` through `AI-405`:
 
 - separate project location under `tools/`
 - `GET /api/health` endpoint for deployment and proxy checks
@@ -11,6 +11,7 @@ This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. T
 - Gradle build file and Dockerfile draft
 - minimal generation request DTO, controller, validation, and Swagger exposure
 - ComfyUI `/prompt` template assembly and submit flow with `prompt_id` return
+- ComfyUI `/history/{promptId}` polling and first output metadata parsing
 
 ## Current endpoints
 
@@ -18,6 +19,7 @@ This project is a Spring Boot bootstrap for the ComfyUI internal tool backend. T
 - `GET /api/actuator/health`
 - `GET /api/swagger-ui/index.html`
 - `POST /api/generation-requests`
+- `GET /api/generation-requests/{promptId}`
 
 ## Environment
 
@@ -42,6 +44,8 @@ Optional profile override files:
 The server uses `/api` as its servlet context path, so the health check URL is `http://localhost:8080/api/health`.
 
 `POST /api/generation-requests` now performs the `AI-404` submit flow. It validates `workflowId`, assembles a ComfyUI `/prompt` body from the current classpath template, submits it, and returns `202 Accepted` with both a server-side `requestId` and the ComfyUI `promptId`.
+
+`GET /api/generation-requests/{promptId}` now performs the `AI-405` polling flow. It polls ComfyUI `/history/{promptId}` until the execution is completed, then returns the parsed first output image metadata and observed message types.
 
 ## Current structure
 
@@ -73,4 +77,5 @@ tools/ai_server/
 - `AI-402` adds typed configuration properties, startup validation, and a reusable ComfyUI HTTP client bean.
 - `AI-403` adds the minimal generation request API contract before actual ComfyUI submission logic.
 - `AI-404` adds `PromptAssemblyService`, a classpath prompt template, real `/prompt` submit, `promptId` extraction, and debug logging for request/response payloads.
+- `AI-405` adds `GenerationHistoryService`, `GenerationHistoryParser`, `/history` polling constants, and a success-path parser that reads the first output image by iterating the `outputs` map instead of hardcoding a node id.
 - This project is intentionally separate from the root `server/` project.

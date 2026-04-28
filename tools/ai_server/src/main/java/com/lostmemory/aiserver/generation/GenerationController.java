@@ -1,6 +1,8 @@
 package com.lostmemory.aiserver.generation;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,9 +22,14 @@ import jakarta.validation.Valid;
 public class GenerationController {
 
     private final GenerationService generationService;
+    private final GenerationHistoryService generationHistoryService;
 
-    public GenerationController(GenerationService generationService) {
+    public GenerationController(
+            GenerationService generationService,
+            GenerationHistoryService generationHistoryService
+    ) {
         this.generationService = generationService;
+        this.generationHistoryService = generationHistoryService;
     }
 
     @PostMapping
@@ -48,5 +55,30 @@ public class GenerationController {
             @Valid @RequestBody CreateGenerationRequest request) {
         return ResponseEntity.accepted()
                 .body(ApiResponse.success(generationService.accept(request)));
+    }
+
+    @GetMapping("/{promptId}")
+    @Operation(
+            summary = "Poll ComfyUI history until generation completes",
+            description = "AI-405 endpoint. This step polls ComfyUI /history/{promptId} until the execution is completed and returns the parsed first output image metadata.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Generation history completed and parsed",
+                            content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "502",
+                            description = "ComfyUI /history polling failed",
+                            content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "504",
+                            description = "ComfyUI /history polling timed out",
+                            content = @Content(schema = @Schema(implementation = ApiResponse.class)))
+            }
+    )
+    public ResponseEntity<ApiResponse<GenerationHistoryResponse>> getGenerationHistory(
+            @PathVariable String promptId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(generationHistoryService.pollUntilCompleted(promptId)));
     }
 }
