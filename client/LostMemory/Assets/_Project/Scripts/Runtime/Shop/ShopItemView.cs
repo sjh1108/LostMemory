@@ -11,7 +11,7 @@ namespace LostMemory.Shop
     /// 상점 목록에서 아이템 1행을 담당하는 뷰 컴포넌트.
     /// ShopPanelView가 Init()을 호출해 데이터를 주입한다.
     /// </summary>
-    public class ShopItemView : MonoBehaviour, IPointerClickHandler
+    public class ShopItemView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField] private Image             _iconImage;
         [SerializeField] private TextMeshProUGUI   _nameText;
@@ -25,8 +25,9 @@ namespace LostMemory.Shop
         private ShopItemData         _data;
         private Action<ShopItemData> _onBuyRequested;
         private Action<ShopItemData> _onSelected;
-        private bool                 _isSoldOut   = false;
-        private bool                 _canAfford   = true;
+        private bool                 _isSoldOut = false;
+        private bool                 _isOwned   = false;   // 이미 보유 중
+        private bool                 _canAfford = true;
         private Color                _originalBgColor;
         private Color                _originalBtnColor;
 
@@ -42,7 +43,7 @@ namespace LostMemory.Shop
         /// <summary>컴포넌트 추가 / Reset 시 자식 참조를 자동으로 찾는다.</summary>
         private void Reset()
         {
-            _iconImage       = transform.Find("IconImage")?.GetComponent<Image>();
+            _iconImage       = transform.Find("IconImage/Icon")?.GetComponent<Image>();
             _nameText        = transform.Find("InfoArea/NameText")?.GetComponent<TextMeshProUGUI>();
             _descriptionText = transform.Find("InfoArea/DescText")?.GetComponent<TextMeshProUGUI>();
             _priceText       = transform.Find("PriceArea/PriceText")?.GetComponent<TextMeshProUGUI>();
@@ -64,23 +65,29 @@ namespace LostMemory.Shop
             _priceText.text       = data.Price.ToString("N0");
 
             _iconImage.sprite  = data.Relic.Icon;
+            _iconImage.color   = Color.white;          // 스프라이트가 회색으로 물들지 않게
             _iconImage.enabled = data.Relic.Icon != null;
 
             SetSoldOut(false);
 
             _buyButton.onClick.RemoveAllListeners();
-            _buyButton.onClick.AddListener(() =>
-            {
-                _onSelected?.Invoke(_data);      // 먼저 Detail 갱신
-                _onBuyRequested?.Invoke(_data);  // 그 다음 구매 시도
-            });
+            _buyButton.onClick.AddListener(() => _onBuyRequested?.Invoke(_data));
         }
 
-        /// <summary>아이템 배경 클릭 시 Detail 영역을 갱신한다.</summary>
-        /// BuyButton은 이벤트를 자체 소비하므로 배경 클릭에만 반응한다.
-        public void OnPointerClick(PointerEventData eventData)
+        /// <summary>마우스가 아이템 위에 올라오면 Detail 영역을 갱신한다.</summary>
+        public void OnPointerEnter(PointerEventData eventData)
         {
-            _onSelected?.Invoke(_data);
+            if (_data != null) _onSelected?.Invoke(_data);
+        }
+
+        /// <summary>마우스가 아이템을 벗어나도 마지막 선택 상태를 유지한다 (sticky).</summary>
+        public void OnPointerExit(PointerEventData eventData) { }
+
+        /// <summary>이미 보유 중 상태를 설정한다. 버튼을 "보유중"으로 비활성화한다.</summary>
+        public void SetOwned(bool isOwned)
+        {
+            _isOwned = isOwned;
+            RefreshButtonState();
         }
 
         /// <summary>구매완료 상태를 설정한다.</summary>
@@ -109,23 +116,25 @@ namespace LostMemory.Shop
             RefreshButtonState();
         }
 
-        /// <summary>sold-out / affordable 상태를 조합해 버튼 외관을 결정한다.</summary>
+        /// <summary>sold-out / owned / affordable 상태를 조합해 버튼 외관을 결정한다.</summary>
         private void RefreshButtonState()
         {
             if (_buyButton == null) return;
 
-            _buyButton.interactable = !_isSoldOut && _canAfford;
+            _buyButton.interactable = !_isSoldOut && !_isOwned && _canAfford;
 
-            // 버튼 텍스트
+            // 버튼 텍스트 — 우선순위: 구매완료 > 보유중 > 구매
             var buyText = _buyButton.GetComponentInChildren<TextMeshProUGUI>();
             if (buyText != null)
-                buyText.text = _isSoldOut ? "구매완료" : "구매";
+                buyText.text = _isSoldOut ? "구매완료"
+                             : _isOwned   ? "보유중"
+                             :              "구매";
 
             // 버튼 색상
             var btnImg = _buyButton.GetComponent<Image>();
             if (btnImg != null)
             {
-                if (_isSoldOut)
+                if (_isSoldOut || _isOwned)
                     btnImg.color = new Color(_originalBtnColor.r * 0.5f,
                                             _originalBtnColor.g * 0.5f,
                                             _originalBtnColor.b * 0.5f);   // 어두운 초록

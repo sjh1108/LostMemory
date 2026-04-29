@@ -37,17 +37,9 @@ namespace LostMemory.Relics
 
             if (relic.IsConsumable)
             {
-                // 즉시 사용 소모품(랜덤박스 등)은 인벤토리에 등록하지 않음
-                if (relic.IsInstantUse)
-                {
-                    Debug.Log($"[PlayerRelicInventory] 즉시 사용 소모품 — 인벤토리 미등록: {relic.DisplayName}");
-                    return false;
-                }
-
-                // 보관 소모품(물약 등)은 중복 허용하여 인벤토리에 추가
-                _ownedRelics.Add(relic);
-                Debug.Log($"[PlayerRelicInventory] 소모품 획득: {relic.DisplayName}");
-                return true;
+                // 소모품은 단축키바(PlayerConsumableInventory)로 라우팅 — 유물 인벤토리 미등록
+                Debug.Log($"[PlayerRelicInventory] 소모품은 단축키바로 라우팅: {relic.DisplayName}");
+                return false;
             }
 
             // 일반 유물: 중복 체크
@@ -57,21 +49,48 @@ namespace LostMemory.Relics
                 return false;
             }
 
-            _ownedRelics.Add(relic);
-            OnRelicAcquired?.Invoke(relic);
+            int emptyIdx = _ownedRelics.IndexOf(null);
+            if (emptyIdx >= 0) _ownedRelics[emptyIdx] = relic;
+            else               _ownedRelics.Add(relic);
             Debug.Log($"[PlayerRelicInventory] 유물 획득: {relic.DisplayName}");
             return true;
         }
 
         /// <summary>해당 유물을 보유 중인지 확인한다.</summary>
         public bool Has(RelicData relic) =>
-            _ownedRelics.Any(r => r.name == relic.name);
+            _ownedRelics.Any(r => r != null && r.name == relic.name);
 
         /// <summary>
         /// RewardPool.DrawThree()에 넘길 보유 유물 이름 목록을 반환한다.
         /// </summary>
         public IEnumerable<string> GetOwnedNames() =>
-            _ownedRelics.Select(r => r.name);
+            _ownedRelics.Where(r => r != null).Select(r => r.name);
+
+        /// <summary>유물을 인벤토리에서 1개 제거한다.</summary>
+        /// <returns>실제로 제거됐으면 true</returns>
+        public bool Remove(RelicData relic)
+        {
+            if (relic == null) return false;
+            int idx = _ownedRelics.FindIndex(r => r != null && r.name == relic.name);
+            if (idx < 0) return false;
+            _ownedRelics[idx] = null;   // 슬롯 위치 유지 — 제거 대신 null로 교체
+            Debug.Log($"[PlayerRelicInventory] 유물 버림: {relic.DisplayName}");
+            return true;
+        }
+
+        /// <summary>두 인덱스의 유물 위치를 교환한다. 리스트가 짧으면 null로 채워 확장한다.</summary>
+        public void Swap(int indexA, int indexB)
+        {
+            if (indexA < 0 || indexB < 0) return;
+            if (indexA == indexB) return;
+
+            // 목적지 인덱스까지 null로 채워 리스트를 확장
+            int needed = Mathf.Max(indexA, indexB) + 1;
+            while (_ownedRelics.Count < needed)
+                _ownedRelics.Add(null);
+
+            (_ownedRelics[indexA], _ownedRelics[indexB]) = (_ownedRelics[indexB], _ownedRelics[indexA]);
+        }
 
         /// <summary>런 종료 시 인벤토리를 초기화한다. CL-109: OnCleared 이벤트 발화로 Registry 가 modifier/shield 정리.</summary>
         public void Clear()
