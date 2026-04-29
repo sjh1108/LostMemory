@@ -366,5 +366,29 @@ namespace LostMemory.TestKhi
 
             Debug.Log($"[KhiParry] {label} t={Time.time:F3}");
         }
+
+        // ── 임시 디버그 (race condition 추적용. 진단 끝나면 제거 또는 #if UNITY_EDITOR 로 감싸기) ──
+
+        [ContextMenu("Debug — Dump permit state")]
+        private void DebugDumpPermitState()
+        {
+            string weaponState = handleWeapon != null ? handleWeapon.AbilityPermitted.ToString() : "null";
+            string dashState = dashController != null ? dashController.AbilityPermitted.ToString() : "null";
+            string meleeState = meleeCombo != null ? meleeCombo.ExternalBlock.ToString() : "null";
+            Debug.Log($"[KhiParry-DBG] state={_state}, hasCache={_hasCachedPermits}, " +
+                      $"cached(weapon={_cachedHandleWeaponPermitted}, dash={_cachedDashPermitted}, melee={_cachedMeleeExternalBlock}), " +
+                      $"current(weapon={weaponState}, dash={dashState}, melee={meleeState}), " +
+                      $"timeScale={Time.timeScale}");
+        }
+
+        [ContextMenu("Debug — Force restore permits (panic)")]
+        private void DebugForceRestorePermits()
+        {
+            if (handleWeapon != null) handleWeapon.AbilityPermitted = true;
+            if (dashController != null) dashController.PermitAbility(true);
+            if (meleeCombo != null) meleeCombo.ExternalBlock = false;
+            _hasCachedPermits = false;
+            Debug.Log("[KhiParry-DBG] All permits force-restored. state was=" + _state);
+        }
     }
 }
