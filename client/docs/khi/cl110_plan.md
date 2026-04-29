@@ -348,12 +348,20 @@ public readonly struct RoomClearedPayload
    - 인벤토리 등록 + RelicEffectRegistry.HandleAcquired → AttackPower +5%
    - 다음 방 진입 후 검 1 타 데미지 = base × stepMul × 1.05
 
-### 시나리오 6 — Run 종료 (정리)
+### 시나리오 6 — Run 종료 (정리) — **CL-109 cleanup 자연 검증 통합**
 1. 보상 1 회 받은 후 보스 클리어 → RunCleared → 결과 화면 → CloseResulting
 2. **기대**:
-   - PlayerRelicInventory.Clear() 호출 (RunManager.CloseResulting 끝에 1 줄, CL-109 plan 위험 #5 참고)
+   - RunManager.CloseResulting 끝의 `playerRelicInventory.Clear()` 자동 호출 (**CL-109 구현 완료** — [cl109.md](cl109.md) 참조)
+   - `PlayerRelicInventory.OnCleared` → `RelicEffectRegistry.HandleRunCleared` chain → `container.ClearAll` + `playerShield.ClearShield` + 3 List `Clear`
+   - **기대 로그**:
+     ```
+     [StatModifier] Cleared all modifiers.
+     [PlayerShield] Expired/Cleared
+     ```
+   - 다음 런 시작 후 *Add all assigned relics 누르기 전* 시점에 Log all totals → 7 stat 모두 baseline (1.000 / count=0) 복귀 (= 전 런의 효과 누수 없음)
    - RewardController.UnsubscribeAllRoomControllers (OnDisable 또는 RunManager 위임)
    - 다음 런 시작 시 보상 다시 정상 동작
+3. **⚠️ 본 시나리오 = CL-109 시나리오 3 의 자연 검증 시점**. CL-109 commit 시 *현장 검증 미진행* (DungeonArchitect Build NRE 로 보스 방 진입 막힘 + 디버그 ContextMenu 추가/제거 비용 회피) → 본 CL-110 의 보상 흐름 검증 시 *전체 한 사이클* 자연 트리거로 동시 검증. 본 시나리오 통과 시 **CL-109 의 HandleRunCleared 4 줄 cleanup 도 동시에 검증 완료** 처리. 누수 발견 시 CL-109 fix ticket 별도 생성
 
 ---
 

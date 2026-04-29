@@ -60,7 +60,10 @@ namespace LostMemory.Combat
             if (_currentShield > 0f && Time.time >= _expiresAt) ClearShield();
         }
 
-        private void ClearShield()
+        /// <summary>
+        /// CL-109: Run 종료 시 RelicEffectRegistry 가 호출. 만료 외 외부 강제 리셋 진입점.
+        /// </summary>
+        public void ClearShield()
         {
             _currentShield = 0f;
             _expiresAt = 0f;
