@@ -45,7 +45,10 @@ namespace LostMemory.Stage
             // Initializing → RunFailed (DA Build 실패 시 — 예외 처리, 후속 CL 에서 트리거 정의)
             (RunState.Initializing, RunState.RunFailed),
 
-            // InRun → RunCleared (보스방 RoomCleared)
+            // InRun -> Initializing (boss clear portal -> next stage build)
+            (RunState.InRun, RunState.Initializing),
+
+            // InRun → RunCleared (last stage boss clear portal)
             (RunState.InRun, RunState.RunCleared),
             // InRun → RunFailed (Player Defeated)
             (RunState.InRun, RunState.RunFailed),

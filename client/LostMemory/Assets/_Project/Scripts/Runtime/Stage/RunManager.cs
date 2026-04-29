@@ -13,7 +13,7 @@ namespace LostMemory.Stage
     /// 책임:
     ///   1. <see cref="RunStateMachine"/> 생성 / 보유
     ///   2. <see cref="DungeonRunBootstrap.DungeonBuilt"/> 구독 → InRun 전이
-    ///   3. <see cref="RoomEntryRuntimeController.RoomCleared"/> 구독 → 보스방 클리어 시 RunCleared 전이
+    ///   3. <see cref="RoomEntryRuntimeController.RoomCleared"/> 구독 → 보스방 클리어 시 포탈 진입 대기
     ///   4. <see cref="KhiPlayerStateAggregator.StateChanged"/> 구독 → Defeated 검출 시 RunFailed 전이
     ///   5. RunCleared / RunFailed 도달 후 일정 지연 → Resulting 전이 + UI 활성 (stub)
     ///   6. 외부 (UI 닫기 버튼 등) 가 <see cref="CloseResulting"/> 호출 → None 복귀
@@ -44,12 +44,30 @@ namespace LostMemory.Stage
         [SerializeField, Tooltip("RunCleared/RunFailed 도달 후 Resulting 까지의 지연 시간(초)")]
         private float resultingDelaySeconds = 2f;
 
+        [Header("Stage Progression")]
+        [SerializeField, Min(1), Tooltip("이번 런에서 진행할 스테이지 수. 보스 클리어 포탈 진입 시 다음 스테이지가 없으면 결과 화면으로 간다.")]
+        private int totalStageCount = 1;
+
+        [SerializeField, Tooltip("보스 클리어 포탈/스테이지 진행 로그 출력.")]
+        private bool logStageProgression = true;
+
         public RunStateMachine StateMachine { get; private set; }
 
         // 후속 네트워크 CL 이 한 줄만 바꾸면 호스트 권위 분기로 전환된다.
         public bool IsAuthority => true;
 
+        public int CurrentStageIndex { get; private set; }
+        public int CurrentStageNumber => CurrentStageIndex + 1;
+        public int TotalStageCount => Mathf.Max(1, totalStageCount);
+        public bool HasNextStage => CurrentStageIndex + 1 < TotalStageCount;
+
         private readonly HashSet<RoomEntryRuntimeController> _subscribedControllers = new HashSet<RoomEntryRuntimeController>();
+        private float runStartedAt;
+        private int killCount;
+        private int bossKillCount;
+        private int totalDamage;
+        private int memoryFragments;
+        private bool bossClearPortalReady;
 
         private void Awake()
         {
@@ -81,6 +99,11 @@ namespace LostMemory.Stage
                 playerDownController.DefeatedByTimeout += HandlePlayerDefeatedDirect;
                 playerDownController.DefeatedSolo += HandlePlayerDefeatedDirect;
             }
+            if (runResultPanelView != null)
+            {
+                runResultPanelView.OnLobby += CloseResulting;
+                runResultPanelView.OnRestart += CloseResulting;
+            }
         }
 
         private void OnDisable()
@@ -97,6 +120,11 @@ namespace LostMemory.Stage
             {
                 playerDownController.DefeatedByTimeout -= HandlePlayerDefeatedDirect;
                 playerDownController.DefeatedSolo -= HandlePlayerDefeatedDirect;
+            }
+            if (runResultPanelView != null)
+            {
+                runResultPanelView.OnLobby -= CloseResulting;
+                runResultPanelView.OnRestart -= CloseResulting;
             }
             UnsubscribeAllRoomControllers();
 
@@ -128,10 +156,53 @@ namespace LostMemory.Stage
             {
                 return;
             }
+            CurrentStageIndex = 0;
+            bossClearPortalReady = false;
+            ResetRunResultTracking();
+            BuildCurrentStage();
+        }
+
+        /// <summary>
+        /// 보스 클리어 포탈 진입 시 호출. 다음 스테이지가 있으면 새 스테이지를 빌드하고, 없으면 결과 화면으로 진입한다.
+        /// </summary>
+        public bool NotifyBossClearPortalEntered()
+        {
+            if (!IsAuthority)
+            {
+                return false;
+            }
+            if (StateMachine.Current != RunState.InRun)
+            {
+                Debug.LogWarning($"[RunManager] Boss clear portal ignored. Current state is {StateMachine.Current}.", this);
+                return false;
+            }
+            if (!bossClearPortalReady)
+            {
+                Debug.LogWarning("[RunManager] Boss clear portal ignored before boss room clear.", this);
+                return false;
+            }
+
+            bossClearPortalReady = false;
+
+            bool handled = HasNextStage ? AdvanceToNextStage() : CompleteRunFromBossPortal();
+            if (!handled)
+            {
+                bossClearPortalReady = true;
+            }
+
+            return handled;
+        }
+
+        private void BuildCurrentStage()
+        {
             if (dungeonRunBootstrap == null)
             {
                 Debug.LogWarning("[RunManager] dungeonRunBootstrap reference is null. Cannot build run.", this);
                 return;
+            }
+            if (logStageProgression)
+            {
+                Debug.Log($"[RunManager] Build stage {CurrentStageNumber}/{TotalStageCount}.");
             }
             dungeonRunBootstrap.BuildRun();
         }
@@ -146,6 +217,7 @@ namespace LostMemory.Stage
             {
                 return;
             }
+            bossClearPortalReady = false;
             if (runResultPanelView != null)
             {
                 runResultPanelView.Hide();
@@ -219,16 +291,48 @@ namespace LostMemory.Stage
                 Debug.LogWarning("[RunManager] RoomCleared payload has null RoomData; ignoring.", this);
                 return;
             }
-            // 보스방 클리어 = 런 클리어
-            if (payload.Data.RoomType == StageRoomType.Boss)
+            if (payload.Data.RoomType != StageRoomType.Boss)
             {
-                if (StateMachine.TryTransition(RunState.RunCleared))
-                {
-                    StartCoroutine(DelayedTransitionToResulting());
-                }
+                return;
+            }
+            // 보스방 클리어 = 보스 클리어 포탈 활성화
+            bossKillCount++;
+            bossClearPortalReady = true;
+            if (logStageProgression)
+            {
+                Debug.Log($"[RunManager] Boss room cleared. Boss clear portal is ready. Stage={CurrentStageNumber}/{TotalStageCount}.", this);
             }
             // 일반방 클리어는 *다음 방 진입* 으로 자연 진행 (RoomEntryZone OnTriggerEnter2D 영역 — CL-105).
             // 본 CL 은 *런 단위 전이* 만 책임.
+        }
+
+        private bool AdvanceToNextStage()
+        {
+            if (!StateMachine.TryTransition(RunState.Initializing))
+            {
+                return false;
+            }
+
+            UnsubscribeAllRoomControllers();
+            if (rewardController != null)
+            {
+                rewardController.UnsubscribeAllRoomControllers();
+            }
+
+            CurrentStageIndex++;
+            BuildCurrentStage();
+            return true;
+        }
+
+        private bool CompleteRunFromBossPortal()
+        {
+            if (!StateMachine.TryTransition(RunState.RunCleared))
+            {
+                return false;
+            }
+
+            StartCoroutine(DelayedTransitionToResulting());
+            return true;
         }
 
         private void HandlePlayerStateChanged(KhiPlayerState prev, KhiPlayerState current)
@@ -245,6 +349,7 @@ namespace LostMemory.Stage
             }
             if (StateMachine.TryTransition(RunState.RunFailed))
             {
+                bossClearPortalReady = false;
                 StartCoroutine(DelayedTransitionToResulting());
             }
         }
@@ -262,6 +367,7 @@ namespace LostMemory.Stage
             }
             if (StateMachine.TryTransition(RunState.RunFailed))
             {
+                bossClearPortalReady = false;
                 StartCoroutine(DelayedTransitionToResulting());
             }
         }
@@ -278,15 +384,36 @@ namespace LostMemory.Stage
 
         private void ShowResultingUI()
         {
-            // TODO: RunResultData 집계 → runResultPanelView.Show(data) 호출.
-            // 본 CL 범위 = *상태 추적까지*. RunResultData 집계 / 데이터 wiring 은 후속 CL.
             if (runResultPanelView == null)
             {
                 Debug.Log("[RunManager] Resulting state — no RunResultPanelView wired (stub).");
                 return;
             }
-            runResultPanelView.gameObject.SetActive(true);
-            Debug.Log("[RunManager] Resulting state — RunResultPanelView activated (stub, no data binding).");
+
+            runResultPanelView.Show(BuildRunResultData());
+            Debug.Log("[RunManager] Resulting state — RunResultPanelView shown.");
+        }
+
+        private void ResetRunResultTracking()
+        {
+            runStartedAt = Time.time;
+            killCount = 0;
+            bossKillCount = 0;
+            totalDamage = 0;
+            memoryFragments = 0;
+        }
+
+        private RunResultData BuildRunResultData()
+        {
+            float playTime = Mathf.Max(0f, Time.time - runStartedAt);
+            return new RunResultData
+            {
+                KillCount = killCount,
+                BossKillCount = bossKillCount,
+                TotalDamage = totalDamage,
+                PlayTime = playTime,
+                MemoryFragments = memoryFragments
+            };
         }
 
         private void LogStateChange(RunState prev, RunState current)
