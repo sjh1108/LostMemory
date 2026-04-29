@@ -2547,7 +2547,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1789113369}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!114 &786682090 stripped
 MonoBehaviour:
@@ -2555,7 +2559,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682092}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fe81ad80cb743b408fa90b048ad597f, type: 3}
@@ -2567,12 +2571,18 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682092}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ce249ab02704ff4ab08dddf7901fad5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerStateAggregator
+--- !u!1 &786682092 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &921228320 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
@@ -3830,12 +3840,25 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682092}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33c724ba75b7ffe42af7580044857e52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiDownController
+--- !u!114 &1789113369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786682092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
+  logModifierChanges: 1
 --- !u!28 &1841735891
 Texture2D:
   m_ObjectHideFlags: 0
