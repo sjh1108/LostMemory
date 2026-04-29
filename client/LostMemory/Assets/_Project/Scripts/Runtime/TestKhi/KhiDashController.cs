@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using LostMemory.Combat;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -13,17 +15,28 @@ namespace LostMemory.TestKhi
         [SerializeField] private bool allowDashDuringAttack = false;
         [SerializeField] private bool allowDashDuringAttackRecovery = false;
         [SerializeField] private bool logBlockedDashToConsole = false;
+        [Tooltip("CL-108: DashCooldown multiplier 조회용 (질풍 장화). 같은 GameObject 의 컴포넌트.")]
+        [SerializeField] private PlayerStatModifierContainer statContainer;
+
+        // CL-108: Initialization 시점의 base cooldown 캐시. multiplier 는 매 DashStart 마다 적용.
+        private float _baseCooldownDuration;
+        private bool _wasDashingLastFrame;
 
         public bool IsDashing => _dashing;
         public bool AllowDashDuringAttack => allowDashDuringAttack;
         public bool AllowDashDuringAttackRecovery => allowDashDuringAttackRecovery;
+
+        /// <summary>CL-108: 대시 종료 직후 발화 (LateUpdate IsDashing 변화 감지). 추적자의 망토 등이 구독.</summary>
+        public event Action OnDashEnded;
 
         protected override void Initialization()
         {
             base.Initialization();
             aim ??= GetComponent<KhiPlayerAim>();
             meleeCombo ??= GetComponent<KhiMeleeComboController>();
+            if (statContainer == null) statContainer = GetComponent<PlayerStatModifierContainer>();
             DashMode = DashModes.Script;
+            _baseCooldownDuration = Cooldown != null ? Cooldown.ConsumptionDuration : 0f;
         }
 
         protected override void HandleInput()
@@ -57,7 +70,26 @@ namespace LostMemory.TestKhi
         {
             DashMode = DashModes.Script;
             DashDirection = ResolveDashDirection();
+
+            // CL-108: 질풍 장화 (DashCooldown multiplier). 음수 magnitude 면 단축.
+            if (statContainer != null && Cooldown != null)
+            {
+                float mul = statContainer.GetTotalMultiplier(StatId.DashCooldown);
+                Cooldown.ConsumptionDuration = _baseCooldownDuration * mul;
+            }
+
             base.DashStart();
+        }
+
+        // CL-108: 대시 종료 감지. TDE CharacterDash2D 의 DashStop() virtual 미확인이라
+        // LateUpdate IsDashing 변화 감지로 안전하게 처리.
+        private void LateUpdate()
+        {
+            if (_wasDashingLastFrame && !IsDashing)
+            {
+                OnDashEnded?.Invoke();
+            }
+            _wasDashingLastFrame = IsDashing;
         }
 
         private bool ShouldBlockDash()

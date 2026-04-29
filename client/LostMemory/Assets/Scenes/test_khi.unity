@@ -2506,11 +2506,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -32.299667
+      value: -6
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -15.00176
+      value: -2.8
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2544,6 +2544,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 114646620809325970, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: statContainer
+      value: 
+      objectReference: {fileID: 1789113369}
+    - target: {fileID: 8056956279644409734, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: playerHealing
+      value: 
+      objectReference: {fileID: 1789113402}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2568,6 +2578,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1789113401}
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1789113403}
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1789113402}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!114 &786682090 stripped
 MonoBehaviour:
@@ -3476,6 +3494,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: MapMaker_LM
       objectReference: {fileID: 0}
+    - target: {fileID: 3672130645875568416, guid: 5b1281f4582790746bcf292c3e78f799,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3875,6 +3898,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
   logModifierChanges: 1
+--- !u!114 &1789113371 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8099593820185299679, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786682092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e91b5caa1ec5f7a428fe2e32f2b348d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiParryController
 --- !u!114 &1789113373 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 114109505143042948, guid: 4d290d1fc0f84526999c421c61df5d8f,
@@ -3899,6 +3934,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce4d96451ada47fd91066a50793a9f2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiMeleeComboController
+--- !u!114 &1789113378 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114646620809325970, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786682092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f47b34d4ea84fbfba2cb67c6db59740, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1789113380 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 114871673569860628, guid: 4d290d1fc0f84526999c421c61df5d8f,
@@ -3955,6 +4002,9 @@ MonoBehaviour:
   container: {fileID: 1789113369}
   playerHealth: {fileID: 1789113380}
   combatController: {fileID: 1789113374}
+  parryController: {fileID: 1789113371}
+  dashController: {fileID: 1789113378}
+  playerShield: {fileID: 1789113403}
 --- !u!114 &1789113401
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3974,6 +4024,41 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2f6954336ecfe564d8c6544f754189b7, type: 2}
   - {fileID: 11400000, guid: bc2ccafc2d7af344a9d4d95f1ed01af2, type: 2}
   - {fileID: 11400000, guid: 57c8fa532f114c04991d0a28d50cedf8, type: 2}
+  - {fileID: 11400000, guid: a587bd5dfcf4a2a468639943a93bf83c, type: 2}
+  - {fileID: 11400000, guid: 5ebd41e2a884c6b45bff2603b28a9128, type: 2}
+  - {fileID: 11400000, guid: 5c1bb4475bb3f684897825120a45ff40, type: 2}
+  - {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}
+  - {fileID: 11400000, guid: d3e3144f7ab56554985fafc09eb06ace, type: 2}
+--- !u!114 &1789113402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786682092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6643ceaf7a0382f44881910471033808, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealing
+  health: {fileID: 1789113380}
+  container: {fileID: 1789113369}
+  logHeals: 1
+  _debugConsumableToUse: {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709,
+    type: 2}
+--- !u!114 &1789113403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786682092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b426d2595487b104e92127941d64ee42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerShield
+  logShieldEvents: 1
 --- !u!28 &1841735891
 Texture2D:
   m_ObjectHideFlags: 0

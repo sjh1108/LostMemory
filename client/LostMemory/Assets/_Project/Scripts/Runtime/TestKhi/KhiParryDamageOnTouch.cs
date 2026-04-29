@@ -1,3 +1,4 @@
+using LostMemory.Combat;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -8,6 +9,8 @@ namespace LostMemory.TestKhi
     /// 피해 적용 직전에 대상의 KhiParryController를 확인해 패링 성공 시 피해를 스킵하고
     /// 패링 실패 후딜 중이면 감쇠 피해만 적용한다.
     /// 패링과 무관한 대상이면 기본 DamageOnTouch 흐름을 그대로 유지한다.
+    ///
+    /// CL-108: 모든 데미지 경로에 PlayerShield 차감 hook 추가. 패링 성공은 보호막을 차감하지 않음.
     ///
     /// NOTE: 감쇠 경로는 base.OnCollideWithDamageable(Health)의 로직(TDE DamageOnTouch.cs 라인 634-676)과
     /// 동일 순서로 수동 재현한다. TDE 버전 업그레이드 시 base 구현을 확인해야 한다.
@@ -26,39 +29,57 @@ namespace LostMemory.TestKhi
                 return;
             }
 
+            PlayerShield shield = ResolvePlayerShield(health);
             KhiParryController parry = ResolveParryController(health);
-            if (parry == null)
-            {
-                if (logParryInteraction) Debug.Log($"[KhiParryDoT] no KhiParryController on {health.name}, base path");
-                base.OnCollideWithDamageable(health);
-                return;
-            }
 
             float randomDamage = Random.Range(MinDamageCaused, Mathf.Max(MaxDamageCaused, MinDamageCaused));
             Vector2 incomingDir = (Vector2)(health.transform.position - transform.position);
 
-            if (logParryInteraction)
+            // CL-108: 패링 처리 먼저. 성공이면 보호막 차감 없이 즉시 return.
+            float damageToApply = randomDamage;
+            if (parry != null)
             {
-                Debug.Log($"[KhiParryDoT] calling TryResolve, state={parry.CurrentState}, damage={randomDamage}");
+                if (logParryInteraction)
+                {
+                    Debug.Log($"[KhiParryDoT] calling TryResolve, state={parry.CurrentState}, damage={randomDamage}");
+                }
+
+                if (parry.TryResolveIncomingDamage(gameObject, incomingDir, randomDamage, out float resolved))
+                {
+                    if (resolved <= 0f)
+                    {
+                        // 패링 성공: 피해 적용 스킵. 보호막도 차감하지 않음.
+                        if (logParryInteraction) Debug.Log("[KhiParryDoT] parry SUCCESS, skip damage");
+                        return;
+                    }
+                    // 패링 실패 후딜 감쇠
+                    if (logParryInteraction) Debug.Log($"[KhiParryDoT] parry REDUCED, damage={resolved}");
+                    damageToApply = resolved;
+                }
+                else if (logParryInteraction)
+                {
+                    Debug.Log("[KhiParryDoT] TryResolve returned false, full damage path");
+                }
             }
 
-            if (!parry.TryResolveIncomingDamage(gameObject, incomingDir, randomDamage, out float resolved))
+            // CL-108: PlayerShield 차감. 보호막이 완전 흡수하면 피드백/이벤트 스킵 (결정 #4 정책).
+            float dmgAfterShield = shield != null ? shield.TryAbsorb(damageToApply) : damageToApply;
+            if (dmgAfterShield <= 0f)
             {
-                if (logParryInteraction) Debug.Log($"[KhiParryDoT] TryResolve returned false, base path");
-                base.OnCollideWithDamageable(health);
+                if (logParryInteraction) Debug.Log("[KhiParryDoT] shield fully absorbed, skip damage application");
                 return;
             }
 
-            if (resolved <= 0f)
-            {
-                // 패링 성공: 피해 적용 스킵. 피드백/이벤트도 호출하지 않음.
-                if (logParryInteraction) Debug.Log($"[KhiParryDoT] parry SUCCESS, skip damage");
-                return;
-            }
+            // 모든 경로 ApplyReducedDamage 로 통합 (base 의 부수 효과 재현).
+            ApplyReducedDamage(health, dmgAfterShield);
+        }
 
-            // 실패 후딜 중 감쇠 피해 적용 (base 로직 수동 재현)
-            if (logParryInteraction) Debug.Log($"[KhiParryDoT] parry REDUCED, damage={resolved}");
-            ApplyReducedDamage(health, resolved);
+        private static PlayerShield ResolvePlayerShield(Health health)
+        {
+            if (health == null) return null;
+            PlayerShield shield = health.gameObject.GetComponent<PlayerShield>();
+            if (shield == null) shield = health.gameObject.GetComponentInParent<PlayerShield>();
+            return shield;
         }
 
         private static KhiParryController ResolveParryController(Health health)
