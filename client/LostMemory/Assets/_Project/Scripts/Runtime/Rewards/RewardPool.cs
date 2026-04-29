@@ -33,6 +33,16 @@ namespace LostMemory.Rewards
         private const int ConsumableWeight = 5; 
 
         /// <summary>
+        /// 보유 유물 이름 목록을 받아 1개를 추첨해 반환한다.
+        /// 후보가 없으면 null 반환.
+        /// </summary>
+        public RelicData DrawOne(IEnumerable<string> ownedRelicNames)
+        {
+            var results = DrawThree(ownedRelicNames);
+            return results.Count > 0 ? results[0] : null;
+        }
+
+        /// <summary>
         /// 보유 유물 이름 목록을 받아 3개를 추첨해 반환한다.
         /// </summary>
         /// <param name="ownedRelicNames">이미 보유한 유물의 name(asset 파일명) 집합</param>

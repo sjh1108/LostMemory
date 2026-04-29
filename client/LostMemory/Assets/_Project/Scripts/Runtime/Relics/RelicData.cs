@@ -15,6 +15,11 @@ namespace LostMemory.Relics
         [Tooltip("true = 소모품(회복약·랜덤박스), false = 유물")]
         [SerializeField] private bool _isConsumable;
 
+        [Tooltip("true = 구매 즉시 효과 발동 후 사라짐 (랜덤박스 등)\n" +
+                 "false = 인벤토리에 보관해 뒀다가 사용 (물약 등)\n" +
+                 "IsConsumable = false 이면 이 값은 무시됨")]
+        [SerializeField] private bool _isInstantUse;
+
         [Tooltip("소모품일 때는 무시")]
         [SerializeField] private RelicRarity _rarity;
 
@@ -27,8 +32,10 @@ namespace LostMemory.Relics
         
         // 유물이름
         public string      DisplayName       => _displayName;
-        // 비유물 여부 
+        // 비유물 여부
         public bool        IsConsumable      => _isConsumable;
+        // 구매 즉시 사용 여부 (랜덤박스 등 — IsConsumable=true 일 때만 유효)
+        public bool        IsInstantUse      => _isInstantUse;
         // 등급
         public RelicRarity Rarity            => _rarity;
         // 태그
