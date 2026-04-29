@@ -27,18 +27,24 @@ namespace LostMemory.UI
 
         private void Awake()
         {
-            _restartButton.onClick.AddListener(() => OnRestart?.Invoke());
-            _lobbyButton.onClick.AddListener(() => OnLobby?.Invoke());
+            if (_restartButton != null)
+            {
+                _restartButton.onClick.AddListener(() => OnRestart?.Invoke());
+            }
+            if (_lobbyButton != null)
+            {
+                _lobbyButton.onClick.AddListener(() => OnLobby?.Invoke());
+            }
         }
 
         /// <summary>결산 창을 열고 데이터를 표시한다.</summary>
         public void Show(RunResultData data)
         {
-            _killCountText.text       = data.KillCount.ToString();
-            _bossKillCountText.text   = data.BossKillCount.ToString();
-            _totalDamageText.text     = data.TotalDamage.ToString("N0");
-            _playTimeText.text        = FormatTime(data.PlayTime);
-            _memoryFragmentsText.text = data.MemoryFragments.ToString();
+            SetText(_killCountText, data.KillCount.ToString());
+            SetText(_bossKillCountText, data.BossKillCount.ToString());
+            SetText(_totalDamageText, data.TotalDamage.ToString("N0"));
+            SetText(_playTimeText, FormatTime(data.PlayTime));
+            SetText(_memoryFragmentsText, data.MemoryFragments.ToString());
 
             gameObject.SetActive(true);
         }
@@ -50,6 +56,14 @@ namespace LostMemory.UI
             int m = (int)seconds / 60;
             int s = (int)seconds % 60;
             return $"{m:00}:{s:00}";
+        }
+
+        private static void SetText(TextMeshProUGUI target, string value)
+        {
+            if (target != null)
+            {
+                target.text = value;
+            }
         }
     }
 }

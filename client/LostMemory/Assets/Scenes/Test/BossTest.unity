@@ -4294,6 +4294,7 @@ GameObject:
   - component: {fileID: 1014074242}
   - component: {fileID: 1014074248}
   - component: {fileID: 1014074247}
+  - component: {fileID: 1014074249}
   m_Layer: 0
   m_Name: BerthaRoot
   m_TagString: Untagged
@@ -5705,6 +5706,7 @@ MonoBehaviour:
   character: {fileID: 1014074198}
   health: {fileID: 1014074199}
   dashAbility: {fileID: 1014074193}
+  phaseController: {fileID: 1014074249}
   movingStateName: Moving
   lightAttack1TelegraphStateName: LightTelegraph
   lightAttack2TelegraphStateName: Light2Telegraph
@@ -5728,6 +5730,37 @@ MonoBehaviour:
   lightAttack2Weight: 3
   heavyAttackWeight: 2
   normalDashWeight: 1
+  phasePatternSettings:
+  - Phase: 1
+    AllowDashAttack: 0
+    AllowFullCombo: 0
+    NormalDashCooldown: 10
+    DashCooldown: 15
+    FullComboCooldown: 15
+    LightAttack1Weight: 3
+    LightAttack2Weight: 3
+    HeavyAttackWeight: 2
+    NormalDashWeight: 1
+  - Phase: 2
+    AllowDashAttack: 1
+    AllowFullCombo: 1
+    NormalDashCooldown: 8
+    DashCooldown: 12
+    FullComboCooldown: 12
+    LightAttack1Weight: 2
+    LightAttack2Weight: 3
+    HeavyAttackWeight: 3
+    NormalDashWeight: 2
+  - Phase: 3
+    AllowDashAttack: 1
+    AllowFullCombo: 1
+    NormalDashCooldown: 6
+    DashCooldown: 9
+    FullComboCooldown: 9
+    LightAttack1Weight: 1
+    LightAttack2Weight: 2
+    HeavyAttackWeight: 3
+    NormalDashWeight: 2
   debugLogging: 0
 --- !u!114 &1014074233
 MonoBehaviour:
@@ -6185,6 +6218,22 @@ MonoBehaviour:
   enhancedReactionStateNameKeywords:
   - Dash
   useUnscaledTime: 1
+  debugLogging: 0
+--- !u!114 &1014074249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014074185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0133e7f9eecd45e1892e5b0383084e82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBossPhaseController
+  health: {fileID: 1014074199}
+  phase2ThresholdNormalized: 0.7
+  phase3ThresholdNormalized: 0.3
   debugLogging: 0
 --- !u!1001 &1129161349
 PrefabInstance:
@@ -6810,6 +6859,57 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &1468015137
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1468015138}
+  - component: {fileID: 1468015139}
+  m_Layer: 0
+  m_Name: RoomEntryRunTime
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1468015138
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468015137}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1246816514}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1468015139
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468015137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5f1b47db33bcc5409105e8ded726822, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
+  roomData: {fileID: 11400000, guid: 67c5a04bef7c31e4ba76921b0e61df54, type: 2}
+  enemyCatalog: {fileID: 0}
+  encounterAnchor: {fileID: 0}
+  encounterSpawner: {fileID: 0}
+  entryAnchors: []
+  exitWalls: []
+  bossTracker: {fileID: 0}
 --- !u!114 &1590449024 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1718577566972713409, guid: 7b13fb56397ae8f4d8ece5efb234114e,
@@ -6897,7 +6997,11 @@ PrefabInstance:
         type: 3}
       insertIndex: 0
       addedObject: {fileID: 296633061}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1053890707461078126, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2104144963}
   m_SourcePrefab: {fileID: 100100000, guid: 2b91fe08d79d1fd4b8a80d08a8178696, type: 3}
 --- !u!213 &1721099738
 Sprite:
@@ -7609,6 +7713,57 @@ Sprite:
   m_Bones: []
   m_ScriptableObjects: []
   m_SpriteID: 
+--- !u!1 &2012047024
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2012047026}
+  - component: {fileID: 2012047025}
+  m_Layer: 0
+  m_Name: RunManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2012047025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2012047024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3f81b52a5dc98746b589322d8f28663, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RunManager
+  dungeonRunBootstrap: {fileID: 0}
+  playerStateAggregator: {fileID: 0}
+  playerDownController: {fileID: 0}
+  runResultPanelView: {fileID: 0}
+  playerRelicInventory: {fileID: 0}
+  autoStartOnAwake: 0
+  resultingDelaySeconds: 2
+--- !u!4 &2012047026
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2012047024}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2041357595
 GameObject:
   m_ObjectHideFlags: 0
@@ -9970,6 +10125,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9db907e78fe22d40bd5ec13bc262b79, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossIntroSequenceController
+--- !u!114 &2104144963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104144904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddf343186ec14c02a5705090ea3d395d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossDefeatRoomClearController
+  bossHealth: {fileID: 2104145014}
+  roomController: {fileID: 1468015139}
+  clearDelaySeconds: 0
+  debugLogging: 1
+--- !u!114 &2104145014 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1476706992768293698, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+    type: 3}
+  m_PrefabInstance: {fileID: 1650389220}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104144904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01754710d9f92ec4d9a21b81f5682667, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
 --- !u!1 &880101000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -35816,6 +35999,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 9024611849101462520, guid: 7b13fb56397ae8f4d8ece5efb234114e,
         type: 3}
       insertIndex: -1
+      addedObject: {fileID: 1468015138}
+    - targetCorrespondingSourceObject: {fileID: 9024611849101462520, guid: 7b13fb56397ae8f4d8ece5efb234114e,
+        type: 3}
+      insertIndex: -1
       addedObject: {fileID: 2104144905}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7b13fb56397ae8f4d8ece5efb234114e, type: 3}
@@ -36113,3 +36300,4 @@ SceneRoots:
   - {fileID: 6712288157925954419}
   - {fileID: 1313030007481101386}
   - {fileID: 850200002}
+  - {fileID: 2012047026}
