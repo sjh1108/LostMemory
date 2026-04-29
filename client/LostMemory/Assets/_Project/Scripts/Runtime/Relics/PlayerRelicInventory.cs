@@ -28,14 +28,22 @@ namespace LostMemory.Relics
                 return false;
             }
 
-            // 소모품은 인벤토리에 등록하지 않음 (즉시 효과만 적용)
             if (relic.IsConsumable)
             {
-                Debug.Log($"[PlayerRelicInventory] 소모품 사용: {relic.DisplayName}");
-                return false;
+                // 즉시 사용 소모품(랜덤박스 등)은 인벤토리에 등록하지 않음
+                if (relic.IsInstantUse)
+                {
+                    Debug.Log($"[PlayerRelicInventory] 즉시 사용 소모품 — 인벤토리 미등록: {relic.DisplayName}");
+                    return false;
+                }
+
+                // 보관 소모품(물약 등)은 중복 허용하여 인벤토리에 추가
+                _ownedRelics.Add(relic);
+                Debug.Log($"[PlayerRelicInventory] 소모품 획득: {relic.DisplayName}");
+                return true;
             }
 
-            // 중복 체크
+            // 일반 유물: 중복 체크
             if (Has(relic))
             {
                 Debug.LogWarning($"[PlayerRelicInventory] 이미 보유 중: {relic.DisplayName}");
