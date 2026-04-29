@@ -51,6 +51,7 @@ namespace LostMemory.Stage
         private readonly StageRoomProgress progress = new StageRoomProgress();
         private IRoomClearConditionTracker clearTracker;
         private bool entryConsumed;
+        private bool roomCleared;
 
         // 후속 네트워크 CL 이 한 줄만 바꾸면 호스트 권위 분기로 전환된다.
         public bool IsAuthority => true;
@@ -117,12 +118,28 @@ namespace LostMemory.Stage
             }
 
             entryConsumed = true;
+            roomCleared = false;
             progress.MarkVisited();
 
             ApplyInitContext(initiator);
             BeginEncounter();
 
             RoomEntered?.Invoke(new RoomEnteredPayload(roomData.RoomId, initiator));
+        }
+
+        public void NotifyCustomRoomCleared()
+        {
+            if (!IsAuthority)
+            {
+                return;
+            }
+            if (roomData == null)
+            {
+                Debug.LogWarning($"[RoomEntryRuntimeController] roomData is null on '{name}'. Cannot clear room.", this);
+                return;
+            }
+
+            FireRoomCleared(new RoomClearedPayload(roomData.RoomId, roomData));
         }
 
         private void ApplyInitContext(Character initiator)
@@ -271,7 +288,18 @@ namespace LostMemory.Stage
 
         private void HandleRoomCleared(RoomClearedPayload payload)
         {
-            Debug.Log($"[Controller] HandleRoomCleared: roomId='{payload.RoomId}' on '{name}'. Disabling exit walls.");
+            FireRoomCleared(payload);
+        }
+
+        private void FireRoomCleared(RoomClearedPayload payload)
+        {
+            if (roomCleared)
+            {
+                return;
+            }
+
+            roomCleared = true;
+            Debug.Log($"[Controller] RoomCleared: roomId='{payload.RoomId}' on '{name}'. Disabling exit walls.");
             SetExitWallsActive(false);
             RoomCleared?.Invoke(payload);
 
