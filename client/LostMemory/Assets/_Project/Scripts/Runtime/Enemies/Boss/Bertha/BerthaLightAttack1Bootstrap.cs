@@ -311,6 +311,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                 Character character = GetOrAdd<Character>(gameObject);
                 CharacterOrientation2D orientation = GetOrAdd<CharacterOrientation2D>(gameObject);
                 Health health = GetOrAdd<Health>(gameObject);
+                BerthaBossPhaseController phaseController = GetOrAdd<BerthaBossPhaseController>(gameObject);
                 BerthaHitReactionPresenter hitReactionPresenter = GetOrAdd<BerthaHitReactionPresenter>(gameObject);
                 BerthaHealthThresholdReactionController thresholdReactionController = GetOrAdd<BerthaHealthThresholdReactionController>(gameObject);
                 AttackTelegraph2DView telegraphView = GetOrAdd<AttackTelegraph2DView>(gameObject);
@@ -460,6 +461,11 @@ namespace LostMemory.Enemies.Boss.Bertha
                 dashAbility.Cooldown.RefillDuration = 0.01f;
                 dashAbility.Cooldown.CanInterruptRefill = true;
                 dashAbility.InvincibleWhileDashing = false;
+                phaseController.Configure(
+                    health,
+                    stunThresholdNormalized,
+                    tiredThresholdNormalized,
+                    debugLogging);
                 thresholdReactionController.Configure(
                     brain,
                     character,
@@ -574,6 +580,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     character,
                     health,
                     dashAbility,
+                    phaseController,
                     attackRange,
                     lightAttack2Range,
                     heavyAttackRange,
