@@ -34,6 +34,8 @@ namespace LostMemory.Stage
         [SerializeField] private RunResultPanelView runResultPanelView;
         [Tooltip("CL-109: Run 종료 시 Clear() 호출 → OnCleared 이벤트 발화 → RelicEffectRegistry 가 modifier/shield 정리.")]
         [SerializeField] private PlayerRelicInventory playerRelicInventory;
+        [Tooltip("CL-110: 방 클리어 → 보상 3택 흐름의 오케스트레이터. HandleDungeonBuilt 시 RoomCleared 구독, CloseResulting 시 해제.")]
+        [SerializeField] private RewardController rewardController;
 
         [Header("Behavior")]
         [SerializeField, Tooltip("Awake 후 자동으로 StartRun() 호출. 디버그 / 검증 시 편의용.")]
@@ -149,6 +151,11 @@ namespace LostMemory.Stage
                 runResultPanelView.Hide();
             }
             UnsubscribeAllRoomControllers();
+            // CL-110: RewardController 의 RoomCleared 구독도 해제.
+            if (rewardController != null)
+            {
+                rewardController.UnsubscribeAllRoomControllers();
+            }
             // CL-109: 인벤토리 비우기 → OnCleared 이벤트 → RelicEffectRegistry 가 modifier/shield 일괄 정리.
             if (playerRelicInventory != null)
             {
@@ -163,6 +170,11 @@ namespace LostMemory.Stage
                 return;
             }
             SubscribeAllRoomControllers();
+            // CL-110: RewardController 도 RoomCleared 구독 (Combat 방 보상 3택 흐름).
+            if (rewardController != null)
+            {
+                rewardController.SubscribeAllRoomControllers();
+            }
             StateMachine.TryTransition(RunState.InRun);
         }
 
