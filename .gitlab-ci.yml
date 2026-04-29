@@ -1,5 +1,6 @@
 stages:
   - notify
+  - trigger
 
 notify_develop_merge:
   stage: notify
@@ -19,3 +20,43 @@ notify_develop_merge:
       curl -X POST -H "Content-Type: application/json" \
         -d "$PAYLOAD" \
         "$MATTERMOST_WEBHOOK_URL"
+
+# develop push 시 Jenkins 빌드 큐잉 — gitlab-runner outbound 경유 (인바운드 webhook 회피)
+# Jenkins 잡: lostmemory-server-deploy / "Trigger builds remotely" 토큰 인증
+# 호스트 도달성: runner config network_mode = "host" 필요 (그래야 localhost 가 EC2 호스트를 가리킴)
+# changes 필터: monorepo 구조 — server 외 변경(Unity client / AI tools / docs)은 server 재배포 불필요
+trigger_jenkins_build:
+  stage: trigger
+  image: alpine:latest
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - server/**/*
+        - .gitlab-ci.yml
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      set -e
+      ENDPOINT="${JENKINS_BASE_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters"
+      HTTP_CODE=$(curl -sS -o /tmp/resp.txt -w "%{http_code}" \
+        -X POST \
+        --data-urlencode "token=${JENKINS_BUILD_TOKEN}" \
+        --data-urlencode "COMMIT_SHA=${CI_COMMIT_SHA}" \
+        --data-urlencode "BRANCH=${CI_COMMIT_REF_NAME}" \
+        "${ENDPOINT}")
+      echo "Jenkins HTTP status: ${HTTP_CODE}"
+      echo "--- response body ---"
+      cat /tmp/resp.txt || true
+      echo
+      echo "--------------------"
+      # Jenkins 는 큐 추가 성공 시 201 (일부 버전 200) 반환
+      case "${HTTP_CODE}" in
+        200|201) echo "Jenkins build queued successfully." ;;
+        403) echo "ERROR: 403 Forbidden — token 불일치 또는 'Trigger builds remotely' 미활성화"; exit 1 ;;
+        404) echo "ERROR: 404 Not Found — JENKINS_BASE_URL 또는 JENKINS_JOB_NAME 확인"; exit 1 ;;
+        000) echo "ERROR: Jenkins 도달 실패 — runner config 의 network_mode = host 확인"; exit 1 ;;
+        *)   echo "ERROR: Unexpected status ${HTTP_CODE}"; exit 1 ;;
+      esac
+  # Jenkins 장애 시 develop pipeline 을 빨갛게 표시 (의도적 — 실패가 묻히지 않게)
+  # 안정화되면 allow_failure: true 로 격리 강화 가능
