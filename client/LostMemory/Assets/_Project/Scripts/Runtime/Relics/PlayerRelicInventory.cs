@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -14,6 +15,9 @@ namespace LostMemory.Relics
 
         /// <summary>현재 보유한 유물 목록 (읽기 전용)</summary>
         public IReadOnlyList<RelicData> OwnedRelics => _ownedRelics;
+
+        /// <summary>유물이 새로 획득되었을 때 발화. RelicEffectApplier 등이 구독.</summary>
+        public event Action<RelicData> OnRelicAcquired;
 
         /// <summary>
         /// 유물을 인벤토리에 추가한다.
@@ -51,6 +55,7 @@ namespace LostMemory.Relics
             }
 
             _ownedRelics.Add(relic);
+            OnRelicAcquired?.Invoke(relic);
             Debug.Log($"[PlayerRelicInventory] 유물 획득: {relic.DisplayName}");
             return true;
         }
@@ -67,5 +72,21 @@ namespace LostMemory.Relics
 
         /// <summary>런 종료 시 인벤토리를 초기화한다.</summary>
         public void Clear() => _ownedRelics.Clear();
+
+        // ── CL-107 검증용 디버그 진입점 ─────────────────────
+        // CL-110 의 RewardPanel 자동 흐름이 완성되기 전까지 Inspector 에서 수동 TryAdd 로 효과 검증.
+        [Header("Debug (CL-107 검증용)")]
+        [Tooltip("Inspector 우상단 ︙ → 'Debug — Add all assigned relics' 클릭 시 모두 TryAdd. 비워두면 무동작.")]
+        [SerializeField] private RelicData[] _debugRelicsToAdd;
+
+        [ContextMenu("Debug — Add all assigned relics")]
+        private void DebugAddAllAssignedRelics()
+        {
+            if (_debugRelicsToAdd == null) return;
+            foreach (RelicData r in _debugRelicsToAdd)
+            {
+                if (r != null) TryAdd(r);
+            }
+        }
     }
 }

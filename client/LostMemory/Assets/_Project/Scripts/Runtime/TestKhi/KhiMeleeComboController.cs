@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Combat;
 using LostMemory.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -22,6 +23,8 @@ namespace LostMemory.TestKhi
         [SerializeField] private bool bufferAttackDuringDash = false;
         [SerializeField] private bool disableTdeHandleWeapon = true;
         [SerializeField] private bool logHitsToConsole = false;
+        [Tooltip("CL-107: AttackPower / AttackSpeed / FinisherDamage multiplier 조회용. 같은 GameObject 또는 Player root 의 컴포넌트.")]
+        [SerializeField] private PlayerStatModifierContainer statContainer;
 
         private readonly HashSet<Health> _alreadyHitThisSwing = new HashSet<Health>();
         private readonly List<Health> _hitsThisSample = new List<Health>(8);
@@ -42,6 +45,9 @@ namespace LostMemory.TestKhi
         public event Action<KhiAttackRequest, AttackStepData> AttackActiveEnded;
         public event Action<KhiAttackRequest, AttackStepData, Health> TargetHit;
         public event Action<KhiAttackRequest, AttackStepData> FinisherHit;
+
+        /// <summary>CL-107: 본 컨트롤러의 공격이 대상을 사망시켰을 때 발화. RelicEffectApplier 의 붉은송곳니 등이 구독.</summary>
+        public event Action<KhiAttackRequest, AttackStepData, Health> EnemyKilledByPlayer;
 
         public bool IsAttacking => _isAttacking;
         public bool IsInAttackRecovery => _isInAttackRecovery;
@@ -155,6 +161,15 @@ namespace LostMemory.TestKhi
 
             AttackStepData step = GetStep(comboStep);
             _currentComboStep = step.comboStep;
+
+            // CL-107: AttackSpeed multiplier 적용. AttackStepData 는 [Serializable] (WeaponData.Steps 배열 항목)
+            // → in-place 변경 시 SO 데이터 변조됨. 반드시 local 변수로 캡처.
+            float speedMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.AttackSpeed) : 1f;
+            if (speedMul <= 0f) speedMul = 1f;
+            float startupDur = step.startupDuration / speedMul;
+            float activeDur = step.activeDuration / speedMul;
+            float recoveryDur = step.recoveryDuration / speedMul;
+
             Vector2 aimDirection = aim != null ? aim.GetAimDirection() : Vector2.right;
             if (aimDirection.sqrMagnitude <= Mathf.Epsilon)
             {
@@ -175,11 +190,11 @@ namespace LostMemory.TestKhi
             AttackStarted?.Invoke(request, step);
             _chainInputAllowedAt = Mathf.Max(
                 request.StartedAt + weaponData.MinimumChainInputDelay,
-                request.StartedAt + step.startupDuration + step.activeDuration * 0.5f);
+                request.StartedAt + startupDur + activeDur * 0.5f);
 
-            if (step.startupDuration > 0f)
+            if (startupDur > 0f)
             {
-                yield return new WaitForSeconds(step.startupDuration);
+                yield return new WaitForSeconds(startupDur);
             }
 
             if (_externalAbortRequested)
@@ -189,7 +204,7 @@ namespace LostMemory.TestKhi
             }
 
             bool hitAnyTarget = false;
-            float activeEndsAt = Time.time + step.activeDuration;
+            float activeEndsAt = Time.time + activeDur;
             // active 시작 시점의 위치를 request.Origin에 반영 (windup 중 플레이어 이동 보정).
             request.Origin = transform.position;
             AttackActiveStarted?.Invoke(request, step);
@@ -198,12 +213,25 @@ namespace LostMemory.TestKhi
             {
                 KhiAttackRequest sampleRequest = request;
                 sampleRequest.Origin = transform.position;
-                int sampledHitCount = hitbox != null ? hitbox.Sample(sampleRequest, step, weaponData.BaseDamage * step.damageMultiplier, _alreadyHitThisSwing, _hitsThisSample) : 0;
+                // CL-107: AttackPower multiplier (전사의끈/전투북 등) + FinisherDamage multiplier (분쇄의팔찌, 3타에만).
+                float attackMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.AttackPower) : 1f;
+                float finisherMul = (statContainer != null && step.comboStep == 3)
+                    ? statContainer.GetTotalMultiplier(StatId.FinisherDamage) : 1f;
+                float finalDamage = weaponData.BaseDamage * step.damageMultiplier * attackMul * finisherMul;
+                int sampledHitCount = hitbox != null
+                    ? hitbox.Sample(sampleRequest, step, finalDamage, _alreadyHitThisSwing, _hitsThisSample)
+                    : 0;
                 hitAnyTarget |= sampledHitCount > 0;
 
                 for (int i = 0; i < _hitsThisSample.Count; i++)
                 {
-                    TargetHit?.Invoke(sampleRequest, step, _hitsThisSample[i]);
+                    Health hit = _hitsThisSample[i];
+                    TargetHit?.Invoke(sampleRequest, step, hit);
+                    // CL-107: 본 hit 으로 사망한 적 → EnemyKilledByPlayer 발화 (붉은송곳니용).
+                    if (hit != null && hit.CurrentHealth <= 0f)
+                    {
+                        EnemyKilledByPlayer?.Invoke(sampleRequest, step, hit);
+                    }
                 }
 
                 yield return null;
@@ -228,7 +256,7 @@ namespace LostMemory.TestKhi
             }
 
             _isInAttackRecovery = true;
-            float recoveryEndsAt = Time.time + step.recoveryDuration;
+            float recoveryEndsAt = Time.time + recoveryDur;
             while (Time.time < recoveryEndsAt && !_externalAbortRequested)
             {
                 yield return null;
