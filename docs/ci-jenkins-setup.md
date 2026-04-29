@@ -82,7 +82,16 @@ Job 설정:
 
 ## 자동 트리거 셋업 (S14P31C201-114)
 
-### 1. Jenkins 잡 측 — Build trigger token 발급 + 파라미터 등록
+### 1. Jenkins 측 — "Build Authorization Token Root Plugin" 설치
+
+모던 Jenkins(2.5xx)는 표준 `/job/<name>/buildWithParameters` 엔드포인트가 POST 시 CSRF crumb 을 강제하므로, 외부 CI 가 단순 토큰만으로 빌드를 트리거할 수 없습니다. 이를 위한 우회 endpoint(`/buildByToken/...`)를 제공하는 공식 플러그인 설치:
+
+1. Jenkins UI → **Manage Jenkins → Plugins → Available** 탭
+2. 검색: `Build Authorization Token Root`
+3. Install (재시작 불필요)
+4. 설치 확인: `curl -fsS http://localhost/jenkins/buildByToken/` 가 404 가 아닌 다른 응답이면 endpoint 노출됨 (인증 없이 GET 은 보통 403/방어 응답)
+
+### 2. Jenkins 잡 측 — Build trigger token 발급 + 파라미터 등록
 
 `lostmemory-server-deploy` → Configure:
 1. **Build Triggers** → **"Trigger builds remotely (e.g., from scripts)"** 체크
@@ -90,7 +99,7 @@ Job 설정:
 3. **General → This project is parameterized** — Jenkinsfile 의 `parameters` 블록이 자동 인식되므로 별도 추가 입력 불필요 (`SKIP_TESTS`/`COMMIT_SHA`/`BRANCH` 가 자동 노출됨).
 4. Save
 
-### 2. GitLab Project → Settings → CI/CD → Variables 등록
+### 3. GitLab Project → Settings → CI/CD → Variables 등록
 
 | Key | Value 예시 | Type | Flags |
 | --- | --- | --- | --- |
@@ -100,10 +109,10 @@ Job 설정:
 
 `localhost` 가 호스트로 라우팅되도록 EC2 의 `/srv/gitlab-runner/config/config.toml` 의 `[runners.docker]` 블록에 `network_mode = "host"` 가 들어있어야 합니다 (없으면 잡 컨테이너의 localhost 가 자기 자신을 가리킴).
 
-### 3. 동작 흐름
+### 4. 동작 흐름
 1. develop 에 push (직접 또는 MR 머지)
 2. GitLab Pipeline 발동 — `notify_develop_merge` (Mattermost), `trigger_jenkins_build` (Jenkins) 두 잡 병렬 실행
-3. `trigger_jenkins_build` 가 `POST $JENKINS_BASE_URL/job/$JENKINS_JOB_NAME/buildWithParameters` 호출 + `token`/`COMMIT_SHA`/`BRANCH` 전달
+3. `trigger_jenkins_build` 가 `POST $JENKINS_BASE_URL/buildByToken/buildWithParameters?job=$JENKINS_JOB_NAME&token=$JENKINS_BUILD_TOKEN` 호출 + body 로 `COMMIT_SHA`/`BRANCH` 전달
 4. Jenkins 가 빌드 큐잉 → 기존 5단계(Checkout → Build & Test → Docker Build → Deploy → Smoke Test) 실행
 
 ## 사용법

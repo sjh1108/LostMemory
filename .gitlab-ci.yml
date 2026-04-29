@@ -23,6 +23,9 @@ notify_develop_merge:
 
 # develop push 시 Jenkins 빌드 큐잉 — gitlab-runner outbound 경유 (인바운드 webhook 회피)
 # Jenkins 잡: lostmemory-server-deploy / "Trigger builds remotely" 토큰 인증
+# Jenkins 측 전제: "Build Authorization Token Root Plugin" 설치 — /buildByToken/* endpoint 가
+#   CSRF crumb 검사 우회용으로 제공됨. 표준 /job/<name>/buildWithParameters 는 모던 Jenkins 의
+#   CrumbFilter 가 POST 를 무조건 거부하므로 사용 불가.
 # 호스트 도달성: runner config network_mode = "host" 필요 (그래야 localhost 가 EC2 호스트를 가리킴)
 # changes 필터: monorepo 구조 — server 외 변경(Unity client / AI tools / docs)은 server 재배포 불필요
 trigger_jenkins_build:
@@ -38,10 +41,9 @@ trigger_jenkins_build:
   script:
     - |
       set -e
-      ENDPOINT="${JENKINS_BASE_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters"
+      ENDPOINT="${JENKINS_BASE_URL}/buildByToken/buildWithParameters?job=${JENKINS_JOB_NAME}&token=${JENKINS_BUILD_TOKEN}"
       HTTP_CODE=$(curl -sS -o /tmp/resp.txt -w "%{http_code}" \
         -X POST \
-        --data-urlencode "token=${JENKINS_BUILD_TOKEN}" \
         --data-urlencode "COMMIT_SHA=${CI_COMMIT_SHA}" \
         --data-urlencode "BRANCH=${CI_COMMIT_REF_NAME}" \
         "${ENDPOINT}")
