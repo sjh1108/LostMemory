@@ -40,6 +40,10 @@ namespace LostMemory.Stage
         // null 허용 — 보스 의존성 없는 단독 검증 씬에서는 비워둠.
         [SerializeField] private BossRoomEntryTracker bossTracker;
 
+        [Header("Reward Integration (CL-110)")]
+        [Tooltip("true 면 클리어 시 자동으로 출구 벽 비활성화 (기존 동작). RewardController 가 관리하는 Combat 방은 false 로 두고 RewardController 가 OpenExits() 호출.")]
+        [SerializeField] private bool autoOpenExitsOnCleared = true;
+
         public event Action<RoomEnteredPayload> RoomEntered;
         public event Action<RoomCombatStartedPayload> RoomCombatStarted;
         public event Action<EnemySpawnedPayload> EnemySpawned;
@@ -58,6 +62,9 @@ namespace LostMemory.Stage
 
         public RoomData RoomData => roomData;
         public StageRoomProgress Progress => progress;
+
+        /// <summary>CL-110: RewardController 가 RoomCleared payload 와 controller 매칭에 사용.</summary>
+        public string RoomId => roomData != null ? roomData.RoomId : null;
 
         private void Awake()
         {
@@ -288,6 +295,11 @@ namespace LostMemory.Stage
 
         private void HandleRoomCleared(RoomClearedPayload payload)
         {
+            // CL-110: 옵트인. RewardController 가 관리하는 방은 false 로 두고 카드 선택 후 OpenExits() 호출.
+            if (autoOpenExitsOnCleared)
+            {
+                SetExitWallsActive(false);
+            }
             FireRoomCleared(payload);
         }
 
@@ -299,14 +311,22 @@ namespace LostMemory.Stage
             }
 
             roomCleared = true;
-            Debug.Log($"[Controller] RoomCleared: roomId='{payload.RoomId}' on '{name}'. Disabling exit walls.");
-            SetExitWallsActive(false);
+            // develop 의 로그는 살림. 단 옵트인 시에는 *문이 닫힌 채로 이벤트 발화* 라
+            // "Disabling exit walls" 문구는 상태와 어긋남 → 메시지만 정리.
+            Debug.Log($"[Controller] RoomCleared: roomId='{payload.RoomId}' on '{name}'.");
+            // develop 의 SetExitWallsActive(false) 제거 — HandleRoomCleared 의 옵트인이 이미 결정.
             RoomCleared?.Invoke(payload);
 
             if (bossTracker != null && !string.IsNullOrEmpty(payload.RoomId))
             {
                 bossTracker.TryMarkRoomCompleted(payload.RoomId);
             }
+        }
+
+        /// <summary>CL-110: RewardController 가 보상 선택 후 호출. autoOpenExitsOnCleared=false 일 때 외부에서 문 열기 트리거.</summary>
+        public void OpenExits()
+        {
+            SetExitWallsActive(false);
         }
 
         // CL-036: 모든 출구 벽 일괄 토글. 출구별 다른 정책 (LockPolicy 등) 은 후속 CL.

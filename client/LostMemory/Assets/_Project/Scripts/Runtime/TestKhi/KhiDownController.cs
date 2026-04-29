@@ -188,16 +188,30 @@ namespace LostMemory.TestKhi
 
         private void HandleHealthHit()
         {
-            if (_state != KhiDownState.Normal)
-            {
-                return;
-            }
-
             if (health == null)
             {
                 return;
             }
 
+            // Defeated: 이미 죽음 처리 완료, intercept 안 함.
+            if (_state == KhiDownState.Defeated)
+            {
+                return;
+            }
+
+            // Down 중 후속 hit (적 OnTriggerStay2D 등) 으로 HP 가 0 이하 떨어지면
+            // Health.Damage 의 `if (CurrentHealth <= 0) Kill()` 가 발화해 GameObject 가 비활성화되고
+            // Down 타이머가 멈춘다. floor 로 즉시 복원해 Kill 트리거를 막는다.
+            if (_state == KhiDownState.Down)
+            {
+                if (health.CurrentHealth <= 0f)
+                {
+                    health.SetHealth(Mathf.Max(0.0001f, downHealthFloor));
+                }
+                return;
+            }
+
+            // _state == Normal: 첫 치명타 intercept.
             if (health.CurrentHealth > 0f)
             {
                 return;

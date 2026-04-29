@@ -1,3 +1,4 @@
+using System;
 using LostMemory.Relics;
 using UnityEngine;
 
@@ -13,6 +14,9 @@ namespace LostMemory.Rewards
         [SerializeField] private RewardPool _rewardPool;
         [SerializeField] private PlayerRelicInventory _inventory;
         [SerializeField] private RewardCardView[] _cards;
+
+        /// <summary>CL-110: 카드 선택 후 발화. RewardController 가 구독하여 문 열기 등 후속 처리.</summary>
+        public event Action<RelicData> RewardSelected;
 
         /// <summary>
         /// 보상 패널을 열고 카드 3장을 추첨해 표시한다.
@@ -44,6 +48,8 @@ namespace LostMemory.Rewards
         {
             _inventory.TryAdd(selected);
             gameObject.SetActive(false);
+            // CL-110: RewardController 등 외부 구독자에게 선택 완료 알림.
+            RewardSelected?.Invoke(selected);
         }
     }
 }
