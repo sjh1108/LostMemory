@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using LostMemory.Combat;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -40,6 +41,8 @@ namespace LostMemory.TestKhi
         [SerializeField] private KhiHitStunController hitStun;
         [SerializeField] private KhiParryController parryController;
         [SerializeField] private Animator animator;
+        [Tooltip("CL-108: 부활 회복을 PlayerHealing 경로로 위임 (HealReceivedPercent 적용 가능). null 이면 SetHealth fallback.")]
+        [SerializeField] private PlayerHealing playerHealing;
 
         [Header("Down")]
         [SerializeField, Min(0f)] private float downDuration = 10f;
@@ -308,7 +311,17 @@ namespace LostMemory.TestKhi
 
             if (health != null)
             {
-                health.SetHealth(reviveHp);
+                // CL-108: 부활 회복을 PlayerHealing 경로로 위임 (철의 깃 등 HealReceivedPercent 적용).
+                // playerHealing 미부착 시 SetHealth fallback. 다운 시점 currentHp ≈ downHealthFloor 라
+                // Heal(reviveHp) 의 final hp 가 (currentHp + reviveHp×mul) ≈ reviveHp×mul 로 의도와 일치.
+                if (playerHealing != null)
+                {
+                    playerHealing.Heal(reviveHp, this);
+                }
+                else
+                {
+                    health.SetHealth(reviveHp);
+                }
             }
 
             if (health != null && reviveInvulnerabilityAfter > 0f)
