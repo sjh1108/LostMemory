@@ -61,6 +61,116 @@ namespace LostMemory.Editor.Shop
         }
 
         /// <summary>
+        /// 오브젝트는 일절 생성·수정하지 않고 스크립트 참조만 재연결한다.
+        /// Prefab에서 새로 꺼낸 후 references가 끊겼을 때 사용한다.
+        /// </summary>
+        [MenuItem("LostMemory/Shop/Wire References Only")]
+        public static void WireReferencesOnly()
+        {
+            s_font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+
+            var canvas = Object.FindFirstObjectByType<Canvas>();
+            if (canvas == null)
+            {
+                Debug.LogError("[ShopUIBuilder] Canvas를 찾을 수 없습니다.");
+                return;
+            }
+
+            var shopPanelGO = canvas.transform.Find("ShopPanel")?.gameObject;
+            var invPanelGO  = canvas.transform.Find("InventoryPanel")?.gameObject;
+
+            if (shopPanelGO != null)
+            {
+                WireShopPanelView(shopPanelGO);
+                Debug.Log("[ShopUIBuilder] ShopPanel 참조 재연결 완료");
+            }
+            else Debug.LogWarning("[ShopUIBuilder] ShopPanel을 Canvas 아래에서 찾을 수 없음");
+
+            if (invPanelGO != null)
+            {
+                WireInventoryPanelView(invPanelGO);
+                Debug.Log("[ShopUIBuilder] InventoryPanel 참조 재연결 완료");
+            }
+            else Debug.LogWarning("[ShopUIBuilder] InventoryPanel을 Canvas 아래에서 찾을 수 없음");
+
+            // TestShop 컴포넌트 참조 재연결 (이름 무관)
+            var testShop = Object.FindFirstObjectByType<TestShop>();
+            if (testShop != null && shopPanelGO != null && invPanelGO != null)
+            {
+                RewireTestShopPanelsIfExists(
+                    shopPanelGO.GetComponent<ShopPanelView>(),
+                    invPanelGO.GetComponent<InventoryPanelView>());
+            }
+
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("[ShopUIBuilder] ✅ Wire References Only 완료 — UI 오브젝트 미변경");
+        }
+
+        /// <summary>
+        /// 단축키바만 Sync한다. 다른 패널은 일절 건드리지 않는다.
+        /// </summary>
+        [MenuItem("LostMemory/Shop/Sync Shortcut Bar")]
+        public static void SyncShortcutBarOnly()
+        {
+            s_font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+
+            var canvas      = FindOrCreateCanvas();
+            var shortcutBar = SyncShortcutBar(canvas.transform);
+            WireShortcutBarView(shortcutBar);
+
+            var consumableInventory = FindOrCreatePlayerConsumableInventory();
+            RewireTestShopShortcutBarIfExists(
+                shortcutBar.GetComponent<ShortcutBarView>(),
+                consumableInventory);
+
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("[ShopUIBuilder] ✅ ShortcutBar Sync 완료");
+        }
+
+        /// <summary>
+        /// InventoryPanel만 Sync한다. ShopPanel은 일절 건드리지 않는다.
+        /// </summary>
+        [MenuItem("LostMemory/Shop/Sync Inventory UI Only")]
+        public static void SyncInventoryOnly()
+        {
+            s_font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+
+            var canvas         = FindOrCreateCanvas();
+            var inventoryPanel = SyncInventoryPanel(canvas.transform);
+            WireInventoryPanelView(inventoryPanel);
+
+            // 이름 무관하게 씬에서 TestShop 컴포넌트를 찾아 재연결
+            var testShop = Object.FindFirstObjectByType<TestShop>();
+            if (testShop != null)
+            {
+                var so = new SerializedObject(testShop);
+                so.FindProperty("_inventoryPanel").objectReferenceValue =
+                    inventoryPanel.GetComponent<InventoryPanelView>();
+                so.ApplyModifiedProperties();
+                Debug.Log($"[ShopUIBuilder] '{testShop.gameObject.name}'의 _inventoryPanel 재연결 완료");
+            }
+
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("[ShopUIBuilder] ✅ Inventory Sync 완료 — ShopPanel 미변경");
+        }
+
+        /// <summary>
+        /// 툴팁 패널만 Sync한다. 없으면 생성하고 참조를 자동 연결한다.
+        /// </summary>
+        [MenuItem("LostMemory/Shop/Sync Tooltip")]
+        public static void SyncTooltipMenu()
+        {
+            s_font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+
+            var canvas  = FindOrCreateCanvas();
+            var tooltip = SyncTooltipView(canvas.transform);
+            WireTooltipView(tooltip);
+
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("[ShopUIBuilder] ✅ Tooltip Sync 완료");
+        }
+
+        /// <summary>
         /// UI Sync + ShopData 에셋 생성 + PlayerInventory + TestShop 연결.
         /// Play 버튼만 누르면 바로 테스트 가능.
         /// </summary>
@@ -273,12 +383,18 @@ namespace LostMemory.Editor.Shop
                 hlg.childForceExpandHeight = true;
             }
 
-            // IconImage
+            // IconImage — 배경 타일 (ColSlotBg 회색, 항상 표시)
             var (iconGO, _)           = GetOrCreateChild(go.transform, "IconImage");
             var (iconImg, iconImgNew) = GetOrAdd<Image>(iconGO);
             if (iconImgNew) iconImg.color = ColSlotBg;
             var (iconLE, iconLENew) = GetOrAdd<LayoutElement>(iconGO);
             if (iconLENew) { iconLE.minWidth = 64f; iconLE.preferredWidth = 64f; }
+
+            // Icon — 스프라이트 전용 (흰색 = 틴트 없음, 배경 위에 렌더)
+            var (spriteGO, spriteNew)         = GetOrCreateChild(iconGO.transform, "Icon");
+            if (spriteNew) SetStretch(spriteGO, 4f, 4f, 4f, 4f);
+            var (spriteImg, spriteImgNew)     = GetOrAdd<Image>(spriteGO);
+            if (spriteImgNew) { spriteImg.color = Color.white; spriteImg.raycastTarget = false; }
 
             // InfoArea
             var (infoGO, _)         = GetOrCreateChild(go.transform, "InfoArea");
@@ -444,7 +560,7 @@ namespace LostMemory.Editor.Shop
             var (go, _) = GetOrCreateChild(parent, "SlotGrid");
 
             var (le, leNew) = GetOrAdd<LayoutElement>(go);
-            if (leNew) le.preferredHeight = 300f;
+            le.preferredHeight = 260f;   // 항상 업데이트 — DiscardZone 공간 확보 (4행×55px + spacing + padding ≈ 258px)
 
             var (glg, glgNew) = GetOrAdd<GridLayoutGroup>(go);
             if (glgNew)
@@ -458,11 +574,37 @@ namespace LostMemory.Editor.Shop
 
             for (int i = 0; i < 16; i++)
             {
-                var (slotGO, _)           = GetOrCreateChild(go.transform, $"Slot_{i}");
-                var (slotImg, slotImgNew) = GetOrAdd<Image>(slotGO);
-                if (slotImgNew) slotImg.color = ColSlotBg;
+                var (slotGO, _)  = GetOrCreateChild(go.transform, $"Slot_{i}");
+                var (slotImg, _) = GetOrAdd<Image>(slotGO);
+                slotImg.color    = ColSlotBg;   // 항상 회색으로 — _normalColor 기준값
                 GetOrAdd<InventorySlotView>(slotGO);
+
+                // 배경(회색)과 분리된 아이콘 전용 Image — 흰색으로 스프라이트를 깨끗하게 표시
+                var (iconGO, iconNew) = GetOrCreateChild(slotGO.transform, "IconImage");
+                if (iconNew) SetStretch(iconGO, 4f, 4f, 4f, 4f);
+                var (iconImg, _) = GetOrAdd<Image>(iconGO);
+                iconImg.color    = Color.white; // 항상 흰색 유지 — 아이콘 색상 틴트 없음
+                if (iconNew) iconImg.enabled = false;
             }
+        }
+
+        private static void SyncDiscardZone(Transform parent)
+        {
+            var (go, _) = GetOrCreateChild(parent, "DiscardZone");
+
+            var (img, imgNew) = GetOrAdd<Image>(go);
+            if (imgNew) img.color = new Color(0.35f, 0.12f, 0.12f);
+
+            var (le, leNew) = GetOrAdd<LayoutElement>(go);
+            if (leNew) le.preferredHeight = 40f;   // 50(TitleBar)+260(SlotGrid)+40+40(GoldArea)=390px
+
+            GetOrAdd<DiscardZoneView>(go);
+
+            var (textGO, textNew) = GetOrCreateChild(go.transform, "DiscardText");
+            if (textNew) SetStretch(textGO, 4f, 4f, 0f, 0f);
+            var (tmp, tmpNew) = GetOrAdd<TextMeshProUGUI>(textGO);
+            if (tmpNew) ApplyTMP(tmp, "여기에 드래그해서 버리기", 12f,
+                                 new Color(0.9f, 0.5f, 0.5f), TextAlignmentOptions.Center);
         }
 
         private static void SyncGoldArea(Transform parent)
@@ -482,6 +624,153 @@ namespace LostMemory.Editor.Shop
         }
 
         // ════════════════════════════════════════════════════════════
+        // ShortcutBar
+        // ════════════════════════════════════════════════════════════
+
+        private static GameObject SyncShortcutBar(Transform canvasT)
+        {
+            var (go, created) = GetOrCreateChild(canvasT, "ShortcutBar");
+            if (created)
+                SetRect(go, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                        new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(300f, 80f));
+
+            var (img, imgNew) = GetOrAdd<Image>(go);
+            if (imgNew) img.color = new Color(0.12f, 0.12f, 0.12f);
+
+            var (hlg, hlgNew) = GetOrAdd<HorizontalLayoutGroup>(go);
+            if (hlgNew)
+            {
+                hlg.padding               = new RectOffset(10, 10, 10, 10);
+                hlg.spacing               = 8f;
+                hlg.childControlWidth     = false;
+                hlg.childControlHeight    = false;
+                hlg.childForceExpandWidth = false;
+                hlg.childForceExpandHeight = false;
+                hlg.childAlignment        = TextAnchor.MiddleCenter;
+            }
+
+            GetOrAdd<ShortcutBarView>(go);
+
+            for (int i = 0; i < PlayerConsumableInventory.SlotCount; i++)
+                SyncConsumableSlot(go.transform, i);
+
+            return go;
+        }
+
+        private static void SyncConsumableSlot(Transform parent, int index)
+        {
+            var (go, created) = GetOrCreateChild(parent, $"ConsumableSlot_{index}");
+            if (created) go.GetComponent<RectTransform>().sizeDelta = new Vector2(60f, 60f);
+
+            var (img, imgNew) = GetOrAdd<Image>(go);
+            if (imgNew) img.color = ColSlotBg;
+
+            GetOrAdd<ConsumableSlotView>(go);
+
+            // IconImage — 슬롯 안쪽을 여백 4px 두고 채움
+            var (iconGO, iconNew) = GetOrCreateChild(go.transform, "IconImage");
+            if (iconNew) SetStretch(iconGO, 4f, 4f, 4f, 4f);
+            var (iconImg, iconImgNew) = GetOrAdd<Image>(iconGO);
+            if (iconImgNew) { iconImg.color = Color.white; iconImg.enabled = false; }
+
+            // KeyLabel — 우하단 코너, 단축키 숫자 표시
+            var (labelGO, labelNew) = GetOrCreateChild(go.transform, "KeyLabel");
+            if (labelNew)
+            {
+                var rt              = labelGO.GetComponent<RectTransform>();
+                rt.anchorMin        = new Vector2(1f, 0f);
+                rt.anchorMax        = new Vector2(1f, 0f);
+                rt.pivot            = new Vector2(1f, 0f);
+                rt.anchoredPosition = new Vector2(-2f, 2f);
+                rt.sizeDelta        = new Vector2(14f, 14f);
+            }
+            var (labelTMP, labelTMPNew) = GetOrAdd<TextMeshProUGUI>(labelGO);
+            if (labelTMPNew) ApplyTMP(labelTMP, (index + 1).ToString(), 10f,
+                                      new Color(0.7f, 0.7f, 0.7f), TextAlignmentOptions.Right);
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // TooltipPanel
+        // ════════════════════════════════════════════════════════════
+
+        private static GameObject SyncTooltipView(Transform canvasT)
+        {
+            var (go, created) = GetOrCreateChild(canvasT, "TooltipPanel");
+            if (created)
+                // 초기 크기는 ContentSizeFitter가 조절하므로 폭만 기준값으로 설정
+                SetRect(go, new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(0f, 0f), Vector2.zero, new Vector2(200f, 60f));
+
+            var (img, imgNew) = GetOrAdd<Image>(go);
+            if (imgNew) img.color = new Color(0.08f, 0.08f, 0.08f, 0.92f);
+
+            var (vlg, vlgNew) = GetOrAdd<VerticalLayoutGroup>(go);
+            if (vlgNew)
+            {
+                vlg.padding                = new RectOffset(8, 8, 6, 6);
+                vlg.spacing                = 2f;
+                vlg.childControlWidth      = true;
+                vlg.childControlHeight     = true;
+                vlg.childForceExpandWidth  = true;
+                vlg.childForceExpandHeight = false;
+            }
+
+            // ContentSizeFitter: 텍스트 길이에 맞게 패널 크기를 자동으로 늘린다
+            var (csf, csfNew) = GetOrAdd<ContentSizeFitter>(go);
+            if (csfNew)
+            {
+                csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                csf.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
+            }
+
+            GetOrAdd<TooltipView>(go);
+
+            // ── NameText (아이템 이름, 등급색 적용) ─────────────────
+            var (nameGO, _)       = GetOrCreateChild(go.transform, "NameText");
+            var (nameTMP, nameNew) = GetOrAdd<TextMeshProUGUI>(nameGO);
+            if (nameNew)
+            {
+                ApplyTMP(nameTMP, "", 16f, Color.white);
+                nameTMP.enableWordWrapping = false;
+            }
+
+            // ── RarityText (등급 + 태그 라벨) ───────────────────────
+            var (rarityGO, _)         = GetOrCreateChild(go.transform, "RarityText");
+            var (rarityTMP, rarityNew) = GetOrAdd<TextMeshProUGUI>(rarityGO);
+            if (rarityNew)
+            {
+                ApplyTMP(rarityTMP, "", 13f, new Color(0.65f, 0.65f, 0.65f));
+                rarityTMP.enableWordWrapping = false;
+            }
+
+            // ── DescText (효과 설명) ─────────────────────────────────
+            var (descGO, _)       = GetOrCreateChild(go.transform, "DescText");
+            var (descTMP, descNew) = GetOrAdd<TextMeshProUGUI>(descGO);
+            if (descNew)
+            {
+                ApplyTMP(descTMP, "", 13f, new Color(0.85f, 0.85f, 0.85f));
+                descTMP.enableWordWrapping = false;
+            }
+
+            return go;
+        }
+
+        private static void WireTooltipView(GameObject tooltipGO)
+        {
+            var view = tooltipGO.GetComponent<TooltipView>();
+            if (view == null) return;
+
+            var so = new SerializedObject(view);
+            so.FindProperty("_nameText").objectReferenceValue =
+                tooltipGO.transform.Find("NameText")?.GetComponent<TextMeshProUGUI>();
+            so.FindProperty("_rarityText").objectReferenceValue =
+                tooltipGO.transform.Find("RarityText")?.GetComponent<TextMeshProUGUI>();
+            so.FindProperty("_descText").objectReferenceValue =
+                tooltipGO.transform.Find("DescText")?.GetComponent<TextMeshProUGUI>();
+            so.ApplyModifiedProperties();
+        }
+
+        // ════════════════════════════════════════════════════════════
         // 참조 연결 (구조적 연결 → 항상 재연결)
         // ════════════════════════════════════════════════════════════
 
@@ -497,6 +786,10 @@ namespace LostMemory.Editor.Shop
             itemViewsProp.arraySize = itemViews.Length;
             for (int i = 0; i < itemViews.Length; i++)
                 itemViewsProp.GetArrayElementAtIndex(i).objectReferenceValue = itemViews[i];
+
+            so.FindProperty("_detailIconImage").objectReferenceValue =
+                shopPanel.transform.Find("DetailArea/IconImage")
+                                   ?.GetComponent<Image>();
 
             so.FindProperty("_detailNameText").objectReferenceValue =
                 shopPanel.transform.Find("DetailArea/InfoGroup/DetailNameText")
@@ -525,16 +818,13 @@ namespace LostMemory.Editor.Shop
             var so = new SerializedObject(itemView);
             var t  = itemView.transform;
 
-            so.FindProperty("_iconImage").objectReferenceValue =
-                t.Find("IconImage")?.GetComponent<Image>();
-            so.FindProperty("_nameText").objectReferenceValue =
-                t.Find("InfoArea/NameText")?.GetComponent<TextMeshProUGUI>();
-            so.FindProperty("_descriptionText").objectReferenceValue =
-                t.Find("InfoArea/DescText")?.GetComponent<TextMeshProUGUI>();
-            so.FindProperty("_priceText").objectReferenceValue =
-                t.Find("PriceArea/PriceText")?.GetComponent<TextMeshProUGUI>();
-            so.FindProperty("_buyButton").objectReferenceValue =
-                t.Find("PriceArea/BuyButton")?.GetComponent<Button>();
+            // SetIfNotNull: 경로를 못 찾으면 기존(수동 연결된) 참조를 유지한다
+            // IconImage/Icon: 스프라이트 전용 자식 Image (흰색, 배경과 분리)
+            SetIfNotNull(so, "_iconImage",       t.Find("IconImage/Icon")?.GetComponent<Image>());
+            SetIfNotNull(so, "_nameText",        t.Find("InfoArea/NameText")?.GetComponent<TextMeshProUGUI>());
+            SetIfNotNull(so, "_descriptionText", t.Find("InfoArea/DescText")?.GetComponent<TextMeshProUGUI>());
+            SetIfNotNull(so, "_priceText",       t.Find("PriceArea/PriceText")?.GetComponent<TextMeshProUGUI>());
+            SetIfNotNull(so, "_buyButton",       t.Find("PriceArea/BuyButton")?.GetComponent<Button>());
             so.ApplyModifiedProperties();
         }
 
@@ -554,16 +844,80 @@ namespace LostMemory.Editor.Shop
             so.FindProperty("_goldText").objectReferenceValue =
                 inventoryPanel.transform.Find("GoldArea/GoldText")
                               ?.GetComponent<TextMeshProUGUI>();
+
             so.ApplyModifiedProperties();
+
+            // 각 슬롯의 _iconImage를 자식 IconImage로 연결 (배경과 분리)
+            foreach (var slot in slots)
+            {
+                var slotSO = new SerializedObject(slot);
+                slotSO.FindProperty("_iconImage").objectReferenceValue =
+                    slot.transform.Find("IconImage")?.GetComponent<Image>();
+                slotSO.ApplyModifiedProperties();
+            }
+        }
+
+        private static void WireShortcutBarView(GameObject shortcutBarGO)
+        {
+            var view = shortcutBarGO.GetComponent<ShortcutBarView>();
+            if (view == null) return;
+
+            var so    = new SerializedObject(view);
+            var slots = shortcutBarGO.GetComponentsInChildren<ConsumableSlotView>();
+
+            var slotsProp = so.FindProperty("_slots");
+            slotsProp.arraySize = slots.Length;
+            for (int i = 0; i < slots.Length; i++)
+                slotsProp.GetArrayElementAtIndex(i).objectReferenceValue = slots[i];
+
+            so.ApplyModifiedProperties();
+
+            foreach (var slot in slots)
+                WireConsumableSlotView(slot);
+        }
+
+        private static void WireConsumableSlotView(ConsumableSlotView slot)
+        {
+            var so = new SerializedObject(slot);
+            var t  = slot.transform;
+
+            so.FindProperty("_iconImage").objectReferenceValue =
+                t.Find("IconImage")?.GetComponent<Image>();
+            so.FindProperty("_keyLabel").objectReferenceValue =
+                t.Find("KeyLabel")?.GetComponent<TextMeshProUGUI>();
+            so.ApplyModifiedProperties();
+        }
+
+        private static void RewireTestShopShortcutBarIfExists(
+            ShortcutBarView shortcutBarView, PlayerConsumableInventory consumableInventory)
+        {
+            var testShop = Object.FindFirstObjectByType<TestShop>();
+            if (testShop == null) return;
+
+            var so = new SerializedObject(testShop);
+            if (shortcutBarView != null)
+                so.FindProperty("_shortcutBar").objectReferenceValue = shortcutBarView;
+            if (consumableInventory != null)
+                so.FindProperty("_consumableInventory").objectReferenceValue = consumableInventory;
+            so.ApplyModifiedProperties();
+
+            Debug.Log($"[ShopUIBuilder] '{testShop.gameObject.name}' 단축키바 재연결 완료");
+        }
+
+        private static PlayerConsumableInventory FindOrCreatePlayerConsumableInventory()
+        {
+            var existing = Object.FindFirstObjectByType<PlayerConsumableInventory>();
+            if (existing != null) return existing;
+
+            var go = new GameObject("PlayerConsumableInventory");
+            return go.AddComponent<PlayerConsumableInventory>();
         }
 
         private static void RewireTestShopPanelsIfExists(
             ShopPanelView shopPanelView, InventoryPanelView invPanelView)
         {
-            var testShopGO = GameObject.Find("TestShop");
-            if (testShopGO == null) return;
-
-            var testShop = testShopGO.GetComponent<TestShop>();
+            // 이름 무관하게 TestShop 컴포넌트를 씬에서 검색
+            var testShop = Object.FindFirstObjectByType<TestShop>();
             if (testShop == null) return;
 
             var so = new SerializedObject(testShop);
@@ -573,7 +927,7 @@ namespace LostMemory.Editor.Shop
                 so.FindProperty("_inventoryPanel").objectReferenceValue = invPanelView;
             so.ApplyModifiedProperties();
 
-            Debug.Log("[ShopUIBuilder] TestShop 패널 재연결 완료");
+            Debug.Log($"[ShopUIBuilder] '{testShop.gameObject.name}' 패널 재연결 완료");
         }
 
         // ════════════════════════════════════════════════════════════
@@ -661,6 +1015,17 @@ namespace LostMemory.Editor.Shop
         // ════════════════════════════════════════════════════════════
         // 핵심 헬퍼
         // ════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// value가 null이 아닐 때만 SerializedProperty를 덮어쓴다.
+        /// null이면 기존(수동 연결된) 참조를 그대로 유지한다.
+        /// </summary>
+        private static void SetIfNotNull(SerializedObject so, string propName, Object value)
+        {
+            if (value == null) return;
+            var prop = so.FindProperty(propName);
+            if (prop != null) prop.objectReferenceValue = value;
+        }
 
         /// <summary>
         /// 컴포넌트를 찾거나 없으면 추가한다.

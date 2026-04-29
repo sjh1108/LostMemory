@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using LostMemory.Relics;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace LostMemory.Shop
 {
@@ -17,9 +18,10 @@ namespace LostMemory.Shop
         [SerializeField] private ShopItemView[] _itemViews;
 
         [Header("하단 상세 정보 (선택)")]
-        [SerializeField] private TextMeshProUGUI _detailNameText;
-        [SerializeField] private TextMeshProUGUI _detailRarityText;  // "[유니크] 맹공" 형식
-        [SerializeField] private TextMeshProUGUI _detailDescText;    // EffectDescription
+        [SerializeField] private Image            _detailIconImage;
+        [SerializeField] private TextMeshProUGUI  _detailNameText;
+        [SerializeField] private TextMeshProUGUI  _detailRarityText;  // "[유니크] 맹공" 형식
+        [SerializeField] private TextMeshProUGUI  _detailDescText;    // EffectDescription
 
         /// <summary>구매 성공 이벤트 — 인자: 구매된 아이템 데이터</summary>
         public event Action<ShopItemData> OnItemPurchased;
@@ -118,20 +120,33 @@ namespace LostMemory.Shop
             OnItemPurchased?.Invoke(item);
         }
 
-        /// <summary>현재 골드로 각 아이템의 구매 가능 여부를 갱신한다.</summary>
+        /// <summary>현재 골드와 보유 여부로 각 아이템의 구매 가능 상태를 갱신한다.</summary>
         private void RefreshAffordability()
         {
             if (_shopData == null) return;
             for (int i = 0; i < _itemViews.Length; i++)
             {
-                if (i < _shopData.Items.Length && _itemViews[i].gameObject.activeSelf)
-                    _itemViews[i].SetAffordable(_gold >= _shopData.Items[i].Price);
+                if (i >= _shopData.Items.Length || !_itemViews[i].gameObject.activeSelf)
+                    continue;
+
+                var relic = _shopData.Items[i].Relic;
+
+                // 소모품이 아닌 유물이고 이미 보유 중이면 "보유중" 표시
+                bool owned = !relic.IsConsumable && _inventory.Has(relic);
+                _itemViews[i].SetOwned(owned);
+                _itemViews[i].SetAffordable(_gold >= _shopData.Items[i].Price);
             }
         }
 
         private void ShowDetail(RelicData relic)
         {
-            if (_detailNameText  != null) _detailNameText.text  = relic.DisplayName;
+            if (_detailIconImage != null)
+            {
+                _detailIconImage.sprite  = relic.Icon;
+                _detailIconImage.color   = Color.white;
+                _detailIconImage.enabled = relic.Icon != null;
+            }
+            if (_detailNameText   != null) _detailNameText.text   = relic.DisplayName;
             if (_detailRarityText != null) _detailRarityText.text = GetRarityTagLabel(relic);
             if (_detailDescText   != null) _detailDescText.text   = relic.EffectDescription;
         }
@@ -160,9 +175,10 @@ namespace LostMemory.Shop
 
         private void ClearDetail()
         {
-            if (_detailNameText   != null) _detailNameText.text   = string.Empty;
-            if (_detailRarityText != null) _detailRarityText.text = string.Empty;
-            if (_detailDescText   != null) _detailDescText.text   = string.Empty;
+            if (_detailIconImage  != null) _detailIconImage.enabled = false;
+            if (_detailNameText   != null) _detailNameText.text     = string.Empty;
+            if (_detailRarityText != null) _detailRarityText.text   = string.Empty;
+            if (_detailDescText   != null) _detailDescText.text     = string.Empty;
         }
     }
 }

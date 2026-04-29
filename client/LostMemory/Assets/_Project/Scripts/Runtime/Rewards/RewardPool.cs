@@ -58,6 +58,27 @@ namespace LostMemory.Rewards
             return PickWeighted(available, 3);
         }
 
+        /// <summary>
+        /// 상점 유물 슬롯용 추첨.
+        /// 소모품을 제외하고, 미보유 유물만 대상으로 커스텀 가중치를 적용해 1개를 반환한다.
+        /// 후보가 없으면 null 반환.
+        /// </summary>
+        /// <param name="excludedNames">제외할 유물 이름 목록 (보유 유물 + 이번 상점 중복 방지)</param>
+        /// <param name="rarityWeights">등급별 가중치 테이블</param>
+        public RelicData DrawOneRelicForShop(
+            IEnumerable<string>              excludedNames,
+            Dictionary<RelicRarity, int>     rarityWeights)
+        {
+            var excluded   = new HashSet<string>(excludedNames);
+            var candidates = _allRewards
+                .Where(r => !r.IsConsumable && !excluded.Contains(r.name))
+                .ToList();
+
+            if (candidates.Count == 0) return null;
+
+            return PickOneWeightedByRarity(candidates, rarityWeights);
+        }
+
         // ── private ──────────────────────────────────────────────
 
         private List<RelicData> PickWeighted(List<RelicData> pool, int count)
@@ -88,5 +109,26 @@ namespace LostMemory.Rewards
 
         private static int GetWeight(RelicData data)
             => data.IsConsumable ? ConsumableWeight : RarityWeights[data.Rarity];
+
+        private static RelicData PickOneWeightedByRarity(
+            List<RelicData>              pool,
+            Dictionary<RelicRarity, int> weights)
+        {
+            int totalWeight = pool.Sum(r => weights.TryGetValue(r.Rarity, out int w) ? w : 0);
+            if (totalWeight <= 0)
+                return pool[Random.Range(0, pool.Count)];   // 가중치 없으면 균등 추첨
+
+            int roll       = Random.Range(0, totalWeight);
+            int cumulative = 0;
+
+            foreach (var item in pool)
+            {
+                if (!weights.TryGetValue(item.Rarity, out int w)) continue;
+                cumulative += w;
+                if (roll < cumulative) return item;
+            }
+
+            return pool[pool.Count - 1];   // 안전망
+        }
     }
 }
