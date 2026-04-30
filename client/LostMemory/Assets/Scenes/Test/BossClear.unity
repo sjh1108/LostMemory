@@ -8494,6 +8494,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9067875688562728613, guid: 05b0030e1918abf43b6b9e1670e146f7,
+        type: 3}
+      propertyPath: initialHealth
+      value: 100
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -14128,6 +14133,8 @@ MonoBehaviour:
   roomController: {fileID: 934030394}
   portalVisualRoot: {fileID: 1405436028}
   portalTrigger: {fileID: 2112965939}
+  activationRadius: 1.5
+  fallbackInteractKey: 101
   hideOnStart: 1
   hideAfterUse: 1
   debugLogging: 0
