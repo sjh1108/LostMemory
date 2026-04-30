@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Relics;
 using LostMemory.Rewards;
@@ -18,8 +19,20 @@ namespace LostMemory.Stage
         [Header("Refs")]
         [SerializeField] private RewardPanelView rewardPanelView;
         [SerializeField] private PlayerRelicInventory playerRelicInventory;
-        [Tooltip("CL-110: 보상 패널 떠있는 동안 마우스 조준 (칼 따라가기) 차단용. Player GameObject 의 KhiPlayerAim.")]
+        [Tooltip("CL-110: 보상 패널 떠있는 동안 마우스 조준 (칼 따라가기) 차단용. Player GameObject 의 KhiPlayerAim. (참고: KhiPlayerAim 자체엔 Update 가 없어 enabled 토글 효과 없음 — 실제 칼 회전 차단은 playerWeaponPresenter 슬롯)")]
         [SerializeField] private KhiPlayerAim playerAim;
+        [Tooltip("보상 패널 표시 동안 칼이 마우스를 따라 회전하지 않도록 차단. KhiWeaponPresenter.Update 가 매 프레임 GetAimDirection 으로 칼을 갱신하므로 이 컴포넌트 enabled 토글이 실제 차단점.")]
+        [SerializeField] private KhiWeaponPresenter playerWeaponPresenter;
+        [Tooltip("보상 패널 표시 동안 공격 input 차단. ExternalBlock = true 로 토글.")]
+        [SerializeField] private KhiMeleeComboController playerMeleeCombo;
+        [Tooltip("보상 패널 표시 동안 대쉬 input 차단. PermitAbility(false) 로 토글.")]
+        [SerializeField] private KhiDashController playerDash;
+        [Tooltip("보상 패널 표시 동안 패링 input 차단. ExternalBlock = true 로 토글.")]
+        [SerializeField] private KhiParryController playerParry;
+
+        [Header("Timing")]
+        [SerializeField, Min(0f), Tooltip("방 클리어 후 보상 패널 표시까지 대기 (초). 플레이어 공격 모션 도중 패널 등장 방지. WaitForSecondsRealtime 사용 → timeScale 영향 없음.")]
+        private float rewardShowDelay = 0.5f;
 
         [Header("Debug")]
         [SerializeField] private bool logRewardFlow = false;
@@ -51,6 +64,7 @@ namespace LostMemory.Stage
             {
                 Time.timeScale = _savedTimeScale;
                 if (playerAim != null) playerAim.enabled = true;
+                SetCombatInputsBlocked(false);
                 _isShowingReward = false;
             }
         }
@@ -115,8 +129,21 @@ namespace LostMemory.Stage
             }
 
             _pendingController = source;
-            if (logRewardFlow) Debug.Log($"[RewardController] Pending controller set: '{_pendingController.name}' (RoomId={_pendingController.RoomId}).");
+            // 가드 선점 — delay 동안 다른 방 클리어가 끼어들어 reward 가 큐잉되지 않도록 _isShowingReward 즉시 true.
+            _isShowingReward = true;
+            if (logRewardFlow) Debug.Log($"[RewardController] Pending controller set: '{_pendingController.name}' (RoomId={_pendingController.RoomId}). Showing reward in {rewardShowDelay}s.");
 
+            StartCoroutine(DelayedShowReward());
+        }
+
+        // 보상 패널 표시 직전 짧은 지연 — 플레이어 공격 모션이 끝나기 전 패널이 등장해 입력이 끊기는 UX 방지.
+        // WaitForSecondsRealtime 으로 timeScale 무관 (ShowReward 가 timeScale=0 만들기 전이라 이론상 영향 없으나 안전 차원).
+        private IEnumerator DelayedShowReward()
+        {
+            if (rewardShowDelay > 0f)
+            {
+                yield return new WaitForSecondsRealtime(rewardShowDelay);
+            }
             ShowReward();
         }
 
@@ -131,6 +158,7 @@ namespace LostMemory.Stage
                 Debug.LogError("[RewardController] rewardPanelView 또는 playerRelicInventory 가 null. wiring 확인.", this);
                 return;
             }
+            // 외부 직접 호출 (HandleRoomClearedFromController 미경유) 시에도 가드가 켜지도록 idempotent.
             _isShowingReward = true;
 
             // CL-110: 보상 패널 떠있는 동안 게임 시간 정지 + 마우스 조준 차단.
@@ -139,6 +167,8 @@ namespace LostMemory.Stage
             _savedTimeScale = Time.timeScale;
             Time.timeScale = 0f;
             if (playerAim != null) playerAim.enabled = false;
+            // 공격 / 대쉬 / 패링 input 은 timeScale 무관하게 Update 로 읽혀 새 액션이 발화될 수 있음 → 명시적 차단.
+            SetCombatInputsBlocked(true);
 
             rewardPanelView.Show(playerRelicInventory);
             if (logRewardFlow) Debug.Log("[RewardController] Reward panel shown. timeScale=0, aim locked.");
@@ -152,6 +182,7 @@ namespace LostMemory.Stage
             // CL-110: 보상 선택 후 게임 시간 + 조준 복원.
             Time.timeScale = _savedTimeScale;
             if (playerAim != null) playerAim.enabled = true;
+            SetCombatInputsBlocked(false);
 
             if (_pendingController != null)
             {
@@ -164,6 +195,16 @@ namespace LostMemory.Stage
                 Debug.LogWarning("[RewardController] _pendingController is null; cannot open exits. (정상: 외부 ShowReward 호출 흐름)");
             }
             // _pendingController == null 이면 RoomCleared 경유 안 한 외부 트리거 (정상).
+        }
+
+        // 보상 패널 동안 공격 / 대쉬 / 패링 input + 칼 회전 일괄 토글. timeScale=0 만으론 Update 기반 동작이 막히지 않아 별도 차단.
+        private void SetCombatInputsBlocked(bool block)
+        {
+            if (playerMeleeCombo != null) playerMeleeCombo.ExternalBlock = block;
+            if (playerDash != null) playerDash.PermitAbility(!block);
+            if (playerParry != null) playerParry.ExternalBlock = block;
+            // 칼이 마우스 따라가는 Update 차단 — enabled=false 면 Update 가 안 돌아 마지막 프레임 위치/회전 그대로 freeze.
+            if (playerWeaponPresenter != null) playerWeaponPresenter.enabled = !block;
         }
     }
 }

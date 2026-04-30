@@ -66,6 +66,9 @@ namespace LostMemory.TestKhi
         public bool IsParryInCooldown => _state == KhiParryState.Cooldown;
         public float CurrentStateRemaining => _state == KhiParryState.Idle ? 0f : Mathf.Max(0f, _stateEndTime - Time.time);
 
+        // 외부 시스템 (보상 패널 등) 이 패링 input 을 일시 차단할 때 사용. KhiMeleeComboController.ExternalBlock 과 동일 패턴.
+        public bool ExternalBlock { get; set; }
+
         private void Awake()
         {
             handleWeapon ??= GetComponent<CharacterHandleWeapon>();
@@ -135,6 +138,11 @@ namespace LostMemory.TestKhi
 
         private void HandleParryInput()
         {
+            if (ExternalBlock)
+            {
+                return;
+            }
+
             if (_state != KhiParryState.Idle)
             {
                 return;

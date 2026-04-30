@@ -70,6 +70,13 @@ GameObject:
   - component: {fileID: 3094904453405037617}
   - component: {fileID: 5896544923211324735}
   - component: {fileID: 9123898256926965793}
+  - component: {fileID: 1496170365699431617}
+  - component: {fileID: 5883894535095913450}
+  - component: {fileID: 4842836589957752715}
+  - component: {fileID: 3903827755165773276}
+  - component: {fileID: 1736420558605640635}
+  - component: {fileID: 1105879407601961676}
+  - component: {fileID: 1642600212417923945}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -345,6 +352,7 @@ MonoBehaviour:
   allowDashDuringAttack: 0
   allowDashDuringAttackRecovery: 0
   logBlockedDashToConsole: 0
+  statContainer: {fileID: 1496170365699431617}
 --- !u!114 &114583920634094340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -723,6 +731,7 @@ MonoBehaviour:
   bufferAttackDuringDash: 0
   disableTdeHandleWeapon: 1
   logHitsToConsole: 0
+  statContainer: {fileID: 0}
 --- !u!114 &114910001000000005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -788,6 +797,7 @@ MonoBehaviour:
   hitStun: {fileID: 4506602064698978107}
   parryController: {fileID: 8099593820185299679}
   animator: {fileID: 0}
+  playerHealing: {fileID: 1642600212417923945}
   downDuration: 10
   downHealthFloor: 1
   reviveHealthFraction: 0.2
@@ -845,7 +855,7 @@ MonoBehaviour:
   allowParryDuringAttack: 0
   allowParryDuringAttackRecovery: 0
   allowParryDuringDash: 0
-  logStateTransitions: 0
+  logStateTransitions: 1
 --- !u!114 &4325928476706910750
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -985,6 +995,121 @@ MonoBehaviour:
   targetComboSteps: 03000000
   lungeDistance: 0.8
   lungeDuration: 0.12
+--- !u!114 &1496170365699431617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
+  logModifierChanges: 1
+--- !u!114 &5883894535095913450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c6b3edc7e9507f47a877287ef93fd2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.RelicEffectApplier
+  inventory: {fileID: 1736420558605640635}
+  container: {fileID: 1496170365699431617}
+  playerHealth: {fileID: 114871673569860628}
+  combatController: {fileID: 114910001000000004}
+  parryController: {fileID: 8099593820185299679}
+  dashController: {fileID: 114646620809325970}
+  playerShield: {fileID: 1105879407601961676}
+--- !u!114 &4842836589957752715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2dccb7f7d3f05f41aa562eee59345a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerMovementStatApplier
+  characterMovement: {fileID: 114109505143042948}
+  container: {fileID: 1496170365699431617}
+--- !u!114 &3903827755165773276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21400c8789c263d40aecc0310a362c7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealthStatApplier
+  health: {fileID: 114871673569860628}
+  container: {fileID: 1496170365699431617}
+--- !u!114 &1736420558605640635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
+  _debugRelicsToAdd:
+  - {fileID: 11400000, guid: 8e31f126b13b2184dac90cdb89760ccc, type: 2}
+  - {fileID: 11400000, guid: cc3c34d065f1025459a49cfa67b4e3d9, type: 2}
+  - {fileID: 11400000, guid: 695ecc0b511d2794195358ca94f9d767, type: 2}
+  - {fileID: 11400000, guid: 2f6954336ecfe564d8c6544f754189b7, type: 2}
+  - {fileID: 11400000, guid: bc2ccafc2d7af344a9d4d95f1ed01af2, type: 2}
+  - {fileID: 11400000, guid: 57c8fa532f114c04991d0a28d50cedf8, type: 2}
+  - {fileID: 11400000, guid: a587bd5dfcf4a2a468639943a93bf83c, type: 2}
+  - {fileID: 11400000, guid: 5ebd41e2a884c6b45bff2603b28a9128, type: 2}
+  - {fileID: 11400000, guid: 5c1bb4475bb3f684897825120a45ff40, type: 2}
+  - {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}
+  - {fileID: 11400000, guid: d3e3144f7ab56554985fafc09eb06ace, type: 2}
+  - {fileID: 11400000, guid: a587bd5dfcf4a2a468639943a93bf83c, type: 2}
+--- !u!114 &1105879407601961676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b426d2595487b104e92127941d64ee42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerShield
+  logShieldEvents: 1
+--- !u!114 &1642600212417923945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6643ceaf7a0382f44881910471033808, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealing
+  health: {fileID: 114871673569860628}
+  container: {fileID: 1496170365699431617}
+  logHeals: 1
+  _debugConsumableToUse: {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709,
+    type: 2}
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
