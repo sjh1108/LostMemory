@@ -15,7 +15,6 @@ namespace LostMemory.Stage
         [SerializeField, Min(0.1f)] private float activationRadius = 1.5f;
         [SerializeField] private KeyCode fallbackInteractKey = KeyCode.E;
         [SerializeField] private bool hideOnStart = true;
-        [SerializeField] private bool hideAfterUse = true;
         [SerializeField] private bool debugLogging;
 
         private readonly Collider2D[] overlapBuffer = new Collider2D[16];
@@ -218,23 +217,11 @@ namespace LostMemory.Stage
             Debug.Log($"[BossClearPortalController] Portal used by '{character.name}'.", this);
             portalUseInProgress = true;
 
-            if (hideAfterUse)
-            {
-                HidePortal();
-            }
-
             bool handled = runManager.NotifyBossClearPortalEntered();
             if (!handled)
             {
                 Log("RunManager rejected portal use. Portal restored.");
-                if (hideAfterUse)
-                {
-                    ShowPortal();
-                }
-                else
-                {
-                    portalUseInProgress = false;
-                }
+                portalUseInProgress = false;
                 return false;
             }
 

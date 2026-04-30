@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using LostMemory.Relics;
 using LostMemory.TestKhi;
 using LostMemory.UI;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -47,6 +48,9 @@ namespace LostMemory.Stage
         [SerializeField, Tooltip("RunCleared/RunFailed 도달 후 Resulting 까지의 지연 시간(초)")]
         private float resultingDelaySeconds = 2f;
 
+        [SerializeField, Tooltip("결과창의 마을로 버튼을 눌렀을 때 로드할 씬 이름.")]
+        private string townSceneName = "Town";
+
         [Header("Stage Progression")]
         [SerializeField, Min(1), Tooltip("이번 런에서 진행할 스테이지 수. 보스 클리어 포탈 진입 시 다음 스테이지가 없으면 결과 화면으로 간다.")]
         private int totalStageCount = 1;
@@ -71,6 +75,7 @@ namespace LostMemory.Stage
         private int totalDamage;
         private int memoryFragments;
         private bool bossClearPortalReady;
+        private bool townReturnInProgress;
 
         private void Awake()
         {
@@ -106,8 +111,8 @@ namespace LostMemory.Stage
             // HandleRestartRequested 가 SceneManager.LoadScene 으로 씬 재로드까지 수행 (superset).
             if (runResultPanelView != null)
             {
+                runResultPanelView.OnLobby += ReturnToTown;
                 runResultPanelView.OnRestart += HandleRestartRequested;
-                runResultPanelView.OnLobby += HandleLobbyRequested;
             }
         }
 
@@ -128,8 +133,8 @@ namespace LostMemory.Stage
             }
             if (runResultPanelView != null)
             {
+                runResultPanelView.OnLobby -= ReturnToTown;
                 runResultPanelView.OnRestart -= HandleRestartRequested;
-                runResultPanelView.OnLobby -= HandleLobbyRequested;
             }
             UnsubscribeAllRoomControllers();
 
@@ -218,10 +223,68 @@ namespace LostMemory.Stage
         /// </summary>
         public void CloseResulting()
         {
-            if (!StateMachine.TryTransition(RunState.None))
+            TryCloseResulting();
+        }
+
+        public void ReturnToTown()
+        {
+            if (!IsAuthority || townReturnInProgress)
             {
                 return;
             }
+
+            if (string.IsNullOrWhiteSpace(townSceneName))
+            {
+                Debug.LogWarning("[RunManager] Town scene name is empty.", this);
+                return;
+            }
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            bool networkSessionActive = networkManager != null && networkManager.IsListening;
+            if (networkSessionActive && !networkManager.IsServer)
+            {
+                Debug.LogWarning("[RunManager] Town return must be requested on the server/host. Client request RPC is not wired yet.", this);
+                return;
+            }
+
+            if (!Application.CanStreamedLevelBeLoaded(townSceneName))
+            {
+                Debug.LogWarning($"[RunManager] Town scene '{townSceneName}' is not available. Add it to Build Settings.", this);
+                return;
+            }
+
+            townReturnInProgress = true;
+            if (!TryCloseResulting())
+            {
+                CleanupRunResultingState();
+            }
+            Time.timeScale = 1f;
+
+            if (networkSessionActive)
+            {
+                networkManager.SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
+            }
+            else
+            {
+                SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
+            }
+
+            Destroy(gameObject);
+        }
+
+        private bool TryCloseResulting()
+        {
+            if (!StateMachine.TryTransition(RunState.None))
+            {
+                return false;
+            }
+
+            CleanupRunResultingState();
+            return true;
+        }
+
+        private void CleanupRunResultingState()
+        {
             bossClearPortalReady = false;
             if (runResultPanelView != null)
             {
