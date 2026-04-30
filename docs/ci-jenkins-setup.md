@@ -2,7 +2,9 @@
 
 ## 개요
 Spring Boot 앱을 Docker 이미지로 빌드하고 EC2 에 `docker compose` 로 배포하는 Jenkins 파이프라인입니다.
-수동 트리거(Build with Parameters) 기반으로 작동하며, Jenkinsfile 은 `server/Jenkinsfile` 에 위치합니다.
+**develop 브랜치 push 시 GitLab CI 가 자동 트리거**하며 (S14P31C201-114), 수동 빌드(Build with Parameters)도 그대로 가능합니다. Jenkinsfile 은 `server/Jenkinsfile` 에 위치합니다.
+
+자동 트리거는 GitLab → EC2 인바운드 webhook 대신 EC2 의 gitlab-runner outbound 호출로 동작합니다 — SSAFY GitLab admin 의 outbound 차단 정책을 회피하기 위함.
 
 ## 전제 조건
 
@@ -78,12 +80,52 @@ Job 설정:
 - **Script Path**: `server/Jenkinsfile`
 - Save
 
+## 자동 트리거 셋업 (S14P31C201-114)
+
+### 1. Jenkins 측 — "Build Authorization Token Root Plugin" 설치
+
+모던 Jenkins(2.5xx)는 표준 `/job/<name>/buildWithParameters` 엔드포인트가 POST 시 CSRF crumb 을 강제하므로, 외부 CI 가 단순 토큰만으로 빌드를 트리거할 수 없습니다. 이를 위한 우회 endpoint(`/buildByToken/...`)를 제공하는 공식 플러그인 설치:
+
+1. Jenkins UI → **Manage Jenkins → Plugins → Available** 탭
+2. 검색: `Build Authorization Token Root`
+3. Install (재시작 불필요)
+4. 설치 확인: `curl -fsS http://localhost/jenkins/buildByToken/` 가 404 가 아닌 다른 응답이면 endpoint 노출됨 (인증 없이 GET 은 보통 403/방어 응답)
+
+### 2. Jenkins 잡 측 — Build trigger token 발급 + 파라미터 등록
+
+`lostmemory-server-deploy` → Configure:
+1. **Build Triggers** → **"Trigger builds remotely (e.g., from scripts)"** 체크
+2. **Authentication Token** — 임의 강한 문자열 입력 (예: `openssl rand -hex 32`). 이 값을 GitLab Variable `JENKINS_BUILD_TOKEN` 으로 등록.
+3. **General → This project is parameterized** — Jenkinsfile 의 `parameters` 블록이 자동 인식되므로 별도 추가 입력 불필요 (`SKIP_TESTS`/`COMMIT_SHA`/`BRANCH` 가 자동 노출됨).
+4. Save
+
+### 3. GitLab Project → Settings → CI/CD → Variables 등록
+
+| Key | Value 예시 | Type | Flags |
+| --- | --- | --- | --- |
+| `JENKINS_BASE_URL` | `http://localhost/jenkins` | Variable | Protected |
+| `JENKINS_JOB_NAME` | `lostmemory-server-deploy` | Variable | Protected |
+| `JENKINS_BUILD_TOKEN` | (위 1단계에서 발급한 토큰) | Variable | Protected, **Masked** |
+
+`localhost` 가 호스트로 라우팅되도록 EC2 의 `/srv/gitlab-runner/config/config.toml` 의 `[runners.docker]` 블록에 `network_mode = "host"` 가 들어있어야 합니다 (없으면 잡 컨테이너의 localhost 가 자기 자신을 가리킴).
+
+### 4. 동작 흐름
+1. develop 에 push (직접 또는 MR 머지)
+2. GitLab Pipeline 발동 — `notify_develop_merge` (Mattermost), `trigger_jenkins_build` (Jenkins) 두 잡 병렬 실행
+3. `trigger_jenkins_build` 가 `POST $JENKINS_BASE_URL/buildByToken/buildWithParameters?job=$JENKINS_JOB_NAME&token=$JENKINS_BUILD_TOKEN` 호출 + body 로 `COMMIT_SHA`/`BRANCH` 전달
+4. Jenkins 가 빌드 큐잉 → 기존 5단계(Checkout → Build & Test → Docker Build → Deploy → Smoke Test) 실행
+
 ## 사용법
 
-### 배포 실행
+### 자동 배포 (develop push)
+- develop 에 머지하면 자동 실행. GitLab Pipelines 페이지에서 `trigger_jenkins_build` 잡 로그에 `Jenkins HTTP status: 201` 확인 후, Jenkins UI 에서 진행 상황 확인.
+
+### 수동 배포 실행
 1. Jenkins → `lostmemory-server-deploy` → **Build with Parameters** 클릭
-2. 파라미터 선택:
-   - `SKIP_TESTS` — 기본 true (Gradle test 단계 스킵). 테스트까지 돌리고 싶으면 해제
+2. 파라미터:
+   - `SKIP_TESTS` — 기본 true (Gradle test 단계 스킵)
+   - `COMMIT_SHA` — 비워두면 develop HEAD 빌드
+   - `BRANCH` — 기본 `develop`
 3. **Build** 클릭 → Pipeline 실행
 
 ### Stage 구성
@@ -111,5 +153,5 @@ Job 설정:
 ## 향후 확장 포인트
 - `DEPLOY_PROFILE` 파라미터 추가해 dev/prod 분리 배포
 - 실패 시 자동 롤백 (이전 `:latest` 태그 보존 + 실패 시 재적용)
-- GitLab MR 머지 완료 후 자동 트리거 (webhook → Jenkins Generic Webhook Trigger)
+- HTTPS 적용 후 webhook 직결 트리거로 전환 가능 (현재는 outbound 우회)
 - Docker Registry push (이미지 보관/버전 관리) — 현재는 EC2 로컬 빌드만
