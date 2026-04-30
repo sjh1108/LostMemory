@@ -703,19 +703,7 @@ MonoBehaviour:
         DebugActive: 0
         PlayEvents:
           m_PersistentCalls:
-            m_Calls:
-            - m_Target: {fileID: 1347354678631216277}
-              m_TargetAssemblyTypeName: 
-              m_MethodName: Collect
-              m_Mode: 1
-              m_Arguments:
-                m_ObjectArgument: {fileID: 0}
-                m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-                m_IntArgument: 0
-                m_FloatArgument: 0
-                m_StringArgument: 
-                m_BoolArgument: 0
-              m_CallState: 2
+            m_Calls: []
         StopEvents:
           m_PersistentCalls:
             m_Calls: []
@@ -735,9 +723,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4173073286476048}
   - component: {fileID: 61248425652782926}
-  - component: {fileID: 114888599849180486}
-  - component: {fileID: 114867595043371398}
-  - component: {fileID: 1347354678631216277}
   - component: {fileID: 2352508785994630202}
   - component: {fileID: 114260000000000001}
   m_Layer: 0
@@ -809,60 +794,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.2, y: 1.4}
   m_EdgeRadius: 0
---- !u!114 &114888599849180486
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1877469732588648}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1feff4042ae759c49a290443b9bfdd71, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PickedMMFeedbacks: {fileID: 497004076}
-  DisableColliderOnPick: 0
-  DisableObjectOnPick: 1
-  DisableDelay: 0
-  DisableModelOnPick: 0
-  DisableTargetObjectOnPick: 0
-  TargetObjectToDisable: {fileID: 0}
-  TargetObjectDisableDelay: 1
-  Model: {fileID: 0}
-  RequireCharacterComponent: 1
-  RequirePlayerType: 1
---- !u!114 &114867595043371398
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1877469732588648}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86fd837a0abc28d4d91c55590bd2c090, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Item: {fileID: 11400000, guid: 2291b70db5927194d8c90ca2403a143c, type: 2}
-  Quantity: 1
-  RemainingQuantity: 1
-  PickableIfInventoryIsFull: 0
-  DisableObjectWhenDepleted: 0
-  RequirePlayerTag: 1
---- !u!114 &1347354678631216277
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1877469732588648}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 117209d925eeb13429ff554fe3bec186, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  CollectibleName: OrcMeleeWeapon4Dir
 --- !u!114 &2352508785994630202
 MonoBehaviour:
   m_ObjectHideFlags: 0

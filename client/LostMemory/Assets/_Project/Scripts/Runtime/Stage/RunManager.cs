@@ -4,6 +4,7 @@ using LostMemory.Relics;
 using LostMemory.TestKhi;
 using LostMemory.UI;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LostMemory.Stage
 {
@@ -36,6 +37,8 @@ namespace LostMemory.Stage
         [SerializeField] private PlayerRelicInventory playerRelicInventory;
         [Tooltip("CL-110: 방 클리어 → 보상 3택 흐름의 오케스트레이터. HandleDungeonBuilt 시 RoomCleared 구독, CloseResulting 시 해제.")]
         [SerializeField] private RewardController rewardController;
+        [Tooltip("CL-113: Run 한정 골드 지갑. Combat 클리어 시 +50, CloseResulting 시 Reset.")]
+        [SerializeField] private GoldWallet goldWallet;
 
         [Header("Behavior")]
         [SerializeField, Tooltip("Awake 후 자동으로 StartRun() 호출. 디버그 / 검증 시 편의용.")]
@@ -99,10 +102,12 @@ namespace LostMemory.Stage
                 playerDownController.DefeatedByTimeout += HandlePlayerDefeatedDirect;
                 playerDownController.DefeatedSolo += HandlePlayerDefeatedDirect;
             }
+            // CL-113: RunResult 버튼 wiring. develop 의 단순 += CloseResulting 대신 우리 핸들러 채택 —
+            // HandleRestartRequested 가 SceneManager.LoadScene 으로 씬 재로드까지 수행 (superset).
             if (runResultPanelView != null)
             {
-                runResultPanelView.OnLobby += CloseResulting;
-                runResultPanelView.OnRestart += CloseResulting;
+                runResultPanelView.OnRestart += HandleRestartRequested;
+                runResultPanelView.OnLobby += HandleLobbyRequested;
             }
         }
 
@@ -123,8 +128,8 @@ namespace LostMemory.Stage
             }
             if (runResultPanelView != null)
             {
-                runResultPanelView.OnLobby -= CloseResulting;
-                runResultPanelView.OnRestart -= CloseResulting;
+                runResultPanelView.OnRestart -= HandleRestartRequested;
+                runResultPanelView.OnLobby -= HandleLobbyRequested;
             }
             UnsubscribeAllRoomControllers();
 
@@ -233,6 +238,11 @@ namespace LostMemory.Stage
             {
                 playerRelicInventory.Clear();
             }
+            // CL-113: 골드 Run 한정 — 다음 Run 시작 시 0 부터.
+            if (goldWallet != null)
+            {
+                goldWallet.ResetToInitial();
+            }
         }
 
         private void HandleDungeonBuilt()
@@ -291,19 +301,23 @@ namespace LostMemory.Stage
                 Debug.LogWarning("[RunManager] RoomCleared payload has null RoomData; ignoring.", this);
                 return;
             }
+            // CL-113: Combat 방 클리어 시 보상 골드 +50.
+            if (payload.Data.RoomType == StageRoomType.Combat && goldWallet != null)
+            {
+                goldWallet.Add(50);
+            }
+            // develop: 보스방 외 클리어는 런 흐름에 영향 X (다음 방 자연 진입).
             if (payload.Data.RoomType != StageRoomType.Boss)
             {
                 return;
             }
-            // 보스방 클리어 = 보스 클리어 포탈 활성화
+            // 보스방 클리어 = 보스 클리어 포탈 활성화 (즉시 RunCleared 전이 X — 포탈 진입 시 NotifyBossClearPortalEntered 가 트리거).
             bossKillCount++;
             bossClearPortalReady = true;
             if (logStageProgression)
             {
                 Debug.Log($"[RunManager] Boss room cleared. Boss clear portal is ready. Stage={CurrentStageNumber}/{TotalStageCount}.", this);
             }
-            // 일반방 클리어는 *다음 방 진입* 으로 자연 진행 (RoomEntryZone OnTriggerEnter2D 영역 — CL-105).
-            // 본 CL 은 *런 단위 전이* 만 책임.
         }
 
         private bool AdvanceToNextStage()
@@ -419,6 +433,23 @@ namespace LostMemory.Stage
         private void LogStateChange(RunState prev, RunState current)
         {
             Debug.Log($"[RunManager] {prev} -> {current}");
+        }
+
+        // CL-113: 결산 창의 Restart 버튼. CloseResulting → 현재 씬 재로드.
+        // SceneManager.LoadScene 은 *현재 활성 씬* 의 buildIndex 를 사용 — 별도 마을 씬 도입 (CL-117) 까지 단순.
+        private void HandleRestartRequested()
+        {
+            Debug.Log("[RunManager] Restart requested. Reloading current scene.");
+            CloseResulting();
+            Scene activeScene = SceneManager.GetActiveScene();
+            SceneManager.LoadScene(activeScene.buildIndex);
+        }
+
+        // CL-113: 결산 창의 Lobby 버튼. 마을 씬 도입 (CL-117) 까지 CloseResulting 만.
+        private void HandleLobbyRequested()
+        {
+            Debug.Log("[RunManager] Lobby requested. (TODO: CL-117 마을 씬 로드. 현재는 CloseResulting 만.)");
+            CloseResulting();
         }
     }
 }

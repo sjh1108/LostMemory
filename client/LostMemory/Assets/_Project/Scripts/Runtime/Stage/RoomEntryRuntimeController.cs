@@ -149,6 +149,26 @@ namespace LostMemory.Stage
             FireRoomCleared(new RoomClearedPayload(roomData.RoomId, roomData));
         }
 
+        // CL-112: DA spawn 후 DungeonRunBootstrap 이 시퀀스별 RoomData 를 주입.
+        // Awake 의 progress.Configure 를 *덮어쓰기* 위해 같은 호출을 재실행.
+        public void SetRoomData(RoomData data)
+        {
+            if (entryConsumed)
+            {
+                Debug.LogWarning($"[RoomEntryRuntimeController] SetRoomData called after entry on '{name}'. Ignored.", this);
+                return;
+            }
+            roomData = data;
+            if (data != null)
+            {
+                progress.Configure(
+                    data.RoomId,
+                    data.RoomType,
+                    data.BossEntryRequirementMode,
+                    data);
+            }
+        }
+
         private void ApplyInitContext(Character initiator)
         {
             RoomInitContextSpec init = roomData.InitContext;

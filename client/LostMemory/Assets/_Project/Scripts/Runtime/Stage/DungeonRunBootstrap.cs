@@ -1,4 +1,5 @@
 using DungeonArchitect;
+using LostMemory.Stage.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -41,6 +42,14 @@ namespace LostMemory.Stage
 
         [SerializeField, Tooltip("Build 후 player 를 첫 module 의 EntryAnchor 위치로 정렬. 없으면 player 위치 변동 없음.")]
         private bool warpPlayerToFirstRoom = true;
+
+        [Header("MVP Sequence (CL-112)")]
+        [SerializeField, Tooltip("DA spawn 순서대로 매핑할 RoomData. [0]=첫 방 ~ [N-1]=마지막. 빈 배열이면 주입 skip (legacy 동작).")]
+        private RoomData[] mvpRoomDataSequence = new RoomData[6];
+
+        [Header("Pre-built Layout")]
+        [SerializeField, Tooltip("true: 방이 씬에 직접 배치된 MVP 씬 (DA Build 사용 안 함). DungeonBuilt 즉시 발화 → RunManager / RewardController 가 FindObjectsOfType 으로 씬의 방 모두 구독.")]
+        private bool usePrebuiltLayout = false;
 
         // 후속 네트워크 CL 이 한 줄만 바꾸면 호스트 권위 분기로 전환된다.
         public bool IsAuthority => true;
@@ -87,6 +96,18 @@ namespace LostMemory.Stage
             {
                 return;
             }
+
+            // 방이 씬에 직접 배치된 모드 — DA Build skip + DungeonBuilt 즉시 발화.
+            // RunManager.HandleDungeonBuilt → RewardController.SubscribeAllRoomControllers 가
+            // FindObjectsOfType<RoomEntryRuntimeController> 로 씬의 방 모두 구독.
+            if (usePrebuiltLayout)
+            {
+                Debug.Log("[DungeonRunBootstrap] usePrebuiltLayout=true. Skipping DA Build; firing DungeonBuilt directly.");
+                buildRequested = true;
+                DungeonBuilt?.Invoke();
+                return;
+            }
+
             if (dungeon == null)
             {
                 Debug.LogWarning("[DungeonRunBootstrap] Dungeon reference is null. Skip build.", this);
@@ -110,8 +131,19 @@ namespace LostMemory.Stage
         {
             Debug.Log($"[DungeonRunBootstrap] DA spawned {spawnedManagedObjects.Length} managed objects (seed={dungeon.Config?.Seed})");
 
-            // CL-048: RunManager 등 외부 구독자에게 DA build 완료 신호. warp / BeginRoomEntry 보다 *먼저* 발행하여
-            // 외부 시스템이 InRun 전이 후 첫 방 진입 흐름을 관찰할 수 있게 함.
+            // CL-112 spike: spawn 배열의 순서/위치를 5회 반복 비교하기 위한 임시 디버그.
+            // 합격 후 (spawn array index 0..N-1 = sequence 순서가 deterministic 임을 확인) 본 블록 제거.
+            for (int i = 0; i < spawnedManagedObjects.Length; i++)
+            {
+                GameObject m = spawnedManagedObjects[i];
+                Debug.Log($"[Spike] [{i}] {(m != null ? m.name : "<null>")} pos={(m != null ? m.transform.position.ToString("F2") : "<null>")}");
+            }
+
+            // CL-112: spawn 순서대로 mvpRoomDataSequence 주입. RewardController.Subscribe 가
+            // controller.RoomData 를 의존하지 않더라도 *주입 후 DungeonBuilt 발행* 으로 일관성 보장.
+            InjectMvpRoomDataSequence(spawnedManagedObjects);
+
+            // CL-048: RunManager 등 외부 구독자에게 DA build 완료 신호. RoomData 주입 *이후* 발행 (CL-112).
             DungeonBuilt?.Invoke();
 
             if (!warpPlayerToFirstRoom || player == null)
@@ -149,6 +181,55 @@ namespace LostMemory.Stage
             }
 
             Debug.LogWarning("[DungeonRunBootstrap] No module with RoomEntryRuntimeController found among spawned objects. Player not warped.", this);
+        }
+
+        // CL-112: DA spawn 결과의 controller-가진 module 들을 *순서대로* mvpRoomDataSequence 의 RoomData 와 매핑.
+        // BossArea_Test 처럼 controller 미부착 prefab 은 skip (CL-112 결정 #4 의 Option F1 에서 Boss 에도 controller 부착 권장).
+        private void InjectMvpRoomDataSequence(GameObject[] spawnedManagedObjects)
+        {
+            if (mvpRoomDataSequence == null || mvpRoomDataSequence.Length == 0)
+            {
+                return;
+            }
+
+            int sequenceIndex = 0;
+            for (int i = 0; i < spawnedManagedObjects.Length; i++)
+            {
+                GameObject moduleInstance = spawnedManagedObjects[i];
+                if (moduleInstance == null)
+                {
+                    continue;
+                }
+
+                RoomEntryRuntimeController controller = moduleInstance.GetComponentInChildren<RoomEntryRuntimeController>(includeInactive: true);
+                if (controller == null)
+                {
+                    continue;
+                }
+
+                if (sequenceIndex >= mvpRoomDataSequence.Length)
+                {
+                    Debug.LogWarning($"[DungeonRunBootstrap] More controllers than mvpRoomDataSequence entries (idx {sequenceIndex}). Extra modules use prefab default RoomData.", this);
+                    return;
+                }
+
+                RoomData injected = mvpRoomDataSequence[sequenceIndex];
+                if (injected != null)
+                {
+                    controller.SetRoomData(injected);
+                    Debug.Log($"[DungeonRunBootstrap] Injected '{injected.RoomId}' into '{controller.name}' (idx {sequenceIndex}).");
+                }
+                else
+                {
+                    Debug.LogWarning($"[DungeonRunBootstrap] mvpRoomDataSequence[{sequenceIndex}] is null. Skipping injection for '{controller.name}'.", this);
+                }
+                sequenceIndex++;
+            }
+
+            if (sequenceIndex != mvpRoomDataSequence.Length)
+            {
+                Debug.LogWarning($"[DungeonRunBootstrap] Injected {sequenceIndex}/{mvpRoomDataSequence.Length} RoomData. Remainder unused.", this);
+            }
         }
 
         private void WarpPlayer(Vector3 position)
