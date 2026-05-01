@@ -6,20 +6,23 @@
 
 ### 완료
 - [x] **§3 Combat +50 hook + GoldWallet Reset** — `RunManager.cs` 의 `HandleRoomCleared` (Combat 분기) + `CloseResulting` (Reset) 구현
-- [x] **§2 신규 코드 4 파일 — 코드 산출물 단계** — `GoldWallet.cs`, `ShopController.cs`, `ShopNpcInteractable.cs`, `ShopExitTrigger.cs` 모두 작성됨. *씬 wiring + 통합 검증은 미진행*
+- [x] **§2 신규 코드 4 파일 — 코드 산출물 단계** — `GoldWallet.cs`, `ShopController.cs`, `ShopNpcInteractable.cs`, `ShopExitTrigger.cs` 모두 작성됨
 - [x] **§7 RunResult 최소 wiring** — `RunManager.HandleRestartRequested` (CloseResulting + LoadScene), `HandleLobbyRequested` (CL-117 까지 CloseResulting 만)
 - [x] **Step 1 spike 위험 소거** — `Assets/Scenes/MVP1/MVP1.unity` 의 prebuilt 5방 환경에서 `RoomEntryRuntimeController.BeginRoomEntry` → 적 처치 → `RoomCleared` 이벤트 → `RewardController` 보상 패널 → `OpenExits` → 다음 방 자연 진입 chain 이 *수동 배치 module* 에서도 정상 동작함을 4 방 연속 클리어로 확인. `ManualRoomChainController` fallback 불필요. 단 이를 위해 `DungeonRunBootstrap.usePrebuiltLayout` 모드를 신설 (DA Build skip + DungeonBuilt 즉시 발화) — [cl112_mvp1_prebuilt_completion.md](cl112_mvp1_prebuilt_completion.md) 참조
-- [x] **수동 6방 씬 결정** — Plan §4 의 `MVP1_Dungeon.unity` 가정 대신 `Assets/Scenes/MVP1/MVP1.unity` 신설로 채택 (현재 5방 Combat 만 배치, Shop / Boss 미배치)
+- [x] **수동 6방 씬 결정** — `Assets/Scenes/MVP1/MVP1_testkhi.unity` 신설로 최종 채택 (Combat 4 + Shop 1 일렬 배치 통합 검증 완료. cl112 doc 의 `MVP1.unity` (Combat 5 만) 와 별도 씬)
+- [x] **§1 `ShopRoom_Sample.prefab` 신설** — Combat module 복제 + EnemyEncounterSpawner 제거 + Shop NPC + 출구 trigger
+- [x] **§4 6방 일렬 배치 완성 (Boss 제외)** — `MVP1_testkhi.unity` 에 Combat×4 + Shop×1 배치. Boss 방은 후속 분리
+- [x] **§5 방→방 entry chain 통합 검증 (Boss 제외)** — 검증 12 항목 중 1~10 통과 (Combat + Shop)
+- [x] **§8 ShopController 플레이어 조작 봉쇄** — `RewardController.SetCombatInputsBlocked` 패턴 재사용. KhiWeaponPresenter / KhiMeleeComboController / KhiDashController / KhiParryController 일괄 차단
 
-### 진행 중 / 미착수
-- [ ] §1 `ShopRoom_Sample.prefab` 신설
-- [ ] §4 6방 일렬 배치 완성 (현재 5 Combat → Shop 1 + Combat 4 + Boss 1 로 재구성 필요)
-- [ ] §5 방→방 entry chain 통합 검증 (Shop / Boss 포함 6방)
-- [ ] §6 Boss 방 wiring 검증 (`BossArea_Test.prefab` 또는 후속)
-- [ ] §8 ShopController 의 플레이어 조작 봉쇄 — CL-112 의 `SetCombatInputsBlocked` 패턴 (공격 / 대쉬 / 패링 / 칼 회전 일괄 토글) 재사용 권장
+### 후속 분리 (별도 ticket / 검증 세션)
+- [ ] §6 Boss 방 wiring 검증 (`BossArea_Test.prefab` 정식 동작 + Boss 처치 → RunResult chain) — **CL-114 (보스방 DA flow 통합, 다른 작업자)**
+- [ ] §검증 12 OnRestart Reset 통과 — Boss 통과 후 RunResult 출현 전제이므로 **CL-114 와 동반**
+- [ ] **인벤토리 연동 정식화** (Shop ↔ InventoryToggle desync / ESC 키 토글 / 네임스페이스 분리) — **CL-115 (골드 통화 최소 — 전투 보상 → 상점 사용)** 에서 진행. 김회인 본인 후속 작업
 
 ### 연관 산출물
 - [cl112_mvp1_prebuilt_completion.md](cl112_mvp1_prebuilt_completion.md) — 본 plan 의 *prebuilt 채택* 결정의 실현 doc + 본 브랜치 코드 산출물 (A 그룹: usePrebuiltLayout, NRE 정리, 보상 폴리시, input 차단 / B 그룹: GoldWallet, Shop scripts, RunManager 골드 hook) 통합 정리
+- [cl113_shop_integration_completion.md](cl113_shop_integration_completion.md) — 본 CL 의 *씬 wiring + 통합 검증 단계* 완료 보고서. Shop 방 prefab + ShopController input 일괄 차단 + MVP1_testkhi.unity 6방 배치 + 검증 12 항목 중 1~10 통과 결과
 
 ---
 

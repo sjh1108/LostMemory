@@ -25,12 +25,22 @@ namespace LostMemory.Shop
     {
         [Header("Refs")]
         [SerializeField] private ShopPanelView panel;
+        [Tooltip("CL-113: Shop 열림과 동시에 표시할 인벤토리 패널 (null 허용 — 표시 안 함). 구매 시 자동 Refresh.")]
+        [SerializeField] private InventoryPanelView inventoryPanel;
         [SerializeField] private PlayerRelicInventory playerRelicInventory;
         [SerializeField] private GoldWallet goldWallet;
-        [Tooltip("CL-113: 패널 떠있는 동안 마우스 조준 차단. RewardController 와 동일 패턴.")]
+        [Tooltip("CL-113: 패널 떠있는 동안 마우스 조준 차단. (참고: KhiPlayerAim 자체엔 Update 가 없어 enabled 토글 효과 없음 — 실제 칼 회전 차단은 playerWeaponPresenter 슬롯)")]
         [SerializeField] private KhiPlayerAim playerAim;
         [Tooltip("CL-113: 패널 떠있는 동안 이동 차단. CharacterMovement.MovementForbidden 토글.")]
         [SerializeField] private CharacterMovement playerMovement;
+        [Tooltip("CL-113: 패널 떠있는 동안 칼이 마우스를 따라 회전하지 않도록 차단. KhiWeaponPresenter.Update 가 매 프레임 GetAimDirection 으로 칼을 갱신하므로 이 컴포넌트 enabled 토글이 실제 차단점.")]
+        [SerializeField] private KhiWeaponPresenter playerWeaponPresenter;
+        [Tooltip("CL-113: 패널 떠있는 동안 공격 input 차단. ExternalBlock = true 로 토글.")]
+        [SerializeField] private KhiMeleeComboController playerMeleeCombo;
+        [Tooltip("CL-113: 패널 떠있는 동안 대쉬 input 차단. PermitAbility(false) 로 토글.")]
+        [SerializeField] private KhiDashController playerDash;
+        [Tooltip("CL-113: 패널 떠있는 동안 패링 input 차단. ExternalBlock = true 로 토글.")]
+        [SerializeField] private KhiParryController playerParry;
 
         [Header("Debug")]
         [SerializeField] private bool logShopFlow = true;
@@ -81,6 +91,12 @@ namespace LostMemory.Shop
             IsOpen = true;
             panel.gameObject.SetActive(true);
             panel.Init(shopData, playerRelicInventory, goldWallet.Current);
+            // 인벤토리 패널 동시 표시 — 구매 시 슬롯 갱신 즉시 확인 가능.
+            if (inventoryPanel != null)
+            {
+                inventoryPanel.gameObject.SetActive(true);
+                inventoryPanel.Init(playerRelicInventory, goldWallet.Current);
+            }
             SuppressPlayerControls();
 
             if (logShopFlow) Debug.Log($"[ShopController] Opened. gold={goldWallet.Current}");
@@ -95,6 +111,11 @@ namespace LostMemory.Shop
             }
             IsOpen = false;
             panel.gameObject.SetActive(false);
+            // 인벤토리 패널도 같이 닫음. 단독 토글 (InventoryToggleController) 가 다시 열 수 있음.
+            if (inventoryPanel != null)
+            {
+                inventoryPanel.gameObject.SetActive(false);
+            }
             RestorePlayerControls();
 
             if (logShopFlow) Debug.Log("[ShopController] Closed.");
@@ -134,6 +155,11 @@ namespace LostMemory.Shop
                     panel.UpdateGold(goldWallet.Current);
                 }
             }
+            // 인벤토리 패널 슬롯 갱신 — 새로 추가된 유물이 즉시 슬롯에 보임.
+            if (inventoryPanel != null && inventoryPanel.gameObject.activeSelf)
+            {
+                inventoryPanel.Refresh(playerRelicInventory, goldWallet != null ? goldWallet.Current : 0);
+            }
 
             if (logShopFlow) Debug.Log($"[ShopController] Purchased '{item.Relic?.DisplayName}' price={item.Price}");
         }
@@ -146,12 +172,26 @@ namespace LostMemory.Shop
         {
             if (playerMovement != null) playerMovement.MovementForbidden = true;
             if (playerAim != null) playerAim.enabled = false;
+            // 공격 / 대쉬 / 패링 input + 칼 회전 일괄 차단 — RewardController.SetCombatInputsBlocked 와 동일 패턴.
+            // Update 기반 input 은 timeScale 무관하게 동작하므로 명시적 차단 필요. Shop 은 timeScale 변경 X 라 더더욱.
+            SetCombatInputsBlocked(true);
         }
 
         private void RestorePlayerControls()
         {
             if (playerMovement != null) playerMovement.MovementForbidden = false;
             if (playerAim != null) playerAim.enabled = true;
+            SetCombatInputsBlocked(false);
+        }
+
+        // 보상 패널 패턴과 동일. 향후 RewardController 와 공통 추출 시 별도 리팩토링 ticket.
+        private void SetCombatInputsBlocked(bool block)
+        {
+            if (playerMeleeCombo != null) playerMeleeCombo.ExternalBlock = block;
+            if (playerDash != null) playerDash.PermitAbility(!block);
+            if (playerParry != null) playerParry.ExternalBlock = block;
+            // 칼이 마우스 따라가는 Update 차단 — enabled=false 면 Update 가 안 돌아 마지막 프레임 위치/회전 그대로 freeze.
+            if (playerWeaponPresenter != null) playerWeaponPresenter.enabled = !block;
         }
     }
 }
