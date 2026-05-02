@@ -155,6 +155,9 @@ GameObject:
   - component: {fileID: 5080981940864639101}
   - component: {fileID: 8462157311149912200}
   - component: {fileID: 8462157311149912201}
+  - component: {fileID: 2233445566778899011}
+  - component: {fileID: 2233445566778899012}
+  - component: {fileID: 2233445566778899013}
   m_Layer: 13
   m_Name: SkeletonArcher_CL041
   m_TagString: Enemy
@@ -1119,7 +1122,7 @@ MonoBehaviour:
   InitializationMode: 0
   Label: 
   TargetHandleWeaponAbility: {fileID: 0}
-  AimOrigin: 0
+  AimOrigin: 1
   FaceTarget: 1
   AimAtTarget: 1
 --- !u!114 &5080981940864639101
@@ -1137,56 +1140,11 @@ MonoBehaviour:
   InitializationMode: 0
   Label: 
   TargetHandleWeaponAbility: {fileID: 0}
-  AimOrigin: 0
+  AimOrigin: 1
   FaceTarget: 1
-  AimAtTarget: 0
+  AimAtTarget: 1
   ShootOffset: {x: 0, y: 0, z: 0}
   OnlyAimWhenInState: 0
---- !u!114 &2233445566778899011
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1561694053617324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
-  Label: AimFinished
-  AfterTimeMin: 2
-  AfterTimeMax: 2
---- !u!114 &2233445566778899012
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1561694053617324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
-  Label: AttackFinished
-  AfterTimeMin: 0.1
-  AfterTimeMax: 0.1
---- !u!114 &2233445566778899013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1561694053617324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
-  Label: RecoverFinished
-  AfterTimeMin: 2
-  AfterTimeMax: 2
 --- !u!114 &8462157311149912200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1233,6 +1191,51 @@ MonoBehaviour:
   startOffset: 0.1
   useLastKnownTargetPosition: 1
   lockDirectionOnTelegraphStart: 0
+--- !u!114 &2233445566778899011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: AimFinished
+  AfterTimeMin: 2
+  AfterTimeMax: 2
+--- !u!114 &2233445566778899012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: AttackFinished
+  AfterTimeMin: 0.1
+  AfterTimeMax: 0.1
+--- !u!114 &2233445566778899013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: RecoverFinished
+  AfterTimeMin: 2
+  AfterTimeMax: 2
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
