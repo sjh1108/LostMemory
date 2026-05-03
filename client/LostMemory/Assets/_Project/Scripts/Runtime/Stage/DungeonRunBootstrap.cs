@@ -1,4 +1,5 @@
 using DungeonArchitect;
+using LostMemory.Networking.Common;
 using LostMemory.Stage.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -51,8 +52,9 @@ namespace LostMemory.Stage
         [SerializeField, Tooltip("true: 방이 씬에 직접 배치된 MVP 씬 (DA Build 사용 안 함). DungeonBuilt 즉시 발화 → RunManager / RewardController 가 FindObjectsOfType 으로 씬의 방 모두 구독.")]
         private bool usePrebuiltLayout = false;
 
-        // 후속 네트워크 CL 이 한 줄만 바꾸면 호스트 권위 분기로 전환된다.
-        public bool IsAuthority => true;
+        // Phase B-1: HostAuthority.IsHost 로 통일. 싱글 실행 시 NetworkManager 비활성 → true 반환.
+        // 멀티 실행 시 호스트만 Dungeon Build 권한 보유.
+        public bool IsAuthority => HostAuthority.IsHost;
 
         /// <summary>
         /// DA Build 완료 + module spawn 끝난 직후 발행. CL-048 RunManager 가

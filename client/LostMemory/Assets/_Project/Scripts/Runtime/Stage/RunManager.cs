@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Networking.Common;
 using LostMemory.Relics;
 using LostMemory.TestKhi;
 using LostMemory.UI;
@@ -60,8 +61,9 @@ namespace LostMemory.Stage
 
         public RunStateMachine StateMachine { get; private set; }
 
-        // 후속 네트워크 CL 이 한 줄만 바꾸면 호스트 권위 분기로 전환된다.
-        public bool IsAuthority => true;
+        // Phase B-1: HostAuthority.IsHost 로 통일. 싱글 실행 시 NetworkManager 비활성 → true 반환.
+        // 멀티 실행 시 호스트(=서버)만 true. 클라이언트는 false 로 진입 차단.
+        public bool IsAuthority => HostAuthority.IsHost;
 
         public int CurrentStageIndex { get; private set; }
         public int CurrentStageNumber => CurrentStageIndex + 1;

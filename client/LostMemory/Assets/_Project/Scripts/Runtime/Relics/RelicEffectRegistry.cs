@@ -35,9 +35,9 @@ namespace LostMemory.Relics
         [Tooltip("CL-108: ShieldOnParry 의 보호막 부여 대상.")]
         [SerializeField] private PlayerShield playerShield;
 
-        // CL-109: future-proof 권위 게이트. 현재 단일 플레이어라 항상 true.
-        // 멀티 framework 도입 시 NetworkRelicEffectAuthority 로 이 라인만 교체.
-        private readonly IRelicEffectAuthority _authority = new LocalRelicEffectAuthority();
+        // Phase B-1: NetworkRelicEffectAuthority 로 교체. 싱글 실행 시 NetworkManager 비활성 → true,
+        // 멀티 실행 시 호스트만 true. LocalRelicEffectAuthority 는 보존(롤백 또는 테스트 용).
+        private readonly IRelicEffectAuthority _authority = new NetworkRelicEffectAuthority();
 
         private readonly List<OnKillSubscription> _onKillSubscriptions = new();
         private readonly List<TimedSubscription> _onParrySuccessSubscriptions = new();
