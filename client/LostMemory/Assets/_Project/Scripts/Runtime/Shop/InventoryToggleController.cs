@@ -18,6 +18,10 @@ namespace LostMemory.Shop
         [SerializeField] private PlayerRelicInventory playerRelicInventory;
         [Tooltip("골드 표시용. null 이어도 동작 (gold=0 으로 고정 표시).")]
         [SerializeField] private GoldWallet goldWallet;
+        [Tooltip("CL-115 C: Shop 열림 중 I/ESC 입력을 무시하기 위한 우선 가드. null 이면 가드 없음 (단독 인벤토리 테스트 씬 호환).")]
+        [SerializeField] private ShopController shopController;
+        [Tooltip("CL-115: 보상 패널 떠있는 중 I/ESC 입력을 무시하기 위한 가드. RewardController.ShowReward 가 진입 시 본 패널을 강제 Close 도 함. null 이면 가드 없음.")]
+        [SerializeField] private RewardController rewardController;
 
         [Header("Input")]
         [SerializeField] private KeyCode toggleKey = KeyCode.I;
@@ -41,9 +45,20 @@ namespace LostMemory.Shop
 
         private void Update()
         {
+            // CL-115 C: Shop 열림 중에는 I / ESC 입력 무시 — ShopController 가 자체 Close 책임.
+            if (shopController != null && shopController.IsOpen) return;
+            // CL-115: 보상 패널 떠있는 중에도 I / ESC 무시 — RewardController 가 자체 Close 책임 (선택 후 자동 종료).
+            if (rewardController != null && rewardController.IsShowing) return;
+
             if (Input.GetKeyDown(toggleKey))
             {
                 Toggle();
+            }
+            // CL-115 D: 인벤토리 단독 열림 시 ESC → Close.
+            else if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (logToggle) Debug.Log("[InventoryToggleController] ESC → Close.");
+                Close();
             }
         }
 

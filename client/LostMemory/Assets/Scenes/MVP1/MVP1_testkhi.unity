@@ -3832,11 +3832,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -18.35
+      value: 0.94
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.37
+      value: 1.64
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3929,7 +3929,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.ShopController
   panel: {fileID: 699985019}
-  inventoryPanel: {fileID: 0}
+  inventoryPanel: {fileID: 327936925}
   playerRelicInventory: {fileID: 1789113401}
   goldWallet: {fileID: 435695097}
   playerAim: {fileID: 1789113406}
@@ -3990,9 +3990,10 @@ MonoBehaviour:
   runResultPanelView: {fileID: 2012047026}
   playerRelicInventory: {fileID: 1789113401}
   rewardController: {fileID: 927221817}
-  goldWallet: {fileID: 0}
+  goldWallet: {fileID: 435695097}
   autoStartOnAwake: 1
   resultingDelaySeconds: 2
+  townSceneName: Town
   totalStageCount: 1
   logStageProgression: 1
 --- !u!4 &927221816
@@ -4029,6 +4030,7 @@ MonoBehaviour:
   playerMeleeCombo: {fileID: 1789113374}
   playerDash: {fileID: 1789113378}
   playerParry: {fileID: 1789113371}
+  inventoryToggle: {fileID: 0}
   rewardShowDelay: 1.5
   logRewardFlow: 1
 --- !u!1001 &1023475402
@@ -6738,6 +6740,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2020695044}
   - component: {fileID: 2020695043}
+  - component: {fileID: 2020695045}
   m_Layer: 0
   m_Name: InventoryToggleController
   m_TagString: Untagged
@@ -6760,6 +6763,8 @@ MonoBehaviour:
   panel: {fileID: 327936925}
   playerRelicInventory: {fileID: 1789113401}
   goldWallet: {fileID: 435695097}
+  shopController: {fileID: 861803106}
+  rewardController: {fileID: 927221817}
   toggleKey: 105
   startHidden: 1
   logToggle: 0
@@ -6778,6 +6783,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2020695045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020695042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b388821ecfcc2764ebfb6c285304c905, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.ShopController
+  panel: {fileID: 699985019}
+  inventoryPanel: {fileID: 327936925}
+  playerRelicInventory: {fileID: 1789113401}
+  goldWallet: {fileID: 435695097}
+  playerAim: {fileID: 1789113406}
+  playerMovement: {fileID: 1789113411}
+  playerWeaponPresenter: {fileID: 589709549}
+  playerMeleeCombo: {fileID: 1789113374}
+  playerDash: {fileID: 1789113378}
+  playerParry: {fileID: 1789113371}
+  logShopFlow: 1
 --- !u!28 &2066035281
 Texture2D:
   m_ObjectHideFlags: 0

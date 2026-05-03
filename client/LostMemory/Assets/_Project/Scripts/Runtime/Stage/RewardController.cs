@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Relics;
 using LostMemory.Rewards;
+using LostMemory.Shop;
 using LostMemory.TestKhi;
 using UnityEngine;
 
@@ -29,6 +30,8 @@ namespace LostMemory.Stage
         [SerializeField] private KhiDashController playerDash;
         [Tooltip("보상 패널 표시 동안 패링 input 차단. ExternalBlock = true 로 토글.")]
         [SerializeField] private KhiParryController playerParry;
+        [Tooltip("CL-115: 보상 패널 떠오를 때 인벤토리 패널이 열려있으면 강제로 닫기 위함. null 허용 — 단독 씬 호환. 가드는 InventoryToggleController.Update 가 IsShowing 을 직접 체크하는 방식과 짝.")]
+        [SerializeField] private InventoryToggleController inventoryToggle;
 
         [Header("Timing")]
         [SerializeField, Min(0f), Tooltip("방 클리어 후 보상 패널 표시까지 대기 (초). 플레이어 공격 모션 도중 패널 등장 방지. WaitForSecondsRealtime 사용 → timeScale 영향 없음.")]
@@ -43,6 +46,9 @@ namespace LostMemory.Stage
             = new Dictionary<RoomEntryRuntimeController, System.Action<RoomClearedPayload>>();
         private RoomEntryRuntimeController _pendingController;
         private bool _isShowingReward;
+
+        /// <summary>CL-115: 보상 패널 표시 중 여부. InventoryToggleController 가 I 키 가드에 사용.</summary>
+        public bool IsShowing => _isShowingReward;
 
         private void OnEnable()
         {
@@ -160,6 +166,14 @@ namespace LostMemory.Stage
             }
             // 외부 직접 호출 (HandleRoomClearedFromController 미경유) 시에도 가드가 켜지도록 idempotent.
             _isShowingReward = true;
+
+            // CL-115: 보상 패널 진입 시 인벤토리 단독 토글 패널이 열려있으면 강제 닫기 — 화면 중첩 방지.
+            // InventoryToggleController.Update 가드가 IsShowing 을 체크하므로 *재오픈도 차단됨*.
+            if (inventoryToggle != null && inventoryToggle.IsOpen)
+            {
+                if (logRewardFlow) Debug.Log("[RewardController] Force-closing InventoryToggle for reward focus.");
+                inventoryToggle.Close();
+            }
 
             // CL-110: 보상 패널 떠있는 동안 게임 시간 정지 + 마우스 조준 차단.
             // timeScale=0 으로 적 AI / Player 이동 / 코루틴 deltaTime stop.
