@@ -1,5 +1,6 @@
 using System;
 using LostMemory.Combat;
+using LostMemory.Networking.Common;
 using LostMemory.Stage.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -57,8 +58,9 @@ namespace LostMemory.Stage
         private bool entryConsumed;
         private bool roomCleared;
 
-        // 후속 네트워크 CL 이 한 줄만 바꾸면 호스트 권위 분기로 전환된다.
-        public bool IsAuthority => true;
+        // Phase B-1: HostAuthority.IsHost 로 통일. 싱글 실행 시 NetworkManager 비활성 → true 반환.
+        // 멀티 실행 시 호스트만 BeginRoomEntry / NotifyCustomRoomCleared 권위 보유.
+        public bool IsAuthority => HostAuthority.IsHost;
 
         public RoomData RoomData => roomData;
         public StageRoomProgress Progress => progress;
