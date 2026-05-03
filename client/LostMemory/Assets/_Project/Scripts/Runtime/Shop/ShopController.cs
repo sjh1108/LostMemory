@@ -69,6 +69,16 @@ namespace LostMemory.Shop
             }
         }
 
+        // CL-115 D: ESC 일괄 닫기. 열림 상태에서만 동작 — Close() 가 인벤토리 패널까지 같이 닫음.
+        private void Update()
+        {
+            if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (logShopFlow) Debug.Log("[ShopController] ESC → Close.");
+                Close();
+            }
+        }
+
         /// <summary>NPC 가까이 + F 키 입력 시 ShopNpcInteractable 가 호출.</summary>
         public void Open(ShopData shopData)
         {

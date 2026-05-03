@@ -365,8 +365,10 @@ namespace LostMemory.Stage
                 return;
             }
             // CL-113: Combat 방 클리어 시 보상 골드 +50.
+            // CL-115 B: 의도 로그 — GoldWallet 자동 로그가 *왜* 는 안 알려주므로.
             if (payload.Data.RoomType == StageRoomType.Combat && goldWallet != null)
             {
+                Debug.Log("[RunManager] Combat clear reward gold +50.");
                 goldWallet.Add(50);
             }
             // develop: 보스방 외 클리어는 런 흐름에 영향 X (다음 방 자연 진입).
