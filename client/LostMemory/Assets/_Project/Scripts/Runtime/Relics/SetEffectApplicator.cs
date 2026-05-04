@@ -81,9 +81,11 @@ namespace LostMemory.Relics
             var source = new SetEffectSource(set, tierIndex);
             switch (tier.EffectType)
             {
-                // ── StatModifier 라우팅 (CL-140 본격 처리) ──
+                // ── StatModifier 라우팅 (CL-140 본격 처리, CL-141 에서 AttackSpeed 추가) ──
                 case RelicEffectType.AttackPowerPercent:
                     statContainer.AddPermanent(StatId.AttackPower, tier.Magnitude, source); break;
+                case RelicEffectType.AttackSpeedPercent:
+                    statContainer.AddPermanent(StatId.AttackSpeed, tier.Magnitude, source); break;
                 case RelicEffectType.MaxHealthPercent:
                     statContainer.AddPermanent(StatId.MaxHealth, tier.Magnitude, source); break;
                 case RelicEffectType.MoveSpeedPercent:
