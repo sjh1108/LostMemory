@@ -3,6 +3,7 @@ package com.lostmemory.server.global.config;
 import com.lostmemory.server.global.security.JwtAuthenticationFilter;
 import com.lostmemory.server.global.security.RestAccessDeniedHandler;
 import com.lostmemory.server.global.security.RestAuthenticationEntryPoint;
+import com.lostmemory.server.global.security.SecurityPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,15 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
-
-    private static final String[] WHITELIST = {
-            "/auth/**",
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/v3/api-docs/**",
-            "/actuator/health",
-            "/favicon.ico"
-    };
 
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
@@ -43,7 +35,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(WHITELIST).permitAll()
+                        .requestMatchers(SecurityPaths.WHITELIST).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

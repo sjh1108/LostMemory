@@ -24,7 +24,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -34,6 +34,7 @@ public class AuthService {
     private final JwtProperties jwtProperties;
 
     /** 회원가입: loginId/nickname 중복 검증 후 BCrypt 해시한 비밀번호로 User 저장 */
+    @Transactional
     public void signup(SignupRequest request) {
         if (userRepository.existsByLoginId(request.loginId())) {
             throw new BusinessException(ErrorCode.USER_LOGIN_ID_DUPLICATED);
@@ -48,6 +49,7 @@ public class AuthService {
     }
 
     /** 로그인: 비밀번호 검증 후 access/refresh 발급, refresh 해시 DB 저장, lastLoginAt 갱신 */
+    @Transactional
     public TokenResponse login(LoginRequest request) {
         User user = userRepository.findByLoginId(request.loginId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
@@ -61,10 +63,12 @@ public class AuthService {
     }
 
     /**
-     * 리프레시: 서명/만료 검증 → DB hash 매칭 → active 검증.
-     * reuse(이미 revoke 된 토큰 재사용)면 해당 토큰만 revoke 하고 예외.
+     * 리프레시: 서명/만료 검증 → DB hash 매칭(SELECT FOR UPDATE) → active 검증.
+     * reuse(이미 revoke 된 토큰 재사용) 감지 시 해당 user 의 refresh family 전체를 revoke 하고 예외.
      * 정상이면 기존 토큰 markUsed + revoke 후 신규 토큰 페어 발급(rotation).
+     * 비관적 락으로 동시 요청에 의한 두 쌍 동시 발급 race 차단.
      */
+    @Transactional
     public TokenResponse refresh(RefreshRequest request) {
         String refreshToken = request.refreshToken();
 
@@ -73,11 +77,11 @@ public class AuthService {
         }
 
         String tokenHash = jwtProvider.hashForStorage(refreshToken);
-        AuthRefreshToken stored = refreshTokenRepository.findByTokenHash(tokenHash)
+        AuthRefreshToken stored = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_REFRESH_NOT_FOUND));
 
         if (!stored.isActive(Instant.now())) {
-            stored.revoke();
+            refreshTokenRepository.revokeAllActiveByUserId(stored.getUser().getId(), Instant.now());
             throw new BusinessException(ErrorCode.AUTH_REFRESH_REUSED);
         }
 
@@ -88,6 +92,7 @@ public class AuthService {
     }
 
     /** 로그아웃: 전달된 refresh 토큰 해시로 row 조회 후 revoke (멱등 — 모르는 토큰은 조용히 무시) */
+    @Transactional
     public void logout(LogoutRequest request) {
         String tokenHash = jwtProvider.hashForStorage(request.refreshToken());
         Optional<AuthRefreshToken> stored = refreshTokenRepository.findByTokenHash(tokenHash);

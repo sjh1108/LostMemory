@@ -10,10 +10,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 
 @Slf4j
@@ -23,8 +27,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
+    private static final RequestMatcher WHITELIST_MATCHER = new OrRequestMatcher(
+            Arrays.stream(SecurityPaths.WHITELIST)
+                    .map(p -> PathPatternRequestMatcher.withDefaults().matcher(p))
+                    .toArray(RequestMatcher[]::new));
+
     private final JwtProvider jwtProvider;
     private final ErrorResponseWriter errorResponseWriter;
+
+    /**
+     * 화이트리스트(공개 API/Swagger/헬스체크 등) 경로는 필터 자체를 스킵.
+     * 클라가 모든 요청에 Bearer 헤더를 박는 패턴에서 만료/잘못된 토큰이 와도
+     * 공개 경로는 401 로 떨구지 않고 정상 응답이 나가도록.
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return WHITELIST_MATCHER.matches(request);
+    }
 
     /**
      * Authorization: Bearer 헤더가 있으면 access 토큰으로 파싱·검증해 SecurityContext 에 인증 주입.
