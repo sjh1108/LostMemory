@@ -163,13 +163,7 @@ namespace LostMemory.Shop
                 RelicRarity.Legendary => "전설",
                 _                     => ""
             };
-            string tagName = relic.Tag switch
-            {
-                RelicTag.Assault  => "맹공",
-                RelicTag.Guardian => "수호",
-                RelicTag.Sprint   => "질주",
-                _                 => ""
-            };
+            string tagName = RelicTagLabels.ToKorean(relic.TagPrimary);
             return $"[{rarityName}] {tagName}";
         }
 
