@@ -1,6 +1,9 @@
 package com.lostmemory.server.global.security;
 
+import com.lostmemory.server.global.exception.BusinessException;
+import com.lostmemory.server.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -78,6 +81,36 @@ public class JwtProvider {
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
+        }
+    }
+
+    /**
+     * Access 토큰을 파싱·검증하고 userId(sub) 반환.
+     * 만료 시 AUTH_TOKEN_EXPIRED, 서명 불일치/형식 오류/refresh type/sub 형식 오류 등 그 외 무효 시 AUTH_TOKEN_INVALID.
+     * 호출자(인증 필터)는 BusinessException 만 catch 하면 되도록 raw 예외(NPE/NumberFormatException 등)는 내부에서 흡수한다.
+     */
+    public Long parseAccessToken(String token) {
+        Claims claims;
+        try {
+            claims = parse(token);
+        } catch (ExpiredJwtException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        if (!TYPE_ACCESS.equals(claims.get(TYPE_CLAIM))) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        String subject = claims.getSubject();
+        if (subject == null) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+        try {
+            return Long.valueOf(subject);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
         }
     }
 
