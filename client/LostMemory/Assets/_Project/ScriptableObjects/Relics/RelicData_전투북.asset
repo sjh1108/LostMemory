@@ -10,17 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c8e0f24e7d572b41b49f49ebbd03167, type: 3}
-  m_Name: "RelicData_\uC804\uD22C\uBD81"
+  m_Name: "RelicData_전투북"
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.RelicData
-  _displayName: "\uC804\uD22C \uBD81"
+  _displayName: "전투 북"
   _isConsumable: 0
   _isInstantUse: 0
   _rarity: 1
-  _tag: 0
-  _effectDescription: "\uCCB4\uB825 50% \uC774\uC0C1\uC77C \uB54C \uACF5\uACA9\uB825
-    \uC99D\uAC00"
+  _tagPrimary: 3
+  _tagSecondary: 10
+  _size: {x: 1, y: 2}
+  _effectDescription: "체력 50% 이상일 때 공격력
+    증가"
   _icon: {fileID: 21300000, guid: f041a4c8ca7118b44a682b5f90a747a0, type: 3}
-  _effectType: 4
-  _magnitude: 0.1
-  _duration: 0
-  _threshold: 0.5
+  _effects: []
+  _effectTypeLegacy: 4
+  _magnitudeLegacy: 0.1
+  _durationLegacy: 0
+  _thresholdLegacy: 0.5

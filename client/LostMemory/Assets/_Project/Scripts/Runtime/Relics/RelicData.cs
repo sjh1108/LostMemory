@@ -1,10 +1,18 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace LostMemory.Relics
 {
     /// <summary>
     /// 유물 또는 소모품 하나의 데이터.
     /// IsConsumable = true 이면 회복약·랜덤박스 등 비유물 보상이다.
+    ///
+    /// CL-138: 듀얼 태그 + 사이즈 + 다중 효과(Effects[]) 도입.
+    /// 기존 _tag/_effectType/_magnitude/_duration/_threshold 는 FormerlySerializedAs 로 보존
+    /// (18개 기존 SO 직렬화 안전). RelicEffectRegistry 호환을 위해 legacy 프로퍼티는
+    /// _effects[0] 우선, 비어 있으면 legacy 필드를 fallback 으로 반환.
     /// </summary>
     [CreateAssetMenu(fileName = "RelicData_New",
                      menuName = "LostMemory/Relic Data")]
@@ -23,25 +31,38 @@ namespace LostMemory.Relics
         [Tooltip("소모품일 때는 무시")]
         [SerializeField] private RelicRarity _rarity;
 
-        [Tooltip("소모품일 때는 무시")]
-        [SerializeField] private RelicTag _tag;
+        [Header("Tag (CL-138 듀얼)")]
+        [Tooltip("듀얼 태그 첫 번째. 소모품·단일 태그 아이템은 None 사용.")]
+        [FormerlySerializedAs("_tag")]
+        [SerializeField] private RelicTag _tagPrimary;
+
+        [Tooltip("듀얼 태그 두 번째. 단일 태그 아이템이면 None.")]
+        [SerializeField] private RelicTag _tagSecondary;
+
+        [Header("Inventory (CL-138)")]
+        [Tooltip("인벤토리 점유 사이즈 (B-Lite 1). 등급별 자동 매핑은 CL-150 에서.")]
+        [SerializeField] private Vector2Int _size = new Vector2Int(1, 1);
 
         [SerializeField, TextArea(2, 4)] private string _effectDescription;
 
         [SerializeField] private Sprite _icon;
 
-        [Header("Effect (CL-106 Wave A)")]
-        [Tooltip("효과 분류. None = Wave A 시점 미구현 효과 (비-MVP 등).")]
-        [SerializeField] private RelicEffectType _effectType = RelicEffectType.None;
+        [Header("Effects (CL-138 V0.4 — 다중 효과)")]
+        [Tooltip("이 아이템이 부여하는 효과 목록. 빈 배열이면 legacy 단일 효과 필드(_effectTypeLegacy 등) fallback.")]
+        [SerializeField] private EffectEntry[] _effects;
 
-        [Tooltip("효과의 주 수치. % 는 0.05 형태 (5%). 회복약은 0.25 = 25% 회복. 음수 가능 (질풍 장화 -0.12).")]
-        [SerializeField] private float _magnitude;
+        [Header("Legacy (CL-106 단일 효과 — deprecated, 마이그레이션 후 제거 예정)")]
+        [FormerlySerializedAs("_effectType")]
+        [SerializeField] private RelicEffectType _effectTypeLegacy = RelicEffectType.None;
 
-        [Tooltip("임시 효과의 지속 시간(초). 영구/조건부면 0.")]
-        [SerializeField, Min(0f)] private float _duration;
+        [FormerlySerializedAs("_magnitude")]
+        [SerializeField] private float _magnitudeLegacy;
 
-        [Tooltip("조건부 효과의 임계치 (예: 전투 북의 0.5 = HP 50%). 없으면 0.")]
-        [SerializeField, Min(0f)] private float _threshold;
+        [FormerlySerializedAs("_duration")]
+        [SerializeField, Min(0f)] private float _durationLegacy;
+
+        [FormerlySerializedAs("_threshold")]
+        [SerializeField, Min(0f)] private float _thresholdLegacy;
 
         // 유물이름
         public string      DisplayName       => _displayName;
@@ -51,20 +72,36 @@ namespace LostMemory.Relics
         public bool        IsInstantUse      => _isInstantUse;
         // 등급
         public RelicRarity Rarity            => _rarity;
-        // 태그
-        public RelicTag    Tag               => _tag;
         // 효과 설명
         public string      EffectDescription => _effectDescription;
         // 아이콘
         public Sprite      Icon              => _icon;
 
-        // 효과 분류 (CL-106 Wave A)
-        public RelicEffectType EffectType => _effectType;
-        // 효과 주 수치 (CL-106 Wave A)
-        public float           Magnitude  => _magnitude;
-        // 임시 효과 지속 시간 (CL-106 Wave A)
-        public float           Duration   => _duration;
-        // 조건부 효과 임계치 (CL-106 Wave A)
-        public float           Threshold  => _threshold;
+        // CL-138 신규
+        public RelicTag                  TagPrimary    => _tagPrimary;
+        public RelicTag                  TagSecondary  => _tagSecondary;
+        public Vector2Int                Size          => _size;
+        public IReadOnlyList<EffectEntry> Effects       => _effects;
+
+        /// <summary>CL-138 이전 단일 태그 호환. <see cref="TagPrimary"/> 와 동일.</summary>
+        [Obsolete("Use TagPrimary instead. Kept for legacy view code.")]
+        public RelicTag Tag => _tagPrimary;
+
+        // RelicEffectRegistry 호환 (CL-106). _effects[0] 우선, 없으면 legacy 필드.
+        [Obsolete("Use Effects[0].Type instead. Kept for RelicEffectRegistry single-effect path.")]
+        public RelicEffectType EffectType =>
+            (_effects != null && _effects.Length > 0) ? _effects[0].Type : _effectTypeLegacy;
+
+        [Obsolete("Use Effects[0].Magnitude instead.")]
+        public float Magnitude =>
+            (_effects != null && _effects.Length > 0) ? _effects[0].Magnitude : _magnitudeLegacy;
+
+        [Obsolete("Use Effects[0].Duration instead.")]
+        public float Duration =>
+            (_effects != null && _effects.Length > 0) ? _effects[0].Duration : _durationLegacy;
+
+        [Obsolete("Use Effects[0].Threshold instead.")]
+        public float Threshold =>
+            (_effects != null && _effects.Length > 0) ? _effects[0].Threshold : _thresholdLegacy;
     }
 }

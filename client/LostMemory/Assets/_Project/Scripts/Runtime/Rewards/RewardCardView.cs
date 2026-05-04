@@ -32,7 +32,7 @@ namespace LostMemory.Rewards
             _descriptionText.text = data.EffectDescription;
             _rarityText.text      = data.IsConsumable
                 ? "[소모품]"
-                : $"[{ToKorean(data.Rarity)}] {ToKoreanTag(data.Tag)}";
+                : $"[{ToKorean(data.Rarity)}] {RelicTagLabels.ToKorean(data.TagPrimary)}";
 
             _icon.sprite  = data.Icon != null ? data.Icon : null;
             _icon.enabled = data.Icon != null;
@@ -48,14 +48,6 @@ namespace LostMemory.Rewards
             RelicRarity.Unique    => "유니크",
             RelicRarity.Legendary => "전설",
             _                     => rarity.ToString()
-        };
-
-        private static string ToKoreanTag(RelicTag tag) => tag switch
-        {
-            RelicTag.Assault  => "맹공",
-            RelicTag.Guardian => "수호",
-            RelicTag.Sprint   => "질주",
-            _                 => tag.ToString()
         };
 
         private static Color GetRarityColor(RelicData data)
