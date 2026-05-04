@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace LostMemory.Combat.Telegraph
 {
@@ -24,7 +26,10 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private string previewObjectName = "AttackTelegraphPreview";
         [SerializeField] private Transform previewParent;
         [SerializeField] private SpriteRenderer sortingReference;
-        [SerializeField] private int sortingOrder = -5;
+        [FormerlySerializedAs("sortingOrder")]
+        [SerializeField] private int sortingOrderOffset = -5;
+        [SerializeField] private bool renderOutsideSortingGroup = true;
+        [SerializeField] private SortingGroup sortingGroupReference;
         [SerializeField] private Color defaultColor = new Color(1f, 0.33f, 0.08f, 0.32f);
         [SerializeField] private float pulseSpeed = 8f;
         [SerializeField] [Range(0f, 1f)] private float pulseAlphaStrength = 0.18f;
@@ -56,6 +61,17 @@ namespace LostMemory.Combat.Telegraph
         private void OnDisable()
         {
             HideImmediate();
+        }
+
+        private void OnDestroy()
+        {
+            if (_previewObject == null)
+            {
+                return;
+            }
+
+            Destroy(_previewObject);
+            _previewObject = null;
         }
 
         public void Show(AttackTelegraphRequest2D request)
@@ -115,19 +131,20 @@ namespace LostMemory.Combat.Telegraph
 
             previewParent ??= transform;
             sortingReference ??= FindSortingReference();
+            sortingGroupReference ??= FindSortingGroupReference();
 
             _previewObject = new GameObject(previewObjectName);
             _previewObject.layer = gameObject.layer;
 
             _previewTransform = _previewObject.transform;
-            _previewTransform.SetParent(previewParent, false);
+            _previewTransform.SetParent(ResolvePreviewRenderParent(), false);
 
             _previewRenderer = _previewObject.AddComponent<SpriteRenderer>();
             _previewRenderer.sprite = GetOrCreateTelegraphSprite();
-            _previewRenderer.sortingOrder = sortingOrder;
+            _previewRenderer.sortingOrder = sortingOrderOffset;
             _previewRenderer.drawMode = SpriteDrawMode.Simple;
 
-            CopySortingFromReference();
+            ApplySorting();
         }
 
         private void ApplyRequest()
@@ -149,7 +166,7 @@ namespace LostMemory.Combat.Telegraph
             _previewRenderer.color = color;
             _previewRenderer.enabled = true;
 
-            CopySortingFromReference();
+            ApplySorting();
         }
 
         private void ApplyPulse()
@@ -162,26 +179,71 @@ namespace LostMemory.Combat.Telegraph
 
         private Vector3 ResolveLocalScale(Vector2 worldSize)
         {
-            Vector3 scaleBasis = previewParent != null ? previewParent.lossyScale : Vector3.one;
+            Transform renderParent = _previewTransform != null ? _previewTransform.parent : previewParent;
+            Vector3 scaleBasis = renderParent != null ? renderParent.lossyScale : Vector3.one;
             float safeScaleX = Mathf.Abs(scaleBasis.x) > 0.0001f ? Mathf.Abs(scaleBasis.x) : 1f;
             float safeScaleY = Mathf.Abs(scaleBasis.y) > 0.0001f ? Mathf.Abs(scaleBasis.y) : 1f;
             return new Vector3(worldSize.x / safeScaleX, worldSize.y / safeScaleY, 1f);
         }
 
-        private void CopySortingFromReference()
+        private Transform ResolvePreviewRenderParent()
+        {
+            if (!renderOutsideSortingGroup)
+            {
+                return previewParent;
+            }
+
+            sortingGroupReference ??= FindSortingGroupReference();
+            return sortingGroupReference != null ? sortingGroupReference.transform.parent : previewParent;
+        }
+
+        private void ApplySorting()
         {
             if (_previewRenderer == null)
             {
                 return;
             }
 
+            sortingGroupReference ??= FindSortingGroupReference();
+            if (renderOutsideSortingGroup && sortingGroupReference != null)
+            {
+                _previewRenderer.sortingLayerID = sortingGroupReference.sortingLayerID;
+                _previewRenderer.sortingOrder = sortingGroupReference.sortingOrder + sortingOrderOffset;
+                return;
+            }
+
             sortingReference ??= FindSortingReference();
             if (sortingReference == null)
             {
+                _previewRenderer.sortingOrder = sortingOrderOffset;
                 return;
             }
 
             _previewRenderer.sortingLayerID = sortingReference.sortingLayerID;
+            _previewRenderer.sortingOrder = sortingReference.sortingOrder + sortingOrderOffset;
+        }
+
+        private SortingGroup FindSortingGroupReference()
+        {
+            if (sortingReference != null)
+            {
+                SortingGroup group = sortingReference.GetComponentInParent<SortingGroup>();
+                if (group != null)
+                {
+                    return group;
+                }
+            }
+
+            if (previewParent != null)
+            {
+                SortingGroup group = previewParent.GetComponentInParent<SortingGroup>();
+                if (group != null)
+                {
+                    return group;
+                }
+            }
+
+            return GetComponentInParent<SortingGroup>();
         }
 
         private SpriteRenderer FindSortingReference()
