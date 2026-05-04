@@ -124,6 +124,8 @@ namespace LostMemory.Shop
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (!eventData.dragging) return;
+            // ConsumableSlotView에서 드래그 중일 때만 하이라이트 (일반 유물 드래그는 무시)
+            if (eventData.pointerDrag?.GetComponent<ConsumableSlotView>() == null) return;
             if (_bgImage != null) _bgImage.color = HoverColor;
         }
 
