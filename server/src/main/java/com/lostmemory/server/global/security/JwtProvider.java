@@ -86,8 +86,8 @@ public class JwtProvider {
 
     /**
      * Access 토큰을 파싱·검증하고 userId(sub) 반환.
-     * 만료 시 AUTH_TOKEN_EXPIRED, 서명 불일치/형식 오류/refresh type 등 그 외 무효 시 AUTH_TOKEN_INVALID.
-     * 인증 필터가 catch 해서 ErrorResponseWriter 로 401 응답을 직접 작성한다.
+     * 만료 시 AUTH_TOKEN_EXPIRED, 서명 불일치/형식 오류/refresh type/sub 형식 오류 등 그 외 무효 시 AUTH_TOKEN_INVALID.
+     * 호출자(인증 필터)는 BusinessException 만 catch 하면 되도록 raw 예외(NPE/NumberFormatException 등)는 내부에서 흡수한다.
      */
     public Long parseAccessToken(String token) {
         Claims claims;
@@ -102,7 +102,16 @@ public class JwtProvider {
         if (!TYPE_ACCESS.equals(claims.get(TYPE_CLAIM))) {
             throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
         }
-        return Long.valueOf(claims.getSubject());
+
+        String subject = claims.getSubject();
+        if (subject == null) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+        try {
+            return Long.valueOf(subject);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
     }
 
     /** refresh 토큰 DB 저장용 SHA-256 해시 (원문 저장 금지) */

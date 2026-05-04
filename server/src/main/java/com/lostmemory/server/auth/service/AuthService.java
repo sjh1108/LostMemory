@@ -91,11 +91,14 @@ public class AuthService {
         return issueTokens(stored.getUser());
     }
 
-    /** 로그아웃: 전달된 refresh 토큰 해시로 row 조회 후 revoke (멱등 — 모르는 토큰은 조용히 무시) */
+    /**
+     * 로그아웃: 전달된 refresh 토큰 해시로 row 조회 후 revoke (멱등 — 모르는 토큰은 조용히 무시).
+     * refresh 와 동일하게 비관적 락을 사용해 동시 logout/refresh 간 정책 일관성 유지.
+     */
     @Transactional
     public void logout(LogoutRequest request) {
         String tokenHash = jwtProvider.hashForStorage(request.refreshToken());
-        Optional<AuthRefreshToken> stored = refreshTokenRepository.findByTokenHash(tokenHash);
+        Optional<AuthRefreshToken> stored = refreshTokenRepository.findByTokenHashForUpdate(tokenHash);
         stored.ifPresent(AuthRefreshToken::revoke);
     }
 
