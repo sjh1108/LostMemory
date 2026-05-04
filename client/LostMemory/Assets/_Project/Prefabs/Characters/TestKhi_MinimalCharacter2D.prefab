@@ -119,7 +119,7 @@ MonoBehaviour:
   CharacterDimension: 0
   CharacterType: 0
   PlayerID: Player1
-  CharacterAnimator: {fileID: 0}
+  CharacterAnimator: {fileID: 431677536353520410}
   UseDefaultMecanim: 1
   RunAnimatorSanityChecks: 0
   DisableAnimatorLogs: 1
@@ -569,7 +569,7 @@ MonoBehaviour:
   UseMaterialPropertyBlocks: 0
   MasterHealth: {fileID: 0}
   TargetDamageResistanceProcessor: {fileID: 0}
-  TargetAnimator: {fileID: 0}
+  TargetAnimator: {fileID: 431677536353520410}
   DisableAnimatorLogs: 1
 --- !u!114 &114654745524214770
 MonoBehaviour:
@@ -767,9 +767,9 @@ MonoBehaviour:
   dashController: {fileID: 114646620809325970}
   meleeCombo: {fileID: 114910001000000004}
   characterMovement: {fileID: 114109505143042948}
-  parryController: {fileID: 0}
-  downController: {fileID: 0}
-  animator: {fileID: 0}
+  parryController: {fileID: 8099593820185299679}
+  downController: {fileID: 8056956279644409734}
+  animator: {fileID: 431677536353520410}
   hitStunDuration: 0.12
   postHitInvulnerability: 0.15
   interruptMeleeComboOnHit: 1
@@ -796,7 +796,7 @@ MonoBehaviour:
   characterMovement: {fileID: 114109505143042948}
   hitStun: {fileID: 4506602064698978107}
   parryController: {fileID: 8099593820185299679}
-  animator: {fileID: 0}
+  animator: {fileID: 431677536353520410}
   playerHealing: {fileID: 1642600212417923945}
   downDuration: 10
   downHealthFloor: 1
@@ -1120,6 +1120,9 @@ GameObject:
   m_Component:
   - component: {fileID: 4417269262889042}
   - component: {fileID: 212503738640729348}
+  - component: {fileID: 431677536353520410}
+  - component: {fileID: 7302294448563179921}
+  - component: {fileID: 8109641592879168815}
   m_Layer: 10
   m_Name: MinimalCharacterModel
   m_TagString: Untagged
@@ -1191,7 +1194,7 @@ SpriteRenderer:
   m_SortingLayer: 4
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: eeb68d44a260e964584c4310ad5add3a, type: 3}
+  m_Sprite: {fileID: 475270040, guid: 13786762124fab74880fe357f2993310, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1201,6 +1204,64 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!95 &431677536353520410
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1997364199477008}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 7c6663b11a5428245b36d74244d187b0, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &7302294448563179921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1997364199477008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a3b02543c3f70949b220dedcb295a39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiSpriteFlipBinder
+  aim: {fileID: 0}
+  aimDeadZoneX: 0.05
+  initialFacingRight: 1
+  backIdleStateName: Back_Idle
+  backWalkStateName: Back_Walk
+  logEveryFrame: 0
+--- !u!114 &8109641592879168815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1997364199477008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da79ff5025ad4a044a7ae60ca68f491d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiAnimatorMovementBinder
+  aim: {fileID: 0}
+  body: {fileID: 0}
+  movementYParam: MovementY
+  speedParam: Speed
+  speedDecayTime: 0.15
+  logEveryFrame: 0
 --- !u!1 &1516448916103123182
 GameObject:
   m_ObjectHideFlags: 0
