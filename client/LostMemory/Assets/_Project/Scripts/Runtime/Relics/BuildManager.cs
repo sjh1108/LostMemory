@@ -69,6 +69,13 @@ namespace LostMemory.Relics
             return set.Tiers[idx];
         }
 
+        /// <summary>
+        /// CL-140: 특정 태그의 BuildSetData 자체. 미등록 시 null.
+        /// SetEffectApplicator 가 oldTier 효과 제거 시 set.Tiers[oldTier] 의 EffectType 등 메타 데이터 조회용.
+        /// </summary>
+        public BuildSetData GetSetForTag(RelicTag tag) =>
+            _setByTag.TryGetValue(tag, out BuildSetData set) ? set : null;
+
         private void Awake()
         {
             if (_setDatabase == null || _setDatabase.Length == 0)

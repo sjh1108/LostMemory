@@ -3876,6 +3876,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1642600212417923945, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: logHeals
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8056956279644409734, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: logStateTransitions
@@ -3894,6 +3899,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1789113441}
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1789113442}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!114 &786682090 stripped
 MonoBehaviour:
@@ -5422,6 +5431,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69614a4a3cfd06d4e8388acafdb774bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1789113415 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1496170365699431617, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 621644652}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
 --- !u!114 &1789113441
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5452,7 +5473,22 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a8baad304e4b25749af1e2915d872e54, type: 2}
   - {fileID: 11400000, guid: c500dfed38286ef40bbfb822a2ae2b8b, type: 2}
   - {fileID: 11400000, guid: 2bb2a81a159bc4f4ba41db9e4ac710da, type: 2}
-  _logTierChanges: 1
+  _logTierChanges: 0
+--- !u!114 &1789113442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 621644652}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68563bd613df6e94cba2a1f22206d983, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.SetEffectApplicator
+  buildManager: {fileID: 1789113441}
+  statContainer: {fileID: 1789113415}
+  _logEffectDispatch: 1
 --- !u!28 &1841735891
 Texture2D:
   m_ObjectHideFlags: 0
