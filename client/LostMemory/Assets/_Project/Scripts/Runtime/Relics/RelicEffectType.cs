@@ -42,5 +42,8 @@ namespace LostMemory.Relics
         TarotProc,                        // 타로 발동
         LuckSlotExpand,                   // 행운 3스택 슬롯+1
         LuckLegendaryGuarantee,           // 행운 7스택 무조건 전설
+
+        // CL-141 추가 — items_draft 의 "공속 +N%" 효과 표현용 (10+ 아이템)
+        AttackSpeedPercent,               // 공속 영구 % (StatId.AttackSpeed 라우팅)
     }
 }
