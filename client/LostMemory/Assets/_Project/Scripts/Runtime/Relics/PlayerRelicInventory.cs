@@ -19,6 +19,9 @@ namespace LostMemory.Relics
         /// <summary>유물이 새로 획득되었을 때 발화. RelicEffectRegistry 등이 구독.</summary>
         public event Action<RelicData> OnRelicAcquired;
 
+        /// <summary>CL-139: 유물이 인벤토리에서 제거됐을 때 발화. BuildManager 가 카운트 갱신용으로 구독.</summary>
+        public event Action<RelicData> OnRelicRemoved;
+
         /// <summary>CL-109: Run 종료 시 인벤토리 비워질 때 발화. RelicEffectRegistry 가 modifier/shield 일괄 정리.</summary>
         public event Action OnCleared;
 
@@ -52,6 +55,7 @@ namespace LostMemory.Relics
             int emptyIdx = _ownedRelics.IndexOf(null);
             if (emptyIdx >= 0) _ownedRelics[emptyIdx] = relic;
             else               _ownedRelics.Add(relic);
+            OnRelicAcquired?.Invoke(relic);
             Debug.Log($"[PlayerRelicInventory] 유물 획득: {relic.DisplayName}");
             return true;
         }
@@ -74,6 +78,7 @@ namespace LostMemory.Relics
             int idx = _ownedRelics.FindIndex(r => r != null && r.name == relic.name);
             if (idx < 0) return false;
             _ownedRelics[idx] = null;   // 슬롯 위치 유지 — 제거 대신 null로 교체
+            OnRelicRemoved?.Invoke(relic);
             Debug.Log($"[PlayerRelicInventory] 유물 버림: {relic.DisplayName}");
             return true;
         }
@@ -114,5 +119,10 @@ namespace LostMemory.Relics
                 if (r != null) TryAdd(r);
             }
         }
+
+        // CL-139 검증용: Run 종료(=Clear) 흐름을 수동 트리거. BuildManager / EffectApplicator(CL-140)
+        // 의 OnCleared 구독 경로 확인용. RunManager 까지 가지 않고도 인벤토리 비우기 + OnCleared 발화.
+        [ContextMenu("Debug — Clear inventory")]
+        private void DebugClear() => Clear();
     }
 }
