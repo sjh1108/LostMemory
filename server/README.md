@@ -617,10 +617,93 @@
 
 ---
 
+## HTTPS / Let's Encrypt 운영
+
+`k14c201.p.ssafy.io` 의 HTTPS 는 Let's Encrypt 인증서를 `server/docker-compose.yml` 의 `certbot` 서비스(profile `certbot`)로 발급/갱신한다. nginx 는 인증서를 `:ro` 로만 마운트해서 손상 가능성을 차단한다.
+
+### 첫 발급 (1회)
+
+EC2 호스트(`ubuntu@k14c201.p.ssafy.io`)에서 `server/` 디렉토리 기준:
+
+1. `.env` 에 아래 두 줄을 채운다 (`server/.env.example` 참고).
+   ```env
+   DOMAIN=k14c201.p.ssafy.io
+   LETSENCRYPT_EMAIL=<운영자 메일>
+   ```
+   Jenkins credential `lostmemory-env` (Secret file) 도 동일하게 갱신한다.
+2. DNS 가 EC2 를 가리키는지 확인.
+   ```bash
+   dig +short k14c201.p.ssafy.io @8.8.8.8   # → 54.180.247.19
+   ```
+3. 부트스트랩 스크립트 실행. dummy self-signed cert 로 nginx 가 먼저 정상 기동한 뒤 → staging dry-run → prod 발급 → reload 까지 자동 처리한다.
+   ```bash
+   chmod +x scripts/*.sh
+   ./scripts/init-letsencrypt.sh
+   ```
+4. 검증 시퀀스(아래) 통과 확인.
+
+### 자동 갱신 (cron, 1회 등록)
+
+호스트 root crontab 에 wrapper 등록.
+```bash
+sudo crontab -e
+```
+```cron
+17 3 * * 1 /home/ubuntu/lostmemory/server/scripts/certbot-renew.sh >> /var/log/certbot-renew.log 2>&1
+```
+Let's Encrypt 정책상 `renew` 는 만료 30일 이내일 때만 실제 갱신하므로 평소엔 no-op. 등록 직후 한 번 수동 실행해 동작 확인.
+```bash
+sudo /home/ubuntu/lostmemory/server/scripts/certbot-renew.sh
+docker compose --env-file .env --profile certbot run --rm certbot renew --dry-run
+```
+
+### Jenkins 시스템 URL 갱신 (1회, 수동)
+
+HTTPS 활성 직후 운영자가 Jenkins UI 에서 변경:
+
+1. `https://k14c201.p.ssafy.io/jenkins/` 접속, 관리자 로그인.
+2. Jenkins 관리 → System → "Jenkins URL" 을 `https://k14c201.p.ssafy.io/jenkins/` 로 변경 → 저장.
+3. 다음 빌드의 메일/웹훅 링크가 https 로 생성되는지 확인.
+
+### 검증 시퀀스
+
+```bash
+curl -I https://k14c201.p.ssafy.io/api/actuator/health     # HTTP/2 200
+curl -I http://k14c201.p.ssafy.io/api/actuator/health      # 301 → https
+curl -I http://k14c201.p.ssafy.io/.well-known/acme-challenge/probe   # 404 (정상)
+openssl s_client -connect k14c201.p.ssafy.io:443 \
+  -servername k14c201.p.ssafy.io < /dev/null 2>/dev/null \
+  | openssl x509 -noout -issuer -subject -dates           # issuer = Let's Encrypt
+curl -I https://k14c201.p.ssafy.io/jenkins/login           # 200 또는 403
+curl -I http://k14c201.p.ssafy.io/nginx-health             # 200 (HTTP 에서도 살림)
+curl -I https://k14c201.p.ssafy.io/nginx-health            # 200
+```
+
+### 롤백
+
+발급 실패 또는 nginx 가 cert 문제로 안 뜨는 경우:
+
+1. `server/nginx/conf.d/default.conf` 의 443 server 블록 전체를 임시로 주석 처리.
+2. ```bash
+   docker compose --env-file .env exec nginx nginx -t
+   docker compose --env-file .env exec nginx nginx -s reload
+   ```
+3. 80 만 살아있는 상태에서 원인 파악(주로 ACME challenge 응답 안 됨 / DNS / UFW / AWS SG / rate limit) 후 다시 `init-letsencrypt.sh`.
+4. 또는 git revert 후 `docker compose up -d nginx` 로 직전 상태 복귀.
+
+### 주의
+
+- prod 발급은 도메인당 주 5회 rate limit. 부트스트랩 스크립트가 staging dry-run 을 먼저 돌리는 이유.
+- certbot 은 webroot 모드로 동작하므로 nginx 가 80 에 계속 떠있어야 한다 (standalone 모드로 바꾸지 말 것).
+- `certbot_etc` 와 `certbot_webroot` 는 named volume 이라 호스트 경로로 직접 보지 못한다. 인증서 확인은 `docker compose --profile certbot run --rm --entrypoint sh certbot -c "ls /etc/letsencrypt/live/$DOMAIN/"` 로.
+
+---
+
 ## 문서 변경 이력
 
 | 날짜 | 내용 | 작성자 |
 |---|---|---|
 | 2026-04-21 | 초안 작성 | 송주헌 |
+| 2026-05-04 | INFRA-15 Let's Encrypt HTTPS 운영 절차 추가 | 송주헌 |
 
 ---
