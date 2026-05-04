@@ -38,3 +38,9 @@
 # Keep Git metadata files normalized too.
 .gitattributes text eol=lf
 .gitignore text eol=lf
+
+# Shell scripts must stay LF (EC2 Ubuntu 에서 CRLF 면 bash 가 No such file or directory).
+*.sh text eol=lf
+
+# Nginx 설정 파일도 LF 유지 (컨테이너 안에서 일관된 라인 엔딩).
+*.conf text eol=lf
