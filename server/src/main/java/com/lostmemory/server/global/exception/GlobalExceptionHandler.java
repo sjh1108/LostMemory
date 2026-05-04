@@ -9,6 +9,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
 
@@ -46,6 +47,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException e) {
         log.warn("Access denied: {}", e.getMessage());
         return toResponse(ErrorCode.COMMON_FORBIDDEN, ErrorCode.COMMON_FORBIDDEN.message());
+    }
+
+    /** 매핑된 핸들러/정적 리소스가 없을 때(잘못된 경로 호출 등) 404 응답 */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(NoResourceFoundException e) {
+        log.warn("No resource found: {}", e.getMessage());
+        return toResponse(ErrorCode.COMMON_RESOURCE_NOT_FOUND, ErrorCode.COMMON_RESOURCE_NOT_FOUND.message());
     }
 
     /** 처리되지 않은 모든 예외를 500으로 응답 + 스택 트레이스 ERROR 로깅 */

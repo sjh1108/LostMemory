@@ -1,6 +1,9 @@
 package com.lostmemory.server.global.security;
 
+import com.lostmemory.server.global.exception.BusinessException;
+import com.lostmemory.server.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -79,6 +82,27 @@ public class JwtProvider {
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    /**
+     * Access 토큰을 파싱·검증하고 userId(sub) 반환.
+     * 만료 시 AUTH_TOKEN_EXPIRED, 서명 불일치/형식 오류/refresh type 등 그 외 무효 시 AUTH_TOKEN_INVALID.
+     * 인증 필터가 catch 해서 ErrorResponseWriter 로 401 응답을 직접 작성한다.
+     */
+    public Long parseAccessToken(String token) {
+        Claims claims;
+        try {
+            claims = parse(token);
+        } catch (ExpiredJwtException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        if (!TYPE_ACCESS.equals(claims.get(TYPE_CLAIM))) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+        return Long.valueOf(claims.getSubject());
     }
 
     /** refresh 토큰 DB 저장용 SHA-256 해시 (원문 저장 금지) */
