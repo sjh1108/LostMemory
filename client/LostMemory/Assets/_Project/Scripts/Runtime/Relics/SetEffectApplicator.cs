@@ -28,6 +28,9 @@ namespace LostMemory.Relics
         [Tooltip("같은 GameObject 의 PlayerStatModifierContainer. StatModifier 라우팅 대상.")]
         [SerializeField] private PlayerStatModifierContainer statContainer;
 
+        [Tooltip("같은 GameObject 의 OnHitEffectRegistry. CL-142 OnHit 라우팅 대상 (Slow/Freeze/Chain).")]
+        [SerializeField] private OnHitEffectRegistry onHitRegistry;
+
         [Tooltip("티어 변경 시 라우팅 로그 (APPLY/REMOVE).")]
         [SerializeField] private bool _logEffectDispatch = false;
 
@@ -46,6 +49,11 @@ namespace LostMemory.Relics
                 Debug.LogError($"[SetEffectApplicator] statContainer null. Inspector wiring 필요. host={gameObject.name}", this);
                 return;
             }
+            // CL-142 진단: OnHit wiring 상태 즉시 표시
+            string onHitWiring = onHitRegistry != null
+                ? $"OK (host={onHitRegistry.gameObject.name})"
+                : "❌ NULL (Slow/Freeze/Chain 동작 안 함)";
+            Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}", this);
             buildManager.OnSetTierChanged += HandleSetTierChanged;
         }
 
@@ -102,13 +110,18 @@ namespace LostMemory.Relics
                     // 주의: PlayerStatModifierContainer 는 % 합산. flat 의미는 CL-146 에서 정책 결정.
                     statContainer.AddPermanent(StatId.Defense, tier.Magnitude, source); break;
 
-                // ── 미존재 시스템 (TODO — 후속 CL) ──
-                case RelicEffectType.BurnOnHit:
+                // ── OnHit 라우팅 (CL-142 본격 처리) ──
                 case RelicEffectType.SlowOnHit:
                 case RelicEffectType.FreezeOnHit:
                 case RelicEffectType.ChainOnHit:
+                    if (onHitRegistry != null)
+                        onHitRegistry.Register(tier.EffectType, tier.Magnitude, source);
+                    else
+                        Debug.LogWarning($"[SetEffectApplicator] onHitRegistry null — {tier.EffectType} 적용 X. Inspector wiring 필요.");
+                    break;
+                case RelicEffectType.BurnOnHit:
                 case RelicEffectType.WindAOE:
-                    Debug.LogWarning($"[SetEffectApplicator] {tier.EffectType} OnHit 라우팅 미구현 (CL-142/143)");
+                    Debug.LogWarning($"[SetEffectApplicator] {tier.EffectType} OnHit 라우팅 미구현 (CL-143)");
                     break;
                 case RelicEffectType.MagicalGirlSummon:
                 case RelicEffectType.MagicalGirlFusion:
@@ -146,9 +159,12 @@ namespace LostMemory.Relics
             var source = new SetEffectSource(set, tierIndex);
 
             // StatModifier 케이스: source 매칭으로 일괄 제거.
-            // 본 CL 시점 미존재 시스템 (OnHit/MagicalGirl/Tarot 등) 의 정리는 후속 CL 이
-            // 각 시스템에 RemoveBySource 등 추가하며 본 메서드에 분기 추가 예정.
             statContainer.RemoveBySource(source);
+
+            // CL-142: OnHit (Slow/Freeze/Chain) 도 같은 source 로 unregister.
+            // 미존재 시스템 (MagicalGirl/Tarot) 정리는 후속 CL 분기 추가 예정.
+            if (onHitRegistry != null)
+                onHitRegistry.UnregisterBySource(source);
         }
     }
 }

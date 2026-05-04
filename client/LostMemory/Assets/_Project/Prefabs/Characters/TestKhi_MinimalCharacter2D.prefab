@@ -77,6 +77,9 @@ GameObject:
   - component: {fileID: 1736420558605640635}
   - component: {fileID: 1105879407601961676}
   - component: {fileID: 1642600212417923945}
+  - component: {fileID: 5492564548965125359}
+  - component: {fileID: 3147602633388410817}
+  - component: {fileID: 7504139936399824677}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -773,7 +776,6 @@ MonoBehaviour:
   hitStunDuration: 0.12
   postHitInvulnerability: 0.15
   interruptMeleeComboOnHit: 1
-  setAnimatorTrigger: 1
   hitAnimatorTriggerName: Hit
   logStateTransitions: 0
 --- !u!114 &8056956279644409734
@@ -806,8 +808,7 @@ MonoBehaviour:
   reviveInvulnerabilityAfter: 1.5
   soloBehavior: 1
   debugReviveKey: 114
-  logStateTransitions: 0
-  setAnimatorTriggers: 0
+  logStateTransitions: 1
   downAnimatorTriggerName: Down
   reviveAnimatorTriggerName: Revive
 --- !u!114 &1205325766915542333
@@ -1080,6 +1081,19 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}
   - {fileID: 11400000, guid: d3e3144f7ab56554985fafc09eb06ace, type: 2}
   - {fileID: 11400000, guid: a587bd5dfcf4a2a468639943a93bf83c, type: 2}
+  - {fileID: 11400000, guid: 558c97a6a3e11164a9bbc48e208e3f0b, type: 2}
+  - {fileID: 11400000, guid: 22ddeae1831bdc64b81b8d87ad723cd1, type: 2}
+  - {fileID: 11400000, guid: 9fe6ae97b3fd6c046be7917438487eb3, type: 2}
+  - {fileID: 11400000, guid: bc63b7e045ab9d64896fca36272cabb6, type: 2}
+  - {fileID: 11400000, guid: 0557cf6fb76abfd479ac127fd2f52fb8, type: 2}
+  - {fileID: 11400000, guid: 9fe6ae97b3fd6c046be7917438487eb3, type: 2}
+  - {fileID: 11400000, guid: dc24f14c2f0f12044bab28d4896cbfed, type: 2}
+  - {fileID: 11400000, guid: d261cb928aa0e76428ee823058c3e70e, type: 2}
+  - {fileID: 11400000, guid: 66be657fcd71e3e4a9d26b976c9f1f1f, type: 2}
+  - {fileID: 11400000, guid: bc63b7e045ab9d64896fca36272cabb6, type: 2}
+  - {fileID: 11400000, guid: cd7b23f39e873524691c2523831876f0, type: 2}
+  - {fileID: 11400000, guid: 33d168911639aa54f821ef6ef22aec1f, type: 2}
+  - {fileID: 11400000, guid: 730cbbb4bd81e9d42a8d336ac160385e, type: 2}
 --- !u!114 &1105879407601961676
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1107,9 +1121,75 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealing
   health: {fileID: 114871673569860628}
   container: {fileID: 1496170365699431617}
-  logHeals: 1
+  logHeals: 0
   _debugConsumableToUse: {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709,
     type: 2}
+--- !u!114 &5492564548965125359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de088c31fad134e4ca9c7b7d65df81cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildManager
+  inventory: {fileID: 1736420558605640635}
+  _setDatabase:
+  - {fileID: 11400000, guid: c9af9b8a7e979c64fadd5e0b34feaa1b, type: 2}
+  - {fileID: 11400000, guid: 8e1c6afa0e9eed94387f099234c4bd38, type: 2}
+  - {fileID: 11400000, guid: 71cd6a2e7eb991849ae9656eb76faeba, type: 2}
+  - {fileID: 11400000, guid: b35dfa43a19c7ae41b72466313f90a48, type: 2}
+  - {fileID: 11400000, guid: b7ec18394436b89478e14fcdec014e52, type: 2}
+  - {fileID: 11400000, guid: 715805ee19da7e34e91dddacdfae6b80, type: 2}
+  - {fileID: 11400000, guid: 9c78fb1b4f258ca45b9caf9157ce57d6, type: 2}
+  - {fileID: 11400000, guid: 6e9a15813f3cedd45819d11b1cc49ad6, type: 2}
+  - {fileID: 11400000, guid: e8589db59a0214142b9407e818bf0035, type: 2}
+  - {fileID: 11400000, guid: e36eb27697fc49c4bb06d8a17419862f, type: 2}
+  - {fileID: 11400000, guid: 384170b3a7b965549921b2f1ea9e3226, type: 2}
+  - {fileID: 11400000, guid: c7eaf7f4d53bc834fa0ea27b9026435a, type: 2}
+  - {fileID: 11400000, guid: 746e8c4930b981c4fa6a520d162b0161, type: 2}
+  - {fileID: 11400000, guid: a8baad304e4b25749af1e2915d872e54, type: 2}
+  - {fileID: 11400000, guid: c500dfed38286ef40bbfb822a2ae2b8b, type: 2}
+  - {fileID: 11400000, guid: 2bb2a81a159bc4f4ba41db9e4ac710da, type: 2}
+  _logTierChanges: 0
+--- !u!114 &3147602633388410817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68563bd613df6e94cba2a1f22206d983, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.SetEffectApplicator
+  buildManager: {fileID: 5492564548965125359}
+  statContainer: {fileID: 1496170365699431617}
+  onHitRegistry: {fileID: 0}
+  _logEffectDispatch: 1
+--- !u!114 &7504139936399824677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8097ace7e474f24fa103ca2a75efefe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.OnHitEffectRegistry
+  combat: {fileID: 114910001000000004}
+  statContainer: {fileID: 1496170365699431617}
+  _chainRadius: 3
+  _chainMaxTargets: 3
+  _chainCooldown: 0.5
+  _slowDuration: 2
+  _logOnHitDispatch: 0
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
@@ -1258,6 +1338,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiAnimatorMovementBinder
   aim: {fileID: 0}
   body: {fileID: 0}
+  downController: {fileID: 0}
   movementYParam: MovementY
   speedParam: Speed
   speedDecayTime: 0.15
