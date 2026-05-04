@@ -3,7 +3,7 @@ spring:
     import: optional:file:.env.dev[.properties]
   jpa:
     hibernate:
-      ddl-auto: update      # 로컬은 자동 스키마 갱신
+      ddl-auto: create     # 로컬은 자동 스키마 갱신
     show-sql: true
     properties:
       hibernate:
