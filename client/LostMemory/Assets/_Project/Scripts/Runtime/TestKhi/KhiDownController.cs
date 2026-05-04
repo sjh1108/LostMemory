@@ -64,7 +64,6 @@ namespace LostMemory.TestKhi
         // Respawn 디버그 키는 씬 레벨 TestKhiSceneBootstrap이 폴링해 DebugRespawn()을 호출한다.
 
         [Header("Animation")]
-        [SerializeField] private bool setAnimatorTriggers = true;
         [SerializeField] private string downAnimatorTriggerName = "Down";
         [SerializeField] private string reviveAnimatorTriggerName = "Revive";
 
@@ -160,6 +159,21 @@ namespace LostMemory.TestKhi
             if (_state == KhiDownState.Normal && _hasCachedPermits)
             {
                 RestorePermits();
+            }
+
+            // Defeated 동안 외부 컴포넌트(TDE Character.UpdateAnimators 등)가 Animator 파라미터를 흔들어
+            // Dead state 가 다른 state 로 밀려나는 것을 매 프레임 catch — 진행 중인 transition 도 취소함.
+            if (_state == KhiDownState.Defeated && animator != null && animator.isActiveAndEnabled)
+            {
+                bool nextIsDead = animator.IsInTransition(0)
+                    && animator.GetNextAnimatorStateInfo(0).IsName("Dead");
+                bool currentIsDead = !animator.IsInTransition(0)
+                    && animator.GetCurrentAnimatorStateInfo(0).IsName("Dead");
+
+                if (!nextIsDead && !currentIsDead)
+                {
+                    animator.Play("Dead", 0, 0f);
+                }
             }
         }
 
@@ -382,6 +396,9 @@ namespace LostMemory.TestKhi
 
             RestorePermits();
 
+            // 솔로 즉사 경로(EnterDown 우회)에서도 Dead 애니메이션이 재생되도록 Down 트리거 발동.
+            TrySetAnimatorTrigger(downAnimatorTriggerName);
+
             if (health != null)
             {
                 health.Invulnerable = false;
@@ -391,6 +408,21 @@ namespace LostMemory.TestKhi
                 }
                 health.Kill();
             }
+
+            // health.Kill() 내부에서 Character.Reset() 이 Animator 파라미터를 초기화하면서
+            // Dead state 가 다른 state(Front_Idle 등)로 밀려나는 케이스가 관찰됨.
+            // Animator.Play 로 Dead state 를 강제 고정 — outgoing transition 이 없으므로 그대로 유지됨.
+            ForcePlayDeadState();
+        }
+
+        private void ForcePlayDeadState()
+        {
+            if (animator == null || !animator.isActiveAndEnabled)
+            {
+                return;
+            }
+            animator.Play("Dead", 0, 0f);
+            animator.Update(0f);
         }
 
         public void DebugRespawn()
@@ -486,7 +518,7 @@ namespace LostMemory.TestKhi
 
         private void TrySetAnimatorTrigger(string triggerName)
         {
-            if (!setAnimatorTriggers || animator == null || string.IsNullOrEmpty(triggerName))
+            if (animator == null || string.IsNullOrEmpty(triggerName))
             {
                 return;
             }

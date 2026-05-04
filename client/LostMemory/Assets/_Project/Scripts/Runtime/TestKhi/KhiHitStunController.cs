@@ -37,7 +37,6 @@ namespace LostMemory.TestKhi
 
         [Header("Behavior")]
         [SerializeField] private bool interruptMeleeComboOnHit = true;
-        [SerializeField] private bool setAnimatorTrigger = true;
         [SerializeField] private string hitAnimatorTriggerName = "Hit";
 
         [Header("Debug")]
@@ -354,7 +353,7 @@ namespace LostMemory.TestKhi
 
         private void TrySetAnimatorTrigger()
         {
-            if (!setAnimatorTrigger || animator == null || string.IsNullOrEmpty(hitAnimatorTriggerName))
+            if (animator == null || string.IsNullOrEmpty(hitAnimatorTriggerName))
             {
                 return;
             }
