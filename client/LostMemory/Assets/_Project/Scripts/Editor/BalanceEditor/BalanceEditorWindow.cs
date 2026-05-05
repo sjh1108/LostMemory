@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using LostMemory.Editor.BalanceEditor.Providers;
@@ -10,15 +11,20 @@ namespace LostMemory.Editor.BalanceEditor
 {
     /// <summary>
     /// Epic U 밸런스 에디터. UI Toolkit 단일 EditorWindow.
-    /// CL-162: 셸. CL-163: 카테고리 트리 + 디테일 + 검색 + 자동 새로고침.
+    /// CL-162: 셸. CL-163: 트리/디테일/검색/자동 새로고침. CL-164: Dirty/Save/Undo.
     /// </summary>
     public class BalanceEditorWindow : EditorWindow
     {
         private const string UxmlPath = "BalanceEditorWindow";
         private const string UssPath  = "BalanceEditorWindow";
+        private const string DirtyClass = "be-tree-item-dirty";
 
         private static BalanceEditorWindow _instance;
         public static bool IsOpen => _instance != null;
+
+        // SaveAll 동안 AssetPostprocessor 의 자동 새로고침 억제 (선택/디테일 보존)
+        internal static bool SuppressAssetWatcher { get; private set; }
+
         public static void RefreshTree()
         {
             if (_instance != null) _instance.RebuildTree(_instance._lastFilter);
@@ -30,6 +36,12 @@ namespace LostMemory.Editor.BalanceEditor
         private Label _statusLabel;
         private ToolbarSearchField _searchField;
         private string _lastFilter = string.Empty;
+        private bool _isQuitting;
+
+        // 디테일 패널이 현재 표시 중인 SO. 같은 SO 재선택 시 InspectorElement 재생성 방지.
+        private ScriptableObject _currentlyShownSo;
+        // RebuildTree 진행 중 발화하는 빈 selectionChanged 가 ClearDetail 호출 못 하게 차단.
+        private bool _inRebuild;
 
         [MenuItem("LostMemory/Balance Editor")]
         public static void Open()
@@ -43,11 +55,36 @@ namespace LostMemory.Editor.BalanceEditor
         private void OnEnable()
         {
             _instance = this;
+            Undo.undoRedoPerformed += OnUndoRedo;
+            EditorApplication.quitting += OnEditorQuitting;
         }
 
         private void OnDisable()
         {
+            Undo.undoRedoPerformed -= OnUndoRedo;
+            EditorApplication.quitting -= OnEditorQuitting;
             if (_instance == this) _instance = null;
+        }
+
+        private void OnEditorQuitting()
+        {
+            _isQuitting = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (_isQuitting) return;
+
+            int dirtyCount = CountAllDirty();
+            if (dirtyCount <= 0) return;
+
+            bool save = EditorUtility.DisplayDialog(
+                "Balance Editor",
+                $"{dirtyCount} 개의 SO 가 dirty 상태입니다.\n" +
+                "지금 저장하지 않으면 Unity 가 다음 SaveAssets 까지 메모리에 보관합니다.",
+                "Save Now",
+                "Later");
+            if (save) AssetDatabase.SaveAssets();
         }
 
         public void CreateGUI()
@@ -57,7 +94,7 @@ namespace LostMemory.Editor.BalanceEditor
             var uxml = Resources.Load<VisualTreeAsset>(UxmlPath);
             if (uxml == null)
             {
-                Debug.LogError($"[CL-163] UXML 미발견: Resources/{UxmlPath}");
+                Debug.LogError($"[CL-164] UXML 미발견: Resources/{UxmlPath}");
                 return;
             }
             uxml.CloneTree(root);
@@ -69,7 +106,7 @@ namespace LostMemory.Editor.BalanceEditor
             }
             else
             {
-                Debug.LogWarning($"[CL-163] USS 미발견: Resources/{UssPath} (스타일 미적용)");
+                Debug.LogWarning($"[CL-164] USS 미발견: Resources/{UssPath} (스타일 미적용)");
             }
 
             _providers = new List<IBalanceCategoryProvider>
@@ -102,10 +139,59 @@ namespace LostMemory.Editor.BalanceEditor
                 refreshBtn.clicked += () => RebuildTree(_lastFilter);
             }
 
+            var saveBtn = root.Q<Button>("SaveButton");
+            if (saveBtn != null)
+            {
+                saveBtn.clicked += SaveAll;
+            }
+
+            root.RegisterCallback<KeyDownEvent>(OnKeyDown);
+
             PopulateLeftPanel(leftPanel);
             PopulateRightPanel(rightPanel);
 
             RebuildTree();
+            UpdateTitle();
+        }
+
+        private void OnKeyDown(KeyDownEvent e)
+        {
+            if (e.ctrlKey && e.keyCode == KeyCode.S)
+            {
+                SaveAll();
+                e.StopPropagation();
+            }
+        }
+
+        private void SaveAll()
+        {
+            // SaveAssets 가 AssetPostprocessor 트리거 → RebuildTree 로 선택/디테일 잃을 위험.
+            // SaveAll 동안만 watcher 억제. RefreshItems 로 라벨만 직접 갱신.
+            SuppressAssetWatcher = true;
+            try
+            {
+                AssetDatabase.SaveAssets();
+            }
+            finally
+            {
+                SuppressAssetWatcher = false;
+            }
+            UpdateTitle();
+            _treeView?.RefreshItems();
+            UpdateStatus($"Saved at {DateTime.Now:HH:mm:ss}");
+        }
+
+        private void OnUndoRedo()
+        {
+            UpdateTitle();
+            _treeView?.RefreshItems();
+            UpdateStatus("Undo/Redo applied");
+        }
+
+        private void OnInspectorChanged()
+        {
+            UpdateTitle();
+            _treeView?.RefreshItems();
         }
 
         protected virtual void PopulateLeftPanel(VisualElement panel)
@@ -117,7 +203,37 @@ namespace LostMemory.Editor.BalanceEditor
                 bindItem = (element, index) =>
                 {
                     var node = _treeView.GetItemDataForIndex<TreeNode>(index);
-                    ((Label)element).text = node?.DisplayName ?? string.Empty;
+                    var label = (Label)element;
+                    if (node == null)
+                    {
+                        label.text = string.Empty;
+                        return;
+                    }
+
+                    if (node.So != null)
+                    {
+                        // Leaf 노드 — dirty marker
+                        bool dirty = DirtyTracker.IsDirty(node.So);
+                        label.text = dirty ? "* " + node.DisplayName : node.DisplayName;
+                        if (dirty && !label.ClassListContains(DirtyClass))
+                            label.AddToClassList(DirtyClass);
+                        else if (!dirty && label.ClassListContains(DirtyClass))
+                            label.RemoveFromClassList(DirtyClass);
+                    }
+                    else if (node.CachedSos != null)
+                    {
+                        // Category 노드 — 동적 dirty count
+                        int dirtyCount = node.CachedSos.Count(DirtyTracker.IsDirty);
+                        label.text = dirtyCount > 0
+                            ? $"{node.CategoryName} ({node.CachedSos.Count}) [{dirtyCount} dirty]"
+                            : $"{node.CategoryName} ({node.CachedSos.Count})";
+                        if (label.ClassListContains(DirtyClass))
+                            label.RemoveFromClassList(DirtyClass);
+                    }
+                    else
+                    {
+                        label.text = node.DisplayName ?? string.Empty;
+                    }
                 },
                 fixedItemHeight = 18,
                 style = { flexGrow = 1 }
@@ -147,20 +263,58 @@ namespace LostMemory.Editor.BalanceEditor
             _lastFilter = filter ?? string.Empty;
             if (_treeView == null) return;
 
-            var data = BuildTreeData();
-            int totalLeaves = CountLeaves(data);
-            if (!string.IsNullOrEmpty(_lastFilter))
-            {
-                data = FilterTree(data, _lastFilter);
-            }
-            _treeView.SetRootItems(data);
-            _treeView.Rebuild();
-            if (!string.IsNullOrEmpty(_lastFilter))
-            {
-                _treeView.ExpandAll();
-            }
+            var prevSelectedSo = _currentlyShownSo;
 
-            UpdateStatus($"Loaded {_providers.Count} categories, {totalLeaves} items");
+            _inRebuild = true;
+            try
+            {
+                var data = BuildTreeData();
+                int totalLeaves = CountLeaves(data);
+                int totalDirty = CountAllDirty();
+                if (!string.IsNullOrEmpty(_lastFilter))
+                {
+                    data = FilterTree(data, _lastFilter);
+                }
+                _treeView.SetRootItems(data);
+                _treeView.Rebuild();
+                if (!string.IsNullOrEmpty(_lastFilter))
+                {
+                    _treeView.ExpandAll();
+                }
+
+                if (prevSelectedSo != null)
+                {
+                    int? newId = FindIdForSo(prevSelectedSo, data);
+                    if (newId.HasValue)
+                    {
+                        _treeView.SetSelectionById(newId.Value);
+                        _treeView.ScrollToItemById(newId.Value);
+                    }
+                    // 트리에서 사라진 경우 (검색 필터로 가려짐 / 외부 삭제) — 디테일은 그대로 유지.
+                }
+
+                string dirtyMsg = totalDirty > 0 ? $", {totalDirty} dirty" : "";
+                UpdateStatus($"Loaded {_providers.Count} categories, {totalLeaves} items{dirtyMsg}");
+            }
+            finally
+            {
+                _inRebuild = false;
+            }
+        }
+
+        private static int? FindIdForSo(
+            ScriptableObject so, List<TreeViewItemData<TreeNode>> data)
+        {
+            if (so == null) return null;
+            foreach (var category in data)
+            {
+                if (category.children == null) continue;
+                foreach (var leaf in category.children)
+                {
+                    if (leaf.data?.So == so) return leaf.id;
+                }
+            }
+            return null;
         }
 
         private List<TreeViewItemData<TreeNode>> BuildTreeData()
@@ -186,10 +340,12 @@ namespace LostMemory.Editor.BalanceEditor
                     leaves.Add(new TreeViewItemData<TreeNode>(id++, leaf));
                 }
 
+                // 카테고리 라벨은 bindItem 에서 CachedSos 기반 동적 계산.
                 var category = new TreeNode
                 {
-                    DisplayName = $"{provider.CategoryName} ({sos.Count})",
-                    CategoryName = provider.CategoryName
+                    DisplayName = provider.CategoryName,
+                    CategoryName = provider.CategoryName,
+                    CachedSos = sos
                 };
                 roots.Add(new TreeViewItemData<TreeNode>(id++, category, leaves));
             }
@@ -212,10 +368,15 @@ namespace LostMemory.Editor.BalanceEditor
                     .ToList();
                 if (matched.Count == 0) continue;
 
+                var matchedSos = matched
+                    .Select(c => c.data?.So)
+                    .Where(s => s != null)
+                    .ToList();
                 var newCat = new TreeNode
                 {
-                    DisplayName = $"{category.data.CategoryName} ({matched.Count})",
-                    CategoryName = category.data.CategoryName
+                    DisplayName = category.data.CategoryName,
+                    CategoryName = category.data.CategoryName,
+                    CachedSos = matchedSos
                 };
                 result.Add(new TreeViewItemData<TreeNode>(newId++, newCat, matched));
             }
@@ -238,14 +399,42 @@ namespace LostMemory.Editor.BalanceEditor
             return total;
         }
 
+        private int CountAllDirty()
+        {
+            if (_providers == null) return 0;
+            int count = 0;
+            foreach (var p in _providers)
+            {
+                count += p.LoadAll().Count(DirtyTracker.IsDirty);
+            }
+            return count;
+        }
+
+        private void UpdateTitle()
+        {
+            int dirtyCount = CountAllDirty();
+            string suffix = dirtyCount > 0 ? $" ({dirtyCount} unsaved)" : "";
+            titleContent = new GUIContent("Balance Editor" + suffix);
+        }
+
         private void OnTreeSelectionChanged(IEnumerable<object> selected)
         {
             var node = selected.OfType<TreeNode>().FirstOrDefault();
             if (node?.So == null)
             {
+                // RebuildTree 진행 중 발화하는 빈 selectionChanged 는 무시 (디테일 보존)
+                if (_inRebuild) return;
                 ClearDetail();
+                _currentlyShownSo = null;
                 return;
             }
+            if (node.So == _currentlyShownSo)
+            {
+                // 같은 SO 재선택 — 인스펙터 재생성하지 않고 그대로 유지
+                UpdateStatus($"Selected: {node.So.name}");
+                return;
+            }
+            _currentlyShownSo = node.So;
             ShowDetail(node.So);
             EditorGUIUtility.PingObject(node.So);
             UpdateStatus($"Selected: {node.So.name}");
@@ -256,6 +445,7 @@ namespace LostMemory.Editor.BalanceEditor
             if (_detailContainer == null) return;
             _detailContainer.Clear();
             var inspector = new InspectorElement(so);
+            inspector.RegisterCallback<SerializedPropertyChangeEvent>(_ => OnInspectorChanged());
             _detailContainer.Add(inspector);
         }
 
