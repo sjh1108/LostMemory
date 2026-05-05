@@ -37,13 +37,13 @@ public class User {
     @Column(name = "user_id")
     private Long id;
 
-    @Column(name = "login_id", nullable = false, length = 30)
+    @Column(name = "login_id", nullable = false, length = 50)
     private String loginId;
 
-    @Column(name = "password_hash", nullable = false, length = 60)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 50)
     private String nickname;
 
     @Enumerated(EnumType.STRING)

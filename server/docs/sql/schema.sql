@@ -19,8 +19,8 @@ CREATE TABLE users (
     login_id        VARCHAR(50)  NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
     nickname        VARCHAR(50)  NOT NULL UNIQUE,
-    status          VARCHAR(20)  NOT NULL DEFAULT 'active'
-                                 CHECK (status IN ('active', 'suspended', 'deleted')),
+    status          VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE'
+                                 CHECK (status IN ('ACTIVE', 'SUSPENDED')),
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at   TIMESTAMPTZ
