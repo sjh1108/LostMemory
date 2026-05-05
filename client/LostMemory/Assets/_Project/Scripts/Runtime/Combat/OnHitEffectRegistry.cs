@@ -47,6 +47,13 @@ namespace LostMemory.Combat
         [Tooltip("얼음 슬로우 지속시간 (초). 새로 hit 마다 갱신.")]
         [SerializeField, Min(0f)] private float _slowDuration = 2f;
 
+        [Header("Wind Blade (CL-143)")]
+        [Tooltip("바람 검기 길이 (유닛). victim 위치에서 공격 방향으로.")]
+        [SerializeField, Min(0.1f)] private float _windBladeLength = 2f;
+
+        [Tooltip("바람 검기 너비 (유닛). 좁을수록 직선상 적만 맞음.")]
+        [SerializeField, Min(0.1f)] private float _windBladeWidth = 0.6f;
+
         [Header("Debug")]
         [SerializeField] private bool _logOnHitDispatch = false;
 
@@ -56,6 +63,7 @@ namespace LostMemory.Combat
         {
             public RelicEffectType Type;
             public float Magnitude;
+            public float Duration;
             public object Source;
         }
 
@@ -83,11 +91,11 @@ namespace LostMemory.Combat
 
         // ── 등록 API (SetEffectApplicator 가 호출) ──────────
 
-        public void Register(RelicEffectType type, float magnitude, object source)
+        public void Register(RelicEffectType type, float magnitude, float duration, object source)
         {
-            _entries.Add(new OnHitEntry { Type = type, Magnitude = magnitude, Source = source });
+            _entries.Add(new OnHitEntry { Type = type, Magnitude = magnitude, Duration = duration, Source = source });
             if (_logOnHitDispatch)
-                Debug.Log($"[OnHit] Register {type} mag={magnitude} src={source}");
+                Debug.Log($"[OnHit] Register {type} mag={magnitude} dur={duration} src={source}");
         }
 
         public void UnregisterBySource(object source)
@@ -111,7 +119,8 @@ namespace LostMemory.Combat
                     case RelicEffectType.SlowOnHit:    ApplySlow(victim, e.Magnitude); break;
                     case RelicEffectType.FreezeOnHit:  ApplyFreeze(victim, e.Magnitude); break;
                     case RelicEffectType.ChainOnHit:   ApplyChain(req, step, victim, e.Magnitude); break;
-                    // CL-143 에서 추가: BurnOnHit, WindAOE
+                    case RelicEffectType.BurnOnHit:    ApplyBurn(victim, e.Magnitude, e.Duration); break;
+                    case RelicEffectType.WindAOE:      ApplyWindBlade(victim, e.Magnitude); break;
                 }
             }
         }
@@ -161,6 +170,64 @@ namespace LostMemory.Combat
 
             if (_logOnHitDispatch)
                 Debug.Log($"[OnHit] Chain {magnitude:P0} → {targets.Count} targets, {chainDamage:F1} each");
+        }
+
+        private void ApplyBurn(Health victim, float damagePerTick, float duration)
+        {
+            if (duration <= 0f || damagePerTick <= 0f) return;
+            EnemyStatusEffect status = GetOrAddStatus(victim);
+            if (status == null) return;
+            status.ApplyBurn(damagePerTick, duration, gameObject);
+            if (_logOnHitDispatch)
+                Debug.Log($"[OnHit] Burn {damagePerTick}/tick for {duration}s → {victim.name}");
+        }
+
+        private void ApplyWindBlade(Health victim, float magnitude)
+        {
+            if (combat == null) return;
+
+            Vector3 victimPos = victim.transform.position;
+            Vector3 playerPos = combat.transform.position;
+            Vector2 dir = (Vector2)(victimPos - playerPos);
+            // 겹쳤을 때 0벡터 fallback — player.right
+            if (dir.sqrMagnitude < 0.0001f)
+                dir = (Vector2)combat.transform.right;
+            dir.Normalize();
+
+            // 박스 영역: victim 위치에서 dir 방향으로 length/2 만큼 이동한 지점이 박스 중심
+            Vector2 boxCenter = (Vector2)victimPos + dir * (_windBladeLength * 0.5f);
+            Vector2 boxSize = new Vector2(_windBladeLength, _windBladeWidth);
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+            // 본인 공격력 (StatModifier 합산)
+            float playerAttack = combat.WeaponData != null ? combat.WeaponData.BaseDamage : 0f;
+            if (statContainer != null)
+                playerAttack *= statContainer.GetTotalMultiplier(StatId.AttackPower);
+            float bladeDamage = playerAttack * magnitude;
+            if (bladeDamage <= 0f) return;
+
+            int hitCount = 0;
+            Collider2D[] hits = Physics2D.OverlapBoxAll(boxCenter, boxSize, angle);
+            foreach (Collider2D col in hits)
+            {
+                if (col == null) continue;
+                Health h = col.GetComponentInParent<Health>();
+                if (h == null) continue;
+                if (h == victim) continue;        // 본인 제외 (이중 데미지 방지)
+                if (h.CurrentHealth <= 0f) continue;
+                Character ch = h.GetComponentInParent<Character>();
+                if (ch != null && ch.CharacterType == Character.CharacterTypes.Player) continue;
+
+                h.Damage(bladeDamage, gameObject, 0f, 0f, Vector3.zero);
+                hitCount++;
+            }
+
+            // 시각화 — victim 에서 사거리 끝점까지 노란 직선
+            Vector3 endPoint = victimPos + (Vector3)(dir * _windBladeLength);
+            DrawChainBolt(victimPos, endPoint);
+
+            if (_logOnHitDispatch)
+                Debug.Log($"[OnHit] WindBlade {magnitude:P0} dir={dir} → {hitCount} hits, {bladeDamage:F1} each");
         }
 
         // ── 체인 시각화 (placeholder) ───────────────────────
