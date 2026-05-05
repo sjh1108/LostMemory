@@ -3946,6 +3946,11 @@ PrefabInstance:
       propertyPath: onHitRegistry
       value: 
       objectReference: {fileID: 1789113471}
+    - target: {fileID: 3147602633388410817, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: magicalGirlSpawner
+      value: 
+      objectReference: {fileID: 1789113503}
     - target: {fileID: 7504139936399824677, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: _logOnHitDispatch
@@ -3954,7 +3959,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1789113503}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!114 &786682090 stripped
 MonoBehaviour:
@@ -3962,7 +3971,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fe81ad80cb743b408fa90b048ad597f, type: 3}
@@ -3974,7 +3983,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ce249ab02704ff4ab08dddf7901fad5, type: 3}
@@ -5084,6 +5093,12 @@ Transform:
   - {fileID: 7567602113935304269}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1590789576 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1718533678
 GameObject:
   m_ObjectHideFlags: 0
@@ -5405,7 +5420,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33c724ba75b7ffe42af7580044857e52, type: 3}
@@ -5417,7 +5432,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e91b5caa1ec5f7a428fe2e32f2b348d2, type: 3}
@@ -5429,7 +5444,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce4d96451ada47fd91066a50793a9f2f, type: 3}
@@ -5441,7 +5456,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f47b34d4ea84fbfba2cb67c6db59740, type: 3}
@@ -5453,7 +5468,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
@@ -5465,7 +5480,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7ac875443dcb4ae0b3958b7545375b92, type: 3}
@@ -5477,7 +5492,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 69614a4a3cfd06d4e8388acafdb774bd, type: 3}
@@ -5489,12 +5504,42 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e8097ace7e474f24fa103ca2a75efefe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.OnHitEffectRegistry
+--- !u!114 &1789113475 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1496170365699431617, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
+--- !u!114 &1789113503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1590789576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75c7fe601849ec4428e27a32e6aa9b11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.MagicalGirl.MagicalGirlSpawner
+  anchor: {fileID: 0}
+  playerStat: {fileID: 1789113475}
+  playerCombat: {fileID: 1789113374}
+  inventory: {fileID: 1789113401}
+  ringRadius: 1.5
+  _logSpawn: 1
 --- !u!28 &1841735891
 Texture2D:
   m_ObjectHideFlags: 0

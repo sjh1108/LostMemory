@@ -1,4 +1,5 @@
 using LostMemory.Combat;
+using LostMemory.MagicalGirl;
 using UnityEngine;
 
 namespace LostMemory.Relics
@@ -31,6 +32,9 @@ namespace LostMemory.Relics
         [Tooltip("같은 GameObject 의 OnHitEffectRegistry. CL-142 OnHit 라우팅 대상 (Slow/Freeze/Chain).")]
         [SerializeField] private OnHitEffectRegistry onHitRegistry;
 
+        [Tooltip("같은 GameObject 의 MagicalGirlSpawner. CL-144 미소녀 라우팅 대상 (MagicalGirlSummon).")]
+        [SerializeField] private MagicalGirlSpawner magicalGirlSpawner;
+
         [Tooltip("티어 변경 시 라우팅 로그 (APPLY/REMOVE).")]
         [SerializeField] private bool _logEffectDispatch = false;
 
@@ -53,7 +57,10 @@ namespace LostMemory.Relics
             string onHitWiring = onHitRegistry != null
                 ? $"OK (host={onHitRegistry.gameObject.name})"
                 : "❌ NULL (Slow/Freeze/Chain 동작 안 함)";
-            Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}", this);
+            string girlWiring = magicalGirlSpawner != null
+                ? $"OK (host={magicalGirlSpawner.gameObject.name})"
+                : "❌ NULL (미소녀 동작 안 함)";
+            Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}, magicalGirlSpawner={girlWiring}", this);
             buildManager.OnSetTierChanged += HandleSetTierChanged;
         }
 
@@ -124,11 +131,20 @@ namespace LostMemory.Relics
                     else
                         Debug.LogWarning($"[SetEffectApplicator] onHitRegistry null — {tier.EffectType} 적용 X. Inspector wiring 필요.");
                     break;
+                // ── 미소녀 라우팅 (CL-144 본격 처리) ──
                 case RelicEffectType.MagicalGirlSummon:
+                    if (magicalGirlSpawner != null)
+                        magicalGirlSpawner.SetCount(tier.RequiredCount);
+                    else
+                        Debug.LogWarning("[SetEffectApplicator] magicalGirlSpawner null — MagicalGirlSummon 적용 X. Inspector wiring 필요.");
+                    break;
                 case RelicEffectType.MagicalGirlFusion:
+                    Debug.LogWarning("[SetEffectApplicator] MagicalGirlFusion 미구현 (CL-145)");
+                    break;
                 case RelicEffectType.MagicalGirlElementalAttack:
                 case RelicEffectType.MagicalGirlElementalEnhanced:
-                    Debug.LogWarning($"[SetEffectApplicator] {tier.EffectType} 미소녀 라우팅 미구현 (CL-144/145)");
+                    // 본 CL: set 효과로는 처리 안 함. 시각은 PlayerRelicInventory.OnRelicAcquired 직접 hook (MagicalGirlSpawner 내부).
+                    // RelicData 개별 효과로 등록될 때 의미 있음 — 본 CL 의 SetEffectApplicator 분기는 no-op.
                     break;
                 case RelicEffectType.GoldGainPercent:
                 case RelicEffectType.LuckPoints:
@@ -163,9 +179,13 @@ namespace LostMemory.Relics
             statContainer.RemoveBySource(source);
 
             // CL-142: OnHit (Slow/Freeze/Chain) 도 같은 source 로 unregister.
-            // 미존재 시스템 (MagicalGirl/Tarot) 정리는 후속 CL 분기 추가 예정.
             if (onHitRegistry != null)
                 onHitRegistry.UnregisterBySource(source);
+
+            // CL-144: MagicalGirlSummon 비활성화 — newTier=-1 (last item 제거) 케이스 대응.
+            // Tier 전환 (3→4 등) 시에도 0 으로 리셋되지만, 이어지는 ApplyTierEffect 가 newCount 로 재spawn.
+            if (tier.EffectType == RelicEffectType.MagicalGirlSummon && magicalGirlSpawner != null)
+                magicalGirlSpawner.SetCount(0);
         }
     }
 }
