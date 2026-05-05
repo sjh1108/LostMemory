@@ -37,11 +37,15 @@ namespace LostMemory.Editor.BalanceEditor
         private ToolbarSearchField _searchField;
         private string _lastFilter = string.Empty;
         private bool _isQuitting;
+        private string _lastAutoSaveTimestamp = string.Empty;
 
         // 디테일 패널이 현재 표시 중인 SO. 같은 SO 재선택 시 InspectorElement 재생성 방지.
         private ScriptableObject _currentlyShownSo;
         // RebuildTree 진행 중 발화하는 빈 selectionChanged 가 ClearDetail 호출 못 하게 차단.
         private bool _inRebuild;
+
+        // CL-165: Auto-save debounce 컨트롤러
+        private AutoSaveController _autoSave;
 
         [MenuItem("LostMemory/Balance Editor")]
         public static void Open()
@@ -57,13 +61,22 @@ namespace LostMemory.Editor.BalanceEditor
             _instance = this;
             Undo.undoRedoPerformed += OnUndoRedo;
             EditorApplication.quitting += OnEditorQuitting;
+            EditorApplication.update += OnEditorUpdate;
+
+            _autoSave = new AutoSaveController(CountAllDirty, SaveAll);
         }
 
         private void OnDisable()
         {
             Undo.undoRedoPerformed -= OnUndoRedo;
             EditorApplication.quitting -= OnEditorQuitting;
+            EditorApplication.update -= OnEditorUpdate;
             if (_instance == this) _instance = null;
+        }
+
+        private void OnEditorUpdate()
+        {
+            _autoSave?.Tick();
         }
 
         private void OnEditorQuitting()
@@ -145,6 +158,62 @@ namespace LostMemory.Editor.BalanceEditor
                 saveBtn.clicked += SaveAll;
             }
 
+            // CL-165: Export / Import / Auto-save toolbar
+            var exportMenu = root.Q<ToolbarMenu>("ExportMenu");
+            if (exportMenu != null)
+            {
+                exportMenu.menu.AppendAction("Selected SO",
+                    _ => ExportSelected(),
+                    _ => _currentlyShownSo != null
+                        ? DropdownMenuAction.Status.Normal
+                        : DropdownMenuAction.Status.Disabled);
+                exportMenu.menu.AppendAction("Current Category",
+                    _ => ExportCurrentCategory(),
+                    _ => GetCurrentCategoryProvider() != null
+                        ? DropdownMenuAction.Status.Normal
+                        : DropdownMenuAction.Status.Disabled);
+                exportMenu.menu.AppendAction("All Categories", _ => ExportAll());
+            }
+
+            var importMenu = root.Q<ToolbarMenu>("ImportMenu");
+            if (importMenu != null)
+            {
+                importMenu.menu.AppendAction("To Selected SO",
+                    _ => ImportToSelected(),
+                    _ => _currentlyShownSo != null
+                        ? DropdownMenuAction.Status.Normal
+                        : DropdownMenuAction.Status.Disabled);
+                importMenu.menu.AppendAction("Folder...", _ => ImportFolder());
+            }
+
+            var autoSaveToggle = root.Q<ToolbarToggle>("AutoSaveToggle");
+            if (autoSaveToggle != null && _autoSave != null)
+            {
+                autoSaveToggle.value = _autoSave.Enabled;
+                autoSaveToggle.RegisterValueChangedCallback(evt =>
+                {
+                    _autoSave.SetEnabled(evt.newValue);
+                    UpdateStatus(evt.newValue
+                        ? $"Auto-save ON ({(int)_autoSave.DelaySeconds}s debounce)"
+                        : "Auto-save OFF");
+                    UpdateTitle();
+                });
+            }
+
+            var delayField = root.Q<IntegerField>("AutoSaveDelay");
+            if (delayField != null && _autoSave != null)
+            {
+                delayField.value = (int)_autoSave.DelaySeconds;
+                delayField.RegisterValueChangedCallback(evt =>
+                {
+                    int clamped = (int)Math.Clamp(
+                        evt.newValue, AutoSaveController.MinDelay, AutoSaveController.MaxDelay);
+                    if (clamped != evt.newValue) delayField.SetValueWithoutNotify(clamped);
+                    _autoSave.SetDelay(clamped);
+                    UpdateTitle();
+                });
+            }
+
             root.RegisterCallback<KeyDownEvent>(OnKeyDown);
 
             PopulateLeftPanel(leftPanel);
@@ -176,22 +245,101 @@ namespace LostMemory.Editor.BalanceEditor
             {
                 SuppressAssetWatcher = false;
             }
-            UpdateTitle();
+            _autoSave?.NotifySaved();
+            _lastAutoSaveTimestamp = DateTime.Now.ToString("HH:mm:ss");
             _treeView?.RefreshItems();
-            UpdateStatus($"Saved at {DateTime.Now:HH:mm:ss}");
+            UpdateTitle();
+            UpdateStatus($"Saved at {_lastAutoSaveTimestamp}");
         }
 
         private void OnUndoRedo()
         {
-            UpdateTitle();
             _treeView?.RefreshItems();
+            _autoSave?.NotifyChange();
+            UpdateTitle();
             UpdateStatus("Undo/Redo applied");
         }
 
         private void OnInspectorChanged()
         {
-            UpdateTitle();
             _treeView?.RefreshItems();
+            _autoSave?.NotifyChange();
+            UpdateTitle();
+        }
+
+        // ---- CL-165: Export / Import handlers ----
+
+        private IBalanceCategoryProvider GetCurrentCategoryProvider()
+        {
+            if (_currentlyShownSo == null || _providers == null) return null;
+            foreach (var p in _providers)
+            {
+                if (p.LoadAll().Contains(_currentlyShownSo)) return p;
+            }
+            return null;
+        }
+
+        private void ExportSelected()
+        {
+            if (_currentlyShownSo == null) return;
+            if (JsonImportExport.ExportSingle(_currentlyShownSo))
+            {
+                UpdateStatus($"Exported: {_currentlyShownSo.name}.json");
+            }
+        }
+
+        private void ExportCurrentCategory()
+        {
+            var provider = GetCurrentCategoryProvider();
+            if (provider == null) return;
+            int count = JsonImportExport.ExportCategory(provider);
+            if (count > 0) UpdateStatus($"Exported {count} {provider.CategoryName} files");
+        }
+
+        private void ExportAll()
+        {
+            int total = JsonImportExport.ExportAll(_providers);
+            if (total > 0) UpdateStatus($"Exported {total} files (all categories)");
+        }
+
+        private void ImportToSelected()
+        {
+            if (_currentlyShownSo == null) return;
+            SuppressAssetWatcher = true;
+            try
+            {
+                if (JsonImportExport.ImportToSingle(_currentlyShownSo))
+                {
+                    UpdateTitle();
+                    _treeView?.RefreshItems();
+                    _autoSave?.NotifyChange();
+                    UpdateStatus($"Imported to {_currentlyShownSo.name}");
+                }
+            }
+            finally
+            {
+                SuppressAssetWatcher = false;
+            }
+        }
+
+        private void ImportFolder()
+        {
+            SuppressAssetWatcher = true;
+            try
+            {
+                var result = JsonImportExport.ImportFolder(_providers);
+                if (result.Matched + result.Skipped + result.Failed == 0) return;
+                UpdateTitle();
+                _treeView?.RefreshItems();
+                _autoSave?.NotifyChange();
+                string msg = $"Imported {result.Matched} matched, {result.Skipped} skipped";
+                if (result.Failed > 0) msg += $", {result.Failed} failed";
+                UpdateStatus(msg);
+            }
+            finally
+            {
+                SuppressAssetWatcher = false;
+            }
         }
 
         protected virtual void PopulateLeftPanel(VisualElement panel)
@@ -413,8 +561,13 @@ namespace LostMemory.Editor.BalanceEditor
         private void UpdateTitle()
         {
             int dirtyCount = CountAllDirty();
-            string suffix = dirtyCount > 0 ? $" ({dirtyCount} unsaved)" : "";
-            titleContent = new GUIContent("Balance Editor" + suffix);
+            string parts = "Balance Editor";
+            if (dirtyCount > 0) parts += $" ({dirtyCount} unsaved)";
+            if (_autoSave != null && _autoSave.Enabled)
+            {
+                parts += $" • Auto {(int)_autoSave.DelaySeconds}s";
+            }
+            titleContent = new GUIContent(parts);
         }
 
         private void OnTreeSelectionChanged(IEnumerable<object> selected)

@@ -3,7 +3,11 @@
         <uie:Toolbar class="be-toolbar">
             <ui:Label text="Balance Editor" class="be-title" />
             <uie:ToolbarSearchField name="SearchField" class="be-search" />
+            <uie:ToolbarMenu name="ExportMenu" text="Export ▾" class="be-export-menu" />
+            <uie:ToolbarMenu name="ImportMenu" text="Import ▾" class="be-import-menu" />
             <ui:VisualElement class="be-toolbar-spacer" />
+            <uie:ToolbarToggle name="AutoSaveToggle" label="Auto-save" class="be-autosave-toggle" />
+            <uie:IntegerField name="AutoSaveDelay" value="60" class="be-autosave-delay" />
             <uie:ToolbarButton name="RefreshButton" text="Refresh" class="be-refresh-btn" />
             <uie:ToolbarButton name="SaveButton" text="Save All" class="be-save-btn" />
         </uie:Toolbar>
