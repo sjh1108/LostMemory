@@ -1,0 +1,66 @@
+.be-root {
+    flex-grow: 1;
+    flex-direction: column;
+    background-color: rgb(56, 56, 56);
+}
+
+.be-toolbar {
+    flex-direction: row;
+    align-items: center;
+    height: 30px;
+    background-color: rgb(40, 40, 40);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(20, 20, 20);
+    padding-left: 8px;
+}
+
+.be-title {
+    color: rgb(220, 220, 220);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.be-body {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.be-left-panel {
+    width: 30%;
+    min-width: 200px;
+    background-color: rgb(48, 48, 48);
+    border-right-width: 1px;
+    border-right-color: rgb(20, 20, 20);
+    padding: 8px;
+}
+
+.be-right-panel {
+    flex-grow: 1;
+    background-color: rgb(56, 56, 56);
+    padding: 8px;
+}
+
+.be-splitter {
+    width: 1px;
+    background-color: rgb(30, 30, 30);
+}
+
+.be-statusbar {
+    height: 22px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    background-color: rgb(40, 40, 40);
+    border-top-width: 1px;
+    border-top-color: rgb(20, 20, 20);
+}
+
+.be-status-text {
+    color: rgb(180, 180, 180);
+    font-size: 11px;
+}
+
+.be-placeholder {
+    color: rgb(150, 150, 150);
+    -unity-font-style: italic;
+}
