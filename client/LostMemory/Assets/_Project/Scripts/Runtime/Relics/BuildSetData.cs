@@ -44,6 +44,9 @@ namespace LostMemory.Relics
         [Tooltip("효과 수치. 예: 0.25 = 25%, 4 = +4 flat.")]
         public float Magnitude;
 
+        [Tooltip("시간성 효과의 지속시간 (초). 예: BurnOnHit 의 도트 지속. Stat 효과는 0.")]
+        [Min(0)] public float Duration;
+
         [TextArea(1, 3)]
         public string Description;
     }

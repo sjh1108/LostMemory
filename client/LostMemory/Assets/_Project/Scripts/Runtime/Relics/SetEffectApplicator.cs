@@ -101,7 +101,10 @@ namespace LostMemory.Relics
                 case RelicEffectType.CriticalChancePercent:
                     statContainer.AddPermanent(StatId.Critical, tier.Magnitude, source); break;
                 case RelicEffectType.CooldownReductionPercent:
-                    statContainer.AddPermanent(StatId.Cooldown, tier.Magnitude, source); break;
+                    // SO 의 Magnitude 는 양수(0.15 = -15% 감소). multiplier 로는 1 + (-0.15) = 0.85 가 되도록 부호 반전.
+                    statContainer.AddPermanent(StatId.Cooldown, -tier.Magnitude, source);
+                    Debug.LogWarning("[CL-143] StatId.Cooldown 적용됨, but no skill system yet — CL-160 후속 hook 에서 GetTotalMultiplier(Cooldown) 로 적용 예정.");
+                    break;
                 case RelicEffectType.AttackRangePercent:
                     statContainer.AddPermanent(StatId.Range, tier.Magnitude, source); break;
                 case RelicEffectType.DodgeChancePercent:
@@ -110,18 +113,16 @@ namespace LostMemory.Relics
                     // 주의: PlayerStatModifierContainer 는 % 합산. flat 의미는 CL-146 에서 정책 결정.
                     statContainer.AddPermanent(StatId.Defense, tier.Magnitude, source); break;
 
-                // ── OnHit 라우팅 (CL-142 본격 처리) ──
+                // ── OnHit 라우팅 (CL-142 본격 처리, CL-143 에서 BurnOnHit/WindAOE 추가) ──
                 case RelicEffectType.SlowOnHit:
                 case RelicEffectType.FreezeOnHit:
                 case RelicEffectType.ChainOnHit:
-                    if (onHitRegistry != null)
-                        onHitRegistry.Register(tier.EffectType, tier.Magnitude, source);
-                    else
-                        Debug.LogWarning($"[SetEffectApplicator] onHitRegistry null — {tier.EffectType} 적용 X. Inspector wiring 필요.");
-                    break;
                 case RelicEffectType.BurnOnHit:
                 case RelicEffectType.WindAOE:
-                    Debug.LogWarning($"[SetEffectApplicator] {tier.EffectType} OnHit 라우팅 미구현 (CL-143)");
+                    if (onHitRegistry != null)
+                        onHitRegistry.Register(tier.EffectType, tier.Magnitude, tier.Duration, source);
+                    else
+                        Debug.LogWarning($"[SetEffectApplicator] onHitRegistry null — {tier.EffectType} 적용 X. Inspector wiring 필요.");
                     break;
                 case RelicEffectType.MagicalGirlSummon:
                 case RelicEffectType.MagicalGirlFusion:
