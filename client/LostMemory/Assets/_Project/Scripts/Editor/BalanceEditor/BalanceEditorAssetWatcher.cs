@@ -12,6 +12,7 @@ namespace LostMemory.Editor.BalanceEditor
             string[] movedFromAssetPaths)
         {
             if (!BalanceEditorWindow.IsOpen) return;
+            if (BalanceEditorWindow.SuppressAssetWatcher) return;
 
             bool relevant = importedAssets
                 .Concat(deletedAssets)
