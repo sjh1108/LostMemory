@@ -139,7 +139,11 @@ namespace LostMemory.Relics
                         Debug.LogWarning("[SetEffectApplicator] magicalGirlSpawner null — MagicalGirlSummon 적용 X. Inspector wiring 필요.");
                     break;
                 case RelicEffectType.MagicalGirlFusion:
-                    Debug.LogWarning("[SetEffectApplicator] MagicalGirlFusion 미구현 (CL-145)");
+                    // CL-145: T5 의 RequiredCount=5 → SetCount(5) → Spawner 가 fusion 모드 진입
+                    if (magicalGirlSpawner != null)
+                        magicalGirlSpawner.SetCount(tier.RequiredCount);
+                    else
+                        Debug.LogWarning("[SetEffectApplicator] magicalGirlSpawner null — MagicalGirlFusion 적용 X. Inspector wiring 필요.");
                     break;
                 case RelicEffectType.MagicalGirlElementalAttack:
                 case RelicEffectType.MagicalGirlElementalEnhanced:
@@ -182,9 +186,11 @@ namespace LostMemory.Relics
             if (onHitRegistry != null)
                 onHitRegistry.UnregisterBySource(source);
 
-            // CL-144: MagicalGirlSummon 비활성화 — newTier=-1 (last item 제거) 케이스 대응.
-            // Tier 전환 (3→4 등) 시에도 0 으로 리셋되지만, 이어지는 ApplyTierEffect 가 newCount 로 재spawn.
-            if (tier.EffectType == RelicEffectType.MagicalGirlSummon && magicalGirlSpawner != null)
+            // CL-144 / CL-145: MagicalGirlSummon / MagicalGirlFusion 비활성화 — newTier=-1 또는 tier 전환 케이스 대응.
+            // Tier 전환 (3→4, 4→5, 5→4 등) 시에도 0 으로 리셋되지만, 이어지는 ApplyTierEffect 가 newCount/fusion 으로 재spawn.
+            if ((tier.EffectType == RelicEffectType.MagicalGirlSummon
+                 || tier.EffectType == RelicEffectType.MagicalGirlFusion)
+                && magicalGirlSpawner != null)
                 magicalGirlSpawner.SetCount(0);
         }
     }
