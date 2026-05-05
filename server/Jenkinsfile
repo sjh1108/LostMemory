@@ -111,9 +111,49 @@ pipeline {
         sh 'docker compose --env-file "$ENV_FILE" logs --tail=200 app || true'
       }
       echo "❌ Build #${BUILD_NUMBER} failed. 위 로그 확인 후 수동 롤백 필요."
+      script {
+        notifyMattermost('FAILURE')
+      }
     }
     success {
       echo "✅ Build #${BUILD_NUMBER} deployed. Image: server-app:${BUILD_NUMBER}, branch: ${params.BRANCH}, commit: ${params.COMMIT_SHA ?: '(미전달)'}"
+      script {
+        notifyMattermost('SUCCESS')
+      }
     }
   }
+}
+
+// ENV_FILE(.env Secret file) 의 MATTERMOST_WEBHOOK_URL 라인을 grep 으로 추출해
+// Mattermost incoming webhook 으로 빌드 결과 알림을 보낸다.
+//
+// .env 에 라인이 없으면 silent skip — 운영 .env 갱신 전이라도 빌드 자체는 정상.
+// webhook 호출 실패해도 빌드 자체는 fail 시키지 않는다 ('|| echo' 처리).
+//
+// 운영자가 .env 에 한 줄 추가:
+//   MATTERMOST_WEBHOOK_URL=https://meeting.ssafy.com/hooks/<token>
+def notifyMattermost(String status) {
+  def emoji = status == 'SUCCESS' ? '✅' : '❌'
+  def text = """${emoji} **Jenkins 빌드 #${env.BUILD_NUMBER} ${status}** — `${env.JOB_NAME}`
+- 브랜치: `${params.BRANCH ?: '(미전달)'}`
+- 커밋: `${params.COMMIT_SHA ?: '(미전달)'}`
+- 이미지: `server-app:${env.BUILD_NUMBER}`
+- 콘솔: ${env.BUILD_URL}console"""
+
+  def payload = groovy.json.JsonOutput.toJson([text: text])
+  // sh 의 single-quoted 문자열 안에 single quote 가 포함될 때 깨지지 않게 escape
+  def shellSafePayload = payload.replace("'", "'\\''")
+
+  sh """
+    set +x
+    MM_URL=\$(grep '^MATTERMOST_WEBHOOK_URL=' "\$ENV_FILE" | head -1 | cut -d= -f2-)
+    if [ -z "\$MM_URL" ]; then
+      echo "[notify] MATTERMOST_WEBHOOK_URL 미설정 — 알림 건너뜀"
+      exit 0
+    fi
+    curl -fsS -X POST -H 'Content-Type: application/json' \\
+      -d '${shellSafePayload}' \\
+      "\$MM_URL" >/dev/null \\
+      || echo "[notify] webhook 호출 실패 — 빌드 자체는 영향 없음"
+  """
 }

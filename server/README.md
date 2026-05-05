@@ -699,11 +699,41 @@ curl -I https://k14c201.p.ssafy.io/nginx-health            # 200
 
 ---
 
+## Jenkins 빌드 알림 (Mattermost)
+
+Jenkins 빌드의 성공/실패 결과를 Mattermost 채널로 자동 알림한다. Jenkinsfile 의 `post.success` / `post.failure` 가 ENV_FILE(`lostmemory-env` Secret file) 의 `MATTERMOST_WEBHOOK_URL` 라인을 grep 으로 추출해 incoming webhook 으로 호출한다.
+
+### 1회 등록 절차 (운영자)
+
+1. Jenkins 알림 전용 Mattermost incoming webhook URL 보관 (도메인 `meeting.ssafy.com`).
+2. `https://k14c201.p.ssafy.io/jenkins/` → Manage Jenkins → Credentials → System → Global → `lostmemory-env`.
+3. 현재 Secret file 다운로드 → `.env` 텍스트 끝에 한 줄 추가:
+   ```
+   MATTERMOST_WEBHOOK_URL=<발급한 webhook URL>
+   ```
+4. Jenkins UI 에서 같은 credential 의 "Replace" 로 갱신된 `.env` 업로드.
+5. 빌드 한 번 트리거 → 채널에 ✅ 메시지 도착 확인.
+
+> webhook URL 은 commit / Jenkinsfile / 코드 어디에도 hardcode 하지 않는다. 운영자가 .env 에 넣을 때만 입력한다.
+
+### 트러블슈팅
+
+- Jenkins 콘솔에 `[notify] MATTERMOST_WEBHOOK_URL 미설정 — 알림 건너뜀` → `.env` 갱신 누락. 위 1회 등록 절차 다시 진행.
+- `[notify] webhook 호출 실패 — 빌드 자체는 영향 없음` → webhook URL 의 token 만료 / 채널 삭제 / 네트워크 차단 점검. 빌드 자체는 정상 종료된다.
+- `set +x` 로 webhook URL 의 콘솔 노출은 차단되지만, 로그 자체에 외부 인증을 두지 말 것 (현재 Jenkins 가 nginx + auth 뒤에 있어 OK).
+
+### 알림 OFF / 롤백
+
+`server/Jenkinsfile` 의 `post` 블록 안 `notifyMattermost('SUCCESS')` / `notifyMattermost('FAILURE')` 두 줄을 주석 처리하면 즉시 알림 OFF. 헬퍼 함수는 그대로 둬도 무방.
+
+---
+
 ## 문서 변경 이력
 
 | 날짜 | 내용 | 작성자 |
 |---|---|---|
 | 2026-04-21 | 초안 작성 | 송주헌 |
 | 2026-05-04 | INFRA-15 Let's Encrypt HTTPS 운영 절차 추가 | 송주헌 |
+| 2026-05-06 | INFRA-16 Jenkins 빌드 Mattermost 알림 운영 절차 추가 | 송주헌 |
 
 ---
