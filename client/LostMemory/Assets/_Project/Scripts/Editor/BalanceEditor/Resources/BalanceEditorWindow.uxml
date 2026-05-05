@@ -1,20 +1,15 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
     <ui:VisualElement class="be-root">
-        <ui:VisualElement class="be-toolbar">
+        <uie:Toolbar class="be-toolbar">
             <ui:Label text="Balance Editor" class="be-title" />
-            <!-- CL-163: 검색 박스 등 추가 예정 -->
-        </ui:VisualElement>
+            <uie:ToolbarSearchField name="SearchField" class="be-search" />
+            <ui:VisualElement class="be-toolbar-spacer" />
+            <uie:ToolbarButton name="RefreshButton" text="Refresh" class="be-refresh-btn" />
+        </uie:Toolbar>
 
         <ui:VisualElement class="be-body">
-            <ui:VisualElement class="be-left-panel" name="LeftPanel">
-                <ui:Label text="(카테고리 트리 — CL-163)" class="be-placeholder" />
-            </ui:VisualElement>
-
-            <ui:VisualElement class="be-splitter" />
-
-            <ui:VisualElement class="be-right-panel" name="RightPanel">
-                <ui:Label text="(상세 편집 패널 — CL-163)" class="be-placeholder" />
-            </ui:VisualElement>
+            <ui:VisualElement class="be-left-panel" name="LeftPanel" />
+            <ui:VisualElement class="be-right-panel" name="RightPanel" />
         </ui:VisualElement>
 
         <ui:VisualElement class="be-statusbar">
