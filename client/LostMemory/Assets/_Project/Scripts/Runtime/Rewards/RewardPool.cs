@@ -47,6 +47,15 @@ namespace LostMemory.Rewards
         /// </summary>
         /// <param name="ownedRelicNames">이미 보유한 유물의 name(asset 파일명) 집합</param>
         public List<RelicData> DrawThree(IEnumerable<string> ownedRelicNames)
+            => DrawCount(3, ownedRelicNames);
+
+        /// <summary>
+        /// CL-146: count 만큼 추첨. 행운 (luckPoints) 가중치 + forceLegendary 옵션.
+        /// luckPoints &gt; 0 → 행운 태그 (RelicTag.Luck) 가진 RelicData 의 가중치 +luckPoints×2.
+        /// forceLegendary=true → Legendary 등급만 후보.
+        /// </summary>
+        public List<RelicData> DrawCount(int count, IEnumerable<string> ownedRelicNames,
+                                         int luckPoints = 0, bool forceLegendary = false)
         {
             var owned = new HashSet<string>(ownedRelicNames);
 
@@ -55,7 +64,18 @@ namespace LostMemory.Rewards
                 .Where(r => r.IsConsumable || !owned.Contains(r.name))
                 .ToList();
 
-            return PickWeighted(available, 3);
+            if (forceLegendary)
+            {
+                // 소모품도 제외 — Legendary 만
+                available = available.Where(r => !r.IsConsumable && r.Rarity == RelicRarity.Legendary).ToList();
+                if (available.Count == 0)
+                {
+                    Debug.LogWarning("[RewardPool] forceLegendary=true 인데 후보 0 — 모든 Legendary 보유 또는 풀에 없음.");
+                    return new List<RelicData>();
+                }
+            }
+
+            return PickWeighted(available, count, luckPoints);
         }
 
         /// <summary>
@@ -81,20 +101,21 @@ namespace LostMemory.Rewards
 
         // ── private ──────────────────────────────────────────────
 
-        private List<RelicData> PickWeighted(List<RelicData> pool, int count)
+        private List<RelicData> PickWeighted(List<RelicData> pool, int count, int luckPoints = 0)
         {
             var result    = new List<RelicData>();
             var remaining = new List<RelicData>(pool);
 
             for (int i = 0; i < count && remaining.Count > 0; i++)
             {
-                int totalWeight = remaining.Sum(GetWeight);
+                int totalWeight = remaining.Sum(r => GetWeight(r, luckPoints));
+                if (totalWeight <= 0) break;
                 int roll        = Random.Range(0, totalWeight);
                 int cumulative  = 0;
 
                 foreach (var item in remaining)
                 {
-                    cumulative += GetWeight(item);
+                    cumulative += GetWeight(item, luckPoints);
                     if (roll < cumulative)
                     {
                         result.Add(item);
@@ -107,8 +128,17 @@ namespace LostMemory.Rewards
             return result;
         }
 
-        private static int GetWeight(RelicData data)
-            => data.IsConsumable ? ConsumableWeight : RarityWeights[data.Rarity];
+        // CL-146: 행운 (luckPoints) 가 luck 태그 RelicData 가중치 부스트.
+        private static int GetWeight(RelicData data, int luckPoints = 0)
+        {
+            int weight = data.IsConsumable ? ConsumableWeight : RarityWeights[data.Rarity];
+            if (luckPoints > 0 && HasLuckTag(data))
+                weight += luckPoints * 2;     // 행운 1점 당 +2 가중치
+            return weight;
+        }
+
+        private static bool HasLuckTag(RelicData r)
+            => r.TagPrimary == RelicTag.Luck || r.TagSecondary == RelicTag.Luck;
 
         private static RelicData PickOneWeightedByRarity(
             List<RelicData>              pool,

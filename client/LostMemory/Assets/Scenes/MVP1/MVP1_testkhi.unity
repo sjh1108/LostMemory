@@ -3870,46 +3870,32 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 114910001000000002, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: statContainer
+      value: 
+      objectReference: {fileID: 1789113475}
     - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: _debugRelicsToAdd.Array.size
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: '_debugRelicsToAdd.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: 7059b59d592517148a66198dfad484da,
+      objectReference: {fileID: 11400000, guid: c6af61e13da7c474a812ce6f4455d22a,
         type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    - target: {fileID: 3147602633388410817, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[1]'
+      propertyPath: goldWallet
       value: 
-      objectReference: {fileID: 11400000, guid: 899c86627e004ba4fa53497170ca5017,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
+      objectReference: {fileID: 435695097}
+    - target: {fileID: 3147602633388410817, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[2]'
+      propertyPath: playerRelicInventory
       value: 
-      objectReference: {fileID: 11400000, guid: 84b146d383c78e14fbcf841aa17951a2,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[3]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 5d3eedb85c43b8e46bce8aeb427f3600,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[4]'
-      value: 
-      objectReference: {fileID: 11400000, guid: b72ecaf73f2c5f0478e1dc82de92e3a5,
-        type: 2}
-    - target: {fileID: 2592970996598394060, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: playerAim
-      value: 
-      objectReference: {fileID: 1789113406}
+      objectReference: {fileID: 1789113401}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4065,12 +4051,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RewardController
   rewardPanelView: {fileID: 709206705}
   playerRelicInventory: {fileID: 1789113401}
-  playerAim: {fileID: 0}
+  playerAim: {fileID: 1789113406}
   playerWeaponPresenter: {fileID: 589709549}
   playerMeleeCombo: {fileID: 1789113374}
   playerDash: {fileID: 1789113378}
   playerParry: {fileID: 1789113371}
-  inventoryToggle: {fileID: 0}
+  inventoryToggle: {fileID: 2020695043}
+  buildManager: {fileID: 1789113481}
   rewardShowDelay: 1.5
   logRewardFlow: 1
 --- !u!1001 &1023475402
@@ -5358,6 +5345,18 @@ Sprite:
   m_Bones: []
   m_ScriptableObjects: []
   m_SpriteID: 
+--- !u!114 &1759896973 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9112430878888709620, guid: 86eea663c3da48842820549051b45374,
+    type: 3}
+  m_PrefabInstance: {fileID: 1915984883}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45a4443666745b741bcb25c2afa1733a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Rewards.RewardCardView
 --- !u!114 &1789113368 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8056956279644409734, guid: 4d290d1fc0f84526999c421c61df5d8f,
@@ -5442,6 +5441,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69614a4a3cfd06d4e8388acafdb774bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1789113475 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1496170365699431617, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
+--- !u!114 &1789113481 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5492564548965125359, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de088c31fad134e4ca9c7b7d65df81cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildManager
 --- !u!28 &1841735891
 Texture2D:
   m_ObjectHideFlags: 0
@@ -5873,6 +5896,21 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -300.71
       objectReference: {fileID: 0}
+    - target: {fileID: 2397023808437660775, guid: 86eea663c3da48842820549051b45374,
+        type: 3}
+      propertyPath: _cards.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2397023808437660775, guid: 86eea663c3da48842820549051b45374,
+        type: 3}
+      propertyPath: '_cards.Array.data[3]'
+      value: 
+      objectReference: {fileID: 1759896973}
+    - target: {fileID: 2397023808437660775, guid: 86eea663c3da48842820549051b45374,
+        type: 3}
+      propertyPath: '_cards.Array.data[4]'
+      value: 
+      objectReference: {fileID: 1759896973}
     - target: {fileID: 2420711978117545953, guid: 86eea663c3da48842820549051b45374,
         type: 3}
       propertyPath: m_AnchorMax.y

@@ -72,7 +72,10 @@ namespace LostMemory.MagicalGirl
 
         private Health FindClosestEnemy()
         {
-            int hits = Physics2D.OverlapCircleNonAlloc(transform.position, attackRange, _searchBuf);
+            // CL-146: Range multiplier 적용 — 미소녀 사거리 확장
+            float rangeMul = _playerStat != null ? _playerStat.GetTotalMultiplier(StatId.Range) : 1f;
+            float effectiveRange = attackRange * rangeMul;
+            int hits = Physics2D.OverlapCircleNonAlloc(transform.position, effectiveRange, _searchBuf);
             Health closest = null;
             float minDistSq = float.MaxValue;
             for (int i = 0; i < hits; i++)

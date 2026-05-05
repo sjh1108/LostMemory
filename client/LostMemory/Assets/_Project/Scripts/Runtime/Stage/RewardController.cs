@@ -33,6 +33,9 @@ namespace LostMemory.Stage
         [Tooltip("CL-115: 보상 패널 떠오를 때 인벤토리 패널이 열려있으면 강제로 닫기 위함. null 허용 — 단독 씬 호환. 가드는 InventoryToggleController.Update 가 IsShowing 을 직접 체크하는 방식과 짝.")]
         [SerializeField] private InventoryToggleController inventoryToggle;
 
+        [Tooltip("CL-146: BuildManager — 행운 set tier 조회 (LuckPoints 카운트 / 5스택 다중픽 / 7스택 forceLegendary).")]
+        [SerializeField] private BuildManager buildManager;
+
         [Header("Timing")]
         [SerializeField, Min(0f), Tooltip("방 클리어 후 보상 패널 표시까지 대기 (초). 플레이어 공격 모션 도중 패널 등장 방지. WaitForSecondsRealtime 사용 → timeScale 영향 없음.")]
         private float rewardShowDelay = 0.5f;
@@ -184,12 +187,30 @@ namespace LostMemory.Stage
             // 공격 / 대쉬 / 패링 input 은 timeScale 무관하게 Update 로 읽혀 새 액션이 발화될 수 있음 → 명시적 차단.
             SetCombatInputsBlocked(true);
 
-            rewardPanelView.Show(playerRelicInventory);
-            if (logRewardFlow) Debug.Log("[RewardController] Reward panel shown. timeScale=0, aim locked.");
+            // CL-146: 행운 set tier 조회 — 1스택+ 가중치 / 3스택 슬롯 (SetEffectApplicator 처리, 여기선 무관) /
+            // 5스택 (T2, idx=2) 다중픽 / 7스택 (T3, idx=3) forceLegendary.
+            // BuildSet_행운 tier 인덱스: T0(1스택)=LuckPoints, T1(3)=LuckSlotExpand, T2(5)=다중픽, T3(7)=LuckLegendaryGuarantee
+            int luckCount = buildManager != null ? buildManager.GetTagCount(RelicTag.Luck) : 0;
+            int luckTier = buildManager != null ? buildManager.GetActiveTier(RelicTag.Luck) : -1;
+            bool forceLegendary = luckTier >= 3;     // T3+ = 7스택+
+            bool picksDouble    = luckTier >= 2;     // T2+ = 5스택+
+            int picksAllowed    = picksDouble ? 2 : 1;
+            int count           = picksDouble ? 5 : 3;
+
+            rewardPanelView.Show(playerRelicInventory, count, picksAllowed, luckCount, forceLegendary);
+            if (logRewardFlow) Debug.Log($"[RewardController] Reward panel shown. timeScale=0, aim locked. luck={luckCount} tier={luckTier} count={count} picks={picksAllowed} forceLegendary={forceLegendary}");
         }
 
         private void HandleRewardSelected(RelicData selected)
         {
+            // CL-146: 다중 픽 모드 (행운 5스택+) 에서 패널이 아직 열려있으면 — 추가 선택 대기. 복원 X.
+            // RewardPanelView 가 picksAllowed 도달 시 gameObject.SetActive(false) 호출 → activeSelf=false.
+            if (rewardPanelView != null && rewardPanelView.gameObject.activeSelf)
+            {
+                if (logRewardFlow) Debug.Log($"[RewardController] Reward picked: {selected?.DisplayName} — 다중 픽 진행 중, 패널 유지.");
+                return;
+            }
+
             if (logRewardFlow) Debug.Log($"[RewardController] Reward selected: {selected?.DisplayName}. Restoring timeScale + aim.");
             _isShowingReward = false;
 

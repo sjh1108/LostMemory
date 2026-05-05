@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LostMemory.Combat;
 using LostMemory.Data;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -11,6 +12,8 @@ namespace LostMemory.TestKhi
         [SerializeField] private int maximumHitsPerSample = 32;
         [SerializeField] private float targetInvincibilityDuration = 0f;
         [SerializeField] private float targetFlickerDuration = 0f;
+        [Tooltip("CL-146: 같은 GameObject (또는 부모) 의 PlayerStatModifierContainer. 비워두면 GetComponentInParent. Range multiplier 조회용.")]
+        [SerializeField] private PlayerStatModifierContainer statContainer;
         [SerializeField] private bool drawDebugGizmos = true;
         [SerializeField] private Color debugGizmoColor = new Color(1f, 0.2f, 0.1f, 0.25f);
         [SerializeField] private bool showRuntimePreview = true;
@@ -29,6 +32,8 @@ namespace LostMemory.TestKhi
         {
             EnsureOverlapBuffer();
             EnsureRuntimePreview();
+            if (statContainer == null)
+                statContainer = GetComponentInParent<PlayerStatModifierContainer>();
         }
 
         public int Sample(KhiAttackRequest request, AttackStepData step, float damage, HashSet<Health> alreadyHit, List<Health> hitsThisSample)
@@ -40,13 +45,16 @@ namespace LostMemory.TestKhi
             // baseline offset(Right 기준)을 현재 aim 각도로 회전시켜 실제 center 계산.
             Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, aimAngleDeg) * (Vector3)step.hitboxOffset);
             Vector2 center = (Vector2)request.Origin + rotatedOffset;
+            // CL-146: Range multiplier 적용 — 평타 hitbox 크기 확장
+            float rangeMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.Range) : 1f;
+            Vector2 finalSize = step.hitboxSize * rangeMul;
             _debugCenter = center;
-            _debugSize = step.hitboxSize;
+            _debugSize = finalSize;
             _debugAngleDeg = aimAngleDeg;
             _hasDebugHitbox = true;
-            ShowRuntimePreview(center, step.hitboxSize, aimAngleDeg);
+            ShowRuntimePreview(center, finalSize, aimAngleDeg);
 
-            int hitCount = Physics2D.OverlapBoxNonAlloc(center, step.hitboxSize, aimAngleDeg, _overlapResults, targetLayers);
+            int hitCount = Physics2D.OverlapBoxNonAlloc(center, finalSize, aimAngleDeg, _overlapResults, targetLayers);
             int appliedHits = 0;
 
             for (int i = 0; i < hitCount; i++)

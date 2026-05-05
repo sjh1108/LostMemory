@@ -1,5 +1,6 @@
 using LostMemory.Combat;
 using LostMemory.MagicalGirl;
+using LostMemory.Stage;
 using UnityEngine;
 
 namespace LostMemory.Relics
@@ -35,6 +36,12 @@ namespace LostMemory.Relics
         [Tooltip("같은 GameObject 의 MagicalGirlSpawner. CL-144 미소녀 라우팅 대상 (MagicalGirlSummon).")]
         [SerializeField] private MagicalGirlSpawner magicalGirlSpawner;
 
+        [Tooltip("CL-146 탐욕 set 효과 (GoldGainPercent) 라우팅 — GoldWallet.SetGainMultiplier 호출용.")]
+        [SerializeField] private GoldWallet goldWallet;
+
+        [Tooltip("CL-146 행운 3스택 (LuckSlotExpand) 라우팅 — PlayerRelicInventory.AddSlots 호출용.")]
+        [SerializeField] private PlayerRelicInventory playerRelicInventory;
+
         [Tooltip("티어 변경 시 라우팅 로그 (APPLY/REMOVE).")]
         [SerializeField] private bool _logEffectDispatch = false;
 
@@ -60,7 +67,9 @@ namespace LostMemory.Relics
             string girlWiring = magicalGirlSpawner != null
                 ? $"OK (host={magicalGirlSpawner.gameObject.name})"
                 : "❌ NULL (미소녀 동작 안 함)";
-            Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}, magicalGirlSpawner={girlWiring}", this);
+            string goldWiring = goldWallet != null ? "OK" : "⚠ NULL (탐욕 적용 X)";
+            string invWiring = playerRelicInventory != null ? "OK" : "⚠ NULL (행운 슬롯 적용 X)";
+            Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}, magicalGirlSpawner={girlWiring}, goldWallet={goldWiring}, playerRelicInventory={invWiring}", this);
             buildManager.OnSetTierChanged += HandleSetTierChanged;
         }
 
@@ -150,12 +159,25 @@ namespace LostMemory.Relics
                     // 본 CL: set 효과로는 처리 안 함. 시각은 PlayerRelicInventory.OnRelicAcquired 직접 hook (MagicalGirlSpawner 내부).
                     // RelicData 개별 효과로 등록될 때 의미 있음 — 본 CL 의 SetEffectApplicator 분기는 no-op.
                     break;
+                // ── CL-146 시스템 hook ──
                 case RelicEffectType.GoldGainPercent:
+                    if (goldWallet != null)
+                        goldWallet.SetGainMultiplier(1f + tier.Magnitude);
+                    else
+                        Debug.LogWarning("[SetEffectApplicator] goldWallet null — GoldGainPercent 적용 X. Inspector wiring 필요.");
+                    break;
                 case RelicEffectType.LuckPoints:
-                case RelicEffectType.TarotProc:
-                case RelicEffectType.LuckSlotExpand:
                 case RelicEffectType.LuckLegendaryGuarantee:
-                    Debug.LogWarning($"[SetEffectApplicator] {tier.EffectType} 시스템 hook 미구현 (CL-146/147/148)");
+                    // RewardController 가 BuildManager 에서 직접 조회 (보상 시점) — case 자체는 no-op.
+                    break;
+                case RelicEffectType.LuckSlotExpand:
+                    if (playerRelicInventory != null)
+                        playerRelicInventory.AddSlots(1);
+                    else
+                        Debug.LogWarning("[SetEffectApplicator] playerRelicInventory null — LuckSlotExpand 적용 X. Inspector wiring 필요.");
+                    break;
+                case RelicEffectType.TarotProc:
+                    Debug.LogWarning("[SetEffectApplicator] TarotProc 미구현 (CL-147 에서 TarotSystem 신설 후 적용)");
                     break;
 
                 case RelicEffectType.None:
@@ -192,6 +214,15 @@ namespace LostMemory.Relics
                  || tier.EffectType == RelicEffectType.MagicalGirlFusion)
                 && magicalGirlSpawner != null)
                 magicalGirlSpawner.SetCount(0);
+
+            // CL-146: GoldGainPercent 비활성화 — multiplier 1.0 (기본) 으로 복구.
+            // 다른 tier 가 동시 활성이면 ApplyTierEffect 가 즉시 새 multiplier 적용 → 안전.
+            if (tier.EffectType == RelicEffectType.GoldGainPercent && goldWallet != null)
+                goldWallet.SetGainMultiplier(1f);
+
+            // CL-146: LuckSlotExpand 비활성화 — 보너스 슬롯 -1.
+            if (tier.EffectType == RelicEffectType.LuckSlotExpand && playerRelicInventory != null)
+                playerRelicInventory.AddSlots(-1);
         }
     }
 }

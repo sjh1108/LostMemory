@@ -29,8 +29,22 @@ namespace LostMemory.Stage
 
         public int Current { get; private set; }
 
+        // CL-146: 탐욕 (GoldGainPercent) 적용용 multiplier. SetGainMultiplier 로 설정.
+        // Add(amount) 시 amount × _gainMultiplier 적용.
+        private float _gainMultiplier = 1f;
+
         /// <summary>골드 변경 시 새 Current 값을 인자로 발화. UI sync 용.</summary>
         public event Action<int> Changed;
+
+        /// <summary>CL-146: 탐욕 set 효과 — Add 시 amount 에 곱해질 multiplier (1.0 = 기본, 1.3 = +30% 획득).</summary>
+        public void SetGainMultiplier(float mul)
+        {
+            _gainMultiplier = Mathf.Max(0f, mul);
+            if (logChanges)
+            {
+                Debug.Log($"[GoldWallet] SetGainMultiplier → {_gainMultiplier:F2}", this);
+            }
+        }
 
         private void Awake()
         {
@@ -49,10 +63,15 @@ namespace LostMemory.Stage
                 Debug.LogWarning($"[GoldWallet] Add ignored — amount must be positive. amount={amount}", this);
                 return;
             }
-            Current += amount;
+            // CL-146: 탐욕 multiplier 적용
+            int actual = Mathf.RoundToInt(amount * _gainMultiplier);
+            Current += actual;
             if (logChanges)
             {
-                Debug.Log($"[GoldWallet] Add(+{amount}) -> Current={Current}", this);
+                if (Mathf.Abs(_gainMultiplier - 1f) > 0.001f)
+                    Debug.Log($"[GoldWallet] Add({amount} × {_gainMultiplier:F2} = {actual}) -> Current={Current}", this);
+                else
+                    Debug.Log($"[GoldWallet] Add(+{actual}) -> Current={Current}", this);
             }
             Changed?.Invoke(Current);
         }
