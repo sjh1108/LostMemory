@@ -157,7 +157,9 @@ namespace LostMemory.Combat
             float chainDamage = playerAttack * magnitude;
             if (chainDamage <= 0f) return;
 
-            List<Health> targets = FindNearbyEnemies(victim.transform.position, victim, _chainRadius, _chainMaxTargets);
+            // CL-146: Range multiplier 적용 — 체인 검색 반경 확장
+            float rangeMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.Range) : 1f;
+            List<Health> targets = FindNearbyEnemies(victim.transform.position, victim, _chainRadius * rangeMul, _chainMaxTargets);
             if (targets.Count == 0) return;
 
             Vector3 origin = victim.transform.position;
@@ -194,9 +196,12 @@ namespace LostMemory.Combat
                 dir = (Vector2)combat.transform.right;
             dir.Normalize();
 
+            // CL-146: Range multiplier 적용 — Wind 검기 길이 확장 (너비는 유지)
+            float rangeMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.Range) : 1f;
+            float effectiveLength = _windBladeLength * rangeMul;
             // 박스 영역: victim 위치에서 dir 방향으로 length/2 만큼 이동한 지점이 박스 중심
-            Vector2 boxCenter = (Vector2)victimPos + dir * (_windBladeLength * 0.5f);
-            Vector2 boxSize = new Vector2(_windBladeLength, _windBladeWidth);
+            Vector2 boxCenter = (Vector2)victimPos + dir * (effectiveLength * 0.5f);
+            Vector2 boxSize = new Vector2(effectiveLength, _windBladeWidth);
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 
             // 본인 공격력 (StatModifier 합산)
@@ -222,8 +227,8 @@ namespace LostMemory.Combat
                 hitCount++;
             }
 
-            // 시각화 — victim 에서 사거리 끝점까지 노란 직선
-            Vector3 endPoint = victimPos + (Vector3)(dir * _windBladeLength);
+            // 시각화 — victim 에서 사거리 끝점까지 노란 직선 (Range 적용된 길이)
+            Vector3 endPoint = victimPos + (Vector3)(dir * effectiveLength);
             DrawChainBolt(victimPos, endPoint);
 
             if (_logOnHitDispatch)

@@ -11,10 +11,24 @@ namespace LostMemory.Relics
     /// </summary>
     public class PlayerRelicInventory : MonoBehaviour
     {
+        [Header("CL-146 Inventory Capacity")]
+        [Tooltip("기본 인벤토리 최대 슬롯 (5×5 그리드 가정).")]
+        [SerializeField, Min(1)] private int _baseMaxSlots = 25;
+
         private readonly List<RelicData> _ownedRelics = new();
+
+        // CL-146: 행운 3스택 (LuckSlotExpand) 효과로 추가되는 보너스 슬롯.
+        // SetEffectApplicator 가 AddSlots(1) 호출, 비활성화 시 AddSlots(-1).
+        private int _bonusSlots = 0;
 
         /// <summary>현재 보유한 유물 목록 (읽기 전용)</summary>
         public IReadOnlyList<RelicData> OwnedRelics => _ownedRelics;
+
+        /// <summary>CL-146: 현재 최대 슬롯 (기본 + 행운 보너스). CL-148 인벤토리 UI 가 동적 셀 표시용으로 조회.</summary>
+        public int MaxSlots => _baseMaxSlots + _bonusSlots;
+
+        /// <summary>CL-146: 슬롯 변경 시 발화 (인자 = 새 MaxSlots). UI sync 용.</summary>
+        public event Action<int> MaxSlotsChanged;
 
         /// <summary>유물이 새로 획득되었을 때 발화. RelicEffectRegistry 등이 구독.</summary>
         public event Action<RelicData> OnRelicAcquired;
@@ -24,6 +38,19 @@ namespace LostMemory.Relics
 
         /// <summary>CL-109: Run 종료 시 인벤토리 비워질 때 발화. RelicEffectRegistry 가 modifier/shield 일괄 정리.</summary>
         public event Action OnCleared;
+
+        /// <summary>
+        /// CL-146: 행운 3스택 효과 — 보너스 슬롯 가감. AddSlots(1) 활성화, AddSlots(-1) 비활성화.
+        /// _bonusSlots 가 음수가 되지 않도록 clamp.
+        /// </summary>
+        public void AddSlots(int amount)
+        {
+            int newBonus = Mathf.Max(0, _bonusSlots + amount);
+            if (newBonus == _bonusSlots) return;
+            _bonusSlots = newBonus;
+            Debug.Log($"[PlayerRelicInventory] MaxSlots {MaxSlots} ({(amount >= 0 ? "+" : "")}{amount} slots, base={_baseMaxSlots}, bonus={_bonusSlots})");
+            MaxSlotsChanged?.Invoke(MaxSlots);
+        }
 
         /// <summary>
         /// 유물을 인벤토리에 추가한다.

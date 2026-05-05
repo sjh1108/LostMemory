@@ -21,6 +21,9 @@ namespace LostMemory.Rewards
         private RelicData _data;
         private Action<RelicData> _onSelected;
 
+        /// <summary>CL-146: 다중 픽 모드에서 선택된 카드 식별용 (RewardPanelView 가 disable 처리).</summary>
+        public RelicData Data => _data;
+
         /// <summary>카드 데이터를 주입하고 UI를 갱신한다.</summary>
         public void Init(RelicData data, Action<RelicData> onSelected)
         {

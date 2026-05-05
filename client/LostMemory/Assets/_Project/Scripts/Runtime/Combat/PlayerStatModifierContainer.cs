@@ -107,6 +107,32 @@ namespace LostMemory.Combat
             return 1f + sum;
         }
 
+        /// <summary>
+        /// CL-146: flat 합산 반환 (multiplier 와 별도). DefenseFlat 등 flat 성격 stat 용.
+        /// 예: Defense 등록 +4 + +8 → 12 반환. multiplier 적용은 따로.
+        /// 다른 곳에서 GetTotalMultiplier(Defense) 호출하지 않도록 주의 — 의미 다름.
+        /// </summary>
+        public float GetTotalFlat(StatId stat)
+        {
+            float sum = 0f;
+            foreach (PermanentMod m in _permanent)
+            {
+                if (m.Stat == stat) sum += m.Magnitude;
+            }
+            foreach (TimedMod m in _timed)
+            {
+                if (m.Stat == stat) sum += m.Magnitude;
+            }
+            foreach (ConditionalMod m in _conditional)
+            {
+                if (m.Stat == stat && m.Predicate != null && m.Predicate())
+                {
+                    sum += m.Magnitude;
+                }
+            }
+            return sum;
+        }
+
         /// <summary>디버그용. 현재 등록된 modifier 수 (조건부의 평가 결과 무관).</summary>
         public int GetActiveModifierCount(StatId stat)
         {

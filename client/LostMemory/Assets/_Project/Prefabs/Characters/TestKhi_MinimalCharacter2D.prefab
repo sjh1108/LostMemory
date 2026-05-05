@@ -81,6 +81,7 @@ GameObject:
   - component: {fileID: 3147602633388410817}
   - component: {fileID: 7504139936399824677}
   - component: {fileID: 2592970996598394060}
+  - component: {fileID: 6026814209459650701}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -681,6 +682,7 @@ MonoBehaviour:
   maximumHitsPerSample: 32
   targetInvincibilityDuration: 0
   targetFlickerDuration: 0
+  statContainer: {fileID: 0}
   drawDebugGizmos: 1
   debugGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showRuntimePreview: 1
@@ -1069,13 +1071,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
+  _baseMaxSlots: 25
   _debugRelicsToAdd:
-  - {fileID: 11400000, guid: 9ed9103a50a131d4385127e69615691a, type: 2}
-  - {fileID: 11400000, guid: 8c12e96448fbb7941b2d118d23fa1947, type: 2}
-  - {fileID: 11400000, guid: a0ff5d7bc7115ca44afa4c47cf7d8ccd, type: 2}
-  - {fileID: 11400000, guid: 225f3e61d1e6c7a42ac88fe727e2464e, type: 2}
-  - {fileID: 11400000, guid: a171961453dc1704abcd58af98e1528b, type: 2}
-  - {fileID: 11400000, guid: 7dfe3916b30902c4fb71fb058b4ded9f, type: 2}
+  - {fileID: 11400000, guid: 7059b59d592517148a66198dfad484da, type: 2}
+  - {fileID: 11400000, guid: 899c86627e004ba4fa53497170ca5017, type: 2}
+  - {fileID: 11400000, guid: 84b146d383c78e14fbcf841aa17951a2, type: 2}
+  - {fileID: 11400000, guid: 5d3eedb85c43b8e46bce8aeb427f3600, type: 2}
+  - {fileID: 11400000, guid: b72ecaf73f2c5f0478e1dc82de92e3a5, type: 2}
 --- !u!114 &1105879407601961676
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1153,6 +1155,8 @@ MonoBehaviour:
   statContainer: {fileID: 1496170365699431617}
   onHitRegistry: {fileID: 7504139936399824677}
   magicalGirlSpawner: {fileID: 2592970996598394060}
+  goldWallet: {fileID: 0}
+  playerRelicInventory: {fileID: 0}
   _logEffectDispatch: 1
 --- !u!114 &7504139936399824677
 MonoBehaviour:
@@ -1191,8 +1195,24 @@ MonoBehaviour:
   playerStat: {fileID: 1496170365699431617}
   playerCombat: {fileID: 114910001000000004}
   inventory: {fileID: 1736420558605640635}
+  playerAim: {fileID: 114910001000000001}
   ringRadius: 1.5
   _logSpawn: 1
+--- !u!114 &6026814209459650701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e45fef5026c0aa4bb0d05bd6c98bde7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerDamageReceiver
+  health: {fileID: 114871673569860628}
+  container: {fileID: 1496170365699431617}
+  _logDamageMod: 1
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
