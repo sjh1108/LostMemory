@@ -80,6 +80,7 @@ GameObject:
   - component: {fileID: 5492564548965125359}
   - component: {fileID: 3147602633388410817}
   - component: {fileID: 7504139936399824677}
+  - component: {fileID: 2592970996598394060}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -1069,31 +1070,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
   _debugRelicsToAdd:
-  - {fileID: 11400000, guid: 8e31f126b13b2184dac90cdb89760ccc, type: 2}
-  - {fileID: 11400000, guid: cc3c34d065f1025459a49cfa67b4e3d9, type: 2}
-  - {fileID: 11400000, guid: 695ecc0b511d2794195358ca94f9d767, type: 2}
-  - {fileID: 11400000, guid: 2f6954336ecfe564d8c6544f754189b7, type: 2}
-  - {fileID: 11400000, guid: bc2ccafc2d7af344a9d4d95f1ed01af2, type: 2}
-  - {fileID: 11400000, guid: 57c8fa532f114c04991d0a28d50cedf8, type: 2}
-  - {fileID: 11400000, guid: a587bd5dfcf4a2a468639943a93bf83c, type: 2}
-  - {fileID: 11400000, guid: 5ebd41e2a884c6b45bff2603b28a9128, type: 2}
-  - {fileID: 11400000, guid: 5c1bb4475bb3f684897825120a45ff40, type: 2}
-  - {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}
-  - {fileID: 11400000, guid: d3e3144f7ab56554985fafc09eb06ace, type: 2}
-  - {fileID: 11400000, guid: a587bd5dfcf4a2a468639943a93bf83c, type: 2}
-  - {fileID: 11400000, guid: 558c97a6a3e11164a9bbc48e208e3f0b, type: 2}
-  - {fileID: 11400000, guid: 22ddeae1831bdc64b81b8d87ad723cd1, type: 2}
-  - {fileID: 11400000, guid: 9fe6ae97b3fd6c046be7917438487eb3, type: 2}
-  - {fileID: 11400000, guid: bc63b7e045ab9d64896fca36272cabb6, type: 2}
-  - {fileID: 11400000, guid: 0557cf6fb76abfd479ac127fd2f52fb8, type: 2}
-  - {fileID: 11400000, guid: 9fe6ae97b3fd6c046be7917438487eb3, type: 2}
-  - {fileID: 11400000, guid: dc24f14c2f0f12044bab28d4896cbfed, type: 2}
-  - {fileID: 11400000, guid: d261cb928aa0e76428ee823058c3e70e, type: 2}
-  - {fileID: 11400000, guid: 66be657fcd71e3e4a9d26b976c9f1f1f, type: 2}
-  - {fileID: 11400000, guid: bc63b7e045ab9d64896fca36272cabb6, type: 2}
-  - {fileID: 11400000, guid: cd7b23f39e873524691c2523831876f0, type: 2}
-  - {fileID: 11400000, guid: 33d168911639aa54f821ef6ef22aec1f, type: 2}
-  - {fileID: 11400000, guid: 730cbbb4bd81e9d42a8d336ac160385e, type: 2}
+  - {fileID: 11400000, guid: 9ed9103a50a131d4385127e69615691a, type: 2}
+  - {fileID: 11400000, guid: 8c12e96448fbb7941b2d118d23fa1947, type: 2}
+  - {fileID: 11400000, guid: a0ff5d7bc7115ca44afa4c47cf7d8ccd, type: 2}
+  - {fileID: 11400000, guid: 225f3e61d1e6c7a42ac88fe727e2464e, type: 2}
+  - {fileID: 11400000, guid: a171961453dc1704abcd58af98e1528b, type: 2}
+  - {fileID: 11400000, guid: 7dfe3916b30902c4fb71fb058b4ded9f, type: 2}
 --- !u!114 &1105879407601961676
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1169,7 +1151,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.SetEffectApplicator
   buildManager: {fileID: 5492564548965125359}
   statContainer: {fileID: 1496170365699431617}
-  onHitRegistry: {fileID: 0}
+  onHitRegistry: {fileID: 7504139936399824677}
+  magicalGirlSpawner: {fileID: 2592970996598394060}
   _logEffectDispatch: 1
 --- !u!114 &7504139936399824677
 MonoBehaviour:
@@ -1189,7 +1172,27 @@ MonoBehaviour:
   _chainMaxTargets: 3
   _chainCooldown: 0.5
   _slowDuration: 2
-  _logOnHitDispatch: 0
+  _windBladeLength: 2
+  _windBladeWidth: 0.6
+  _logOnHitDispatch: 1
+--- !u!114 &2592970996598394060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75c7fe601849ec4428e27a32e6aa9b11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.MagicalGirl.MagicalGirlSpawner
+  anchor: {fileID: 0}
+  playerStat: {fileID: 1496170365699431617}
+  playerCombat: {fileID: 114910001000000004}
+  inventory: {fileID: 1736420558605640635}
+  ringRadius: 1.5
+  _logSpawn: 1
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
