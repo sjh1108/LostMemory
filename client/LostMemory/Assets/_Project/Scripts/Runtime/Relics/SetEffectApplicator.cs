@@ -1,6 +1,7 @@
 using LostMemory.Combat;
 using LostMemory.MagicalGirl;
 using LostMemory.Stage;
+using LostMemory.Tarot;
 using UnityEngine;
 
 namespace LostMemory.Relics
@@ -42,6 +43,9 @@ namespace LostMemory.Relics
         [Tooltip("CL-146 행운 3스택 (LuckSlotExpand) 라우팅 — PlayerRelicInventory.AddSlots 호출용.")]
         [SerializeField] private PlayerRelicInventory playerRelicInventory;
 
+        [Tooltip("CL-147 타로 (TarotProc/TarotEffectMultiplier) 라우팅 — TarotSystem 활성/multiplier 전달.")]
+        [SerializeField] private TarotSystem tarotSystem;
+
         [Tooltip("티어 변경 시 라우팅 로그 (APPLY/REMOVE).")]
         [SerializeField] private bool _logEffectDispatch = false;
 
@@ -69,7 +73,8 @@ namespace LostMemory.Relics
                 : "❌ NULL (미소녀 동작 안 함)";
             string goldWiring = goldWallet != null ? "OK" : "⚠ NULL (탐욕 적용 X)";
             string invWiring = playerRelicInventory != null ? "OK" : "⚠ NULL (행운 슬롯 적용 X)";
-            Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}, magicalGirlSpawner={girlWiring}, goldWallet={goldWiring}, playerRelicInventory={invWiring}", this);
+            string tarotWiring = tarotSystem != null ? "OK" : "⚠ NULL (타로 적용 X)";
+            Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}, magicalGirlSpawner={girlWiring}, goldWallet={goldWiring}, playerRelicInventory={invWiring}, tarotSystem={tarotWiring}", this);
             buildManager.OnSetTierChanged += HandleSetTierChanged;
         }
 
@@ -177,7 +182,16 @@ namespace LostMemory.Relics
                         Debug.LogWarning("[SetEffectApplicator] playerRelicInventory null — LuckSlotExpand 적용 X. Inspector wiring 필요.");
                     break;
                 case RelicEffectType.TarotProc:
-                    Debug.LogWarning("[SetEffectApplicator] TarotProc 미구현 (CL-147 에서 TarotSystem 신설 후 적용)");
+                    if (tarotSystem != null)
+                        tarotSystem.OnTarotActivated(tier);
+                    else
+                        Debug.LogWarning("[SetEffectApplicator] tarotSystem null — TarotProc 적용 X. Inspector wiring 필요.");
+                    break;
+                case RelicEffectType.TarotEffectMultiplier:
+                    if (tarotSystem != null)
+                        tarotSystem.SetEffectMultiplier(tier.Magnitude);
+                    else
+                        Debug.LogWarning("[SetEffectApplicator] tarotSystem null — TarotEffectMultiplier 적용 X.");
                     break;
 
                 case RelicEffectType.None:
@@ -223,6 +237,15 @@ namespace LostMemory.Relics
             // CL-146: LuckSlotExpand 비활성화 — 보너스 슬롯 -1.
             if (tier.EffectType == RelicEffectType.LuckSlotExpand && playerRelicInventory != null)
                 playerRelicInventory.AddSlots(-1);
+
+            // CL-147: 타로 비활성화 — TarotProc 해제, multiplier 0 으로 복구.
+            if (tarotSystem != null)
+            {
+                if (tier.EffectType == RelicEffectType.TarotProc)
+                    tarotSystem.OnTarotDeactivated();
+                else if (tier.EffectType == RelicEffectType.TarotEffectMultiplier)
+                    tarotSystem.SetEffectMultiplier(0f);
+            }
         }
     }
 }
