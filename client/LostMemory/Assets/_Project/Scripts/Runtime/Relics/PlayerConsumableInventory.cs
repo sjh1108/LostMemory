@@ -43,6 +43,34 @@ namespace LostMemory.Relics
             return false;
         }
 
+        /// <summary>
+        /// CL-177: 지정 슬롯에 소모품 배치. 슬롯이 차 있으면 false (덮어쓰기 X).
+        /// InventoryTestWindow 의 슬롯 지정 UI 가 사용. 게임 보상 흐름은 기존 TryAdd (첫 빈 슬롯 자동) 사용.
+        /// </summary>
+        /// <returns>배치 성공이면 true, 실패 (차 있음 / 범위 밖 / 소모품 아님) 이면 false</returns>
+        public bool TryAddAt(int slot, RelicData consumable)
+        {
+            if (slot < 0 || slot >= SlotCount)
+            {
+                Debug.LogWarning($"[PlayerConsumableInventory] 슬롯 인덱스 범위 오류: {slot}");
+                return false;
+            }
+            if (consumable == null || !consumable.IsConsumable)
+            {
+                Debug.LogWarning("[PlayerConsumableInventory] 소모품이 아닌 아이템은 추가할 수 없습니다.");
+                return false;
+            }
+            if (_slots[slot] != null)
+            {
+                Debug.LogWarning($"[PlayerConsumableInventory] 슬롯 {slot + 1} 이미 사용 중: {_slots[slot].DisplayName}");
+                return false;
+            }
+
+            _slots[slot] = consumable;
+            Debug.Log($"[PlayerConsumableInventory] 소모품 지정 배치 (슬롯 {slot + 1}): {consumable.DisplayName}");
+            return true;
+        }
+
         /// <summary>지정한 슬롯의 소모품을 제거한다.</summary>
         public bool Remove(int slotIndex)
         {
