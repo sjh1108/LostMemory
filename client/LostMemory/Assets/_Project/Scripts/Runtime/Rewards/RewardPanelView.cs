@@ -95,16 +95,17 @@ namespace LostMemory.Rewards
         {
             _inventory.TryAdd(selected);
             _picksMade++;
-            RewardSelected?.Invoke(selected);
 
             if (_picksMade >= _picksAllowed)
             {
                 gameObject.SetActive(false);
+                RewardSelected?.Invoke(selected);
                 return;
             }
 
             // 다중 픽 모드 — 선택된 카드만 비활성, 나머지 선택 대기
             DisableSelectedCard(selected);
+            RewardSelected?.Invoke(selected);
             Debug.Log($"[RewardPanel] Pick {_picksMade}/{_picksAllowed} — {selected?.DisplayName} 선택됨, 추가 선택 대기");
         }
 

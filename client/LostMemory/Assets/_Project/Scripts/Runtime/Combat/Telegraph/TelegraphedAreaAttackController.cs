@@ -357,6 +357,12 @@ namespace LostMemory.Combat.Telegraph
             impactTime = configuredImpactTime;
         }
 
+        public void SetDamageValues(float configuredDamage, float configuredFollowUpAreaDamage)
+        {
+            damage = Mathf.Max(0f, configuredDamage);
+            followUpAreaDamage = Mathf.Max(0f, configuredFollowUpAreaDamage);
+        }
+
         private Animator ResolveAnimator()
         {
             Animator ownAnimator = GetComponent<Animator>();

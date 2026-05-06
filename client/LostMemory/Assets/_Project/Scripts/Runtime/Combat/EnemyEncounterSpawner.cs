@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Enemies;
 using LostMemory.Stage;
 using LostMemory.Stage.Data;
 using MoreMountains.TopDownEngine;
@@ -143,7 +144,7 @@ namespace LostMemory.Combat
                     continue;
                 }
 
-                if (!catalog.TryGetPrefab(entry.EnemyId, out GameObject prefab))
+                if (!catalog.TryGetEntry(entry.EnemyId, out EnemyCatalogEntry catalogEntry))
                 {
                     Debug.LogWarning(
                         $"[EnemyEncounterSpawner] enemyId '{entry.EnemyId}' not found in catalog. Skip {entry.Count} spawn(s) for room '{roomId}' wave {waveIndex}.",
@@ -151,6 +152,7 @@ namespace LostMemory.Combat
                     continue;
                 }
 
+                GameObject prefab = catalogEntry.Prefab;
                 IReadOnlyList<RoomEncounterSpawnPoint> candidates = anchor.GetSpawnPoints(entry.SpawnGroupFilter);
                 if (candidates.Count == 0)
                 {
@@ -170,6 +172,7 @@ namespace LostMemory.Combat
                     }
 
                     GameObject instance = Instantiate(prefab, point.transform.position, Quaternion.identity);
+                    EnemyDataRuntimeAdapter.ApplyTo(instance, catalogEntry.Data);
                     HardenSpawnedInstance(instance);
                     EnsureDeathAnimationLock(instance);
                     RegisterHitAnimationRecovery(instance);
