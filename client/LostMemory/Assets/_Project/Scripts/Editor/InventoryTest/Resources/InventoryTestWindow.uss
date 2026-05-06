@@ -1,0 +1,43 @@
+.iv-root {
+    flex-grow: 1;
+    flex-direction: column;
+    background-color: rgb(56, 56, 56);
+}
+
+.iv-toolbar { flex-shrink: 0; }
+
+.iv-title {
+    color: rgb(220, 220, 220);
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-left: 4px;
+    margin-right: 12px;
+    -unity-text-align: middle-left;
+}
+
+.iv-mode-hint {
+    color: rgb(200, 180, 100);
+    font-size: 12px;
+    -unity-font-style: italic;
+    padding: 8px;
+    flex-shrink: 0;
+}
+
+.iv-body {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.iv-left-panel {
+    min-width: 240px;
+    background-color: rgb(48, 48, 48);
+    border-right-width: 1px;
+    border-right-color: rgb(20, 20, 20);
+    padding: 4px;
+}
+
+.iv-right-panel {
+    flex-grow: 1;
+    background-color: rgb(56, 56, 56);
+    padding: 8px;
+}
