@@ -30,7 +30,7 @@
 Tools/LostMemory/Balance Editor (CL-162~166 인프라 위)
 ├─ Relic, BuildSet, Weapon, Skill, ShopConfig 카테고리 (CL-163, CL-166)
 ├─ + Enemy / Boss 카테고리 (CL-172, CL-173) ← 본 plan
-└─ + Player Stats 카테고리 (CL-188~190 보류)
+└─ + Player Stats 카테고리 (CL-179~181 보류)
 ```
 
 → Epic U 의 새 ticket = **Provider 추가 = 코드 클래스 1개 (~15분)**. 인프라 자동 적용.
@@ -57,19 +57,23 @@ Tools/LostMemory/Inventory Test Window (신설, CL-182 ~ CL-187)
 ```
 Epic U. 밸런스 에디터	Editor Tool	CL-172	EnemyData/BossData SO 정의 + 인스턴스	클라1	P1	데이터 정의	3	일반 몬스터(EnemyData) + 보스(BossData) SO 클래스 + 인스턴스 작성. Bertha 코드 영향 0	CL-166	
 Epic U. 밸런스 에디터	Editor Tool	CL-173	EnemyData/BossData CategoryProvider 등록	클라1	P1	카테고리 노출	1	Balance Editor 좌측 트리에 Enemy/Boss 카테고리 추가	CL-172	
-Epic U. 밸런스 에디터	Editor Tool	CL-180	EnemyData/BossData 적용 어댑터 (게임 내 사용)	클라1	P3	데이터 연동	3	SO 값을 Bertha/일반 몹 컴포넌트에 주입. 일반 몹 등장 시점에 매칭	CL-172	보류
+Epic U. 밸런스 에디터	Editor Tool	CL-174	InventoryTestWindow 셸 + Play 모드 가드	클라1	P1	에디터 셸	2	UXML/USS + asmdef + Tools 메뉴. Play 모드 전제 별도 EditorWindow	CL-166	
+Epic U. 밸런스 에디터	Editor Tool	CL-175	좌측 RelicData 트리 + 우측 인벤토리 슬롯 표시	클라1	P1	메인 UI	2	모든 RelicData 트리 + Player 의 Permanent/Consumable 슬롯 시각화	CL-174	
+Epic U. 밸런스 에디터	Editor Tool	CL-176	더블클릭 추가 / 우클릭 제거 / Clear 버튼	클라1	P1	동작	2	TryAdd/Remove/Clear 호출. OnRelicAcquired 이벤트 발화 검증	CL-175	
+Epic U. 밸런스 에디터	Editor Tool	CL-177	Consumable 4슬롯 별도 영역 + 슬롯 지정	클라1	P2	UI 확장	2	소모품 4슬롯 영역 분리, 더블클릭 시 슬롯 선택	CL-176	
+Epic U. 밸런스 에디터	Editor Tool	CL-178	EnemyData/BossData 적용 어댑터 (게임 내 사용)	클라1	P3	데이터 연동	3	SO 값을 Bertha/일반 몹 컴포넌트에 주입. 일반 몹 등장 시점에 매칭	CL-172	보류
+Epic U. 밸런스 에디터	Editor Tool	CL-179	PlayerStatsData SO 정의 + base 값 마이그레이션	클라1	P3	데이터 정의	3	캐릭터 base 능력치(이속/체력/대시쿨/점프) 통합 SO	CL-166	보류
+Epic U. 밸런스 에디터	Editor Tool	CL-180	PlayerStatsApplier 정리 + base × multiplier 통합	클라1	P3	데이터 연동	2	TDE 컴포넌트에 SO base 값 주입 어댑터	CL-179	보류
+Epic U. 밸런스 에디터	Editor Tool	CL-181	PlayerStatsCategoryProvider	클라1	P3	카테고리 노출	1	Balance Editor 에 Player Stats 카테고리 추가	CL-180	보류
 Epic V. 인벤토리 테스트 도구	Editor Tool	CL-182	InventoryTestWindow 셸 + Play 모드 가드 + Player 자동 검색	클라1	P1	에디터 셸	2	UXML/USS + asmdef + Tools 메뉴. Play 모드 전제 별도 EditorWindow + FindAnyObjectByType<PlayerRelicInventory>	—	
-Epic V. 인벤토리 테스트 도구	Editor Tool	CL-183	좌측 RelicData 트리 + 우측 슬롯 표시 + 검색(이름/태그/효과)	클라1	P1	메인 UI	3	좌측 트리 (Permanent/Consumable 그룹핑) + 우측 슬롯 시각화 + 검색바 (이름·태그·효과 설명)	CL-182	
-Epic V. 인벤토리 테스트 도구	Editor Tool	CL-184	더블클릭 추가 / 우클릭 제거 / Clear 버튼	클라1	P1	동작	2	TryAdd/Remove/Clear 호출. OnRelicAcquired/OnRelicRemoved 이벤트 구독으로 자동 갱신	CL-183	
-Epic V. 인벤토리 테스트 도구	Editor Tool	CL-185	Consumable 4슬롯 별도 영역 + 더블클릭 시 빈 슬롯 자동 배치	클라1	P1	UI 확장	1	소모품 영역 분리. 더블클릭 시 첫 빈 슬롯 자동 (수동 슬롯 선택 불필요)	CL-184	
-Epic V. 인벤토리 테스트 도구	Editor Tool	CL-186	좌측→우측 드래그 앤 드롭 추가	클라1	P2	UX 강화	2	UI Toolkit Manipulator 로 좌측 트리 → 우측 슬롯 드래그. 더블클릭과 동등 효과	CL-184	
-Epic V. 인벤토리 테스트 도구	Editor Tool	CL-187	Quick Add 프리셋 (테스터 저장/로드)	클라1	P2	편의 기능	3	현재 인벤토리 상태를 프리셋으로 저장(EditorPrefs 또는 PresetSO) → 한 번 클릭으로 로드. 추천 빌드 즉석 세팅	CL-184	
-Epic U. 밸런스 에디터	Editor Tool	CL-188	PlayerStatsData SO 정의 + base 값 마이그레이션	클라1	P3	데이터 정의	3	캐릭터 base 능력치(이속/체력/대시쿨/점프) 통합 SO	CL-166	보류
-Epic U. 밸런스 에디터	Editor Tool	CL-189	PlayerStatsApplier 정리 + base × multiplier 통합	클라1	P3	데이터 연동	2	TDE 컴포넌트에 SO base 값 주입 어댑터	CL-188	보류
-Epic U. 밸런스 에디터	Editor Tool	CL-190	PlayerStatsCategoryProvider	클라1	P3	카테고리 노출	1	Balance Editor 에 Player Stats 카테고리 추가	CL-189	보류
+Epic V. 인벤토리 테스트 도구	Editor Tool	CL-183	좌측 RelicData 트리 + 우측 슬롯 표시 + 검색(이름/태그/효과)	클라1	P1	메인 UI	3	좌측 트리 (Permanent/Consumable 그룹핑) + 우측 슬롯 시각화 + 검색바 (이름·태그·효과 설명)	CL-174	
+Epic V. 인벤토리 테스트 도구	Editor Tool	CL-184	더블클릭 추가 / 우클릭 제거 / Clear 버튼	클라1	P1	동작	2	TryAdd/Remove/Clear 호출. OnRelicAcquired/OnRelicRemoved 이벤트 구독으로 자동 갱신	CL-175	
+Epic V. 인벤토리 테스트 도구	Editor Tool	CL-185	Consumable 4슬롯 별도 영역 + 더블클릭 시 빈 슬롯 자동 배치	클라1	P1	UI 확장	1	소모품 영역 분리. 더블클릭 시 첫 빈 슬롯 자동 (수동 슬롯 선택 불필요)	CL-176	
+Epic V. 인벤토리 테스트 도구	Editor Tool	CL-186	좌측→우측 드래그 앤 드롭 추가	클라1	P2	UX 강화	2	UI Toolkit Manipulator 로 좌측 트리 → 우측 슬롯 드래그. 더블클릭과 동등 효과	CL-176	
+Epic V. 인벤토리 테스트 도구	Editor Tool	CL-187	Quick Add 프리셋 (테스터 저장/로드)	클라1	P2	편의 기능	3	현재 인벤토리 상태를 프리셋으로 저장(EditorPrefs 또는 PresetSO) → 한 번 클릭으로 로드. 추천 빌드 즉석 세팅	CL-176	
 ```
 
-**총 12 ticket / 28점**. P1=12점, P2=5점, P3=11점.
+**총 16 ticket / 34점**. P1=18점, P2=7점, P3=9점.
 
 ---
 
@@ -89,7 +93,7 @@ Epic U. 밸런스 에디터	Editor Tool	CL-190	PlayerStatsCategoryProvider	클�
 - `PlayerStatModifierContainer` 가 multiplier 합산 (Permanent/Temp/Conditional, 정책: `total = 1 + Σ(percents)`)
 - 적용 어댑터: `PlayerHealthStatApplier`, `PlayerMovementStatApplier`, `KhiDashController:75-78`
 - **base 값은 TDE 컴포넌트(CharacterMovement/Health/Dash) 의 Inspector 인라인 필드 + 코드** 흩어짐
-- → Balance Editor 노출하려면 PlayerStatsData SO 신설 필요. **회귀 위험으로 본 plan 은 CL-188~190 보류**
+- → Balance Editor 노출하려면 PlayerStatsData SO 신설 필요. **회귀 위험으로 본 plan 은 CL-179~181 보류**
 
 ### 3.3 Weapon — SO 완성
 
@@ -135,39 +139,50 @@ Epic U. 밸런스 에디터	Editor Tool	CL-190	PlayerStatsCategoryProvider	클�
 | ShopConfig | SO ✓ | Provider 추가만 (CL-166) | CL-166 범위 |
 | **Enemy (일반)** | 미존재 | SO 신설 + 인스턴스 + Provider | **CL-172, CL-173** ★ |
 | **Boss (Bertha)** | MB 필드 | BossData SO 신설 (EnemyData 상속) + 인스턴스 + Provider | **CL-172, CL-173** ★ |
-| **Player Stats** | 인라인 | SO 신설 + 마이그레이션 + Provider (大) | CL-188~190 **보류** |
+| **Player Stats** | 인라인 | SO 신설 + 마이그레이션 + Provider (大) | CL-179~181 **보류** |
 | AI 패턴 | MB 필드 | SO 분리 큼, 다양성 커서 어색 | 패스 |
 
 ---
 
 ## 5. ticket 분할 표
 
-### A. Epic U — Balance Editor 카테고리 확장 (Enemy 트랙만 우선 진행)
+### A. Epic U — Balance Editor 카테고리 확장 + Inventory 트랙
+
+#### A-1. Enemy 트랙
 
 | Ticket | 제목 | 점수 | 의존 | 진행 |
 |---|---|---|---|---|
-| CL-172 | EnemyData / BossData SO 정의 + Bertha 인스턴스 (코드 전환 X) | 3 | CL-166 | **진행 권장** ([cl172_plan.md](cl172_plan.md)) |
-| CL-173 | EnemyData / BossData CategoryProvider 등록 | 1 | CL-172 | **진행 권장** |
-| CL-180 | (별도 후속) EnemyData / BossData 적용 어댑터 — 게임 내 실제 사용 | 3+ | CL-172 | **보류** (일반 몹 등장 / Bertha 리팩 ticket 시점에 매칭) |
+| CL-172 | EnemyData / BossData SO 정의 + Bertha 인스턴스 (코드 전환 X) | 3 | CL-166 | ✅ plan 작성 ([cl172_plan.md](cl172_plan.md)) |
+| CL-173 | EnemyData / BossData CategoryProvider 등록 | 1 | CL-172 | ✅ plan 작성 ([cl173_plan.md](cl173_plan.md)) |
+| CL-178 | (별도 후속) EnemyData / BossData 적용 어댑터 — 게임 내 실제 사용 | 3+ | CL-172 | **보류** (일반 몹 등장 / Bertha 리팩 ticket 시점에 매칭) |
+
+#### A-2. Inventory 트랙 (MVP)
+
+| Ticket | 제목 | 점수 | 의존 | 진행 |
+|---|---|---|---|---|
+| CL-174 | InventoryTestWindow 셸 + Play 모드 가드 + Player 자동 검색 | 2 | CL-166 | ✅ plan 작성 ([cl174_plan.md](cl174_plan.md)) |
+| CL-175 | 좌측 RelicData 트리 + 우측 인벤토리 슬롯 표시 | 2 | CL-174 | 다음 |
+| CL-176 | 더블클릭 / 우클릭 제거 / Clear 버튼 | 2 | CL-175 | 다음 |
+| CL-177 | Consumable 4슬롯 별도 영역 + 슬롯 지정 | 2 | CL-176 | 다음 |
 
 ### B. Epic V — 인벤토리 테스트 도구 (별도 EditorWindow)
 
 | Ticket | 제목 | 점수 | 의존 |
 |---|---|---|---|
 | CL-182 | InventoryTestWindow 셸 + Play 모드 가드 + Player 자동 검색 | 2 | — |
-| CL-183 | 좌측 RelicData 트리 + 우측 슬롯 표시 + 검색 (이름/태그/효과) | 3 | CL-182 |
-| CL-184 | 더블클릭 추가 / 우클릭 제거 / Clear 버튼 (이벤트 구독 자동 갱신) | 2 | CL-183 |
-| CL-185 | Consumable 4슬롯 별도 영역 + 더블클릭 시 빈 슬롯 자동 배치 | 1 | CL-184 |
-| CL-186 | 좌측 → 우측 드래그 앤 드롭 (UI Toolkit Manipulator) | 2 | CL-184 |
-| CL-187 | Quick Add 프리셋 (테스터 저장/로드, EditorPrefs or PresetSO) | 3 | CL-184 |
+| CL-183 | 좌측 RelicData 트리 + 우측 슬롯 표시 + 검색 (이름/태그/효과) | 3 | CL-174 |
+| CL-184 | 더블클릭 추가 / 우클릭 제거 / Clear 버튼 (이벤트 구독 자동 갱신) | 2 | CL-175 |
+| CL-185 | Consumable 4슬롯 별도 영역 + 더블클릭 시 빈 슬롯 자동 배치 | 1 | CL-176 |
+| CL-186 | 좌측 → 우측 드래그 앤 드롭 (UI Toolkit Manipulator) | 2 | CL-176 |
+| CL-187 | Quick Add 프리셋 (테스터 저장/로드, EditorPrefs or PresetSO) | 3 | CL-176 |
 
 ### C. Epic U — Player 트랙 (보류)
 
 | Ticket | 제목 | 점수 | 의존 | 진행 |
 |---|---|---|---|---|
-| CL-188 | PlayerStatsData SO 정의 + base 값 마이그레이션 | 3 | CL-166 | **보류** |
-| CL-189 | PlayerStatsApplier 정리 + base × multiplier 통합 | 2 | CL-188 | **보류** |
-| CL-190 | PlayerStatsCategoryProvider | 1 | CL-189 | **보류** |
+| CL-179 | PlayerStatsData SO 정의 + base 값 마이그레이션 | 3 | CL-166 | **보류** |
+| CL-180 | PlayerStatsApplier 정리 + base × multiplier 통합 | 2 | CL-179 | **보류** |
+| CL-181 | PlayerStatsCategoryProvider | 1 | CL-180 | **보류** |
 
 ### 별도 시각 도구 ticket 후보 (본 plan 외)
 
@@ -186,16 +201,19 @@ CL-166 (현재 진행) ─── Weapon/Skill/Shop Provider 등록 끝
 CL-172 (EnemyData + BossData SO 통합) → CL-173 (Provider 등록)
                                           [Balance Editor Enemy/Boss 카테고리 노출]
                                           [기존 Bertha 코드 무수정]
-CL-180 (적용 어댑터) — 보류, 별도 시점에 매칭
+CL-178 (적용 어댑터) — 보류, 별도 시점에 매칭
 
-[Epic V] 인벤토리 테스트 도구 — Balance Editor 와 별도 창
-CL-182 (셸) → CL-183 (트리+슬롯+검색) → CL-184 (add/remove/Clear)
-                                            ├→ CL-185 (Consumable 4슬롯)
-                                            ├→ CL-186 (드래그앤드롭)
-                                            └→ CL-187 (Quick Add 프리셋)
+[Epic U] Inventory 트랙 (MVP) — Play 모드 별도 EditorWindow
+CL-174 (셸 + Play 가드 + Player 검색) → CL-175 (트리 + 슬롯 표시) → CL-176 (add/remove/Clear) → CL-177 (Consumable 4슬롯)
+
+[Epic V] 인벤토리 테스트 도구 — Epic U Inventory 위 확장 layer
+CL-182 (Player 자동 검색 — CL-174 정의와 동등, 별도 진입점)
+CL-183 (트리+슬롯+검색)        ← CL-174 의존
+CL-184 (이벤트 구독 자동 갱신) ← CL-175 의존
+CL-185 (Consumable 자동 배치) / CL-186 (드래그앤드롭) / CL-187 (Quick Add 프리셋) ← CL-176 의존
 
 [Epic U] Player 트랙 — 보류
-CL-188 → CL-189 → CL-190  base 값 SO 마이그레이션. 현재 미진행
+CL-179 → CL-180 → CL-181  base 값 SO 마이그레이션. 현재 미진행
 
 → Enemy / Inventory 트랙 상호 독립. 병렬 진행 가능.
 ```
@@ -204,11 +222,12 @@ CL-188 → CL-189 → CL-190  base 값 SO 마이그레이션. 현재 미진행
 
 ## 7. 우선순위 권장
 
-1. **CL-166 마무리** (이미 진행 중) — Weapon/Skill/Shop Provider 등록
-2. **CL-182 ~ CL-185** (Epic V 핵심) — 셸 / 트리+검색 / 동작 / Consumable. 밸런싱 작업의 testing 인프라
-3. **CL-172 + CL-173** (Epic U Enemy SO + Provider) — 코드 영향 0, Balance Editor 노출만
-4. **CL-186, CL-187** (Epic V 폴리시) — 드래그앤드롭, Quick Add 프리셋. P2
-5. **보류**: CL-180 (Enemy 적용 어댑터), CL-188~190 (Player base SO)
+1. ✅ **CL-166 마무리** (완료) — Weapon/Skill/Shop Provider 등록
+2. ✅ **CL-172 + CL-173** (plan 완료) — Enemy/Boss SO + Provider (Balance Editor 카테고리 노출)
+3. **CL-174 ~ CL-177** (Epic U Inventory MVP — 진행) — 셸 / 트리+슬롯 / 동작 / Consumable. 밸런싱 작업의 testing 인프라
+4. **CL-182 ~ CL-185** (Epic V 확장) — 검색 / 이벤트 자동갱신 / Consumable 자동 배치. CL-174~177 위에 얹는 layer
+5. **CL-186, CL-187** (Epic V 폴리시) — 드래그앤드롭, Quick Add 프리셋. P2
+6. **보류**: CL-178 (Enemy 적용 어댑터), CL-179~181 (Player base SO)
 
 ---
 
@@ -276,7 +295,7 @@ public class PlayerStatsData : ScriptableObject {
 - 현재 `PlayerStatModifierContainer` multiplier 시스템만으로도 디자이너가 곱셈 튜닝 가능
 - Player prefab 1개라 base 값 중복 적은 편 → 이득 작음
 
-→ **CL-188~190 보류**. 일반 몹 등장 / Player prefab 변경 ticket 시점에 재검토.
+→ **CL-179~181 보류**. 일반 몹 등장 / Player prefab 변경 ticket 시점에 재검토.
 
 ### Q2. Enemy 시나리오 B (코드 영향 0) 채택
 
@@ -286,7 +305,7 @@ public class PlayerStatsData : ScriptableObject {
 | **B. SO 정의 + 인스턴스 작성** | A + asset | **없음** | 카테고리에 SO 표시되지만 게임 내 미사용 |
 | C. SO 정의 + 인스턴스 + 적용 어댑터 | B + Bertha 컨트롤러 SO 참조 전환 | **있음** | 데이터-코드 연결, 회귀 위험 |
 
-→ **시나리오 B 채택**. CL-172 + CL-173 만 진행, CL-180 적용 어댑터는 보류. 디자이너에게 "데이터-코드 비동기" 기간 안내 필요 (SO 값 게임 미반영).
+→ **시나리오 B 채택**. CL-172 + CL-173 만 진행, CL-178 적용 어댑터는 보류. 디자이너에게 "데이터-코드 비동기" 기간 안내 필요 (SO 값 게임 미반영).
 
 ### Q3. 인벤토리 테스트 도구 — 별도 EditorWindow 채택
 
@@ -313,14 +332,14 @@ public class PlayerStatsData : ScriptableObject {
 
 ## 10. 검증 (각 ticket 공통)
 
-### Provider 추가 ticket (CL-173, CL-190)
+### Provider 추가 ticket (CL-173, CL-181)
 - Tools > LostMemory > Balance Editor 열고 새 카테고리 노드 표시 확인
 - 검색창에 SO 이름 일부 입력 → 필터링 확인
 - 우측 InspectorElement 에 필드 자동 표시 확인
 - Ctrl+S 저장 → 디스크 반영 확인
 - JSON Export/Import 라운드트립 확인
 
-### SO 신설 ticket (CL-172, CL-188)
+### SO 신설 ticket (CL-172, CL-179)
 - `[CreateAssetMenu]` 메뉴에서 신규 SO 생성 가능 확인
 - Inspector 에서 모든 필드 직렬화/편집 가능 확인
 - `[FormerlySerializedAs]` 필요 시 추가 (마이그레이션 ticket)
@@ -340,19 +359,21 @@ public class PlayerStatsData : ScriptableObject {
 ## 11. 참고 파일 (수정 예상)
 
 ### 신규 (Claude 작성)
-- `Assets/_Project/Scripts/Runtime/Enemies/EnemyData.cs` (CL-172)
-- `Assets/_Project/Scripts/Runtime/Enemies/BossData.cs` (CL-172)
-- `Assets/_Project/Scripts/Editor/BalanceEditor/Providers/EnemyDataCategoryProvider.cs` (CL-173)
-- `Assets/_Project/Scripts/Editor/BalanceEditor/Providers/BossDataCategoryProvider.cs` (CL-173)
-- `Assets/_Project/Scripts/Editor/InventoryTest/InventoryTestWindow.cs` 등 별도 폴더 + asmdef (CL-182~187)
+- `LostMemory/Assets/_Project/Scripts/Runtime/Enemies/EnemyData.cs` (CL-172)
+- `LostMemory/Assets/_Project/Scripts/Runtime/Enemies/BossData.cs` (CL-172)
+- `LostMemory/Assets/_Project/Scripts/Editor/BalanceEditor/Providers/EnemyDataCategoryProvider.cs` (CL-173)
+- `LostMemory/Assets/_Project/Scripts/Editor/BalanceEditor/Providers/BossDataCategoryProvider.cs` (CL-173)
+- `LostMemory/Assets/_Project/Scripts/Editor/InventoryTest/InventoryTestWindow.cs` + Resources/UXML+USS (CL-174 — 무 asmdef 채택, Editor 폴더 규칙으로 자동 분리)
+- (CL-175~177) InventoryTestWindow 트리/슬롯/동작 코드 추가
+- (Epic V 진입 시) 검색 / 드래그앤드롭 / Quick Add 확장 (CL-182~187)
 
 ### 신규 (사용자 Unity Editor 작업)
 - `Assets/_Project/ScriptableObjects/Enemies/Bertha_Boss.asset` (CL-172)
-- (Player 트랙 진행 시) `PlayerStatsCategoryProvider.cs`, `PlayerStatsData.cs`, `PlayerStatsData.asset` (CL-188~190 보류)
+- (Player 트랙 진행 시) `PlayerStatsCategoryProvider.cs`, `PlayerStatsData.cs`, `PlayerStatsData.asset` (CL-179~181 보류)
 
 ### 수정 예상 (보류 ticket 진행 시)
-- `KhiDashController.cs`, `PlayerHealthStatApplier.cs`, `PlayerMovementStatApplier.cs` (base 값 SO 참조로 전환 — CL-189)
-- `BerthaBossPhaseController.cs` (SO 참조 전환 — CL-180)
+- `KhiDashController.cs`, `PlayerHealthStatApplier.cs`, `PlayerMovementStatApplier.cs` (base 값 SO 참조로 전환 — CL-180)
+- `BerthaBossPhaseController.cs` (SO 참조 전환 — CL-178)
 
 ---
 
@@ -370,20 +391,21 @@ CL-166 작업이 머지됐는지 확인. 안 됐으면 CL-166 마무리 우선.
 ### 2. 어느 ticket 부터?
 
 권장 우선순위 (제 7장 참조):
-- CL-166 마무리 → **CL-182** (Inventory Test Window 셸) 또는 **CL-172** (Enemy SO)
-- 두 트랙 독립이라 병렬 가능. 사용자 의사 확인 후 진입
+- ✅ CL-166 마무리 → ✅ CL-172/173 (Enemy SO+Provider) → **CL-174** (Inventory MVP 셸, 진행 중) → CL-175~177
+- Epic V 확장 (CL-182~187) 은 CL-174~177 완료 후 진입
 
-### 3. 첫 ticket 진입 (예: CL-172)
+### 3. 첫 ticket 진입 (현재: CL-174)
 
-[cl172_plan.md](cl172_plan.md) 가 이미 작성됨. 그대로 따라가면 됨:
-1. `EnemyData.cs` / `BossData.cs` 작성
-2. 컴파일 확인
-3. 사용자에게 Bertha_Boss.asset Unity Editor 작업 안내
-4. CL-173 으로 이동
+[cl174_plan.md](cl174_plan.md) 작성됨. 그대로 따라가면 됨:
+1. `Editor/InventoryTest/` 폴더 신설
+2. `InventoryTestWindow.uxml` / `.uss` / `.cs` 작성
+3. 컴파일 확인
+4. 사용자가 Unity Editor 에서 Tools > LostMemory > Inventory Test Window 검증
+5. CL-175 (트리 + 슬롯) 으로 이동
 
 ### 4. 새 ticket 의 plan doc 작성
 
-CL-173, CL-182 등은 plan doc 미작성. 진입 시점에 `cl1XX_plan.md` 작성 후 코드.
+✅ CL-173, CL-174 plan doc 작성됨. CL-175~177, CL-182~187 등은 진입 시점에 `cl1XX_plan.md` 작성 후 코드.
 
 ### 5. 메모리 가이드 — 반드시 준수
 
@@ -411,3 +433,4 @@ CL-173, CL-182 등은 plan doc 미작성. 진입 시점에 `cl1XX_plan.md` 작�
 | 일자 | 변경 |
 |---|---|
 | 2026-05-06 | 최초 작성 (Epic U/V 마스터 plan). 이전 plan: [balance-editor-snuggly-naur.md](file://C:/Users/AD/.claude/plans/balance-editor-snuggly-naur.md) (사용자 홈 — 비공유) 내용 + Bridge 정보 통합 |
+| 2026-05-06 (재) | ticket 시트 16 ticket 으로 확장: Epic U Inventory CL-174~177 추가 (MVP 트랙), Player Stats 번호 재배치 (CL-188~190 → CL-179~181), Enemy 어댑터 (CL-180 → CL-178). 본문 §3.2/§4/§5/§6/§7/§9/§10/§11/§12 일관성 갱신. cl174_plan.md 작성 + master plan 동기화 |
