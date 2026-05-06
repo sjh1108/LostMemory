@@ -6,7 +6,8 @@ namespace LostMemory.Combat.Telegraph
 {
     public enum AttackTelegraphShape2D
     {
-        Box
+        Box,
+        Circle
     }
 
     public struct AttackTelegraphRequest2D
@@ -35,7 +36,10 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] [Range(0f, 1f)] private float pulseAlphaStrength = 0.18f;
         [SerializeField] private Vector3 positionOffset = new Vector3(0f, 0.02f, 0f);
 
-        private static Sprite _telegraphSprite;
+        private const int TelegraphTextureSize = 64;
+
+        private static Sprite _boxTelegraphSprite;
+        private static Sprite _circleTelegraphSprite;
 
         private GameObject _previewObject;
         private Transform _previewTransform;
@@ -140,7 +144,7 @@ namespace LostMemory.Combat.Telegraph
             _previewTransform.SetParent(ResolvePreviewRenderParent(), false);
 
             _previewRenderer = _previewObject.AddComponent<SpriteRenderer>();
-            _previewRenderer.sprite = GetOrCreateTelegraphSprite();
+            _previewRenderer.sprite = GetOrCreateTelegraphSprite(AttackTelegraphShape2D.Box);
             _previewRenderer.sortingOrder = sortingOrderOffset;
             _previewRenderer.drawMode = SpriteDrawMode.Simple;
 
@@ -149,20 +153,18 @@ namespace LostMemory.Combat.Telegraph
 
         private void ApplyRequest()
         {
-            if (_activeRequest.Shape != AttackTelegraphShape2D.Box)
-            {
-                return;
-            }
-
             Vector2 direction = _activeRequest.Direction.sqrMagnitude > 0.0001f
                 ? _activeRequest.Direction.normalized
                 : Vector2.right;
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            float angle = _activeRequest.Shape == AttackTelegraphShape2D.Circle
+                ? 0f
+                : Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             Color color = _activeRequest.Color.a > 0f ? _activeRequest.Color : defaultColor;
 
+            _previewRenderer.sprite = GetOrCreateTelegraphSprite(_activeRequest.Shape);
             _previewTransform.position = (Vector3)_activeRequest.Center + positionOffset;
             _previewTransform.rotation = Quaternion.Euler(0f, 0f, angle);
-            _previewTransform.localScale = ResolveLocalScale(_activeRequest.Size);
+            _previewTransform.localScale = ResolveLocalScale(ResolveShapeSize(_activeRequest.Size, _activeRequest.Shape));
             _previewRenderer.color = color;
             _previewRenderer.enabled = true;
 
@@ -184,6 +186,17 @@ namespace LostMemory.Combat.Telegraph
             float safeScaleX = Mathf.Abs(scaleBasis.x) > 0.0001f ? Mathf.Abs(scaleBasis.x) : 1f;
             float safeScaleY = Mathf.Abs(scaleBasis.y) > 0.0001f ? Mathf.Abs(scaleBasis.y) : 1f;
             return new Vector3(worldSize.x / safeScaleX, worldSize.y / safeScaleY, 1f);
+        }
+
+        private static Vector2 ResolveShapeSize(Vector2 requestedSize, AttackTelegraphShape2D shape)
+        {
+            if (shape != AttackTelegraphShape2D.Circle)
+            {
+                return requestedSize;
+            }
+
+            float diameter = Mathf.Max(Mathf.Abs(requestedSize.x), Mathf.Abs(requestedSize.y));
+            return new Vector2(diameter, diameter);
         }
 
         private Transform ResolvePreviewRenderParent()
@@ -273,21 +286,31 @@ namespace LostMemory.Combat.Telegraph
             }
         }
 
-        private static Sprite GetOrCreateTelegraphSprite()
+        private static Sprite GetOrCreateTelegraphSprite(AttackTelegraphShape2D shape)
         {
-            if (_telegraphSprite != null)
+            if (shape == AttackTelegraphShape2D.Circle)
             {
-                return _telegraphSprite;
+                return GetOrCreateCircleTelegraphSprite();
             }
 
-            Texture2D texture = new Texture2D(16, 16, TextureFormat.RGBA32, false)
+            return GetOrCreateBoxTelegraphSprite();
+        }
+
+        private static Sprite GetOrCreateBoxTelegraphSprite()
+        {
+            if (_boxTelegraphSprite != null)
+            {
+                return _boxTelegraphSprite;
+            }
+
+            Texture2D texture = new Texture2D(TelegraphTextureSize, TelegraphTextureSize, TextureFormat.RGBA32, false)
             {
                 name = "AttackTelegraphBoxTexture",
                 filterMode = FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp
             };
 
-            Color[] pixels = new Color[16 * 16];
+            Color[] pixels = new Color[TelegraphTextureSize * TelegraphTextureSize];
             for (int i = 0; i < pixels.Length; i++)
             {
                 pixels[i] = Color.white;
@@ -296,9 +319,53 @@ namespace LostMemory.Combat.Telegraph
             texture.SetPixels(pixels);
             texture.Apply();
 
-            _telegraphSprite = Sprite.Create(texture, new Rect(0f, 0f, 16f, 16f), new Vector2(0.5f, 0.5f), 16f);
-            _telegraphSprite.name = "AttackTelegraphBoxSprite";
-            return _telegraphSprite;
+            _boxTelegraphSprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, TelegraphTextureSize, TelegraphTextureSize),
+                new Vector2(0.5f, 0.5f),
+                TelegraphTextureSize);
+            _boxTelegraphSprite.name = "AttackTelegraphBoxSprite";
+            return _boxTelegraphSprite;
+        }
+
+        private static Sprite GetOrCreateCircleTelegraphSprite()
+        {
+            if (_circleTelegraphSprite != null)
+            {
+                return _circleTelegraphSprite;
+            }
+
+            Texture2D texture = new Texture2D(TelegraphTextureSize, TelegraphTextureSize, TextureFormat.RGBA32, false)
+            {
+                name = "AttackTelegraphCircleTexture",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+
+            Color[] pixels = new Color[TelegraphTextureSize * TelegraphTextureSize];
+            float radius = TelegraphTextureSize * 0.5f;
+            Vector2 center = new Vector2(radius, radius);
+
+            for (int y = 0; y < TelegraphTextureSize; y++)
+            {
+                for (int x = 0; x < TelegraphTextureSize; x++)
+                {
+                    Vector2 pixelCenter = new Vector2(x + 0.5f, y + 0.5f);
+                    float distance = Vector2.Distance(pixelCenter, center);
+                    pixels[y * TelegraphTextureSize + x] = distance <= radius ? Color.white : Color.clear;
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply();
+
+            _circleTelegraphSprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, TelegraphTextureSize, TelegraphTextureSize),
+                new Vector2(0.5f, 0.5f),
+                TelegraphTextureSize);
+            _circleTelegraphSprite.name = "AttackTelegraphCircleSprite";
+            return _circleTelegraphSprite;
         }
     }
 }

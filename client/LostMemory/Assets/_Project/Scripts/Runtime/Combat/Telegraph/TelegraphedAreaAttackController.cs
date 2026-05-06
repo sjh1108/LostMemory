@@ -28,6 +28,7 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private bool lockMovementDuringAttackSequence = true;
         [SerializeField] private bool lockMovementDuringRecover = true;
         [SerializeField] private Color telegraphColor = new Color(1f, 0.34f, 0.08f, 0.32f);
+        [SerializeField] private AttackTelegraphShape2D attackShape = AttackTelegraphShape2D.Box;
         [SerializeField] private Vector2 attackOffset = Vector2.zero;
         [SerializeField] private Vector2 attackSize = new Vector2(1f, 1f);
         [SerializeField] private LayerMask targetLayerMask = 1 << 10;
@@ -44,6 +45,7 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField, Min(0f)] private float followUpAreaTelegraphDuration = 0.6f;
         [SerializeField] private Color followUpAreaTelegraphColor = new Color(1f, 0.12f, 0.05f, 0.38f);
         [SerializeField] private Vector2 followUpAreaOffset = Vector2.zero;
+        [SerializeField] private AttackTelegraphShape2D followUpAreaShape = AttackTelegraphShape2D.Box;
         [SerializeField] private Vector2 followUpAreaSize = new Vector2(2f, 2f);
         [SerializeField] private float followUpAreaDamage = 10f;
         [SerializeField] private float followUpAreaTargetInvincibilityDuration = 0.5f;
@@ -499,7 +501,7 @@ namespace LostMemory.Combat.Telegraph
             }
 
             float angle = Mathf.Atan2(_lockedDirection.y, _lockedDirection.x) * Mathf.Rad2Deg;
-            int hitCount = Physics2D.OverlapBoxNonAlloc(_lockedCenter, attackSize, angle, _overlapBuffer, targetLayerMask);
+            int hitCount = OverlapAttackAreaNonAlloc(_lockedCenter, attackSize, angle, attackShape);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -646,12 +648,7 @@ namespace LostMemory.Combat.Telegraph
             EnsureBuffer();
             _hitTargetsThisFollowUpArea.Clear();
 
-            int hitCount = Physics2D.OverlapBoxNonAlloc(
-                _followUpAreaCenter,
-                followUpAreaSize,
-                0f,
-                _overlapBuffer,
-                targetLayerMask);
+            int hitCount = OverlapAttackAreaNonAlloc(_followUpAreaCenter, followUpAreaSize, 0f, followUpAreaShape);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -866,10 +863,10 @@ namespace LostMemory.Combat.Telegraph
             Vector2 direction = _lockedDirection.sqrMagnitude > 0.0001f ? _lockedDirection.normalized : Vector2.right;
             return new AttackTelegraphRequest2D
             {
-                Shape = AttackTelegraphShape2D.Box,
+                Shape = attackShape,
                 Center = _lockedCenter,
                 Direction = direction,
-                Size = attackSize,
+                Size = ResolveShapeDisplaySize(attackSize, attackShape),
                 Color = telegraphColor,
                 Duration = 0f
             };
@@ -879,13 +876,60 @@ namespace LostMemory.Combat.Telegraph
         {
             return new AttackTelegraphRequest2D
             {
-                Shape = AttackTelegraphShape2D.Box,
+                Shape = followUpAreaShape,
                 Center = _followUpAreaCenter,
                 Direction = Vector2.right,
-                Size = followUpAreaSize,
+                Size = ResolveShapeDisplaySize(followUpAreaSize, followUpAreaShape),
                 Color = followUpAreaTelegraphColor,
                 Duration = 0f
             };
+        }
+
+        private int OverlapAttackAreaNonAlloc(
+            Vector2 center,
+            Vector2 size,
+            float angle,
+            AttackTelegraphShape2D shape)
+        {
+            if (shape == AttackTelegraphShape2D.Circle)
+            {
+                return Physics2D.OverlapCircle(
+                    center,
+                    ResolveCircleRadius(size),
+                    BuildTargetContactFilter(),
+                    _overlapBuffer);
+            }
+
+            return Physics2D.OverlapBox(
+                center,
+                size,
+                angle,
+                BuildTargetContactFilter(),
+                _overlapBuffer);
+        }
+
+        private ContactFilter2D BuildTargetContactFilter()
+        {
+            ContactFilter2D contactFilter = new ContactFilter2D();
+            contactFilter.SetLayerMask(targetLayerMask);
+            contactFilter.useTriggers = true;
+            return contactFilter;
+        }
+
+        private static float ResolveCircleRadius(Vector2 size)
+        {
+            return Mathf.Max(Mathf.Abs(size.x), Mathf.Abs(size.y)) * 0.5f;
+        }
+
+        private static Vector2 ResolveShapeDisplaySize(Vector2 size, AttackTelegraphShape2D shape)
+        {
+            if (shape != AttackTelegraphShape2D.Circle)
+            {
+                return size;
+            }
+
+            float diameter = Mathf.Max(Mathf.Abs(size.x), Mathf.Abs(size.y));
+            return new Vector2(diameter, diameter);
         }
 
         private Vector2 ResolveFollowUpAreaCenter()
