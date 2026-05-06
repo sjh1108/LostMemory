@@ -789,6 +789,63 @@ sudo ls -la /var/lib/docker/containers/<container-id>/    # 회전된 .1, .2 또
 
 ---
 
+## 배포 / 롤백 운영 (deploy.sh)
+
+`server/scripts/deploy.sh` 가 배포/롤백/상태조회의 단일 진입점이다. Jenkins 자동 배포와 운영자 SSH 수동 운영 양쪽 모두 같은 스크립트를 호출한다.
+
+### Sub-command
+
+| 명령 | 동작 |
+|---|---|
+| `./scripts/deploy.sh deploy <N>` | 빌드된 `server-app:latest` 를 `server-app:N` 으로 태깅 + `up -d` + healthy 폴링. Jenkins 가 호출하는 경로 |
+| `./scripts/deploy.sh rollback <N>` | 보존된 `server-app:N` 태그를 `server-app:latest` 로 재태깅 + `up -d --force-recreate` + healthy 폴링. image 빌드 없이 ~10초 |
+| `./scripts/deploy.sh status` | 현재 app 컨테이너의 image / state / health |
+| `./scripts/deploy.sh history` | 보존된 `server-app:*` 태그 목록 (디스크 점유 같이) |
+
+### 자동 배포 흐름
+
+develop push → GitLab CI `trigger_jenkins_build` → Jenkins 빌드 #N
+1. Docker Build stage: `docker compose build app` → `server-app:latest` image 생성
+2. Deploy stage: `./scripts/deploy.sh deploy <N>` → 태깅 + `up -d` + healthy 폴링
+3. Smoke Test stage: `./scripts/deploy.sh status` (가시성용)
+
+### 수동 배포 / 롤백 (EC2 SSH)
+
+```bash
+ssh -i ~/.ssh/K14C201T.pem ubuntu@k14c201.p.ssafy.io
+cd /home/ubuntu/lostmemory/server
+
+./scripts/deploy.sh status                  # 현재 떠있는 image / health 확인
+./scripts/deploy.sh history                 # 보존된 태그 목록 (#1, #2, ... + size)
+./scripts/deploy.sh rollback 13             # 빌드 #13 으로 즉시 복귀 (~10초)
+```
+
+### 롤백 시나리오 예시
+
+빌드 #14 가 schema-validation fail 로 startup 안 되는 상황 (이번 5월 초의 실제 케이스):
+
+```bash
+./scripts/deploy.sh status      # → server-app-1 가 Restarting 으로 보임
+./scripts/deploy.sh history     # → 13, 12, 11 가 살아있는지 확인
+./scripts/deploy.sh rollback 13 # → 즉시 복귀 + healthy 자동 검증
+```
+
+### 보존 태그 정책 / 디스크
+
+- Jenkinsfile 의 `buildDiscarder(logRotator(numToKeepStr: '20'))` 는 빌드 메타데이터 20개만 유지 (image 자체와는 별개).
+- docker image 자체는 `./scripts/deploy.sh history` 출력의 합계가 디스크 점유.
+- 한 image 약 250MB × 20 ≈ 5GB. 현재 디스크 309GB 여유 충분.
+- 무한 누적 방지하려면 별도 cron 으로 `docker image prune --filter 'until=720h' --force` 같은 정책 추가 (이번 PR 범위 밖).
+
+### 주의
+
+- **rollback 시 새 image build 안 함** — 호스트에 보존된 `server-app:N` 태그를 사용한다. 그 image 가 이미 prune 됐으면 rollback 불가 (`history` 로 사전 확인).
+- **rollback 후 Jenkins 빌드 번호 vs 실제 떠있는 image 불일치 가능** — `./scripts/deploy.sh status` 로 항상 실제 상태 확인.
+- **app service 만 영향**. nginx / postgres / redis 는 별도. schema 누락처럼 DB 차원 이슈는 rollback 만으로 해결되지 않을 수 있음.
+- **healthy 폴링 timeout 90초** (30회 × 3초). 네트워크/DB 가 느려서 그 안에 healthy 못 되면 로그 100줄 출력 후 exit 1 — 빌드도 fail 처리.
+
+---
+
 ## 문서 변경 이력
 
 | 날짜 | 내용 | 작성자 |
@@ -797,5 +854,6 @@ sudo ls -la /var/lib/docker/containers/<container-id>/    # 회전된 .1, .2 또
 | 2026-05-04 | INFRA-15 Let's Encrypt HTTPS 운영 절차 추가 | 송주헌 |
 | 2026-05-06 | INFRA-16 Jenkins 빌드 Mattermost 알림 운영 절차 추가 | 송주헌 |
 | 2026-05-06 | INFRA-17 Docker 로그 rotation + logrotate 운영 절차 추가 | 송주헌 |
+| 2026-05-06 | INFRA-18 deploy.sh 배포/롤백 운영 절차 추가 | 송주헌 |
 
 ---
