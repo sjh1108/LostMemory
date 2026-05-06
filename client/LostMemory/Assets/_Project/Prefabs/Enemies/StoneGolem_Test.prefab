@@ -12,12 +12,12 @@ GameObject:
   - component: {fileID: 212797044214329334}
   - component: {fileID: 95175321394988512}
   m_Layer: 13
-  m_Name: OrcRiderModel
+  m_Name: OrcModel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4067358023085436
 Transform:
   m_ObjectHideFlags: 0
@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0.625, z: 0}
-  m_LocalScale: {x: 4.5, y: 4.5, z: 1}
+  m_LocalScale: {x: 6, y: 6, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4278877128282960}
@@ -84,7 +84,7 @@ SpriteRenderer:
   m_SortingLayer: 4
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -454949978, guid: e47219af8ec814e6ca6c7c02e34b869c, type: 3}
+  m_Sprite: {fileID: 1813561159, guid: 8c446454e11454b8f81f515f9e8eb579, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -104,7 +104,7 @@ Animator:
   m_GameObject: {fileID: 1089166889239254}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 3893228e82590ec4dbca13c9ab0ab87b, type: 2}
+  m_Controller: {fileID: 9100000, guid: 46c5eb6f44ac4ef44ae83d56f15343e2, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -145,16 +145,15 @@ GameObject:
   - component: {fileID: 8095614620046919901}
   - component: {fileID: 3841032822885868042}
   - component: {fileID: 5375288975264428202}
-  - component: {fileID: 8986977757907737210}
-  - component: {fileID: 114900000000000001}
-  - component: {fileID: 114900000000000002}
-  - component: {fileID: 114900000000000003}
-  - component: {fileID: 114900000000000004}
-  - component: {fileID: 114900000000000005}
-  - component: {fileID: 114900000000000006}
-  - component: {fileID: 114900000000000007}
+  - component: {fileID: 8925453758035170687}
+  - component: {fileID: 114900000000100001}
+  - component: {fileID: 114900000000100002}
+  - component: {fileID: 114900000000100006}
+  - component: {fileID: 114900000000100003}
+  - component: {fileID: 114900000000100004}
+  - component: {fileID: 114900000000100005}
   m_Layer: 13
-  m_Name: OrcRider_CL039
+  m_Name: StoneGolem_Test
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -178,7 +177,8 @@ Transform:
   - {fileID: 4067358023085436}
   - {fileID: 247732977693676927}
   - {fileID: 7203366612126677758}
-  - {fileID: 9083412657401123457}
+  - {fileID: 8067319228714699415}
+  - {fileID: 7975849498942803372}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &50872317139119918
@@ -193,7 +193,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
+  m_Mass: 100
   m_LinearDamping: 1
   m_AngularDamping: 0.05
   m_GravityScale: 0
@@ -252,7 +252,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.6, y: 0.5}
+  m_Size: {x: 1.2, y: 0.59}
   m_EdgeRadius: 0
 --- !u!210 &210462174901479078
 SortingGroup:
@@ -264,7 +264,7 @@ SortingGroup:
   m_Enabled: 1
   m_SortingLayerID: 47421343
   m_SortingLayer: 4
-  m_SortingOrder: 0
+  m_SortingOrder: 50
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
 --- !u!114 &114002022934925870
@@ -319,11 +319,11 @@ MonoBehaviour:
   CharacterDimension: 0
   CharacterType: 1
   PlayerID: 
-  CharacterAnimator: {fileID: 95175321394988512}
+  CharacterAnimator: {fileID: 7975849498942803374}
   UseDefaultMecanim: 1
   RunAnimatorSanityChecks: 0
   DisableAnimatorLogs: 1
-  CharacterModel: {fileID: 1089166889239254}
+  CharacterModel: {fileID: 7975849498942803375}
   CharacterHealth: {fileID: 0}
   SendStateChangeEvents: 1
   AdditionalAbilityNodes: []
@@ -352,10 +352,10 @@ MonoBehaviour:
   BlockingWeaponStates: 
   FacingMode: 3
   FacingBase: 0
-  ModelShouldFlip: 0
-  ModelFlipValueLeft: {x: -1, y: 1, z: 1}
-  ModelFlipValueRight: {x: 1, y: 1, z: 1}
-  ModelShouldRotate: 1
+  ModelShouldFlip: 1
+  ModelFlipValueLeft: {x: -3, y: 3, z: 1}
+  ModelFlipValueRight: {x: 3, y: 3, z: 1}
+  ModelShouldRotate: 0
   ModelRotationValueLeft: {x: 0, y: 180, z: 0}
   ModelRotationValueRight: {x: 0, y: 0, z: 0}
   ModelRotationSpeed: 0
@@ -519,6 +519,7 @@ MonoBehaviour:
     Actions:
       array:
       - {fileID: 114113908976523258}
+      - {fileID: 8925453758035170687}
     Transitions:
       array:
       - Decision: {fileID: 114975266224184248}
@@ -529,27 +530,36 @@ MonoBehaviour:
         TrueState: 
         FalseState: Detecting
         LastDecisionEvaluation: 0
-      - Decision: {fileID: 114900000000000007}
-        TrueState: Telegraph
+      - Decision: {fileID: 8095614620046919901}
+        TrueState: AttackTelegraph
         FalseState: 
         LastDecisionEvaluation: 0
-  - StateName: Telegraph
+  - StateName: AttackTelegraph
+    Actions:
+      array:
+      - {fileID: 114472236543704332}
+      - {fileID: 6726437670042269150}
+    Transitions:
+      array:
+      - Decision: {fileID: 114631777180868210}
+        TrueState: 
+        FalseState: Detecting
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 114900000000100003}
+        TrueState: Attack
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: Attack
     Actions:
       array:
       - {fileID: 114472236543704332}
     Transitions:
       array:
-      - Decision: {fileID: 114900000000000002}
-        TrueState: Charge
-        FalseState: 
+      - Decision: {fileID: 114631777180868210}
+        TrueState: 
+        FalseState: Detecting
         LastDecisionEvaluation: 0
-  - StateName: Charge
-    Actions:
-      array:
-      - {fileID: 114900000000000001}
-    Transitions:
-      array:
-      - Decision: {fileID: 114900000000000003}
+      - Decision: {fileID: 114900000000100004}
         TrueState: Recover
         FalseState: 
         LastDecisionEvaluation: 0
@@ -563,7 +573,7 @@ MonoBehaviour:
         TrueState: 
         FalseState: Detecting
         LastDecisionEvaluation: 0
-      - Decision: {fileID: 114900000000000004}
+      - Decision: {fileID: 114900000000100005}
         TrueState: Moving
         FalseState: 
         LastDecisionEvaluation: 0
@@ -591,7 +601,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Label: 
-  Radius: 15
+  Radius: 6
   DetectionOriginOffset: {x: 0, y: 0, z: 0}
   TargetLayer:
     serializedVersion: 2
@@ -874,7 +884,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionFaceTowardsTarget2D
   InitializationMode: 0
   Label: 
-  Mode: 1
+  Mode: 0
 --- !u!114 &8095614620046919901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -889,7 +899,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionDistanceToTarget
   Label: 
   ComparisonMode: 1
-  Distance: 4.5
+  Distance: 1.5
 --- !u!114 &3841032822885868042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -897,7 +907,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1561694053617324}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a07c6668aa55403790d27b575279549, type: 3}
   m_Name: 
@@ -911,7 +921,7 @@ MonoBehaviour:
   BlockingMovementStates: 
   BlockingConditionStates: 
   BlockingWeaponStates: 
-  InitialWeapon: {fileID: 2352508785994630202, guid: 863faa2920c0457dac17c34a95b0fa9a,
+  InitialWeapon: {fileID: 2352508785994630202, guid: ccb51b185aebaba419e15d3a96f9a0cd,
     type: 3}
   CanPickupWeapons: 1
   WeaponUseFeedback: {fileID: 0}
@@ -951,7 +961,7 @@ MonoBehaviour:
   AimAtTarget: 1
   ShootOffset: {x: 0, y: 0, z: 0}
   OnlyAimWhenInState: 0
---- !u!114 &8986977757907737210
+--- !u!114 &8925453758035170687
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -960,120 +970,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1561694053617324}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b2620d37890657743b0e0a1bfa4eea34, type: 3}
+  m_Script: {fileID: 11500000, guid: 1148b739e4c74b8478868d1834fbcd66, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.CharacterDamageDash2D
-  AbilityStartSfx: {fileID: 0}
-  AbilityInProgressSfx: {fileID: 0}
-  AbilityStopSfx: {fileID: 0}
-  AbilityStartFeedbacks: {fileID: 0}
-  AbilityStopFeedbacks: {fileID: 0}
-  AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
-  DashMode: 1
-  DashSpace: 0
-  DashDirection: {x: 0, y: 0, z: 1}
-  DashDistance: 4.5
-  DashDuration: 0.32
-  DashCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  Cooldown:
-    Unlimited: 0
-    ConsumptionDuration: 1.2
-    PauseOnEmptyDuration: 1
-    RefillDuration: 1
-    CanInterruptRefill: 1
-    CooldownState: 0
-    CurrentDurationLeft: 0
-  InvincibleWhileDashing: 0
-  DashFeedback: {fileID: 0}
-  TargetDamageOnTouch: {fileID: 7719002209275833114}
---- !u!114 &114900000000000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1561694053617324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ecd66c04f2d5b9408dae7ed3b52f919, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionFaceTowardsTarget2D
   InitializationMode: 0
-  Label: ChargeDash
-  Mode: 2
-  AutoSetupDashMode: 1
---- !u!114 &114900000000000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1561694053617324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Label: TelegraphDuration
-  AfterTimeMin: 0.5
-  AfterTimeMax: 0.5
---- !u!114 &114900000000000003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1561694053617324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Label: ChargeDuration
-  AfterTimeMin: 0.32
-  AfterTimeMax: 0.32
---- !u!114 &114900000000000004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1561694053617324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Label: RecoverDuration
-  AfterTimeMin: 0.45
-  AfterTimeMax: 0.45
---- !u!114 &114900000000000005
+  Label: 
+  Mode: 0
+--- !u!114 &114900000000100001
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1084,18 +987,18 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d6c7a273e1ea4f149fa4534d4480e5c1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AttackTelegraph2DView
   previewObjectName: AttackTelegraphPreview
   previewParent: {fileID: 4736116768674126}
   sortingReference: {fileID: 212797044214329334}
   sortingOrderOffset: -5
   renderOutsideSortingGroup: 1
-  sortingGroupReference: {fileID: 0}
+  sortingGroupReference: {fileID: 210462174901479078}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
   positionOffset: {x: 0, y: 0.02, z: 0}
---- !u!114 &114900000000000006
+--- !u!114 &114900000000100002
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1104,39 +1007,69 @@ MonoBehaviour:
   m_GameObject: {fileID: 1561694053617324}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3247f4c84dc4c829c4527c8a5cb4bd4, type: 3}
+  m_Script: {fileID: 11500000, guid: 8bae2c2af35b43408599828342239d09, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  driverKey: DashTelegraph
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.TelegraphedAreaAttackController
   brain: {fileID: 114675271368606418}
   character: {fileID: 114184945564206620}
-  dashAbility: {fileID: 8986977757907737210}
+  movementAbility: {fileID: 114809083901408364}
   orientationAbility: {fileID: 114436691134650644}
-  animator: {fileID: 95175321394988512}
-  dashAction: {fileID: 114900000000000001}
-  chargeDamageArea: {fileID: 7742764119654377424}
+  animator: {fileID: 7975849498942803374}
   telegraphOrigin: {fileID: 4736116768674126}
-  telegraphView: {fileID: 114900000000000005}
-  rotateChargeDamageAreaWithDash: 1
-  telegraphColor: {r: 1, g: 0.34, b: 0.08, a: 0.3}
-  telegraphLengthPadding: 0
-  telegraphWidthPadding: 0.1
+  telegraphView: {fileID: 114900000000100001}
+  telegraphStateName: AttackTelegraph
+  attackStateName: Attack
+  recoverStateName: Recover
+  attackAnimationStateName: StoneGolem_Attack
+  attackAnimationLayer: 0
+  impactTime: 0.85
+  hideTelegraphOnAttackStart: 0
+  telegraphHideLeadTime: 0.03
+  lockMovementDuringAttackSequence: 1
+  lockMovementDuringRecover: 1
+  telegraphColor: {r: 1, g: 0.34, b: 0.08, a: 0.32}
+  attackShape: 1
+  attackOffset: {x: 1, y: 0}
+  attackSize: {x: 5, y: 5}
+  targetLayerMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  maximumHits: 8
+  damage: 10
+  targetInvincibilityDuration: 1
   horizontalFacingThreshold: 0.05
-  playTelegraphAnimation: 1
-  telegraphAnimationStateName: OrcRider_Blcok
-  telegraphAnimationLayer: 0
-  playChargeAnimation: 0
-  chargeAnimationStateName: Dash
-  chargeAnimationLayer: 0
-  restoreLocomotionAnimation: 1
-  idleAnimationStateName: OrcRider_Idle
-  walkAnimationStateName: OrcRider_Walk
-  walkingAnimatorParameterName: Walking
-  locomotionTransitionDuration: 0.05
-  telegraphStateName: Telegraph
-  chargeStateName: Charge
-  useLastKnownTargetPosition: 1
---- !u!114 &114900000000000007
+  lockAttackDirectionToTarget: 1
+  limitAttackDirectionToHorizontal: 1
+  driveAnimatorDirectionParameters: 1
+  applyModelFacingImmediately: 1
+  followUpAreaAttackEnabled: 1
+  followUpAreaDelay: 0.15
+  followUpAreaTelegraphDuration: 0.9
+  followUpAreaTelegraphColor: {r: 1, g: 0.12, b: 0.05, a: 0.38}
+  followUpAreaOffset: {x: 0, y: 0}
+  followUpAreaShape: 1
+  followUpAreaSize: {x: 2.5, y: 2.5}
+  followUpAreaDamage: 10
+  followUpAreaTargetInvincibilityDuration: 1
+  followUpAreaImpactSprites:
+  - {fileID: 656703435, guid: fd1dcd8494484b940b1f3e3828ea6528, type: 3}
+  - {fileID: 424885573, guid: fd1dcd8494484b940b1f3e3828ea6528, type: 3}
+  - {fileID: 738367202, guid: fd1dcd8494484b940b1f3e3828ea6528, type: 3}
+  - {fileID: -749985404, guid: fd1dcd8494484b940b1f3e3828ea6528, type: 3}
+  - {fileID: -1060232016, guid: fd1dcd8494484b940b1f3e3828ea6528, type: 3}
+  - {fileID: -989272709, guid: fd1dcd8494484b940b1f3e3828ea6528, type: 3}
+  - {fileID: -903555728, guid: fd1dcd8494484b940b1f3e3828ea6528, type: 3}
+  - {fileID: -544899916, guid: fd1dcd8494484b940b1f3e3828ea6528, type: 3}
+  followUpAreaImpactFrameRate: 16
+  followUpAreaImpactSize: {x: 2.5, y: 2.5}
+  followUpAreaImpactColor: {r: 1, g: 1, b: 1, a: 1}
+  followUpAreaImpactOffset: {x: 0, y: 0, z: 0}
+  followUpAreaImpactParent: {fileID: 0}
+  followUpAreaImpactSortingGroupReference: {fileID: 210462174901479078}
+  followUpAreaImpactSortingOrderOffset: 1
+  debugName: StoneGolemAreaAttack
+  debugLogging: 0
+--- !u!114 &114900000000100006
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1145,13 +1078,56 @@ MonoBehaviour:
   m_GameObject: {fileID: 1561694053617324}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f86ab43e946467ea2d69dc23fab38f7, type: 3}
+  m_Script: {fileID: 11500000, guid: c2f88f9a4d8c4dd486f5ec62ce8eb167, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  Label: 
-  dashAbility: {fileID: 8986977757907737210}
-  comparisonMode: 1
-  distance: 4.5
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.StoneGolemAttackKnockback
+  knockbackForce: 500
+  debugLogging: 0
+--- !u!114 &114900000000100003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: AttackTelegraphDuration
+  AfterTimeMin: 0.7
+  AfterTimeMax: 0.7
+--- !u!114 &114900000000100004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: AttackDuration
+  AfterTimeMin: 1.8
+  AfterTimeMax: 1.8
+--- !u!114 &114900000000100005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: RecoverDuration
+  AfterTimeMin: 0.45
+  AfterTimeMax: 0.45
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
@@ -11828,7 +11804,7 @@ GameObject:
   - component: {fileID: 7742764119654377424}
   - component: {fileID: 7719002209275833114}
   m_Layer: 13
-  m_Name: ChargeDamageArea
+  m_Name: DamageArea
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11843,11 +11819,11 @@ Transform:
   m_GameObject: {fileID: 1422487604856424639}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -0.06, y: 0.12, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 9083412657401123457}
+  m_Father: {fileID: 4736116768674126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!61 &7742764119654377424
 BoxCollider2D:
@@ -11883,7 +11859,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: 0.19}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -11893,7 +11869,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 2.2, y: 3}
+  m_Size: {x: 1.2, y: 0.8}
   m_EdgeRadius: 0
 --- !u!114 &7719002209275833114
 MonoBehaviour:
@@ -11975,35 +11951,132 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4736116768674126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &9083412657401123456
-GameObject:
+--- !u!1001 &4880191076793379241
+PrefabInstance:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 9083412657401123457}
-  m_Layer: 13
-  m_Name: ChargeHitboxAnchor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &9083412657401123457
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9083412657401123456}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.19, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 8067319228714699415}
-  m_Father: {fileID: 4736116768674126}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4736116768674126}
+    m_Modifications:
+    - target: {fileID: 3248787690555597828, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_SortingOrder
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597828, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e2ca7bf8a62241169f20277802ae4b6c, type: 2}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.031
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.068
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597830, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_Name
+      value: StoneGolem
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597831, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: d3a8a495e4e84b77bb7ce982673ae15c, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3248787690555597830, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4775608305527192301}
+  m_SourcePrefab: {fileID: 100100000, guid: 17bd4c4a974d8844ba51e5837e231100, type: 3}
+--- !u!4 &7975849498942803372 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
+    type: 3}
+  m_PrefabInstance: {fileID: 4880191076793379241}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &7975849498942803374 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 3248787690555597831, guid: 17bd4c4a974d8844ba51e5837e231100,
+    type: 3}
+  m_PrefabInstance: {fileID: 4880191076793379241}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7975849498942803375 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3248787690555597830, guid: 17bd4c4a974d8844ba51e5837e231100,
+    type: 3}
+  m_PrefabInstance: {fileID: 4880191076793379241}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4775608305527192301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7975849498942803375}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f404d7d6653a4668bf73c452d06f5ca2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.MeleeAnimationEventRelay
+  targetWeapon: {fileID: 0}
+  characterHandleWeapon: {fileID: 3841032822885868042}
