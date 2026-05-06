@@ -24,3 +24,8 @@ jwt:
   access-expiration: ${JWT_ACCESS_EXPIRATION}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION}
   session-expiration: ${JWT_SESSION_EXPIRATION}   # 자체 Relay 입장용 단명 토큰 (초). 기본 10분
+
+# 자체 Relay 서버 (RelayApplication 으로 기동될 때만 사용. ServerApplication 에서는 무관)
+relay:
+  port: ${RELAY_PORT:7777}
+  handshake-timeout-ms: ${HANDSHAKE_TIMEOUT_MS}  # UDP 통신 핸드셰이크 타임아웃 (밀리초)

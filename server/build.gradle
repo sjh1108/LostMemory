@@ -37,6 +37,10 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-api:0.13.0")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
+
+	// 자체 Relay (RelayApplication) 의 UDP 서버 — Netty
+	// (Spring Boot BOM 이 버전 관리: 4.1.x)
+	implementation 'io.netty:netty-handler'
 }
 
 tasks.named('test') {

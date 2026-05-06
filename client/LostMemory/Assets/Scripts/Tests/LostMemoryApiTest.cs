@@ -23,6 +23,9 @@ namespace LostMemory.Tests
         [SerializeField] private string nickname = "테스터";
 
         private string accessToken;
+        private string hostAccessToken;
+        private string guestAccessToken;
+        private long createdSessionId;
 
         private static readonly JsonSerializerSettings JsonSettings = new()
         {
@@ -43,6 +46,17 @@ namespace LostMemory.Tests
             yield return Signup();
             yield return Login();
             yield return GetMe();
+
+            this.hostAccessToken = this.accessToken;   // 기존 testuser 가 호스트
+            yield return CreateSession();
+            yield return SignupAndLoginGuest();
+            yield return JoinSession("WRONG", "SESSION_INVALID_PRIVATE_CODE");
+            yield return JoinSession("ROOM01", null);                       // 정상
+            yield return JoinSession("ROOM01", "SESSION_ALREADY_JOINED");   // 또 시도
+                                                                            // 정원 초과 테스트는 maxPlayers=2 + 게스트 1명만 만들었으니 별도 게스트2 필요. 생략 가능
+            yield return DeleteSession(guestAccessToken, "SESSION_NOT_HOST");
+            yield return DeleteSession(hostAccessToken, null);              // 정상
+            yield return JoinSession("ROOM01", "SESSION_NOT_FOUND");        // 삭제됐으니
 
             Debug.Log("==== 테스트 종료 ====");
         }
@@ -135,6 +149,123 @@ namespace LostMemory.Tests
                 Debug.Log($"  [{(u.status == UserStatus.ACTIVE ? "✓" : "✗")}] enum 매핑: status == ACTIVE");
                 Debug.Log($"  [{(u.createdAt.Year >= 2026 ? "✓" : "✗")}] DateTime 파싱: createdAt 연도 {u.createdAt.Year}");
             });
+        }
+
+        private IEnumerator CreateSession()
+        {
+            Debug.Log("--- [4] POST /sessions (호스트) ---");
+            var body = new CreateSessionRequest { maxPlayers = 2, privateCode = "ROOM01" };
+            yield return PostJsonWithAuth<SessionResponse>(
+                "/sessions", body, this.accessToken /* 호스트 토큰 */, response =>
+                {
+                    LogResponse("create-session", response);
+                    if (response.success && response.data != null)
+                    {
+                        createdSessionId = response.data.sessionId;
+                        Debug.Log($"✅ 세션 생성. id={createdSessionId}, members={response.data.members.Length}");
+                        Debug.Log($"   sessionToken 앞 20자: {response.data.sessionToken.Substring(0, 20)}...");
+                    }
+                    else
+                    {
+                        Debug.LogError($"❌ 생성 실패: {response.error?.code}");
+                    }
+                });
+        }
+
+        private IEnumerator SignupAndLoginGuest()
+        {
+            Debug.Log("--- [5] 게스트 계정 가입 + 로그인 ---");
+            var signupBody = new SignupRequest { loginId = "testuser01", password = "password123", nickname = "테스터01" };
+            yield return PostJson<object>("/auth/signup", signupBody, _ => { });
+
+            var loginBody = new LoginRequest { loginId = "testuser01", password = "password123" };
+            yield return PostJson<TokenResponse>("/auth/login", loginBody, response =>
+            {
+                if (response.success && response.data != null)
+                {
+                    guestAccessToken = response.data.accessToken;
+                    Debug.Log("✅ 게스트 로그인 OK");
+                }
+            });
+        }
+
+        private IEnumerator JoinSession(string code, string expectedErrorCode)
+        {
+            Debug.Log($"--- [6] POST /sessions/{createdSessionId}/join with code={code} ---");
+            var body = new JoinSessionRequest { privateCode = code };
+            yield return PostJsonWithAuth<SessionResponse>(
+                $"/sessions/{createdSessionId}/join", body, guestAccessToken, response =>
+                {
+                    if (expectedErrorCode == null)
+                    {
+                        if (response.success)
+                            Debug.Log($"✅ join 성공. members={response.data.members.Length}");
+                        else
+                            Debug.LogError($"❌ 예상 외 실패: {response.error?.code}");
+                    }
+                    else
+                    {
+                        if (!response.success && response.error?.code == expectedErrorCode)
+                            Debug.Log($"✅ 예상대로 거절: {expectedErrorCode}");
+                        else
+                            Debug.LogError($"❌ 기대={expectedErrorCode}, 실제={response.error?.code ?? "성공"}");
+                    }
+                });
+        }
+
+        private IEnumerator DeleteSession(string token, string expectedErrorCode)
+        {
+            Debug.Log($"--- [7] DELETE /sessions/{createdSessionId} ---");
+            yield return DeleteJsonWithAuth($"/sessions/{createdSessionId}", token, response =>
+            {
+                if (expectedErrorCode == null)
+                {
+                    if (response.success) Debug.Log("✅ 삭제 OK");
+                    else Debug.LogError($"❌ 예상 외 실패: {response.error?.code}");
+                }
+                else
+                {
+                    if (!response.success && response.error?.code == expectedErrorCode)
+                        Debug.Log($"✅ 예상대로 거절: {expectedErrorCode}");
+                    else
+                        Debug.LogError($"❌ 기대={expectedErrorCode}, 실제={response.error?.code ?? "성공"}");
+                }
+            });
+        }
+
+        private IEnumerator PostJsonWithAuth<T>(string path, object body, string bearer, Action<ApiResponse<T>> onComplete)
+        {
+            string url = baseUrl + path;
+            string json = JsonConvert.SerializeObject(body, JsonSettings);
+            byte[] bodyBytes = Encoding.UTF8.GetBytes(json);
+
+            using var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST);
+            req.uploadHandler = new UploadHandlerRaw(bodyBytes);
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Content-Type", "application/json; charset=UTF-8");
+            req.SetRequestHeader("Accept", "application/json");
+            if (!string.IsNullOrEmpty(bearer))
+                req.SetRequestHeader("Authorization", "Bearer " + bearer);
+
+            yield return req.SendWebRequest();
+            string responseText = req.downloadHandler.text;
+            Debug.Log($"  HTTP {(int)req.responseCode}, raw body: {responseText}");
+            onComplete(ParseSafely<T>(responseText));
+        }
+
+        private IEnumerator DeleteJsonWithAuth(string path, string bearer, Action<ApiResponse<object>> onComplete)
+        {
+            string url = baseUrl + path;
+            using var req = new UnityWebRequest(url, "DELETE");
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Accept", "application/json");
+            if (!string.IsNullOrEmpty(bearer))
+                req.SetRequestHeader("Authorization", "Bearer " + bearer);
+
+            yield return req.SendWebRequest();
+            string responseText = req.downloadHandler.text;
+            Debug.Log($"  HTTP {(int)req.responseCode}, raw body: {responseText}");
+            onComplete(ParseSafely<object>(responseText));
         }
 
         // ============================================================
@@ -249,6 +380,46 @@ namespace LostMemory.Tests
         public UserStatus status;
         public DateTime createdAt;
         public DateTime? lastLoginAt;
+    }
+
+    [Serializable]
+    public class CreateSessionRequest
+    {
+        public int maxPlayers;
+        public string privateCode;
+    }
+
+    [Serializable]
+    public class JoinSessionRequest
+    {
+        public string privateCode;
+    }
+
+    [Serializable]
+    public class SessionResponse
+    {
+        public long sessionId;
+        public long hostId;
+        public int maxPlayers;
+        public string privateCode;
+        public string sessionToken;
+        public long sessionTokenExpiresIn;
+        public SessionMember[] members;
+    }
+
+    [Serializable]
+    public class SessionMember
+    {
+        public long userId;
+        public string nickname;
+        public SessionRole role;
+        public DateTime joinedAt;
+    }
+
+    public enum SessionRole
+    {
+        HOST,
+        GUEST
     }
 
     public enum UserStatus

@@ -135,6 +135,40 @@ public class JwtProvider {
         }
     }
 
+    /**
+     * Session 토큰 검증 후 SessionPrincipal 반환.
+     * 자체 Relay 가 핸드셰이크 직후 사용한다. 만료 시 AUTH_TOKEN_EXPIRED, 그 외(서명 불일치/형식 오류/wrong type/누락 클레임) AUTH_TOKEN_INVALID.
+     */
+    public SessionPrincipal parseSessionToken(String token) {
+        Claims claims;
+        try {
+            claims = parse(token);
+        } catch (ExpiredJwtException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        if (!TYPE_SESSION.equals(claims.get(TYPE_CLAIM))) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        String subject = claims.getSubject();
+        Object sessionIdObj = claims.get(SESSION_ID_CLAIM);
+        Object roleObj = claims.get(ROLE_CLAIM);
+        if (subject == null || sessionIdObj == null || roleObj == null) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        try {
+            Long userId = Long.valueOf(subject);
+            Long sessionId = Long.valueOf(sessionIdObj.toString());
+            return new SessionPrincipal(userId, sessionId, roleObj.toString());
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+    }
+
     /** refresh 토큰 DB 저장용 SHA-256 해시 (원문 저장 금지) */
     public String hashForStorage(String token) {
         try {
