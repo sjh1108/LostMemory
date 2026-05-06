@@ -1325,54 +1325,6 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!1 &306568957
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 306568958}
-  - component: {fileID: 306568959}
-  m_Layer: 10
-  m_Name: TarotSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &306568958
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 306568957}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2139604187}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &306568959
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 306568957}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9141922f61f29314d81aa2feccbd0b10, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Tarot.TarotSystem
-  meleeController: {fileID: 1789113374}
-  playerHealth: {fileID: 2139604186}
-  rewardPanelView: {fileID: 709206705}
-  _logTarot: 1
 --- !u!1001 &327936923
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3918,90 +3870,19 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 114910001000000002, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: statContainer
-      value: 
-      objectReference: {fileID: 1789113475}
-    - target: {fileID: 114910001000000004, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: statContainer
-      value: 
-      objectReference: {fileID: 1789113475}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: _debugRelicsToAdd.Array.size
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[0]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 4651ad8d210e68940a60fb9b17f23717,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[1]'
-      value: 
-      objectReference: {fileID: 11400000, guid: d957bd6ed08f415458052a9ba7d2bc59,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[2]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 64acce36446d6974f81b983107ca7602,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[3]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 41fa80cace25f164c8c3404e02d892b8,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[4]'
-      value: 
-      objectReference: {fileID: 11400000, guid: a09c0fbb530ed074aae824e0a2973aee,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[5]'
-      value: 
-      objectReference: {fileID: 11400000, guid: a3c3af0eb86275f41bfd57583fd206de,
-        type: 2}
-    - target: {fileID: 1736420558605640635, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: '_debugRelicsToAdd.Array.data[6]'
-      value: 
-      objectReference: {fileID: 11400000, guid: fb39984182dc0f04f907fb3097a41a9e,
-        type: 2}
     - target: {fileID: 3147602633388410817, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: goldWallet
       value: 
       objectReference: {fileID: 435695097}
-    - target: {fileID: 3147602633388410817, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    - target: {fileID: 7695798447328655961, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
-      propertyPath: tarotSystem
+      propertyPath: rewardPanelView
       value: 
-      objectReference: {fileID: 306568959}
-    - target: {fileID: 3147602633388410817, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: playerRelicInventory
-      value: 
-      objectReference: {fileID: 1789113401}
-    - target: {fileID: 7504139936399824677, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: _logOnHitDispatch
-      value: 1
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 709206705}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 306568958}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!114 &786682090 stripped
@@ -5554,18 +5435,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69614a4a3cfd06d4e8388acafdb774bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1789113475 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1496170365699431617, guid: 4d290d1fc0f84526999c421c61df5d8f,
-    type: 3}
-  m_PrefabInstance: {fileID: 786682089}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
 --- !u!114 &1789113481 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5492564548965125359, guid: 4d290d1fc0f84526999c421c61df5d8f,
@@ -9178,24 +9047,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5b5d4d7bd3ccc446dacf39060231dd55, type: 3}
---- !u!114 &2139604186 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 114871673569860628, guid: 4d290d1fc0f84526999c421c61df5d8f,
-    type: 3}
-  m_PrefabInstance: {fileID: 786682089}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01754710d9f92ec4d9a21b81f5682667, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &2139604187 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f,
-    type: 3}
-  m_PrefabInstance: {fileID: 786682089}
-  m_PrefabAsset: {fileID: 0}
 --- !u!61 &17134970184908597
 BoxCollider2D:
   m_ObjectHideFlags: 0

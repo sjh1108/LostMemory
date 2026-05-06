@@ -65,6 +65,14 @@ namespace LostMemory.Relics
                 return false;
             }
 
+            // CL-150: 사이즈 검증 — 5×5 인벤토리 초과 reject. MaxColumns/MaxRows 정식 필드는 CL-151 인계.
+            const int MaxColumns = 5, MaxRows = 5;
+            if (relic.Width > MaxColumns || relic.Height > MaxRows)
+            {
+                Debug.LogWarning($"[CL-150] {relic.DisplayName} 사이즈 ({relic.Width}×{relic.Height}) 가 인벤토리 ({MaxColumns}×{MaxRows}) 초과 — TryAdd reject");
+                return false;
+            }
+
             if (relic.IsConsumable)
             {
                 // 소모품은 단축키바(PlayerConsumableInventory)로 라우팅 — 유물 인벤토리 미등록
