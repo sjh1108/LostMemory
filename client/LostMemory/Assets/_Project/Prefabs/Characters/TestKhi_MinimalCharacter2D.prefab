@@ -107,6 +107,7 @@ Transform:
   - {fileID: 6686641576278510502}
   - {fileID: 6350488562025017352}
   - {fileID: 1334160090806314886}
+  - {fileID: 6400602724049874252}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114307563035583202
@@ -682,7 +683,7 @@ MonoBehaviour:
   maximumHitsPerSample: 32
   targetInvincibilityDuration: 0
   targetFlickerDuration: 0
-  statContainer: {fileID: 0}
+  statContainer: {fileID: 1496170365699431617}
   drawDebugGizmos: 1
   debugGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showRuntimePreview: 1
@@ -737,7 +738,7 @@ MonoBehaviour:
   bufferAttackDuringDash: 0
   disableTdeHandleWeapon: 1
   logHitsToConsole: 0
-  statContainer: {fileID: 0}
+  statContainer: {fileID: 1496170365699431617}
 --- !u!114 &114910001000000005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1073,11 +1074,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
   _baseMaxSlots: 25
   _debugRelicsToAdd:
-  - {fileID: 11400000, guid: 7059b59d592517148a66198dfad484da, type: 2}
-  - {fileID: 11400000, guid: 899c86627e004ba4fa53497170ca5017, type: 2}
-  - {fileID: 11400000, guid: 84b146d383c78e14fbcf841aa17951a2, type: 2}
-  - {fileID: 11400000, guid: 5d3eedb85c43b8e46bce8aeb427f3600, type: 2}
-  - {fileID: 11400000, guid: b72ecaf73f2c5f0478e1dc82de92e3a5, type: 2}
+  - {fileID: 11400000, guid: 4651ad8d210e68940a60fb9b17f23717, type: 2}
+  - {fileID: 11400000, guid: d957bd6ed08f415458052a9ba7d2bc59, type: 2}
+  - {fileID: 11400000, guid: 64acce36446d6974f81b983107ca7602, type: 2}
+  - {fileID: 11400000, guid: 41fa80cace25f164c8c3404e02d892b8, type: 2}
+  - {fileID: 11400000, guid: a09c0fbb530ed074aae824e0a2973aee, type: 2}
+  - {fileID: 11400000, guid: a3c3af0eb86275f41bfd57583fd206de, type: 2}
+  - {fileID: 11400000, guid: fb39984182dc0f04f907fb3097a41a9e, type: 2}
 --- !u!114 &1105879407601961676
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1156,7 +1159,8 @@ MonoBehaviour:
   onHitRegistry: {fileID: 7504139936399824677}
   magicalGirlSpawner: {fileID: 2592970996598394060}
   goldWallet: {fileID: 0}
-  playerRelicInventory: {fileID: 0}
+  playerRelicInventory: {fileID: 1736420558605640635}
+  tarotSystem: {fileID: 7695798447328655961}
   _logEffectDispatch: 1
 --- !u!114 &7504139936399824677
 MonoBehaviour:
@@ -1797,6 +1801,54 @@ MonoBehaviour:
   swingDuration: 0.15
   swingForwardThrust: 0.1
   hideWeaponDuringActive: 1
+--- !u!1 &6514021548027372709
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6400602724049874252}
+  - component: {fileID: 7695798447328655961}
+  m_Layer: 10
+  m_Name: TarotSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6400602724049874252
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6514021548027372709}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4319614708212260}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7695798447328655961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6514021548027372709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9141922f61f29314d81aa2feccbd0b10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Tarot.TarotSystem
+  meleeController: {fileID: 114910001000000004}
+  playerHealth: {fileID: 114871673569860628}
+  rewardPanelView: {fileID: 0}
+  _logTarot: 1
 --- !u!1 &6753678586816588783
 GameObject:
   m_ObjectHideFlags: 0
