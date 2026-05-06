@@ -25,6 +25,9 @@ public class JwtProvider {
     private static final String TYPE_CLAIM = "type";
     private static final String TYPE_ACCESS = "access";
     private static final String TYPE_REFRESH = "refresh";
+    private static final String TYPE_SESSION = "session";
+    private static final String SESSION_ID_CLAIM = "sessionId";
+    private static final String ROLE_CLAIM = "role";
 
     private final JwtProperties properties;
     private final SecretKey key;
@@ -62,6 +65,24 @@ public class JwtProvider {
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
         return new TokenIssueResult(token, jti);
+    }
+
+    /**
+     * Session 토큰 발급. 자체 Relay 가 검증할 단명 토큰.
+     * sub=userId, sessionId, role(HOST/GUEST), type=session 클레임 포함.
+     * Relay 는 동일 HMAC 비밀키로 검증해 sessionId 별 in-memory routing table 에 매핑한다.
+     */
+    public String createSessionToken(Long userId, Long sessionId, String role) {
+        long nowMs = System.currentTimeMillis();
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .issuedAt(new Date(nowMs))
+                .expiration(new Date(nowMs + properties.sessionExpiration() * 1000L))
+                .claim(TYPE_CLAIM, TYPE_SESSION)
+                .claim(SESSION_ID_CLAIM, sessionId)
+                .claim(ROLE_CLAIM, role)
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
     }
 
     /** 토큰 검증 후 sub 를 Long userId 로 반환 */

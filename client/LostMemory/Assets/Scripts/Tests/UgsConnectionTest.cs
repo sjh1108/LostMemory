@@ -31,7 +31,7 @@ public class UgsConnectionTest : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             options.SetEnvironmentName("development");
 #else
-              options.SetEnvironmentName("production");
+            options.SetEnvironmentName("production");
 #endif
             await UnityServices.InitializeAsync(options);
             Debug.Log("[UGS] InitializeAsync OK");
@@ -47,9 +47,9 @@ public class UgsConnectionTest : MonoBehaviour
             }.WithRelayNetwork();
 
             var session = await MultiplayerService.Instance.CreateSessionAsync(sessionOptions);
-            Debug.Log($"[UGS] Session created. id={session.Id}, code={session.Code},host ={ session.IsHost}");
+            Debug.Log($"[UGS] Session created. id={session.Id}, code={session.Code}, host={session.IsHost}");
 
-              await session.LeaveAsync();
+            await session.LeaveAsync();
             Debug.Log("[UGS] ✅ All checks passed.");
         }
         catch (Exception e)
