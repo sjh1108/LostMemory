@@ -54,6 +54,11 @@
 - **CL-103**: 디자이너 UX 폴리시 (MVP 후, 3~4h) — Custom Inspector + Scene Gizmo. Auto-revert 는 CL-090 으로 이전됨. 포트폴리오 가치 ★★★★★. 시작 신호: MVP 끝난 후 또는 디자이너/밸런스 담당자 합류.
 - **CL-104**: 데이터 카테고리 확장 (MVP 후, 카테고리당 2~3h) — EnemyData (Orc Rider 등), CharacterData (Khi 스탯). 시작 신호: 두 번째 무기/적 추가 시점, WeaponData 패턴 검증 완료 후.
 
+### Epic U / Epic V — Balance Editor 확장 + 인벤토리 테스트 도구 (CL-172 ~ CL-190)
+
+- **CL-172 ~ CL-190**: Balance Editor 카테고리 확장 (Enemy/Boss/Player Stats) + 별도 Inventory Test Window 신설. 12 ticket / 28점.
+  → 상세: [epic_uv_master_plan_20260506.md](epic_uv_master_plan_20260506.md)
+
 ---
 
 ## 4. 당면 과제 (CL-011 ~ CL-015) 상세 설계
