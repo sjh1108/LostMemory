@@ -15,6 +15,9 @@
     -unity-text-align: middle-left;
 }
 
+.iv-toolbar-spacer { flex-grow: 1; flex-shrink: 1; }
+.iv-refresh-btn { flex-shrink: 0; flex-grow: 0; width: 80px; }
+
 .iv-mode-hint {
     color: rgb(200, 180, 100);
     font-size: 12px;
@@ -40,4 +43,44 @@
     flex-grow: 1;
     background-color: rgb(56, 56, 56);
     padding: 8px;
+}
+
+.iv-area {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+}
+
+.iv-area-header {
+    color: rgb(220, 220, 220);
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.iv-slot-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.iv-slot {
+    width: 60px;
+    height: 60px;
+    margin: 2px;
+    border-width: 1px;
+    border-color: rgb(80, 80, 80);
+    background-color: rgb(64, 64, 64);
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.iv-slot-empty {
+    background-color: rgb(48, 48, 48);
+    border-color: rgb(60, 60, 60);
+}
+
+.iv-slot Label {
+    font-size: 9px;
+    -unity-text-align: middle-center;
+    white-space: normal;
 }
