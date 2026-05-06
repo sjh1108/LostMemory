@@ -44,3 +44,7 @@
 
 # Nginx 설정 파일도 LF 유지 (컨테이너 안에서 일관된 라인 엔딩).
 *.conf text eol=lf
+
+# 호스트 운영 sample (logrotate 등 확장자 없는 conf 파일) 도 LF 강제.
+server/etc/logrotate.d/* text eol=lf
+server/etc/docker/* text eol=lf
