@@ -728,6 +728,67 @@ Jenkins 빌드의 성공/실패 결과를 Mattermost 채널로 자동 알림한�
 
 ---
 
+## 로그 운영 (Docker logging + logrotate)
+
+### 정책
+- 모든 docker 컨테이너의 stdout/stderr 로그는 `json-file` driver, **max-size 10MB × max-file 3** = 컨테이너당 최대 30MB 보관 + 회전 시 gzip 압축.
+- compose 의 `logging` 섹션이 명시 적용 (postgres / redis / app / nginx / certbot / jenkins).
+- compose 외부 컨테이너 (gitlab-runner 등) 는 호스트 `/etc/docker/daemon.json` 의 글로벌 default 로 같은 정책 적용.
+- `/var/log/certbot-renew.log` 는 logrotate 로 주1회 회전, 8주 보관.
+- 호스트 `/var/log/*` 의 syslog / kern / journal 은 Ubuntu 기본 logrotate / journald 가 이미 처리 — 추가 작업 없음.
+
+### 1회 등록 절차 (운영자)
+
+EC2 SSH 후:
+
+1. develop 동기화:
+   ```bash
+   cd /home/ubuntu/lostmemory
+   git fetch origin && git switch develop && git pull --ff-only origin develop
+   ```
+2. 호스트 daemon.json 적용:
+   ```bash
+   sudo cp server/etc/docker/daemon.json /etc/docker/daemon.json
+   sudo systemctl reload docker
+   ```
+3. logrotate conf 적용:
+   ```bash
+   sudo cp server/etc/logrotate.d/lostmemory /etc/logrotate.d/lostmemory
+   sudo logrotate -d /etc/logrotate.d/lostmemory   # dry-run 검증 (실제 회전 X)
+   ```
+4. compose service 재생성 (logging 섹션 새로 적용):
+   ```bash
+   cd /home/ubuntu/lostmemory/server
+   docker compose --env-file .env up -d --force-recreate postgres redis app nginx
+   docker compose -f docker-compose.jenkins.yml --env-file .env up -d --force-recreate jenkins
+   ```
+5. gitlab-runner 는 글로벌 default 만으로 충분 — 다음 재시작 시 효과:
+   ```bash
+   docker restart gitlab-runner
+   ```
+
+### 검증
+
+```bash
+for c in server-app server-postgres server-nginx server-redis jenkins gitlab-runner; do
+  docker inspect "$c" --format "$c: {{.HostConfig.LogConfig.Type}} {{.HostConfig.LogConfig.Config}}"
+done
+```
+모든 행에 `max-size:10m max-file:3 compress:true` 표시되어야 통과.
+
+회전 동작 확인 (선택):
+```bash
+sudo ls -la /var/lib/docker/containers/<container-id>/    # 회전된 .1, .2 또는 .gz 파일 보임
+```
+
+### 롤백
+
+- daemon.json 원복: `sudo rm /etc/docker/daemon.json && sudo systemctl reload docker`
+- compose 의 `logging` / `*default-logging` 라인 주석 처리 → `docker compose up -d --force-recreate` (또는 git revert)
+- logrotate conf 원복: `sudo rm /etc/logrotate.d/lostmemory`
+
+---
+
 ## 문서 변경 이력
 
 | 날짜 | 내용 | 작성자 |
@@ -735,5 +796,6 @@ Jenkins 빌드의 성공/실패 결과를 Mattermost 채널로 자동 알림한�
 | 2026-04-21 | 초안 작성 | 송주헌 |
 | 2026-05-04 | INFRA-15 Let's Encrypt HTTPS 운영 절차 추가 | 송주헌 |
 | 2026-05-06 | INFRA-16 Jenkins 빌드 Mattermost 알림 운영 절차 추가 | 송주헌 |
+| 2026-05-06 | INFRA-17 Docker 로그 rotation + logrotate 운영 절차 추가 | 송주헌 |
 
 ---
