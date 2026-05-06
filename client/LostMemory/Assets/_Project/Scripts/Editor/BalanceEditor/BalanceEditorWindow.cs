@@ -126,6 +126,9 @@ namespace LostMemory.Editor.BalanceEditor
             {
                 new RelicCategoryProvider(),
                 new BuildSetCategoryProvider(),
+                new WeaponCategoryProvider(),
+                new SkillCategoryProvider(),
+                new ShopConfigCategoryProvider(),
             };
 
             var leftPanel = root.Q<VisualElement>("LeftPanel");
@@ -469,7 +472,7 @@ namespace LostMemory.Editor.BalanceEditor
         {
             var roots = new List<TreeViewItemData<TreeNode>>();
             int id = 0;
-            foreach (var provider in _providers)
+            foreach (var provider in _providers.OrderBy(p => p.CategoryName))
             {
                 var sos = provider.LoadAll()
                     .Where(s => s != null)
