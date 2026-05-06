@@ -330,7 +330,7 @@ _providers = new List<IBalanceCategoryProvider>
 | `LostMemory.BalanceEditor.Editor.asmdef` | references = [] 정책 유지 |
 | 기존 5개 Provider | 본 CL 범위 외 |
 | `EnemyData.cs` / `BossData.cs` | CL-172 산출물 무수정 |
-| `BerthaBossPhaseController.cs` / `EnemyCatalog.cs` | CL-180 보류 영역 |
+| `BerthaBossPhaseController.cs` / `EnemyCatalog.cs` | CL-178 보류 영역 |
 
 ---
 
@@ -338,9 +338,9 @@ _providers = new List<IBalanceCategoryProvider>
 
 | Ticket | 관계 |
 |---|---|
-| **CL-180** Enemy 적용 어댑터 | 보류. CL-173 까지 완료되면 디자이너가 Balance Editor 에서 Bertha 값 튜닝 가능 (게임 미반영 상태). 적용 어댑터는 별도 시점 |
+| **CL-178** Enemy 적용 어댑터 | 보류. CL-173 까지 완료되면 디자이너가 Balance Editor 에서 Bertha 값 튜닝 가능 (게임 미반영 상태). 적용 어댑터는 별도 시점 |
 | **일반 몹 등장 ticket** | EnemyData asset 추가 시 자동으로 Enemies 카테고리에 표시됨 (Provider 재작성 불필요) |
-| **CL-188~190** Player Stats 카테고리 | 같은 Provider 패턴 재사용. 본 CL 이 4번째 SearchFolders 명시 사례가 됨 |
+| **CL-179~181** Player Stats 카테고리 | 같은 Provider 패턴 재사용. 본 CL 이 4번째 SearchFolders 명시 사례가 됨 |
 | **JSON Import/Export (CL-165)** | 자동 통합. 새 추가 작업 X |
 
 ---
@@ -356,7 +356,7 @@ _providers = new List<IBalanceCategoryProvider>
 | 5 | Claude | 컴파일 오류 없음 확인 (Grep / Read) |
 | 6 | 사용자 | Unity Editor 에서 §검증 시나리오 4-13 실행 |
 | 7 | 사용자 | MR 생성 (커밋/push 사용자 직접) |
-| 8 | — | Epic U Enemy 트랙 마무리 (CL-180 보류, 다음 트랙은 Epic V CL-182) |
+| 8 | — | Epic U Enemy 트랙 마무리 (CL-178 보류, 다음 트랙은 Epic V CL-182) |
 
 ---
 

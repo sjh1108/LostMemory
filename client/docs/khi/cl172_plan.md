@@ -12,8 +12,8 @@ Enemy 트랙 첫 ticket. `EnemyCatalog.cs` 주석(CL-034)에 이미 "후속에 E
 |---|---|
 | `EnemyData.cs` SO 클래스 신설 | 기존 Bertha 컨트롤러 코드 수정 |
 | `BossData.cs` SO 클래스 신설 (EnemyData 상속) | EnemyCatalog.cs 변경 |
-| `Bertha_Boss.asset` 인스턴스 생성 | 적용 어댑터 (→ CL-180 보류) |
-| Balance Editor Provider 등록 (→ CL-173) | Player 트랙 (→ CL-188~190 보류) |
+| `Bertha_Boss.asset` 인스턴스 생성 | 적용 어댑터 (→ CL-178 보류) |
+| Balance Editor Provider 등록 (→ CL-173) | Player 트랙 (→ CL-179~181 보류) |
 
 ---
 
@@ -30,7 +30,7 @@ Runtime/Combat/EnemyCatalog.cs (CL-034)
 Runtime/Enemies/Boss/Bertha/BerthaBossPhaseController.cs (CL-034~)
   - 필드: phase2ThresholdNormalized = 0.7f, phase3ThresholdNormalized = 0.3f
   - Health 컴포넌트 직접 참조 (SO 참조 없음)
-  - Configure() API 존재 → 후속 어댑터(CL-180) 진입점
+  - Configure() API 존재 → 후속 어댑터(CL-178) 진입점
 ```
 
 ### 1.2 EnemyData.cs 미존재 확인
@@ -171,7 +171,7 @@ Claude 는 .asset 파일을 직접 생성하지 않음. Unity Editor 에서 진�
 | Phase 2 Threshold | `0.7` | BerthaBossPhaseController 기존 값 |
 | Phase 3 Threshold | `0.3` | BerthaBossPhaseController 기존 값 |
 
-> BerthaBossPhaseController 코드 변경 없음. asset 값과 Inspector 값이 동기화되지 않아도 CL-172 범위에서는 무방. 실제 연결은 CL-180.
+> BerthaBossPhaseController 코드 변경 없음. asset 값과 Inspector 값이 동기화되지 않아도 CL-172 범위에서는 무방. 실제 연결은 CL-178.
 
 ### EnemyData 일반 인스턴스 (선택)
 
@@ -183,7 +183,7 @@ Claude 는 .asset 파일을 직접 생성하지 않음. Unity Editor 에서 진�
 
 | # | 위험 | 대응 |
 |---|---|---|
-| 1 | **데이터-코드 비동기**: Bertha_Boss.asset 값이 게임에 미반영 | CL-180 적용 어댑터 때 연결. 팀 공유 필요 |
+| 1 | **데이터-코드 비동기**: Bertha_Boss.asset 값이 게임에 미반영 | CL-178 적용 어댑터 때 연결. 팀 공유 필요 |
 | 2 | **expReward/dropWeight 시스템 미존재**: 값 넣어도 게임 효과 없음 | 보상 시스템 ticket 때 연결 |
 | 3 | **MaxHealth / MoveSpeed 값 파악 필요**: Bertha Prefab Inspector 직접 확인 필요 | 인스턴스 생성 가이드 §참조 |
 | 4 | **BossData.OnValidate 실행 시점**: phase3 > phase2 입력 시 자동 보정 (BerthaBossPhaseController 동일 로직) | 의도된 동작 |
@@ -234,7 +234,7 @@ Claude 는 .asset 파일을 직접 생성하지 않음. Unity Editor 에서 진�
 
 | 파일 | 이유 |
 |---|---|
-| `BerthaBossPhaseController.cs` | 코드 전환 X (CL-180 보류) |
+| `BerthaBossPhaseController.cs` | 코드 전환 X (CL-178 보류) |
 | `EnemyCatalog.cs` | 본 CL 범위 외 |
 
 ---
@@ -244,7 +244,7 @@ Claude 는 .asset 파일을 직접 생성하지 않음. Unity Editor 에서 진�
 | Ticket | 관계 |
 |---|---|
 | **CL-173** EnemyData/BossData Provider 등록 | 본 CL 완료 후 즉시 진행. CL-172 산출물(클래스)이 `t:EnemyData` / `t:BossData` 필터의 진입점 |
-| **CL-180** Enemy 적용 어댑터 | 보류. Bertha 리팩 또는 일반 몹 등장 시점에 매칭 |
+| **CL-178** Enemy 적용 어댑터 | 보류. Bertha 리팩 또는 일반 몹 등장 시점에 매칭 |
 | **일반 몹 등장 ticket** | EnemyData.cs 클래스를 그대로 사용. 인스턴스만 추가 |
 | **보상/드롭 시스템 ticket** | expReward / dropWeight 필드 연결 |
 
