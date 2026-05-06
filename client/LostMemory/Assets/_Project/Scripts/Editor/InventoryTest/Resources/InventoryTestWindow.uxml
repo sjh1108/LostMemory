@@ -2,6 +2,8 @@
     <ui:VisualElement class="iv-root">
         <uie:Toolbar class="iv-toolbar">
             <ui:Label text="Inventory Test" class="iv-title" />
+            <ui:VisualElement class="iv-toolbar-spacer" />
+            <uie:ToolbarButton name="RefreshButton" text="Refresh" class="iv-refresh-btn" />
         </uie:Toolbar>
 
         <ui:Label name="ModeHint"
@@ -9,8 +11,18 @@
                   class="iv-mode-hint" />
 
         <ui:VisualElement name="BodyContainer" class="iv-body">
-            <ui:VisualElement name="LeftPanel"  class="iv-left-panel" />
-            <ui:VisualElement name="RightPanel" class="iv-right-panel" />
+            <ui:VisualElement name="LeftPanel" class="iv-left-panel" />
+
+            <ui:VisualElement name="RightPanel" class="iv-right-panel">
+                <ui:VisualElement name="PermanentArea" class="iv-area">
+                    <ui:Label name="PermanentHeader" text="Permanent (0/0)" class="iv-area-header" />
+                    <ui:VisualElement name="PermanentGrid" class="iv-slot-grid" />
+                </ui:VisualElement>
+                <ui:VisualElement name="ConsumableArea" class="iv-area">
+                    <ui:Label name="ConsumableHeader" text="Consumable (0/4)" class="iv-area-header" />
+                    <ui:VisualElement name="ConsumableGrid" class="iv-slot-grid" />
+                </ui:VisualElement>
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
