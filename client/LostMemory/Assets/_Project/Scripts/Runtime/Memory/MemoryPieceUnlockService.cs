@@ -1,5 +1,4 @@
 using System;
-using LostMemory.Relics;
 using UnityEngine;
 
 namespace LostMemory.Memory
@@ -27,8 +26,9 @@ namespace LostMemory.Memory
     {
         [SerializeField] private MemoryProgressTracker _tracker;
 
-        [Tooltip("RelicSlotExpand 보상 즉시 적용용. null 이면 저장만 하고 런 시작 시 적용.")]
-        [SerializeField] private PlayerRelicInventory _relicInventory;
+        // RelicSlotExpand 는 게임 재실행 시 _bonusSlots 가 초기화되므로
+        // 즉시 AddSlots() 대신 SaveData.PermanentBonusRelicSlots 에 저장하고
+        // 런 시작 시 startup 시스템이 재적용한다.
 
         [Header("Debug")]
         [SerializeField] private bool _logUnlocks = true;
@@ -116,11 +116,9 @@ namespace LostMemory.Memory
                 // ── 즉시 적용 ──────────────────────────────
 
                 case MemoryPieceRewardType.RelicSlotExpand:
-                    int slots = Mathf.Max(1, Mathf.RoundToInt(piece.RewardMagnitude));
-                    if (_relicInventory != null)
-                        _relicInventory.AddSlots(slots);
-                    else
-                        Debug.LogWarning("[MemoryPieceUnlockService] RelicInventory 미연결 — 슬롯 즉시 적용 불가.", this);
+                    // SaveData 에 누적 저장. 런 시작 시 startup 시스템이 AddSlots() 로 재적용.
+                    // (게임 재실행 시 _bonusSlots 가 초기화되므로 즉시 호출 방식 사용 불가)
+                    save.PermanentBonusRelicSlots += Mathf.Max(1, Mathf.RoundToInt(piece.RewardMagnitude));
                     break;
 
                 // ── 저장 후 런 시작 시 적용 ────────────────
