@@ -52,7 +52,8 @@ cmd_deploy() {
     exit 1
   fi
   docker tag server-app:latest "server-app:$N" || true
-  docker compose --env-file "$ENV_FILE" up -d app
+  # relay 도 server-app:latest 공유 — app 새 image 시 relay 도 함께 갱신
+  docker compose --env-file "$ENV_FILE" up -d app relay
   wait_healthy
   echo "[deploy] build #$N — 정상"
 }
@@ -66,7 +67,8 @@ cmd_rollback() {
   fi
   echo "[rollback] $TAG -> server-app:latest 재태깅 + recreate"
   docker tag "$TAG" server-app:latest
-  docker compose --env-file "$ENV_FILE" up -d --force-recreate app
+  # relay 도 같은 image 공유 — 함께 force-recreate 해서 옛 image 잔존 차단
+  docker compose --env-file "$ENV_FILE" up -d --force-recreate app relay
   wait_healthy
   echo "[rollback] build #$N 으로 복귀 완료"
 }
