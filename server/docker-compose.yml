@@ -50,6 +50,7 @@ services:
     logging: *default-logging
 
   app:
+    image: server-app:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -85,12 +86,44 @@ services:
       - backend
       - frontend
 
+  # 자체 Relay (Netty UDP 7777). app 이 빌드한 server-app:latest 이미지 그대로 재사용 +
+  # PropertiesLauncher 로 다른 main (RelayApplication) 진입. Dockerfile 변경 X.
+  relay:
+    image: server-app:latest
+    restart: unless-stopped
+    # JarLauncher 가 manifest 의 ServerApplication 만 띄우므로 -Dloader.main 으로 override.
+    entrypoint: ["sh","-c","exec java $$JAVA_OPTS -cp /app -Dloader.main=com.lostmemory.relay.RelayApplication org.springframework.boot.loader.launch.PropertiesLauncher"]
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      # JwtProperties record 4 필드 모두 요구 — 누락 시 binding fail
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      JWT_SESSION_EXPIRATION: ${JWT_SESSION_EXPIRATION}
+      RELAY_PORT: 7777
+      HANDSHAKE_TIMEOUT_MS: ${HANDSHAKE_TIMEOUT_MS}
+      TZ: ${TZ}
+    depends_on:
+      app:
+        condition: service_started
+    healthcheck:
+      # Relay 는 HTTP endpoint 없음 — 프로세스 살아있는지만 체크
+      test: ["CMD-SHELL", "pgrep -f RelayApplication > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    networks:
+      - frontend
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped
     ports:
       - "${HTTP_PORT}:80"
       - "${HTTPS_PORT}:443"
+      - "7777:7777/udp"   # 자체 Relay 외부 진입점 (stream {} → relay:7777)
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
