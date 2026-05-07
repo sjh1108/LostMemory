@@ -10,20 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 557189643fb1cb543b9862b81019d515, type: 3}
-  m_Name: "BuildSet_\uC5BC\uC74C"
+  m_Name: "BuildSet_얼음"
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildSetData
   _setTag: 4
-  _displayName: "\uC5BC\uC74C"
+  _displayName: "얼음"
   _tiers:
   - RequiredCount: 1
     EffectType: 20
-    Magnitude: 0.01
-    Description: "\uC5BC\uC74C \uC2AC\uB85C\uC6B0 1%"
+    Magnitude: 0.1
+    Duration: 0
+    Description: "냉기 - 이속 -10% (2초)"
   - RequiredCount: 2
     EffectType: 20
-    Magnitude: 0.02
-    Description: "\uC5BC\uC74C \uC2AC\uB85C\uC6B0 2%"
-  - RequiredCount: 3
-    EffectType: 21
-    Magnitude: 1
-    Description: "\uC5BC\uC74C \uBE59\uACB0 1\uCD08"
+    Magnitude: 0.15
+    Duration: 0
+    Description: "냉기 - 이속 -15% (2초)"
+  - RequiredCount: 4
+    EffectType: 20
+    Magnitude: 0.3
+    Duration: 0
+    Description: "냉기 - 이속 -30% (2초)"

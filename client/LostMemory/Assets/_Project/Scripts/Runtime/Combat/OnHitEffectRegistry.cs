@@ -157,11 +157,12 @@ namespace LostMemory.Combat
             float chainDamage = playerAttack * magnitude;
             if (chainDamage <= 0f) return;
 
-            // CL-146: Range multiplier 적용 — 체인 검색 반경 확장
-            float rangeMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.Range) : 1f;
+            // CL-146: Range multiplier 적용 — 체인 검색 반경 확장. 상한 200%.
+            float rangeMul = statContainer != null ? statContainer.GetCappedMultiplier(StatId.Range, 1f) : 1f;
             List<Health> targets = FindNearbyEnemies(victim.transform.position, victim, _chainRadius * rangeMul, _chainMaxTargets);
             if (targets.Count == 0) return;
 
+            // 즉발 광역 — 모든 타겟에 동시 타격. 같은 적 중복은 FindNearbyEnemies 의 dedup 으로 차단.
             Vector3 origin = victim.transform.position;
             foreach (Health t in targets)
             {
@@ -174,14 +175,23 @@ namespace LostMemory.Combat
                 Debug.Log($"[OnHit] Chain {magnitude:P0} → {targets.Count} targets, {chainDamage:F1} each");
         }
 
-        private void ApplyBurn(Health victim, float damagePerTick, float duration)
+        private void ApplyBurn(Health victim, float magnitude, float duration)
         {
-            if (duration <= 0f || damagePerTick <= 0f) return;
+            // magnitude 의미: ATK 비례 계수 (0.1 = 초당 ATK 의 10%).
+            // 화상 발동 시점의 ATK 를 캐시 → 도트가 끝날 때까지 그대로 사용.
+            if (duration <= 0f || magnitude <= 0f) return;
             EnemyStatusEffect status = GetOrAddStatus(victim);
             if (status == null) return;
+
+            float playerAttack = combat != null && combat.WeaponData != null ? combat.WeaponData.BaseDamage : 0f;
+            if (statContainer != null)
+                playerAttack *= statContainer.GetTotalMultiplier(StatId.AttackPower);
+            float damagePerTick = playerAttack * magnitude;
+            if (damagePerTick <= 0f) return;
+
             status.ApplyBurn(damagePerTick, duration, gameObject);
             if (_logOnHitDispatch)
-                Debug.Log($"[OnHit] Burn {damagePerTick}/tick for {duration}s → {victim.name}");
+                Debug.Log($"[OnHit] Burn {magnitude:P0}×ATK={damagePerTick:F1}/tick for {duration}s → {victim.name}");
         }
 
         private void ApplyWindBlade(Health victim, float magnitude)
@@ -196,8 +206,8 @@ namespace LostMemory.Combat
                 dir = (Vector2)combat.transform.right;
             dir.Normalize();
 
-            // CL-146: Range multiplier 적용 — Wind 검기 길이 확장 (너비는 유지)
-            float rangeMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.Range) : 1f;
+            // CL-146: Range multiplier 적용 — Wind 검기 길이 확장 (너비는 유지). 상한 200%.
+            float rangeMul = statContainer != null ? statContainer.GetCappedMultiplier(StatId.Range, 1f) : 1f;
             float effectiveLength = _windBladeLength * rangeMul;
             // 박스 영역: victim 위치에서 dir 방향으로 length/2 만큼 이동한 지점이 박스 중심
             Vector2 boxCenter = (Vector2)victimPos + dir * (effectiveLength * 0.5f);
@@ -304,6 +314,7 @@ namespace LostMemory.Combat
         {
             int hits = Physics2D.OverlapCircleNonAlloc(origin, radius, _chainBuf);
             var candidates = new List<(Health h, float distSq)>();
+            var seen = new HashSet<Health>();
             for (int i = 0; i < hits; i++)
             {
                 Collider2D col = _chainBuf[i];
@@ -312,6 +323,8 @@ namespace LostMemory.Combat
                 if (h == null) continue;
                 if (h == exclude) continue;
                 if (h.CurrentHealth <= 0f) continue;
+                // 같은 Health 의 여러 collider 가 잡혀도 1회만 카운트.
+                if (!seen.Add(h)) continue;
                 // Player 자신 제외 — Player Health 도 잡힐 수 있으니 Character.CharacterType 체크
                 Character ch = h.GetComponentInParent<Character>();
                 if (ch != null && ch.CharacterType == Character.CharacterTypes.Player) continue;

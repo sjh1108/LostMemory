@@ -17,7 +17,7 @@ namespace LostMemory.Tarot
     /// - SetEffectApplicator (TarotProc case) → <see cref="OnTarotTierChanged(SetTier)"/>
     /// - TarotEffectMultiplier 효과 → <see cref="SetEffectMultiplier(float)"/>
     ///
-    /// Tier index 0~3 = stacks 1/3/5/7 = thresholds 30/20/12/7.
+    /// Tier index 0~3 = stacks 1/3/5/7 = thresholds 21/17/14/7.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Lost Memory/Tarot/Tarot System")]
@@ -36,7 +36,7 @@ namespace LostMemory.Tarot
         [SerializeField] private bool _logTarot = true;
 
         // tier index 0/1/2/3 = stacks 1/3/5/7
-        private static readonly int[] HitThresholds = new[] { 30, 20, 12, 7 };
+        private static readonly int[] HitThresholds = new[] { 21, 17, 14, 7 };
 
         private int _hitCount;
         private int _currentTierIndex = -1;

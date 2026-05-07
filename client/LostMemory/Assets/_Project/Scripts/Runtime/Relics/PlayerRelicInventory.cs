@@ -62,6 +62,13 @@ namespace LostMemory.Relics
         /// <summary>CL-151: 배치 변경 시 발화 (TryAdd / Remove / Sort / Clear). UI 갱신 hook.</summary>
         public event Action OnPlacementChanged;
 
+        /// <summary>
+        /// CL-152: TryAdd 가 사이즈 초과 또는 그리드 공간 부족으로 실패 시 발화.
+        /// ToastNotifierBridge 가 구독해 사용자 알림. 소모품/중복은 정상 흐름이라 발화 X.
+        /// 인자: (relic, reason) — reason 예: "사이즈 초과", "공간 부족".
+        /// </summary>
+        public event Action<RelicData, string> OnTryAddRejected;
+
         private void Awake()
         {
             _grid = new InventoryGrid(_maxCols, _maxRows);
@@ -97,6 +104,7 @@ namespace LostMemory.Relics
             if (relic.Width > _maxCols || relic.Height > _maxRows)
             {
                 Debug.LogWarning($"[CL-151] {relic.DisplayName} 사이즈 ({relic.Width}×{relic.Height}) 가 인벤토리 ({_maxCols}×{_maxRows}) 초과 — TryAdd reject");
+                OnTryAddRejected?.Invoke(relic, "사이즈 초과");
                 return false;
             }
 
@@ -119,6 +127,7 @@ namespace LostMemory.Relics
             if (!_grid.TryPlace(relic, out var origin))
             {
                 Debug.LogWarning($"[CL-151] {relic.DisplayName} 배치 공간 부족 ({_maxCols}×{_maxRows} 그리드 가득 참) — TryAdd reject");
+                OnTryAddRejected?.Invoke(relic, "공간 부족");
                 return false;
             }
             _placements.Add(new RelicPlacement { Relic = relic, Origin = origin });

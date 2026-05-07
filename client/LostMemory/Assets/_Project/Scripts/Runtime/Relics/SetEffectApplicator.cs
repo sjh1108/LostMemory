@@ -121,6 +121,8 @@ namespace LostMemory.Relics
                     statContainer.AddPermanent(StatId.MoveSpeed, tier.Magnitude, source); break;
                 case RelicEffectType.CriticalChancePercent:
                     statContainer.AddPermanent(StatId.Critical, tier.Magnitude, source); break;
+                case RelicEffectType.CriticalDamagePercent:
+                    statContainer.AddPermanent(StatId.CriticalDamage, tier.Magnitude, source); break;
                 case RelicEffectType.CooldownReductionPercent:
                     // SO 의 Magnitude 는 양수(0.15 = -15% 감소). multiplier 로는 1 + (-0.15) = 0.85 가 되도록 부호 반전.
                     statContainer.AddPermanent(StatId.Cooldown, -tier.Magnitude, source);
