@@ -11,7 +11,8 @@ namespace LostMemory.Editor.InventoryTest
     /// Epic U 인벤토리 테스트 도구. Play 모드 전제 별도 EditorWindow.
     /// CL-174: 셸 + Play 모드 가드 + Player 자동 검색.
     /// CL-175: 좌측 RelicData 트리 + 우측 인벤토리 슬롯 표시 + 이벤트 자동 갱신.
-    /// CL-176~177: 동작 / Consumable 슬롯 지정 추가 예정.
+    /// CL-176: 더블클릭 추가 / 우클릭 제거 / Clear 버튼.
+    /// CL-177: Consumable 슬롯 지정 추가 예정.
     /// </summary>
     public class InventoryTestWindow : EditorWindow
     {
@@ -83,6 +84,12 @@ namespace LostMemory.Editor.InventoryTest
             var refreshBtn = root.Q<Button>("RefreshButton");
             if (refreshBtn != null) refreshBtn.clicked += OnRefreshClicked;
 
+            var clearPermanentBtn = root.Q<Button>("ClearPermanentButton");
+            if (clearPermanentBtn != null) clearPermanentBtn.clicked += OnClearPermanentClicked;
+
+            var clearConsumableBtn = root.Q<Button>("ClearConsumableButton");
+            if (clearConsumableBtn != null) clearConsumableBtn.clicked += OnClearConsumableClicked;
+
             BuildLeftTree(leftPanel);
             UpdateModeView();
         }
@@ -136,6 +143,7 @@ namespace LostMemory.Editor.InventoryTest
                 style = { flexGrow = 1 }
             };
             _treeView.selectionChanged += OnTreeSelectionChanged;
+            _treeView.itemsChosen += OnTreeItemsChosen;
             _treeView.SetRootItems(BuildTreeData());
             _treeView.Rebuild();
             _treeView.ExpandAll();
@@ -216,7 +224,7 @@ namespace LostMemory.Editor.InventoryTest
             for (int i = 0; i < max; i++)
             {
                 var slot = i < owned.Count ? owned[i] : null;
-                grid.Add(BuildSlotElement(slot));
+                grid.Add(BuildSlotElement(slot, i, isConsumableSlot: false));
             }
         }
 
@@ -230,10 +238,10 @@ namespace LostMemory.Editor.InventoryTest
             var grid = _consumableArea.Q<VisualElement>("ConsumableGrid");
             grid.Clear();
             for (int i = 0; i < PlayerConsumableInventory.SlotCount; i++)
-                grid.Add(BuildSlotElement(slots[i]));
+                grid.Add(BuildSlotElement(slots[i], i, isConsumableSlot: true));
         }
 
-        private VisualElement BuildSlotElement(RelicData relic)
+        private VisualElement BuildSlotElement(RelicData relic, int slotIndex, bool isConsumableSlot)
         {
             var slot = new VisualElement();
             slot.AddToClassList("iv-slot");
@@ -241,13 +249,90 @@ namespace LostMemory.Editor.InventoryTest
             {
                 slot.AddToClassList("iv-slot-empty");
                 slot.Add(new Label("·"));
+                return slot;
+            }
+
+            slot.Add(new Label(relic.DisplayName ?? relic.name));
+            slot.AddManipulator(new ContextualMenuManipulator(evt =>
+            {
+                evt.menu.AppendAction("Remove", _ =>
+                {
+                    if (isConsumableSlot)
+                    {
+                        if (_consumeInv == null) return;
+                        _consumeInv.Remove(slotIndex);
+                        OnConsumableChanged();
+                    }
+                    else
+                    {
+                        if (_relicInv == null) return;
+                        _relicInv.Remove(relic);
+                    }
+                });
+            }));
+            return slot;
+        }
+
+        // ── CL-176 동작: 더블클릭 / Clear ─────────────────
+
+        private void OnTreeItemsChosen(IEnumerable<object> items)
+        {
+            var node = items.OfType<InventoryTreeNode>().FirstOrDefault();
+            if (node?.Relic == null) return;
+            AddRelicToCorrectInventory(node.Relic);
+        }
+
+        private void AddRelicToCorrectInventory(RelicData relic)
+        {
+            if (_relicInv == null || _consumeInv == null)
+            {
+                Debug.LogWarning("[CL-176] Player 인스턴스 없음 — Refresh 후 재시도");
+                return;
+            }
+
+            if (relic.IsConsumable)
+            {
+                if (relic.IsInstantUse)
+                {
+                    Debug.LogWarning(
+                        $"[InventoryTest] '{relic.DisplayName}' 은 IsInstantUse=true. " +
+                        "게임 보상 흐름에선 즉시 효과 후 사라지지만, 본 도구는 슬롯 추가만 합니다.");
+                }
+                _consumeInv.TryAdd(relic);
+                OnConsumableChanged();
             }
             else
             {
-                slot.Add(new Label(relic.DisplayName ?? relic.name));
+                _relicInv.TryAdd(relic);
             }
-            return slot;
         }
+
+        private void OnClearPermanentClicked()
+        {
+            if (_relicInv == null) return;
+            int filled = _relicInv.OwnedRelics.Count(r => r != null);
+            if (!EditorUtility.DisplayDialog(
+                    "Clear Permanent Inventory",
+                    $"Permanent 인벤토리 {filled}개를 모두 비웁니다.\n계속할까요?",
+                    "Clear", "Cancel"))
+                return;
+            _relicInv.Clear();
+        }
+
+        private void OnClearConsumableClicked()
+        {
+            if (_consumeInv == null) return;
+            int filled = _consumeInv.Slots.Count(s => s != null);
+            if (!EditorUtility.DisplayDialog(
+                    "Clear Consumable Slots",
+                    $"Consumable 슬롯 {filled}개를 모두 비웁니다.\n계속할까요?",
+                    "Clear", "Cancel"))
+                return;
+            _consumeInv.Clear();
+            OnConsumableChanged();
+        }
+
+        private void OnConsumableChanged() => RefreshConsumableArea();
 
         // ── 이벤트 구독 ─────────────────────────────────────
 
