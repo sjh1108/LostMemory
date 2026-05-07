@@ -82,6 +82,7 @@ GameObject:
   - component: {fileID: 7504139936399824677}
   - component: {fileID: 2592970996598394060}
   - component: {fileID: 6026814209459650701}
+  - component: {fileID: 2913988551999795102}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -1073,6 +1074,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
   _baseMaxSlots: 25
+  _maxCols: 5
+  _maxRows: 5
   _debugRelicsToAdd:
   - {fileID: 11400000, guid: 4651ad8d210e68940a60fb9b17f23717, type: 2}
   - {fileID: 11400000, guid: d957bd6ed08f415458052a9ba7d2bc59, type: 2}
@@ -1217,6 +1220,18 @@ MonoBehaviour:
   health: {fileID: 114871673569860628}
   container: {fileID: 1496170365699431617}
   _logDamageMod: 1
+--- !u!114 &2913988551999795102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcd05997336ce9042bfb91b72d5dafa4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerConsumableInventory
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
