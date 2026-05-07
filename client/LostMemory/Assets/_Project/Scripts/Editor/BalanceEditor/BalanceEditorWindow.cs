@@ -21,6 +21,7 @@ namespace LostMemory.Editor.BalanceEditor
 
         private static BalanceEditorWindow _instance;
         public static bool IsOpen => _instance != null;
+        public static event Action<ScriptableObject> ScriptableObjectChanged;
 
         // SaveAll 동안 AssetPostprocessor 의 자동 새로고침 억제 (선택/디테일 보존)
         internal static bool SuppressAssetWatcher { get; private set; }
@@ -239,6 +240,8 @@ namespace LostMemory.Editor.BalanceEditor
 
         private void SaveAll()
         {
+            NotifyDirtyScriptableObjectsChanged();
+
             // SaveAssets 가 AssetPostprocessor 트리거 → RebuildTree 로 선택/디테일 잃을 위험.
             // SaveAll 동안만 watcher 억제. RefreshItems 로 라벨만 직접 갱신.
             SuppressAssetWatcher = true;
@@ -261,6 +264,7 @@ namespace LostMemory.Editor.BalanceEditor
         {
             _treeView?.RefreshItems();
             _autoSave?.NotifyChange();
+            NotifyScriptableObjectChanged(_currentlyShownSo);
             UpdateTitle();
             UpdateStatus("Undo/Redo applied");
         }
@@ -269,7 +273,34 @@ namespace LostMemory.Editor.BalanceEditor
         {
             _treeView?.RefreshItems();
             _autoSave?.NotifyChange();
+            NotifyScriptableObjectChanged(_currentlyShownSo);
             UpdateTitle();
+        }
+
+        private static void NotifyScriptableObjectChanged(ScriptableObject so)
+        {
+            if (so == null || !EditorApplication.isPlaying)
+            {
+                return;
+            }
+
+            ScriptableObjectChanged?.Invoke(so);
+        }
+
+        private void NotifyDirtyScriptableObjectsChanged()
+        {
+            if (!EditorApplication.isPlaying || _providers == null)
+            {
+                return;
+            }
+
+            foreach (var provider in _providers)
+            {
+                foreach (var so in provider.LoadAll().Where(DirtyTracker.IsDirty))
+                {
+                    NotifyScriptableObjectChanged(so);
+                }
+            }
         }
 
         // ---- CL-165: Export / Import handlers ----
@@ -318,6 +349,7 @@ namespace LostMemory.Editor.BalanceEditor
                     UpdateTitle();
                     _treeView?.RefreshItems();
                     _autoSave?.NotifyChange();
+                    NotifyScriptableObjectChanged(_currentlyShownSo);
                     UpdateStatus($"Imported to {_currentlyShownSo.name}");
                 }
             }
@@ -337,6 +369,7 @@ namespace LostMemory.Editor.BalanceEditor
                 UpdateTitle();
                 _treeView?.RefreshItems();
                 _autoSave?.NotifyChange();
+                NotifyDirtyScriptableObjectsChanged();
                 string msg = $"Imported {result.Matched} matched, {result.Skipped} skipped";
                 if (result.Failed > 0) msg += $", {result.Failed} failed";
                 UpdateStatus(msg);

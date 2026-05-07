@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using LostMemory.Combat.Telegraph;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
@@ -13,7 +14,9 @@ namespace LostMemory.Enemies
     {
         private const string ChargeDamageAreaName = "ChargeDamageArea";
         private const int DeferredApplyFrameCount = 3;
+        private static readonly HashSet<EnemyDataRuntimeAdapter> ActiveAdapters = new HashSet<EnemyDataRuntimeAdapter>();
 
+        [SerializeField] private EnemyData data;
         private Coroutine _deferredApplyRoutine;
 
         public static EnemyDataRuntimeAdapter Resolve(GameObject instance)
@@ -43,6 +46,36 @@ namespace LostMemory.Enemies
             adapter?.Apply(data);
         }
 
+        public static void ApplySavedAsset(EnemyData savedAsset)
+        {
+            if (savedAsset == null || ActiveAdapters.Count == 0)
+            {
+                return;
+            }
+
+            List<EnemyDataRuntimeAdapter> adapters = new List<EnemyDataRuntimeAdapter>(ActiveAdapters);
+            for (int i = 0; i < adapters.Count; i++)
+            {
+                EnemyDataRuntimeAdapter adapter = adapters[i];
+                if (adapter == null || adapter.data != savedAsset)
+                {
+                    continue;
+                }
+
+                adapter.Apply(savedAsset);
+            }
+        }
+
+        private void OnEnable()
+        {
+            ActiveAdapters.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            ActiveAdapters.Remove(this);
+        }
+
         public virtual void Apply(EnemyData data)
         {
             if (data == null)
@@ -50,6 +83,7 @@ namespace LostMemory.Enemies
                 return;
             }
 
+            this.data = data;
             ApplyImmediate(data);
 
             if (_deferredApplyRoutine != null)

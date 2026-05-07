@@ -16,6 +16,9 @@ namespace LostMemory.Enemies.Boss.Bertha
     [AddComponentMenu("Lost Memory/Enemies/Boss/Bertha/Bertha Light Attack 1 Bootstrap")]
     public sealed class BerthaLightAttack1Bootstrap : MonoBehaviour
     {
+        private static readonly HashSet<BerthaLightAttack1Bootstrap> ActiveBootstraps =
+            new HashSet<BerthaLightAttack1Bootstrap>();
+
         private static readonly Vector2 LegacyAttackOffset = new Vector2(1.3f, 0f);
         private static readonly Vector2 LegacyAttackSize = new Vector2(2.4f, 1.3f);
         private static readonly Vector2 RequestedAttackOffset = Vector2.zero;
@@ -260,9 +263,36 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void OnEnable()
         {
+            ActiveBootstraps.Add(this);
+
             if (Application.isPlaying || autoConfigureInEditMode)
             {
                 EnsureConfigured();
+            }
+        }
+
+        private void OnDisable()
+        {
+            ActiveBootstraps.Remove(this);
+        }
+
+        public static void ApplySavedBossData(BossData savedAsset)
+        {
+            if (savedAsset == null || ActiveBootstraps.Count == 0)
+            {
+                return;
+            }
+
+            List<BerthaLightAttack1Bootstrap> bootstraps = new List<BerthaLightAttack1Bootstrap>(ActiveBootstraps);
+            for (int i = 0; i < bootstraps.Count; i++)
+            {
+                BerthaLightAttack1Bootstrap bootstrap = bootstraps[i];
+                if (bootstrap == null || bootstrap.bossData != savedAsset)
+                {
+                    continue;
+                }
+
+                bootstrap.ApplyRuntimeTuning();
             }
         }
 
@@ -824,10 +854,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             ApplyResolvedHealth(health);
 
             CharacterMovement movement = GetComponent<CharacterMovement>();
-            if (movement != null)
-            {
-                movement.WalkSpeed = ResolveMoveSpeed();
-            }
+            ApplyResolvedMovement(movement);
 
             ResolvePhaseThresholds(
                 out float resolvedPhase2ThresholdNormalized,
@@ -938,7 +965,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             character.CharacterHealth = health;
 
             CharacterMovement movement = GetOrAdd<CharacterMovement>(gameObject);
-            movement.WalkSpeed = ResolveMoveSpeed();
+            ApplyResolvedMovement(movement);
             movement.Acceleration = 10f;
             movement.Deceleration = 10f;
             movement.ShouldSetMovement = true;
@@ -960,6 +987,23 @@ namespace LostMemory.Enemies.Boss.Bertha
             float resolvedHealth = ResolveMaxHealth();
             health.InitialHealth = resolvedHealth;
             health.MaximumHealth = resolvedHealth;
+
+            if (Application.isPlaying)
+            {
+                health.SetHealth(resolvedHealth);
+            }
+        }
+
+        private void ApplyResolvedMovement(CharacterMovement movement)
+        {
+            if (movement == null)
+            {
+                return;
+            }
+
+            float resolvedMoveSpeed = ResolveMoveSpeed();
+            movement.WalkSpeed = resolvedMoveSpeed;
+            movement.MovementSpeed = resolvedMoveSpeed;
         }
 
         private float ResolveMaxHealth()
