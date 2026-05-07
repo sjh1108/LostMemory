@@ -12,7 +12,7 @@ namespace LostMemory.Editor.InventoryTest
     /// CL-174: 셸 + Play 모드 가드 + Player 자동 검색.
     /// CL-175: 좌측 RelicData 트리 + 우측 인벤토리 슬롯 표시 + 이벤트 자동 갱신.
     /// CL-176: 더블클릭 추가 / 우클릭 제거 / Clear 버튼.
-    /// CL-177: Consumable 슬롯 지정 추가 예정.
+    /// CL-177: Consumable 슬롯 지정 메뉴 + 시각 폴리시.
     /// </summary>
     public class InventoryTestWindow : EditorWindow
     {
@@ -233,7 +233,7 @@ namespace LostMemory.Editor.InventoryTest
             if (_consumeInv == null || _consumableArea == null) return;
             var slots = _consumeInv.Slots;
             int filled = slots.Count(s => s != null);
-            _consumableHeader.text = $"Consumable ({filled}/{PlayerConsumableInventory.SlotCount})";
+            _consumableHeader.text = $"Consumable ({filled}/{PlayerConsumableInventory.SlotCount}) — slot 1~4";
 
             var grid = _consumableArea.Q<VisualElement>("ConsumableGrid");
             grid.Clear();
@@ -245,6 +245,14 @@ namespace LostMemory.Editor.InventoryTest
         {
             var slot = new VisualElement();
             slot.AddToClassList("iv-slot");
+
+            if (isConsumableSlot)
+            {
+                var slotNumLabel = new Label((slotIndex + 1).ToString());
+                slotNumLabel.AddToClassList("iv-slot-num");
+                slot.Add(slotNumLabel);
+            }
+
             if (relic == null)
             {
                 slot.AddToClassList("iv-slot-empty");
@@ -298,8 +306,7 @@ namespace LostMemory.Editor.InventoryTest
                         $"[InventoryTest] '{relic.DisplayName}' 은 IsInstantUse=true. " +
                         "게임 보상 흐름에선 즉시 효과 후 사라지지만, 본 도구는 슬롯 추가만 합니다.");
                 }
-                _consumeInv.TryAdd(relic);
-                OnConsumableChanged();
+                ShowConsumableSlotMenu(relic);
             }
             else
             {
@@ -333,6 +340,53 @@ namespace LostMemory.Editor.InventoryTest
         }
 
         private void OnConsumableChanged() => RefreshConsumableArea();
+
+        // ── CL-177 Consumable 슬롯 지정 메뉴 ───────────────
+
+        private void ShowConsumableSlotMenu(RelicData consumable)
+        {
+            if (_consumeInv == null) return;
+
+            var slots = _consumeInv.Slots;
+            int emptyCount = slots.Count(s => s == null);
+
+            if (emptyCount == 0)
+            {
+                EditorUtility.DisplayDialog(
+                    "Consumable Slots Full",
+                    "Consumable 슬롯 4개가 모두 차 있습니다.\n먼저 우클릭 → Remove 로 비워주세요.",
+                    "OK");
+                return;
+            }
+
+            var menu = new GenericMenu();
+            for (int i = 0; i < PlayerConsumableInventory.SlotCount; i++)
+            {
+                int slotIdx = i;
+                var existing = slots[i];
+                if (existing == null)
+                {
+                    menu.AddItem(
+                        new GUIContent($"Slot {i + 1}: (empty)"),
+                        false,
+                        () => OnConsumableSlotPicked(slotIdx, consumable));
+                }
+                else
+                {
+                    menu.AddDisabledItem(
+                        new GUIContent($"Slot {i + 1}: {existing.DisplayName ?? existing.name}"));
+                }
+            }
+            menu.ShowAsContext();
+        }
+
+        private void OnConsumableSlotPicked(int slot, RelicData consumable)
+        {
+            if (_consumeInv == null) return;
+            bool ok = _consumeInv.TryAddAt(slot, consumable);
+            if (ok) OnConsumableChanged();
+            else Debug.LogWarning($"[InventoryTest] Slot {slot + 1} 배치 실패");
+        }
 
         // ── 이벤트 구독 ─────────────────────────────────────
 

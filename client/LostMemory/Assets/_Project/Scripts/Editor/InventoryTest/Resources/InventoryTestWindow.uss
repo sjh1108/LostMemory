@@ -79,6 +79,16 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    position: relative;
+}
+
+.iv-slot-num {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
+    color: rgb(140, 140, 140);
+    -unity-font-style: bold;
 }
 
 .iv-slot-empty {
