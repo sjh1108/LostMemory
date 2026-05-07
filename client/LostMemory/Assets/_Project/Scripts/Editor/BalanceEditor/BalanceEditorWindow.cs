@@ -132,6 +132,7 @@ namespace LostMemory.Editor.BalanceEditor
                 new ShopConfigCategoryProvider(),
                 new EnemyDataCategoryProvider(),
                 new BossDataCategoryProvider(),
+                new PlayerStatsCategoryProvider(),
             };
 
             var leftPanel = root.Q<VisualElement>("LeftPanel");
