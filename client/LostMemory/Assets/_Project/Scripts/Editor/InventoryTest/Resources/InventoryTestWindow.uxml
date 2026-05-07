@@ -2,6 +2,7 @@
     <ui:VisualElement class="iv-root">
         <uie:Toolbar class="iv-toolbar">
             <ui:Label text="Inventory Test" class="iv-title" />
+            <uie:ToolbarSearchField name="SearchField" class="iv-search-field" />
             <ui:VisualElement class="iv-toolbar-spacer" />
             <uie:ToolbarButton name="ClearPermanentButton"  text="Clear Permanent"  class="iv-clear-btn" />
             <uie:ToolbarButton name="ClearConsumableButton" text="Clear Consumable" class="iv-clear-btn" />

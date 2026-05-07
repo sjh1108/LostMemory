@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using LostMemory.Relics;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -36,6 +37,10 @@ namespace LostMemory.Editor.InventoryTest
         private Label _permanentHeader;
         private Label _consumableHeader;
         private List<RelicData> _allRelics = new();
+
+        // CL-183: 검색 필드 + 마지막 필터 (Refresh / 자동갱신 시 보존)
+        private ToolbarSearchField _searchField;
+        private string _lastFilter = string.Empty;
 
         [MenuItem("LostMemory/Inventory Test Window")]
         public static void Open()
@@ -80,6 +85,17 @@ namespace LostMemory.Editor.InventoryTest
             _consumableArea = root.Q<VisualElement>("ConsumableArea");
             _permanentHeader  = root.Q<Label>("PermanentHeader");
             _consumableHeader = root.Q<Label>("ConsumableHeader");
+
+            // CL-183: SearchField — 4채널 OR 매칭 (DisplayName / EffectDescription / Tags / Effects[].Type)
+            _searchField = root.Q<ToolbarSearchField>("SearchField");
+            if (_searchField != null)
+            {
+                _searchField.RegisterValueChangedCallback(evt =>
+                {
+                    _lastFilter = evt.newValue ?? string.Empty;
+                    RebuildTreeWithFilter();
+                });
+            }
 
             var refreshBtn = root.Q<Button>("RefreshButton");
             if (refreshBtn != null) refreshBtn.clicked += OnRefreshClicked;
@@ -165,14 +181,58 @@ namespace LostMemory.Editor.InventoryTest
 
         private List<TreeViewItemData<InventoryTreeNode>> BuildTreeData()
         {
+            return BuildTreeData(_lastFilter);
+        }
+
+        // CL-183: 필터 적용 트리 데이터. 빈 필터 = 전체 표시. 빈 카테고리 (매칭 0) 자동 숨김.
+        private List<TreeViewItemData<InventoryTreeNode>> BuildTreeData(string filter)
+        {
             var permanents  = _allRelics.Where(r => !r.IsConsumable).ToList();
             var consumables = _allRelics.Where(r =>  r.IsConsumable).ToList();
 
+            if (!string.IsNullOrEmpty(filter))
+            {
+                var lower = filter.ToLowerInvariant();
+                permanents  = permanents.Where(r => MatchesFilter(r, lower)).ToList();
+                consumables = consumables.Where(r => MatchesFilter(r, lower)).ToList();
+            }
+
             int id = 0;
             var roots = new List<TreeViewItemData<InventoryTreeNode>>();
-            roots.Add(BuildGroup(ref id, "Permanent", permanents));
-            roots.Add(BuildGroup(ref id, "Consumable", consumables));
+            if (permanents.Count > 0)  roots.Add(BuildGroup(ref id, "Permanent", permanents));
+            if (consumables.Count > 0) roots.Add(BuildGroup(ref id, "Consumable", consumables));
             return roots;
+        }
+
+        // CL-183: 4채널 OR 매칭 — 이름 / 효과설명 / 태그 / 효과타입.
+        // legacy _effectTypeLegacy 검색 X (Effects[] 만). RelicData.Effects null/0 가드.
+        private static bool MatchesFilter(RelicData r, string lower)
+        {
+            var name = r.DisplayName ?? r.name;
+            if (!string.IsNullOrEmpty(name)
+                && name.ToLowerInvariant().Contains(lower)) return true;
+
+            if (!string.IsNullOrEmpty(r.EffectDescription)
+                && r.EffectDescription.ToLowerInvariant().Contains(lower)) return true;
+
+            if (r.TagPrimary.ToString().ToLowerInvariant().Contains(lower))   return true;
+            if (r.TagSecondary.ToString().ToLowerInvariant().Contains(lower)) return true;
+
+            if (r.Effects != null && r.Effects.Count > 0)
+            {
+                foreach (var e in r.Effects)
+                    if (e.Type.ToString().ToLowerInvariant().Contains(lower)) return true;
+            }
+            return false;
+        }
+
+        // CL-183: 필터 적용 트리 재구축. SearchField 콜백 / Refresh / 후속 자동갱신 진입점.
+        private void RebuildTreeWithFilter()
+        {
+            if (_treeView == null) return;
+            _treeView.SetRootItems(BuildTreeData(_lastFilter));
+            _treeView.Rebuild();
+            _treeView.ExpandAll();
         }
 
         private TreeViewItemData<InventoryTreeNode> BuildGroup(
@@ -417,9 +477,8 @@ namespace LostMemory.Editor.InventoryTest
         private void OnRefreshClicked()
         {
             _allRelics = LoadAllRelics();
-            _treeView.SetRootItems(BuildTreeData());
-            _treeView.Rebuild();
-            _treeView.ExpandAll();
+            // CL-183: _lastFilter 보존 — Refresh 후에도 검색 결과 유지
+            RebuildTreeWithFilter();
             RefreshInventoryView();
         }
     }
