@@ -6,6 +6,7 @@ import com.lostmemory.server.global.security.JwtProperties;
 import com.lostmemory.server.global.security.JwtProvider;
 import com.lostmemory.server.session.dto.CreateSessionRequest;
 import com.lostmemory.server.session.dto.JoinSessionRequest;
+import com.lostmemory.server.session.dto.SessionFindResponse;
 import com.lostmemory.server.session.dto.SessionMemberResponse;
 import com.lostmemory.server.session.dto.SessionResponse;
 import com.lostmemory.server.session.entity.Session;
@@ -87,6 +88,24 @@ public class SessionService {
         sessionJoinRepository.save(SessionJoin.of(session, user, SessionRole.GUEST));
 
         return buildResponse(session, user.getId(), SessionRole.GUEST);
+    }
+
+    /**
+     * 코드로 세션 조회. 입장 전 단계 — privateCode 만 알고 sessionId 모를 때 클라가 호출.
+     * 입장 안 했으니 sessionToken 발급 X. 정원·호스트 정보만 노출해 클라 UI 용.
+     */
+    public SessionFindResponse findByPrivateCode(String privateCode) {
+        Session session = sessionRepository.findByPrivateCode(privateCode)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        long currentMembers = sessionJoinRepository.countBySessionId(session.getId());
+        return new SessionFindResponse(
+                session.getId(),
+                session.getHost().getId(),
+                session.getMaxPlayers(),
+                currentMembers,
+                currentMembers >= session.getMaxPlayers()
+        );
     }
 
     /**

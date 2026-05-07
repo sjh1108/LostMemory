@@ -89,6 +89,10 @@ namespace LostMemory.Multiplayer
         private bool _isHost;
         private ulong _hostUserId; // 호스트 본인은 자기 userId, 게스트는 SetHostUserId() 로 받음 (옵션)
 
+        // 백그라운드 ReceiveLoop 에서도 안전한 시간 측정 (Time.realtimeSinceStartup 은 메인 스레드 전용)
+        private static readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
+
+
         // ================================================================
         // 외부에서 호출하는 셋업 메서드
         // ================================================================
@@ -150,7 +154,7 @@ namespace LostMemory.Multiplayer
 
             try
             {
-                _udp.Send(wire, wire.Length, _relayEndpoint);
+                _udp.Send(wire, wire.Length);
             }
             catch (Exception e)
             {
@@ -389,7 +393,7 @@ namespace LostMemory.Multiplayer
                 Type = type,
                 ClientId = clientId,
                 Payload = payload,
-                ReceiveTime = Time.realtimeSinceStartup
+                ReceiveTime = (float)_clock.Elapsed.TotalSeconds
             });
         }
 
