@@ -4,11 +4,22 @@
 #
 # 적용 대상:
 #  - /var/log/certbot-renew.log : root crontab 의 certbot-renew.sh wrapper 출력
+#  - /var/log/docker-prune.log  : root crontab 의 docker-prune.sh wrapper 출력
 #
 # 그 외 호스트 로그(/var/log/syslog, /var/log/kern.log, /var/log/journal/* 등)는
 # Ubuntu 기본 logrotate / journald 가 이미 처리한다 — 추가 정책 불필요.
 
 /var/log/certbot-renew.log {
+    weekly
+    rotate 8
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 root root
+}
+
+/var/log/docker-prune.log {
     weekly
     rotate 8
     compress

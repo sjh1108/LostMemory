@@ -699,6 +699,55 @@ curl -I https://k14c201.p.ssafy.io/nginx-health            # 200
 
 ---
 
+## Docker 자원 정리 (cron, 1회 등록)
+
+Jenkins 가 매 빌드마다 `docker compose build app` 으로 새 이미지를 만들고 이전 layer 가 dangling 으로 쌓여 EC2 디스크가 점진적으로 소모된다. `server/scripts/docker-prune.sh` 가 일요일 03:30 에 dangling image + 30일 이상된 build cache 만 정리한다.
+
+### 정책
+
+- **`docker image prune -f`** — dangling image (untagged + 컨테이너 미참조) 만 제거. 태그 붙은 `server-app:N` rollback 이력 (`deploy.sh history`) 은 그대로 보존.
+- **`docker builder prune --filter "until=720h"`** — 30일 이상된 BuildKit 캐시만 제거. 30일 미만 캐시는 다음 빌드 hit 유지.
+- **volume / network / running container 절대 미건드림** — `postgres_data` / `redis_data` / `certbot_etc` / `certbot_webroot` 데이터 손실 위험 차단. `docker system prune` 사용 X.
+- **시간대** — 일요일 03:30. certbot-renew (월 03:17) 와 분리, 트래픽 가장 적은 시간대.
+
+### 1회 등록 절차 (운영자)
+
+EC2 SSH 후 develop 동기화는 [HTTPS 절차](#-자동-갱신-cron-1회-등록) 와 동일.
+
+1. logrotate 정책 적용 (이미 등록돼 있다면 갱신 cp 만):
+   ```bash
+   sudo cp /home/ubuntu/lostmemory/server/etc/logrotate.d/lostmemory /etc/logrotate.d/lostmemory
+   sudo logrotate -d /etc/logrotate.d/lostmemory   # docker-prune.log 정책 dry-run 검증
+   ```
+2. 호스트 root crontab 에 wrapper 등록:
+   ```bash
+   sudo crontab -e
+   ```
+   ```cron
+   30 3 * * 0 /home/ubuntu/lostmemory/server/scripts/docker-prune.sh >> /var/log/docker-prune.log 2>&1
+   ```
+3. 등록 직후 한 번 수동 실행해 동작 확인:
+   ```bash
+   docker system df                                    # before
+   sudo /home/ubuntu/lostmemory/server/scripts/docker-prune.sh
+   docker system df                                    # after — Images / Build Cache 줄어듦, Volumes 동일
+   docker volume ls | grep -E 'postgres_data|redis_data|certbot_'   # 볼륨 4개 모두 그대로
+   tail -20 /var/log/docker-prune.log                  # 정상 종료 로그 확인
+   ```
+4. 다음 일요일 03:30 자동 실행 후 같은 명령으로 검증.
+
+### 롤백
+
+- cron 만 빼기: `sudo crontab -e` 에서 해당 줄 삭제.
+- 로그/정책 함께 정리: `sudo rm /var/log/docker-prune.log` (선택), `sudo rm /etc/logrotate.d/lostmemory` 후 git revert + 재적용.
+
+### 주의
+
+- `docker image prune -a` 는 사용하지 않는다 (`-a` 는 태그 붙은 이미지도 제거 → rollback 이력 손실).
+- volume prune 이 필요한 경우는 운영자가 SSH 직접 + 백업 후 수동 (자동화 절대 X).
+
+---
+
 ## Jenkins 빌드 알림 (Mattermost)
 
 Jenkins 빌드의 성공/실패 결과를 Mattermost 채널로 자동 알림한다. Jenkinsfile 의 `post.success` / `post.failure` 가 ENV_FILE(`lostmemory-env` Secret file) 의 `MATTERMOST_WEBHOOK_URL` 라인을 grep 으로 추출해 incoming webhook 으로 호출한다.
@@ -735,6 +784,7 @@ Jenkins 빌드의 성공/실패 결과를 Mattermost 채널로 자동 알림한�
 - compose 의 `logging` 섹션이 명시 적용 (postgres / redis / app / nginx / certbot / jenkins).
 - compose 외부 컨테이너 (gitlab-runner 등) 는 호스트 `/etc/docker/daemon.json` 의 글로벌 default 로 같은 정책 적용.
 - `/var/log/certbot-renew.log` 는 logrotate 로 주1회 회전, 8주 보관.
+- `/var/log/docker-prune.log` 도 같은 정책 (주1회, 8주 보관). [Docker 자원 정리 절](#docker-자원-정리-cron-1회-등록) 참고.
 - 호스트 `/var/log/*` 의 syslog / kern / journal 은 Ubuntu 기본 logrotate / journald 가 이미 처리 — 추가 작업 없음.
 
 ### 1회 등록 절차 (운영자)
