@@ -4803,7 +4803,9 @@ MonoBehaviour:
   previewObjectName: AttackTelegraphPreview
   previewParent: {fileID: 1014074186}
   sortingReference: {fileID: 0}
-  sortingOrder: 1
+  sortingOrderOffset: 1
+  renderOutsideSortingGroup: 1
+  sortingGroupReference: {fileID: 0}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
@@ -5220,6 +5222,7 @@ MonoBehaviour:
   combatRoot: {fileID: 854109348}
   autoConfigureInEditMode: 1
   addMissingCoreCombatComponents: 1
+  bossData: {fileID: 0}
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 1024
@@ -5349,6 +5352,7 @@ MonoBehaviour:
   heavyAttackWeight: 2
   normalDashWeight: 1
   initialHealth: 100
+  movementSpeed: 3
   stunThresholdNormalized: 0.7
   tiredThresholdNormalized: 0.3
   stunReactionDuration: 1.1
@@ -6910,6 +6914,7 @@ MonoBehaviour:
   entryAnchors: []
   exitWalls: []
   bossTracker: {fileID: 0}
+  autoOpenExitsOnCleared: 1
 --- !u!114 &1590449024 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1718577566972713409, guid: 7b13fb56397ae8f4d8ece5efb234114e,
@@ -6990,6 +6995,42 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1476706992768293698, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      propertyPath: InitialHealth
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 1476706992768293698, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      propertyPath: MaximumHealth
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3376448376559293711, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      propertyPath: stunThresholdNormalized
+      value: 0.502
+      objectReference: {fileID: 0}
+    - target: {fileID: 3376448376559293711, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      propertyPath: tiredThresholdNormalized
+      value: 0.208
+      objectReference: {fileID: 0}
+    - target: {fileID: 5197595442811718107, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      propertyPath: bossData
+      value: 
+      objectReference: {fileID: 11400000, guid: 113345f7316c9c44cbc5db509b9a0520,
+        type: 2}
+    - target: {fileID: 6455771735041413460, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      propertyPath: phaseController
+      value: 
+      objectReference: {fileID: 2104145073}
+    - target: {fileID: 6895068191541539650, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      propertyPath: WalkSpeed
+      value: 5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -7002,6 +7043,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 2104144963}
+    - targetCorrespondingSourceObject: {fileID: 1053890707461078126, guid: 2b91fe08d79d1fd4b8a80d08a8178696,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2104145073}
   m_SourcePrefab: {fileID: 100100000, guid: 2b91fe08d79d1fd4b8a80d08a8178696, type: 3}
 --- !u!213 &1721099738
 Sprite:
@@ -7747,8 +7792,13 @@ MonoBehaviour:
   playerDownController: {fileID: 0}
   runResultPanelView: {fileID: 0}
   playerRelicInventory: {fileID: 0}
+  rewardController: {fileID: 0}
+  goldWallet: {fileID: 0}
   autoStartOnAwake: 0
   resultingDelaySeconds: 2
+  townSceneName: Town
+  totalStageCount: 1
+  logStageProgression: 1
 --- !u!4 &2012047026
 Transform:
   m_ObjectHideFlags: 0
@@ -10153,6 +10203,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01754710d9f92ec4d9a21b81f5682667, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
+--- !u!114 &2104145073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104144904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0133e7f9eecd45e1892e5b0383084e82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBossPhaseController
+  health: {fileID: 2104145014}
+  phase2ThresholdNormalized: 0.8
+  phase3ThresholdNormalized: 0.3
+  debugLogging: 0
 --- !u!1 &880101000001
 GameObject:
   m_ObjectHideFlags: 0
