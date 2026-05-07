@@ -22,5 +22,8 @@ namespace LostMemory.Combat
         Range,              // 공격 범위
         Dodge,              // 회피 확률
         Defense,            // 방어력 (flat — magnitude 의미가 % 와 다름. CL-146 정책 결정)
+
+        // ── S14P31C201-222 추가 (노소연) ──
+        ManaRegen,          // 마나 회복량. TalentStartupApplier 에서 재능 ManaRegen 스탯 적용.
     }
 }
