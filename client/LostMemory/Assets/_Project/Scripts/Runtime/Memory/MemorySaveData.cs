@@ -30,6 +30,13 @@ namespace LostMemory.Memory
         /// <summary>런 시작 시 추가 지급 골드. StartingGold 보상 합산.</summary>
         public int BonusStartingGold;
 
+        /// <summary>
+        /// 유물 인벤토리 영구 추가 슬롯 수. RelicSlotExpand 보상 합산.
+        /// 런 시작 시 PlayerRelicInventory.AddSlots() 로 적용.
+        /// _bonusSlots 는 게임 재실행 시 초기화되므로 SaveData 에 별도 보관.
+        /// </summary>
+        public int PermanentBonusRelicSlots;
+
         /// <summary>룸 보상 선택지 추가 수. RewardSlotExpand 보상 합산. 기본 3택 + 이 값.</summary>
         public int BonusRewardSlots;
 
