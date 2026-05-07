@@ -129,9 +129,23 @@ namespace LostMemory.Rewards
         }
 
         // CL-146: 행운 (luckPoints) 가 luck 태그 RelicData 가중치 부스트.
+        // CL-152 fix: KeyNotFoundException 안전화 — 잘못된 Rarity SO 도 weight=1 fallback 으로 추첨 가능.
         private static int GetWeight(RelicData data, int luckPoints = 0)
         {
-            int weight = data.IsConsumable ? ConsumableWeight : RarityWeights[data.Rarity];
+            int weight;
+            if (data.IsConsumable)
+            {
+                weight = ConsumableWeight;
+            }
+            else if (RarityWeights.TryGetValue(data.Rarity, out int rw))
+            {
+                weight = rw;
+            }
+            else
+            {
+                Debug.LogWarning($"[RewardPool] {data.name} 의 Rarity ({data.Rarity}) 가 RarityWeights 에 없음 — weight=1 fallback");
+                weight = 1;
+            }
             if (luckPoints > 0 && HasLuckTag(data))
                 weight += luckPoints * 2;     // 행운 1점 당 +2 가중치
             return weight;

@@ -10,20 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 557189643fb1cb543b9862b81019d515, type: 3}
-  m_Name: "BuildSet_\uC804\uAE30"
+  m_Name: "BuildSet_전기"
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildSetData
   _setTag: 5
-  _displayName: "\uC804\uAE30"
+  _displayName: "전기"
   _tiers:
   - RequiredCount: 1
     EffectType: 22
     Magnitude: 0.1
-    Description: "\uC804\uAE30 \uCCB4\uC778 10%"
+    Duration: 0
+    Description: "전기 체인 - 공격력의 10%"
   - RequiredCount: 2
     EffectType: 22
-    Magnitude: 0.2
-    Description: "\uC804\uAE30 \uCCB4\uC778 20%"
-  - RequiredCount: 3
+    Magnitude: 0.15
+    Duration: 0
+    Description: "전기 체인 - 공격력의 15%"
+  - RequiredCount: 4
     EffectType: 22
     Magnitude: 0.3
-    Description: "\uC804\uAE30 \uCCB4\uC778 30%"
+    Duration: 0
+    Description: "전기 체인 - 공격력의 30%"

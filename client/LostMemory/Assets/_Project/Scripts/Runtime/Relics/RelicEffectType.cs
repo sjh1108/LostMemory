@@ -48,5 +48,8 @@ namespace LostMemory.Relics
 
         // CL-147 추가 — 타로 카드 효과 강화 multiplier (TarotSystem.SetEffectMultiplier 라우팅)
         TarotEffectMultiplier,            // 0.0 = base 효과, 1.0 = 효과 2배
+
+        // 치명타 피해 보너스 (StatId.CriticalDamage 라우팅). 기본 50% 위에 % 합산.
+        CriticalDamagePercent,
     }
 }

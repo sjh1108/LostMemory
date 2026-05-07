@@ -108,6 +108,17 @@ namespace LostMemory.Combat
         }
 
         /// <summary>
+        /// 합산 multiplier 에 상한을 씌워 반환. 1 + min(Σpercent, capPercent).
+        /// 예: Range 의 200% 상한 → maxBonus=1.0 (200% 도달까지 +100% bonus 허용).
+        /// 상한 초과분은 잘림.
+        /// </summary>
+        public float GetCappedMultiplier(StatId stat, float maxBonus)
+        {
+            float bonus = GetTotalMultiplier(stat) - 1f;
+            return 1f + Mathf.Min(bonus, maxBonus);
+        }
+
+        /// <summary>
         /// CL-146: flat 합산 반환 (multiplier 와 별도). DefenseFlat 등 flat 성격 stat 용.
         /// 예: Defense 등록 +4 + +8 → 12 반환. multiplier 적용은 따로.
         /// 다른 곳에서 GetTotalMultiplier(Defense) 호출하지 않도록 주의 — 의미 다름.

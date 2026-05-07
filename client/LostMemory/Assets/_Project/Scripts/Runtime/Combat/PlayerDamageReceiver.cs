@@ -19,6 +19,8 @@ namespace LostMemory.Combat
     [DisallowMultipleComponent]
     public sealed class PlayerDamageReceiver : MonoBehaviour
     {
+        private const float DodgeChanceCap = 0.15f;
+
         [Tooltip("같은 (또는 자식) GameObject 의 Health. 비워두면 GetComponentInChildren 자동 검색.")]
         [SerializeField] private Health health;
 
@@ -66,8 +68,9 @@ namespace LostMemory.Combat
             float damageReceived = health.LastDamage;
             if (damageReceived <= 0f) return;
 
-            // 1) 회피 roll — DodgeChancePercent 합산 (1.05 = 5% 회피)
-            float dodgeChance = Mathf.Max(0f, container.GetTotalMultiplier(StatId.Dodge) - 1f);
+            // 1) 회피 roll — DodgeChancePercent 합산 (1.05 = 5% 회피).
+            // 상한 15% 적용 — 합산이 초과해도 최대 15%.
+            float dodgeChance = Mathf.Clamp(container.GetTotalMultiplier(StatId.Dodge) - 1f, 0f, DodgeChanceCap);
             if (dodgeChance > 0f && UnityEngine.Random.value < dodgeChance)
             {
                 health.ReceiveHealth(damageReceived, gameObject);

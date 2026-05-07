@@ -219,13 +219,17 @@ namespace LostMemory.TestKhi
                     ? statContainer.GetTotalMultiplier(StatId.FinisherDamage) : 1f;
                 float finalDamage = weaponData.BaseDamage * step.damageMultiplier * attackMul * finisherMul;
 
-                // CL-142: 치명타 처리 — Magnitude 가 critChance (0.25 = 25%), 적중 시 ×2 데미지
+                // 치명타 — 확률(StatId.Critical)과 피해 보너스(StatId.CriticalDamage) 분리.
+                // 기본 치명타 피해 50%; 보너스는 합연산.
                 float critChance = statContainer != null
                     ? Mathf.Max(0f, statContainer.GetTotalMultiplier(StatId.Critical) - 1f)
                     : 0f;
                 if (critChance > 0f && UnityEngine.Random.value < critChance)
                 {
-                    finalDamage *= 2f;
+                    float critDmgBonus = 0.5f;
+                    if (statContainer != null)
+                        critDmgBonus += statContainer.GetTotalMultiplier(StatId.CriticalDamage) - 1f;
+                    finalDamage *= 1f + Mathf.Max(0f, critDmgBonus);
                 }
                 int sampledHitCount = hitbox != null
                     ? hitbox.Sample(sampleRequest, step, finalDamage, _alreadyHitThisSwing, _hitsThisSample)

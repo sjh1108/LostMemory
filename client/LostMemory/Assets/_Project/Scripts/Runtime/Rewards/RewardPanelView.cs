@@ -96,7 +96,12 @@ namespace LostMemory.Rewards
             _inventory.TryAdd(selected);
             _picksMade++;
 
-            if (_picksMade >= _picksAllowed)
+            // CL-152 fix: SetActive / DisableSelectedCard 를 RewardSelected.Invoke *전* 에 처리.
+            // RewardController.HandleRewardSelected 가 rewardPanelView.gameObject.activeSelf 로
+            // "패널 닫혔는지" 판단하므로, 닫는 작업이 먼저 완료되어야 timeScale 복구 정확히 분기.
+            // (CL-146 검증 시 picksAllowed=1 케이스 누락 — 이번에 발견)
+            bool willClose = _picksMade >= _picksAllowed;
+            if (willClose)
             {
                 gameObject.SetActive(false);
                 RewardSelected?.Invoke(selected);
