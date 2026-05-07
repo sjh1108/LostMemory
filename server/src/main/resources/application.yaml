@@ -29,3 +29,9 @@ jwt:
 relay:
   port: ${RELAY_PORT:7777}
   handshake-timeout-ms: ${HANDSHAKE_TIMEOUT_MS}  # UDP 통신 핸드셰이크 타임아웃 (밀리초)
+
+# CORS — Unity WebGL / Swagger 외부 호출 등에서 origin 검사 통과용
+# 콤마 구분 패턴. dev 는 "*", prod 는 도메인 화이트리스트
+app:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS}
