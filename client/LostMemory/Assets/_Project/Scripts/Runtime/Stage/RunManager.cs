@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Memory;
 using LostMemory.Networking.Common;
 using LostMemory.Relics;
 using LostMemory.TestKhi;
@@ -41,6 +42,8 @@ namespace LostMemory.Stage
         [SerializeField] private RewardController rewardController;
         [Tooltip("CL-113: Run 한정 골드 지갑. Combat 클리어 시 +50, CloseResulting 시 Reset.")]
         [SerializeField] private GoldWallet goldWallet;
+        [Tooltip("기억 파편 누적·저장 서비스. 룸 클리어 시 파편 지급, CloseResulting 시 영구 저장.")]
+        [SerializeField] private MemoryProgressTracker memoryProgressTracker;
 
         [Header("Behavior")]
         [SerializeField, Tooltip("Awake 후 자동으로 StartRun() 호출. 디버그 / 검증 시 편의용.")]
@@ -308,6 +311,8 @@ namespace LostMemory.Stage
             {
                 goldWallet.ResetToInitial();
             }
+            // 이번 런 파편 영구 저장.
+            memoryProgressTracker?.SaveRunShards();
         }
 
         private void HandleDungeonBuilt()
@@ -373,6 +378,8 @@ namespace LostMemory.Stage
                 Debug.Log("[RunManager] Combat clear reward gold +50.");
                 goldWallet.Add(50);
             }
+            // 룸 타입에 따른 파편 지급.
+            memoryProgressTracker?.AddShardsForRoom(payload.Data.RoomType);
             // develop: 보스방 외 클리어는 런 흐름에 영향 X (다음 방 자연 진입).
             if (payload.Data.RoomType != StageRoomType.Boss)
             {
@@ -482,6 +489,7 @@ namespace LostMemory.Stage
             bossKillCount = 0;
             totalDamage = 0;
             memoryFragments = 0;
+            memoryProgressTracker?.ResetRunShards();
         }
 
         private RunResultData BuildRunResultData()
@@ -493,7 +501,9 @@ namespace LostMemory.Stage
                 BossKillCount = bossKillCount,
                 TotalDamage = totalDamage,
                 PlayTime = playTime,
-                MemoryFragments = memoryFragments
+                MemoryFragments = memoryProgressTracker != null
+                    ? memoryProgressTracker.ThisRunShards
+                    : memoryFragments,
             };
         }
 
