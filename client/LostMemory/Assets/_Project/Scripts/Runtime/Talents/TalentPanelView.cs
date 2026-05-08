@@ -19,6 +19,8 @@ namespace LostMemory.Talents
         [SerializeField] private Button _closeButton;
         [SerializeField] private bool _autoOpenOnStart = true;
         [SerializeField] private int _debugTotalPoints = 10;
+        [Tooltip("false로 설정하면 ESC 키 처리를 외부(TownTopRightHUDView 등)에 위임합니다.")]
+        [SerializeField] private bool _handleEscKey = true;
 
         private TalentModel _model;
 
@@ -53,7 +55,7 @@ namespace LostMemory.Talents
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (_handleEscKey && Input.GetKeyDown(KeyCode.Escape))
                 Close();
         }
 

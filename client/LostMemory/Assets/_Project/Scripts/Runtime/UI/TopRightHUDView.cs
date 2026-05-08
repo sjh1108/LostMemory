@@ -48,13 +48,32 @@ namespace LostMemory.UI
             }
         }
 
+        // ── 키 입력 ───────────────────────────────────────────────────
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                // PausePanel 열려있으면 닫기(재개), 닫혀있으면 열기(정지)
+                if (_pausePanel != null && _pausePanel.gameObject.activeSelf)
+                    ResumeGame();
+                else
+                    OnPauseClicked();
+            }
+        }
+
         // ── 버튼 처리 ─────────────────────────────────────────────────
 
-        /// <summary>Pause 버튼 클릭 — 게임 정지 + 패널 표시</summary>
+        /// <summary>Pause 버튼 클릭 — 열려있으면 재개, 닫혀있으면 정지</summary>
         private void OnPauseClicked()
         {
-            Time.timeScale = 0f;
-            _pausePanel?.Show();
+            if (_pausePanel != null && _pausePanel.gameObject.activeSelf)
+                ResumeGame();
+            else
+            {
+                Time.timeScale = 0f;
+                _pausePanel?.Show();
+            }
         }
 
         /// <summary>재개 — 게임 재개 + 패널 숨김</summary>
