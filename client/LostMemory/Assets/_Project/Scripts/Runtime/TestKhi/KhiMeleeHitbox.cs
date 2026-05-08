@@ -14,9 +14,11 @@ namespace LostMemory.TestKhi
         [SerializeField] private float targetFlickerDuration = 0f;
         [Tooltip("CL-146: 같은 GameObject (또는 부모) 의 PlayerStatModifierContainer. 비워두면 GetComponentInParent. Range multiplier 조회용.")]
         [SerializeField] private PlayerStatModifierContainer statContainer;
-        [SerializeField] private bool drawDebugGizmos = true;
+        [Tooltip("Editor Scene 뷰에서 hitbox 윤곽 Gizmo 표시 (선택된 GameObject 만). 인게임 화면엔 영향 없음.")]
+        [SerializeField] private bool drawDebugGizmos = false;
         [SerializeField] private Color debugGizmoColor = new Color(1f, 0.2f, 0.1f, 0.25f);
-        [SerializeField] private bool showRuntimePreview = true;
+        [Tooltip("인게임 화면에 hitbox 박스 SpriteRenderer 로 표시 (디버깅 용). default OFF — 시각 검증 시만 ON.")]
+        [SerializeField] private bool showRuntimePreview = false;
         [SerializeField] private Color runtimePreviewColor = new Color(1f, 0f, 0f, 0.28f);
         [SerializeField] private int runtimePreviewSortingOrder = 1000;
 
@@ -36,7 +38,7 @@ namespace LostMemory.TestKhi
                 statContainer = GetComponentInParent<PlayerStatModifierContainer>();
         }
 
-        public int Sample(KhiAttackRequest request, AttackStepData step, float damage, HashSet<Health> alreadyHit, List<Health> hitsThisSample)
+        public int Sample(KhiAttackRequest request, AttackStepData step, Vector2 globalPostRotationOffset, float damage, HashSet<Health> alreadyHit, List<Health> hitsThisSample)
         {
             EnsureOverlapBuffer();
             hitsThisSample?.Clear();
@@ -44,7 +46,8 @@ namespace LostMemory.TestKhi
             float aimAngleDeg = request.AimAngleDegrees;
             // baseline offset(Right 기준)을 현재 aim 각도로 회전시켜 실제 center 계산.
             Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, aimAngleDeg) * (Vector3)step.hitboxOffset);
-            Vector2 center = (Vector2)request.Origin + rotatedOffset;
+            // CL: globalPostRotationOffset 은 회전 후 더함 → 좌/우 어느 방향이든 항상 같은 양만큼 시프트.
+            Vector2 center = (Vector2)request.Origin + rotatedOffset + globalPostRotationOffset;
             // CL-146: Range multiplier 적용 — 평타 hitbox 크기 확장. 상한 200%.
             float rangeMul = statContainer != null ? statContainer.GetCappedMultiplier(StatId.Range, 1f) : 1f;
             Vector2 finalSize = step.hitboxSize * rangeMul;

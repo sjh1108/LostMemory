@@ -114,7 +114,11 @@ namespace LostMemory.TestKhi
             TemporarySlashSpec spec = GetSlashSpec(step.comboStep);
             float directionAngle = request.AimAngleDegrees;
             Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, directionAngle) * (Vector3)step.hitboxOffset);
-            Vector2 center = (Vector2)request.Origin + rotatedOffset;
+            // CL: WeaponData 의 globalPostRotationOffset 을 hitbox 와 동일하게 회전 후 적용 → 좌우 대칭 보장.
+            Vector2 globalPostRotationOffset = (_comboController != null && _comboController.WeaponData != null)
+                ? _comboController.WeaponData.GlobalHitboxPostRotationOffset
+                : Vector2.zero;
+            Vector2 center = (Vector2)request.Origin + rotatedOffset + globalPostRotationOffset;
             Vector2 areaSize = step.hitboxSize * slashAreaScale;
 
             GameObject slashObject = new GameObject($"Khi_TemporarySlash_{step.comboStep}");

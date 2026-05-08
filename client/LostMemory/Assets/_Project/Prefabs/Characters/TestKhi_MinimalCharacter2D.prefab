@@ -1182,6 +1182,8 @@ MonoBehaviour:
   _chainRadius: 3
   _chainMaxTargets: 3
   _chainCooldown: 0.5
+  _chainPlayerLineMaxDistance: 3
+  _chainSpawnInterval: 0.05
   _slowDuration: 2
   _windBladeLength: 2
   _windBladeWidth: 0.6
@@ -1189,13 +1191,27 @@ MonoBehaviour:
     type: 3}
   _windAOEVFXPrefab: {fileID: 5254158234669054749, guid: 188803fde514e2a438f9aa3bf948a826,
     type: 3}
+  _windVFXLifetime: 1.2
   _chainHitSfx: {fileID: 0}
   _windBladeSfx: {fileID: 0}
   _sfxVolume: 0.7
   _chainHitStopDuration: 0.05
   _windHitStopDuration: 0.08
   _hitStopFrozenScale: 0
+  _freezeStatusVFXPrefab: {fileID: 2749308861695354543, guid: 7929bd9ac5d2e734b828abe97c1ee123,
+    type: 3}
+  _burnStatusVFXPrefab: {fileID: 5254158234669054749, guid: 8cca85514eee7fa4293117ca848e4873,
+    type: 3}
+  _slowStatusVFXPrefab: {fileID: 2749308861695354543, guid: 7929bd9ac5d2e734b828abe97c1ee123,
+    type: 3}
+  _slowTintColor: {r: 0.254717, g: 0.758025, b: 1, a: 1}
+  _burnTintColor: {r: 1, g: 0.6, b: 0.4, a: 1}
+  _freezeApplySfx: {fileID: 0}
+  _burnApplySfx: {fileID: 0}
+  _slowApplySfx: {fileID: 0}
+  _statusSfxVolume: 0.6
   _logOnHitDispatch: 1
+  _debugFreezeOverrideSeconds: 0
 --- !u!114 &2592970996598394060
 MonoBehaviour:
   m_ObjectHideFlags: 0
