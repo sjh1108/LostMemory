@@ -102,6 +102,11 @@ namespace LostMemory.Enemies
             {
                 ApplyNamedDamageSource(ChargeDamageAreaName, chargeDamage);
             }
+
+            if (data.TryGetAttackDamage(EnemyAttackType.Slam, out float slamDamage))
+            {
+                ApplyChobombSelfDestructDamage(slamDamage);
+            }
         }
 
         protected virtual IEnumerator ApplyDeferred(EnemyData data)
@@ -185,6 +190,28 @@ namespace LostMemory.Enemies
                 }
 
                 ApplyDamageOnTouchValue(damageSource, resolvedDamage);
+            }
+        }
+
+        private void ApplyChobombSelfDestructDamage(float damage)
+        {
+            ChobombSelfDestructController[] controllers =
+                GetComponentsInChildren<ChobombSelfDestructController>(includeInactive: true);
+            if (controllers == null || controllers.Length == 0)
+            {
+                return;
+            }
+
+            float resolvedDamage = Mathf.Max(0f, damage);
+            for (int i = 0; i < controllers.Length; i++)
+            {
+                ChobombSelfDestructController controller = controllers[i];
+                if (controller == null)
+                {
+                    continue;
+                }
+
+                controller.SetExplosionDamage(resolvedDamage);
             }
         }
 
