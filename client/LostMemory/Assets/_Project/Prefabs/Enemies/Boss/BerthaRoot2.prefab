@@ -811,6 +811,7 @@ MonoBehaviour:
   combatRoot: {fileID: 739069783597370802}
   autoConfigureInEditMode: 1
   addMissingCoreCombatComponents: 1
+  bossData: {fileID: 11400000, guid: 113345f7316c9c44cbc5db509b9a0520, type: 2}
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 1024
@@ -940,6 +941,7 @@ MonoBehaviour:
   heavyAttackWeight: 2
   normalDashWeight: 1
   initialHealth: 100
+  movementSpeed: 3
   stunThresholdNormalized: 0.7
   tiredThresholdNormalized: 0.3
   stunReactionDuration: 1.1
@@ -1077,10 +1079,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
   Model: {fileID: 0}
-  CurrentHealth: 0
+  CurrentHealth: 1000
   Invulnerable: 0
-  InitialHealth: 100
-  MaximumHealth: 100
+  InitialHealth: 1000
+  MaximumHealth: 1000
   ResetHealthOnEnable: 1
   OnHealFeedback: {fileID: 0}
   ImmuneToDamage: 0
@@ -1160,7 +1162,7 @@ MonoBehaviour:
   InputAuthorized: 1
   AnalogInput: 0
   ScriptDrivenInput: 0
-  WalkSpeed: 3
+  WalkSpeed: 5
   ShouldSetMovement: 1
   IdleThreshold: 0.05
   Acceleration: 10
@@ -1219,7 +1221,9 @@ MonoBehaviour:
   previewObjectName: AttackTelegraphPreview
   previewParent: {fileID: 8917022440390223556}
   sortingReference: {fileID: 0}
-  sortingOrder: 1
+  sortingOrderOffset: 1
+  renderOutsideSortingGroup: 1
+  sortingGroupReference: {fileID: 0}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
@@ -2305,8 +2309,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 1615596352621668811}
   neutralBrainStateName: Detecting
   animationLayer: 0
-  stunThresholdNormalized: 0.7
-  tiredThresholdNormalized: 0.3
+  stunThresholdNormalized: 0.502
+  tiredThresholdNormalized: 0.208
   toStunStateName: ToStun
   stunedStateName: Stuned
   shakeHeadStateName: ShakeHead
@@ -2329,8 +2333,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBossPhaseController
   health: {fileID: 4242752178306269673}
-  phase2ThresholdNormalized: 0.7
-  phase3ThresholdNormalized: 0.3
+  phase2ThresholdNormalized: 0.502
+  phase3ThresholdNormalized: 0.208
   debugLogging: 0
 --- !u!114 &5569211883825108730
 MonoBehaviour:

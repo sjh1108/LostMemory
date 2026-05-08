@@ -19,5 +19,13 @@ services:
     volumes:
       - /srv/jenkins:/srv/jenkins
       - /var/run/docker.sock:/var/run/docker.sock
+    # docker-compose.yml 의 anchor 와 동일 정책 (다른 파일이라 anchor 공유 X — 직접 명시).
+    # max-size 10MB × max-file 3 = jenkins 컨테이너당 최대 30MB + 회전 시 gzip 압축.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
     networks:
       - frontend

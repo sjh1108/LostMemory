@@ -699,6 +699,55 @@ curl -I https://k14c201.p.ssafy.io/nginx-health            # 200
 
 ---
 
+## Docker 자원 정리 (cron, 1회 등록)
+
+Jenkins 가 매 빌드마다 `docker compose build app` 으로 새 이미지를 만들고 이전 layer 가 dangling 으로 쌓여 EC2 디스크가 점진적으로 소모된다. `server/scripts/docker-prune.sh` 가 일요일 03:30 에 dangling image + 30일 이상된 build cache 만 정리한다.
+
+### 정책
+
+- **`docker image prune -f`** — dangling image (untagged + 컨테이너 미참조) 만 제거. 태그 붙은 `server-app:N` rollback 이력 (`deploy.sh history`) 은 그대로 보존.
+- **`docker builder prune --filter "until=720h"`** — 30일 이상된 BuildKit 캐시만 제거. 30일 미만 캐시는 다음 빌드 hit 유지.
+- **volume / network / running container 절대 미건드림** — `postgres_data` / `redis_data` / `certbot_etc` / `certbot_webroot` 데이터 손실 위험 차단. `docker system prune` 사용 X.
+- **시간대** — 일요일 03:30. certbot-renew (월 03:17) 와 분리, 트래픽 가장 적은 시간대.
+
+### 1회 등록 절차 (운영자)
+
+EC2 SSH 후 develop 동기화는 [HTTPS 절차](#-자동-갱신-cron-1회-등록) 와 동일.
+
+1. logrotate 정책 적용 (이미 등록돼 있다면 갱신 cp 만):
+   ```bash
+   sudo cp /home/ubuntu/lostmemory/server/etc/logrotate.d/lostmemory /etc/logrotate.d/lostmemory
+   sudo logrotate -d /etc/logrotate.d/lostmemory   # docker-prune.log 정책 dry-run 검증
+   ```
+2. 호스트 root crontab 에 wrapper 등록:
+   ```bash
+   sudo crontab -e
+   ```
+   ```cron
+   30 3 * * 0 /home/ubuntu/lostmemory/server/scripts/docker-prune.sh >> /var/log/docker-prune.log 2>&1
+   ```
+3. 등록 직후 한 번 수동 실행해 동작 확인:
+   ```bash
+   docker system df                                    # before
+   sudo /home/ubuntu/lostmemory/server/scripts/docker-prune.sh
+   docker system df                                    # after — Images / Build Cache 줄어듦, Volumes 동일
+   docker volume ls | grep -E 'postgres_data|redis_data|certbot_'   # 볼륨 4개 모두 그대로
+   tail -20 /var/log/docker-prune.log                  # 정상 종료 로그 확인
+   ```
+4. 다음 일요일 03:30 자동 실행 후 같은 명령으로 검증.
+
+### 롤백
+
+- cron 만 빼기: `sudo crontab -e` 에서 해당 줄 삭제.
+- 로그/정책 함께 정리: `sudo rm /var/log/docker-prune.log` (선택), `sudo rm /etc/logrotate.d/lostmemory` 후 git revert + 재적용.
+
+### 주의
+
+- `docker image prune -a` 는 사용하지 않는다 (`-a` 는 태그 붙은 이미지도 제거 → rollback 이력 손실).
+- volume prune 이 필요한 경우는 운영자가 SSH 직접 + 백업 후 수동 (자동화 절대 X).
+
+---
+
 ## Jenkins 빌드 알림 (Mattermost)
 
 Jenkins 빌드의 성공/실패 결과를 Mattermost 채널로 자동 알림한다. Jenkinsfile 의 `post.success` / `post.failure` 가 ENV_FILE(`lostmemory-env` Secret file) 의 `MATTERMOST_WEBHOOK_URL` 라인을 grep 으로 추출해 incoming webhook 으로 호출한다.
@@ -728,6 +777,125 @@ Jenkins 빌드의 성공/실패 결과를 Mattermost 채널로 자동 알림한�
 
 ---
 
+## 로그 운영 (Docker logging + logrotate)
+
+### 정책
+- 모든 docker 컨테이너의 stdout/stderr 로그는 `json-file` driver, **max-size 10MB × max-file 3** = 컨테이너당 최대 30MB 보관 + 회전 시 gzip 압축.
+- compose 의 `logging` 섹션이 명시 적용 (postgres / redis / app / nginx / certbot / jenkins).
+- compose 외부 컨테이너 (gitlab-runner 등) 는 호스트 `/etc/docker/daemon.json` 의 글로벌 default 로 같은 정책 적용.
+- `/var/log/certbot-renew.log` 는 logrotate 로 주1회 회전, 8주 보관.
+- `/var/log/docker-prune.log` 도 같은 정책 (주1회, 8주 보관). [Docker 자원 정리 절](#docker-자원-정리-cron-1회-등록) 참고.
+- 호스트 `/var/log/*` 의 syslog / kern / journal 은 Ubuntu 기본 logrotate / journald 가 이미 처리 — 추가 작업 없음.
+
+### 1회 등록 절차 (운영자)
+
+EC2 SSH 후:
+
+1. develop 동기화:
+   ```bash
+   cd /home/ubuntu/lostmemory
+   git fetch origin && git switch develop && git pull --ff-only origin develop
+   ```
+2. 호스트 daemon.json 적용:
+   ```bash
+   sudo cp server/etc/docker/daemon.json /etc/docker/daemon.json
+   sudo systemctl reload docker
+   ```
+3. logrotate conf 적용:
+   ```bash
+   sudo cp server/etc/logrotate.d/lostmemory /etc/logrotate.d/lostmemory
+   sudo logrotate -d /etc/logrotate.d/lostmemory   # dry-run 검증 (실제 회전 X)
+   ```
+4. compose service 재생성 (logging 섹션 새로 적용):
+   ```bash
+   cd /home/ubuntu/lostmemory/server
+   docker compose --env-file .env up -d --force-recreate postgres redis app nginx
+   docker compose -f docker-compose.jenkins.yml --env-file .env up -d --force-recreate jenkins
+   ```
+5. gitlab-runner 는 글로벌 default 만으로 충분 — 다음 재시작 시 효과:
+   ```bash
+   docker restart gitlab-runner
+   ```
+
+### 검증
+
+```bash
+for c in server-app server-postgres server-nginx server-redis jenkins gitlab-runner; do
+  docker inspect "$c" --format "$c: {{.HostConfig.LogConfig.Type}} {{.HostConfig.LogConfig.Config}}"
+done
+```
+모든 행에 `max-size:10m max-file:3 compress:true` 표시되어야 통과.
+
+회전 동작 확인 (선택):
+```bash
+sudo ls -la /var/lib/docker/containers/<container-id>/    # 회전된 .1, .2 또는 .gz 파일 보임
+```
+
+### 롤백
+
+- daemon.json 원복: `sudo rm /etc/docker/daemon.json && sudo systemctl reload docker`
+- compose 의 `logging` / `*default-logging` 라인 주석 처리 → `docker compose up -d --force-recreate` (또는 git revert)
+- logrotate conf 원복: `sudo rm /etc/logrotate.d/lostmemory`
+
+---
+
+## 배포 / 롤백 운영 (deploy.sh)
+
+`server/scripts/deploy.sh` 가 배포/롤백/상태조회의 단일 진입점이다. Jenkins 자동 배포와 운영자 SSH 수동 운영 양쪽 모두 같은 스크립트를 호출한다.
+
+### Sub-command
+
+| 명령 | 동작 |
+|---|---|
+| `./scripts/deploy.sh deploy <N>` | 빌드된 `server-app:latest` 를 `server-app:N` 으로 태깅 + `up -d` + healthy 폴링. Jenkins 가 호출하는 경로 |
+| `./scripts/deploy.sh rollback <N>` | 보존된 `server-app:N` 태그를 `server-app:latest` 로 재태깅 + `up -d --force-recreate` + healthy 폴링. image 빌드 없이 ~10초 |
+| `./scripts/deploy.sh status` | 현재 app 컨테이너의 image / state / health |
+| `./scripts/deploy.sh history` | 보존된 `server-app:*` 태그 목록 (디스크 점유 같이) |
+
+### 자동 배포 흐름
+
+develop push → GitLab CI `trigger_jenkins_build` → Jenkins 빌드 #N
+1. Docker Build stage: `docker compose build app` → `server-app:latest` image 생성
+2. Deploy stage: `./scripts/deploy.sh deploy <N>` → 태깅 + `up -d` + healthy 폴링
+3. Smoke Test stage: `./scripts/deploy.sh status` (가시성용)
+
+### 수동 배포 / 롤백 (EC2 SSH)
+
+```bash
+ssh -i ~/.ssh/K14C201T.pem ubuntu@k14c201.p.ssafy.io
+cd /home/ubuntu/lostmemory/server
+
+./scripts/deploy.sh status                  # 현재 떠있는 image / health 확인
+./scripts/deploy.sh history                 # 보존된 태그 목록 (#1, #2, ... + size)
+./scripts/deploy.sh rollback 13             # 빌드 #13 으로 즉시 복귀 (~10초)
+```
+
+### 롤백 시나리오 예시
+
+빌드 #14 가 schema-validation fail 로 startup 안 되는 상황 (이번 5월 초의 실제 케이스):
+
+```bash
+./scripts/deploy.sh status      # → server-app-1 가 Restarting 으로 보임
+./scripts/deploy.sh history     # → 13, 12, 11 가 살아있는지 확인
+./scripts/deploy.sh rollback 13 # → 즉시 복귀 + healthy 자동 검증
+```
+
+### 보존 태그 정책 / 디스크
+
+- Jenkinsfile 의 `buildDiscarder(logRotator(numToKeepStr: '20'))` 는 빌드 메타데이터 20개만 유지 (image 자체와는 별개).
+- docker image 자체는 `./scripts/deploy.sh history` 출력의 합계가 디스크 점유.
+- 한 image 약 250MB × 20 ≈ 5GB. 현재 디스크 309GB 여유 충분.
+- 무한 누적 방지하려면 별도 cron 으로 `docker image prune --filter 'until=720h' --force` 같은 정책 추가 (이번 PR 범위 밖).
+
+### 주의
+
+- **rollback 시 새 image build 안 함** — 호스트에 보존된 `server-app:N` 태그를 사용한다. 그 image 가 이미 prune 됐으면 rollback 불가 (`history` 로 사전 확인).
+- **rollback 후 Jenkins 빌드 번호 vs 실제 떠있는 image 불일치 가능** — `./scripts/deploy.sh status` 로 항상 실제 상태 확인.
+- **app service 만 영향**. nginx / postgres / redis 는 별도. schema 누락처럼 DB 차원 이슈는 rollback 만으로 해결되지 않을 수 있음.
+- **healthy 폴링 timeout 90초** (30회 × 3초). 네트워크/DB 가 느려서 그 안에 healthy 못 되면 로그 100줄 출력 후 exit 1 — 빌드도 fail 처리.
+
+---
+
 ## 문서 변경 이력
 
 | 날짜 | 내용 | 작성자 |
@@ -735,5 +903,7 @@ Jenkins 빌드의 성공/실패 결과를 Mattermost 채널로 자동 알림한�
 | 2026-04-21 | 초안 작성 | 송주헌 |
 | 2026-05-04 | INFRA-15 Let's Encrypt HTTPS 운영 절차 추가 | 송주헌 |
 | 2026-05-06 | INFRA-16 Jenkins 빌드 Mattermost 알림 운영 절차 추가 | 송주헌 |
+| 2026-05-06 | INFRA-17 Docker 로그 rotation + logrotate 운영 절차 추가 | 송주헌 |
+| 2026-05-06 | INFRA-18 deploy.sh 배포/롤백 운영 절차 추가 | 송주헌 |
 
 ---

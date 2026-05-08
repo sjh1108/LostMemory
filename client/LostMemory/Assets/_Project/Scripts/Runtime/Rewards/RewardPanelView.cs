@@ -30,6 +30,16 @@ namespace LostMemory.Rewards
         private int _picksMade;
         private int _picksAllowed = 1;
 
+        // CL-147 타로 재추첨 — 다음 Show 호출 시 N회 재추첨 적용 후 마지막 결과 표시
+        private int _pendingRerolls;
+
+        /// <summary>CL-147: 타로 RerollCard 가 호출. 다음 Show 시 N회 추가 재추첨.</summary>
+        public void RequestReroll(int additionalDraws)
+        {
+            _pendingRerolls += Mathf.Max(0, additionalDraws);
+            Debug.Log($"[RewardPanel] 재추첨 예약 누적 = {_pendingRerolls}");
+        }
+
         /// <summary>
         /// CL-110 호환: 기존 3장 / 1픽 시그니처. 내부적으로 확장 시그니처 호출.
         /// </summary>
@@ -50,6 +60,19 @@ namespace LostMemory.Rewards
 
             var rewards = _rewardPool.DrawCount(
                 count, inventory.GetOwnedNames(), luckPoints, forceLegendary);
+
+            // CL-147: 타로 재추첨 적용 — 마지막 결과만 표시
+            if (_pendingRerolls > 0)
+            {
+                int reroll = _pendingRerolls;
+                _pendingRerolls = 0;
+                for (int r = 0; r < reroll; r++)
+                {
+                    rewards = _rewardPool.DrawCount(
+                        count, inventory.GetOwnedNames(), luckPoints, forceLegendary);
+                }
+                Debug.Log($"[RewardPanel] {reroll}회 재추첨 적용 — 최종 결과만 표시");
+            }
 
             for (int i = 0; i < _cards.Length; i++)
             {
@@ -72,16 +95,22 @@ namespace LostMemory.Rewards
         {
             _inventory.TryAdd(selected);
             _picksMade++;
-            RewardSelected?.Invoke(selected);
 
-            if (_picksMade >= _picksAllowed)
+            // CL-152 fix: SetActive / DisableSelectedCard 를 RewardSelected.Invoke *전* 에 처리.
+            // RewardController.HandleRewardSelected 가 rewardPanelView.gameObject.activeSelf 로
+            // "패널 닫혔는지" 판단하므로, 닫는 작업이 먼저 완료되어야 timeScale 복구 정확히 분기.
+            // (CL-146 검증 시 picksAllowed=1 케이스 누락 — 이번에 발견)
+            bool willClose = _picksMade >= _picksAllowed;
+            if (willClose)
             {
                 gameObject.SetActive(false);
+                RewardSelected?.Invoke(selected);
                 return;
             }
 
             // 다중 픽 모드 — 선택된 카드만 비활성, 나머지 선택 대기
             DisableSelectedCard(selected);
+            RewardSelected?.Invoke(selected);
             Debug.Log($"[RewardPanel] Pick {_picksMade}/{_picksAllowed} — {selected?.DisplayName} 선택됨, 추가 선택 대기");
         }
 

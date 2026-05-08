@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LostMemory.Combat.Telegraph;
+using LostMemory.Enemies;
 using LostMemory.Stage;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
@@ -15,6 +16,9 @@ namespace LostMemory.Enemies.Boss.Bertha
     [AddComponentMenu("Lost Memory/Enemies/Boss/Bertha/Bertha Light Attack 1 Bootstrap")]
     public sealed class BerthaLightAttack1Bootstrap : MonoBehaviour
     {
+        private static readonly HashSet<BerthaLightAttack1Bootstrap> ActiveBootstraps =
+            new HashSet<BerthaLightAttack1Bootstrap>();
+
         private static readonly Vector2 LegacyAttackOffset = new Vector2(1.3f, 0f);
         private static readonly Vector2 LegacyAttackSize = new Vector2(2.4f, 1.3f);
         private static readonly Vector2 RequestedAttackOffset = Vector2.zero;
@@ -66,6 +70,9 @@ namespace LostMemory.Enemies.Boss.Bertha
         [Header("Editor Sync")]
         [SerializeField] private bool autoConfigureInEditMode = true;
         [SerializeField] private bool addMissingCoreCombatComponents = true;
+
+        [Header("Balance Data")]
+        [SerializeField] private BossData bossData;
 
         [Header("Detection")]
         [SerializeField] private LayerMask targetLayerMask = 1 << 10;
@@ -224,6 +231,9 @@ namespace LostMemory.Enemies.Boss.Bertha
         [Header("Health")]
         [SerializeField] private float initialHealth = 100f;
 
+        [Header("Movement")]
+        [SerializeField, Min(0f)] private float movementSpeed = 3f;
+
         [Header("Health Threshold Reactions")]
         [SerializeField, Range(0f, 1f)] private float stunThresholdNormalized = 0.7f;
         [SerializeField, Range(0f, 1f)] private float tiredThresholdNormalized = 0.3f;
@@ -253,9 +263,36 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void OnEnable()
         {
+            ActiveBootstraps.Add(this);
+
             if (Application.isPlaying || autoConfigureInEditMode)
             {
                 EnsureConfigured();
+            }
+        }
+
+        private void OnDisable()
+        {
+            ActiveBootstraps.Remove(this);
+        }
+
+        public static void ApplySavedBossData(BossData savedAsset)
+        {
+            if (savedAsset == null || ActiveBootstraps.Count == 0)
+            {
+                return;
+            }
+
+            List<BerthaLightAttack1Bootstrap> bootstraps = new List<BerthaLightAttack1Bootstrap>(ActiveBootstraps);
+            for (int i = 0; i < bootstraps.Count; i++)
+            {
+                BerthaLightAttack1Bootstrap bootstrap = bootstraps[i];
+                if (bootstrap == null || bootstrap.bossData != savedAsset)
+                {
+                    continue;
+                }
+
+                bootstrap.ApplyRuntimeTuning();
             }
         }
 
@@ -461,10 +498,15 @@ namespace LostMemory.Enemies.Boss.Bertha
                 dashAbility.Cooldown.RefillDuration = 0.01f;
                 dashAbility.Cooldown.CanInterruptRefill = true;
                 dashAbility.InvincibleWhileDashing = false;
+
+                ResolvePhaseThresholds(
+                    out float resolvedPhase2ThresholdNormalized,
+                    out float resolvedPhase3ThresholdNormalized);
+
                 phaseController.Configure(
                     health,
-                    stunThresholdNormalized,
-                    tiredThresholdNormalized,
+                    resolvedPhase2ThresholdNormalized,
+                    resolvedPhase3ThresholdNormalized,
                     debugLogging);
                 thresholdReactionController.Configure(
                     brain,
@@ -473,8 +515,8 @@ namespace LostMemory.Enemies.Boss.Bertha
                     dashAbility,
                     animator,
                     introSequenceController,
-                    stunThresholdNormalized,
-                    tiredThresholdNormalized,
+                    resolvedPhase2ThresholdNormalized,
+                    resolvedPhase3ThresholdNormalized,
                     stunReactionDuration,
                     stunShakeHeadDuration,
                     tiredReactionDuration,
@@ -774,6 +816,8 @@ namespace LostMemory.Enemies.Boss.Bertha
             dashImpactTime = Mathf.Clamp(dashImpactTime, 0f, dashAttackDuration);
             fullComboImpactTime = Mathf.Clamp(fullComboImpactTime, 0f, fullComboDuration);
             specialPatternHealthThresholdNormalized = Mathf.Clamp01(specialPatternHealthThresholdNormalized);
+            initialHealth = Mathf.Max(0f, initialHealth);
+            movementSpeed = Mathf.Max(0f, movementSpeed);
             stunThresholdNormalized = Mathf.Clamp01(stunThresholdNormalized);
             tiredThresholdNormalized = Mathf.Clamp01(tiredThresholdNormalized);
             tiredThresholdNormalized = Mathf.Min(tiredThresholdNormalized, stunThresholdNormalized);
@@ -805,6 +849,45 @@ namespace LostMemory.Enemies.Boss.Bertha
             GetComponent<BerthaLightAttack2Controller>()?.SetImpactTime(lightAttack2ImpactTime);
             GetComponent<BerthaHeavyAttackController>()?.SetImpactTime(heavyAttackImpactTime);
             GetComponent<BerthaFullComboController>()?.SetImpactTime(fullComboImpactTime);
+
+            Health health = GetComponent<Health>();
+            ApplyResolvedHealth(health);
+
+            CharacterMovement movement = GetComponent<CharacterMovement>();
+            ApplyResolvedMovement(movement);
+
+            ResolvePhaseThresholds(
+                out float resolvedPhase2ThresholdNormalized,
+                out float resolvedPhase3ThresholdNormalized);
+
+            BerthaBossPhaseController phaseController = GetComponent<BerthaBossPhaseController>();
+            if (phaseController != null)
+            {
+                phaseController.Configure(
+                    health,
+                    resolvedPhase2ThresholdNormalized,
+                    resolvedPhase3ThresholdNormalized,
+                    debugLogging);
+            }
+
+            BerthaHealthThresholdReactionController thresholdReactionController =
+                GetComponent<BerthaHealthThresholdReactionController>();
+            if (thresholdReactionController != null)
+            {
+                thresholdReactionController.Configure(
+                    GetComponent<AIBrain>(),
+                    GetComponent<Character>(),
+                    health,
+                    GetComponent<CharacterDash2D>(),
+                    ResolveAnimator(),
+                    GetComponent<BossIntroSequenceController>(),
+                    resolvedPhase2ThresholdNormalized,
+                    resolvedPhase3ThresholdNormalized,
+                    stunReactionDuration,
+                    stunShakeHeadDuration,
+                    tiredReactionDuration,
+                    debugLogging);
+            }
         }
 
         private void ConfigureAreaAttackController(
@@ -868,8 +951,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             controller.ObstaclesLayerMask = ResolveObstacleLayerMask();
 
             Health health = GetOrAdd<Health>(gameObject);
-            health.InitialHealth = initialHealth;
-            health.MaximumHealth = initialHealth;
+            ApplyResolvedHealth(health);
             health.TargetAnimator = animator;
             health.DestroyOnDeath = false;
             health.DelayBeforeDestruction = 0f;
@@ -883,7 +965,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             character.CharacterHealth = health;
 
             CharacterMovement movement = GetOrAdd<CharacterMovement>(gameObject);
-            movement.WalkSpeed = 3f;
+            ApplyResolvedMovement(movement);
             movement.Acceleration = 10f;
             movement.Deceleration = 10f;
             movement.ShouldSetMovement = true;
@@ -893,6 +975,61 @@ namespace LostMemory.Enemies.Boss.Bertha
             orientation.ModelFlipValueLeft = new Vector3(-1f, 1f, 1f);
             orientation.ModelFlipValueRight = Vector3.one;
             orientation.ModelShouldRotate = false;
+        }
+
+        private void ApplyResolvedHealth(Health health)
+        {
+            if (health == null)
+            {
+                return;
+            }
+
+            float resolvedHealth = ResolveMaxHealth();
+            health.InitialHealth = resolvedHealth;
+            health.MaximumHealth = resolvedHealth;
+
+            if (Application.isPlaying)
+            {
+                health.SetHealth(resolvedHealth);
+            }
+        }
+
+        private void ApplyResolvedMovement(CharacterMovement movement)
+        {
+            if (movement == null)
+            {
+                return;
+            }
+
+            float resolvedMoveSpeed = ResolveMoveSpeed();
+            movement.WalkSpeed = resolvedMoveSpeed;
+            movement.MovementSpeed = resolvedMoveSpeed;
+        }
+
+        private float ResolveMaxHealth()
+        {
+            return Mathf.Max(0f, bossData != null ? bossData.MaxHealth : initialHealth);
+        }
+
+        private float ResolveMoveSpeed()
+        {
+            return Mathf.Max(0f, bossData != null ? bossData.MoveSpeed : movementSpeed);
+        }
+
+        private void ResolvePhaseThresholds(out float phase2ThresholdNormalized, out float phase3ThresholdNormalized)
+        {
+            if (bossData != null)
+            {
+                phase2ThresholdNormalized = Mathf.Clamp01(bossData.Phase2ThresholdNormalized);
+                phase3ThresholdNormalized = Mathf.Clamp01(bossData.Phase3ThresholdNormalized);
+            }
+            else
+            {
+                phase2ThresholdNormalized = Mathf.Clamp01(stunThresholdNormalized);
+                phase3ThresholdNormalized = Mathf.Clamp01(tiredThresholdNormalized);
+            }
+
+            phase3ThresholdNormalized = Mathf.Min(phase3ThresholdNormalized, phase2ThresholdNormalized);
         }
 
         private BerthaDashHitGate EnsureChargeDamageArea()

@@ -10,16 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 557189643fb1cb543b9862b81019d515, type: 3}
-  m_Name: "BuildSet_\uC77C\uBC18\uB380"
+  m_Name: "BuildSet_일반뎀"
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildSetData
   _setTag: 3
-  _displayName: "\uC77C\uBC18\uB380"
+  _displayName: "일반뎀"
   _tiers:
   - RequiredCount: 1
     EffectType: 1
     Magnitude: 0.1
-    Description: "\uD3C9\uD0C0 +10%"
+    Duration: 0
+    Description: "평타 피해 +10%"
   - RequiredCount: 3
     EffectType: 1
     Magnitude: 0.3
-    Description: "\uD3C9\uD0C0 +30%"
+    Duration: 0
+    Description: "평타 피해 +30%"
+  - RequiredCount: 5
+    EffectType: 1
+    Magnitude: 0.5
+    Duration: 0
+    Description: "평타 피해 +50%"

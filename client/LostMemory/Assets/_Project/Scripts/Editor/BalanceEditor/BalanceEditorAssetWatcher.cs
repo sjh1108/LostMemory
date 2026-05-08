@@ -28,7 +28,8 @@ namespace LostMemory.Editor.BalanceEditor
             if (string.IsNullOrEmpty(path)) return false;
             if (!path.EndsWith(".asset")) return false;
             return path.Contains("/Relics/Generated/")
-                || path.Contains("/BuildSets/");
+                || path.Contains("/BuildSets/")
+                || path.Contains("/Enemies/");
         }
     }
 }

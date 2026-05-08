@@ -69,6 +69,7 @@ GameObject:
   - component: {fileID: 227395712790865169}
   - component: {fileID: 6316947917575294690}
   - component: {fileID: 3376448376559293711}
+  - component: {fileID: 6772711072849941599}
   m_Layer: 0
   m_Name: BerthaRoot
   m_TagString: Untagged
@@ -437,6 +438,7 @@ MonoBehaviour:
   combatRoot: {fileID: 775577051713870925}
   autoConfigureInEditMode: 1
   addMissingCoreCombatComponents: 1
+  bossData: {fileID: 0}
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 1024
@@ -566,6 +568,7 @@ MonoBehaviour:
   heavyAttackWeight: 2
   normalDashWeight: 1
   initialHealth: 100
+  movementSpeed: 3
   stunThresholdNormalized: 0.7
   tiredThresholdNormalized: 0.3
   stunReactionDuration: 1.1
@@ -703,7 +706,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
   Model: {fileID: 0}
-  CurrentHealth: 0
+  CurrentHealth: 100
   Invulnerable: 0
   InitialHealth: 100
   MaximumHealth: 100
@@ -1371,7 +1374,7 @@ MonoBehaviour:
   character: {fileID: 676684734245497551}
   health: {fileID: 1476706992768293698}
   dashAbility: {fileID: 1093519577850685883}
-  phaseController: {fileID: 0}
+  phaseController: {fileID: 6772711072849941599}
   movingStateName: Moving
   lightAttack1TelegraphStateName: LightTelegraph
   lightAttack2TelegraphStateName: Light2Telegraph
@@ -1943,6 +1946,22 @@ MonoBehaviour:
   shakeHeadDuration: 5
   tiredStateName: Tired
   tiredDuration: 1.35
+  debugLogging: 0
+--- !u!114 &6772711072849941599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1053890707461078126}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0133e7f9eecd45e1892e5b0383084e82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBossPhaseController
+  health: {fileID: 1476706992768293698}
+  phase2ThresholdNormalized: 0.7
+  phase3ThresholdNormalized: 0.3
   debugLogging: 0
 --- !u!1 &3513095212431674849
 GameObject:

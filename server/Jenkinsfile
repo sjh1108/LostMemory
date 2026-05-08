@@ -64,42 +64,29 @@ pipeline {
     stage('Docker Build') {
       steps {
         dir('server') {
+          // image 빌드만 — 태깅(server-app:N) + up -d + healthy 폴링은 deploy.sh 가 담당
           sh 'docker compose --env-file "$ENV_FILE" build app'
-          // 태깅 — 실패해도 배포는 계속 (향후 롤백용 보존 태그)
-          sh 'docker tag server-app:latest server-app:${BUILD_NUMBER} || true'
         }
       }
     }
 
     stage('Deploy') {
+      // server/scripts/deploy.sh 가 태깅 / up -d / healthy 폴링 / 실패 로그 출력 까지 일임.
+      // 운영자가 EC2 SSH 에서 수동 배포/롤백 시에도 같은 스크립트를 호출 — 단일 진입점.
       steps {
         dir('server') {
-          sh 'docker compose --env-file "$ENV_FILE" up -d app'
-          sh 'docker compose --env-file "$ENV_FILE" ps'
+          sh 'chmod +x scripts/deploy.sh'
+          sh './scripts/deploy.sh deploy "$BUILD_NUMBER"'
         }
       }
     }
 
     stage('Smoke Test') {
-      // Jenkins 컨테이너 내부에서 localhost 가 EC2 호스트가 아니라 Jenkins 자신이므로
-      // 포트로 접근 대신 compose healthcheck 상태를 폴링하는 방식으로 검증
+      // healthy 검증은 Deploy stage 의 deploy.sh 가 끝낸 상태.
+      // 가시성용으로 현재 image / state 만 출력.
       steps {
         dir('server') {
-          sh '''
-            set +e
-            for i in $(seq 1 30); do
-              if docker compose --env-file "$ENV_FILE" ps app | grep -q "(healthy)"; then
-                echo "✅ app is healthy"
-                exit 0
-              fi
-              echo "Waiting for app healthy... ($i/30)"
-              sleep 3
-            done
-            echo "❌ app did not reach healthy state"
-            docker compose --env-file "$ENV_FILE" ps
-            docker compose --env-file "$ENV_FILE" logs --tail=100 app
-            exit 1
-          '''
+          sh './scripts/deploy.sh status'
         }
       }
     }

@@ -43,6 +43,9 @@ namespace LostMemory.Relics
         [Tooltip("인벤토리 점유 사이즈 (B-Lite 1). 등급별 자동 매핑은 CL-150 에서.")]
         [SerializeField] private Vector2Int _size = new Vector2Int(1, 1);
 
+        [Tooltip("CL-150: 체크 시 Editor 일괄 메뉴 'Apply Rarity-based Sizes' 에서 제외 (수동 사이즈 유지).")]
+        [SerializeField] private bool _sizeLocked;
+
         [SerializeField, TextArea(2, 4)] private string _effectDescription;
 
         [SerializeField] private Sprite _icon;
@@ -82,6 +85,12 @@ namespace LostMemory.Relics
         public RelicTag                  TagSecondary  => _tagSecondary;
         public Vector2Int                Size          => _size;
         public IReadOnlyList<EffectEntry> Effects       => _effects;
+
+        // CL-150 사이즈 헬퍼 — CL-151 자동 배치 알고리즘이 직접 사용
+        public int  Width         => _size.x;
+        public int  Height        => _size.y;
+        public int  OccupiedCells => _size.x * _size.y;
+        public bool IsSizeLocked  => _sizeLocked;
 
         /// <summary>CL-138 이전 단일 태그 호환. <see cref="TagPrimary"/> 와 동일.</summary>
         [Obsolete("Use TagPrimary instead. Kept for legacy view code.")]

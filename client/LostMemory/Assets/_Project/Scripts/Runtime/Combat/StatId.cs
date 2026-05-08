@@ -22,5 +22,7 @@ namespace LostMemory.Combat
         Range,              // 공격 범위
         Dodge,              // 회피 확률
         Defense,            // 방어력 (flat — magnitude 의미가 % 와 다름. CL-146 정책 결정)
+        CriticalDamage,     // 치명타 피해 보너스 (% bonus, 합연산). 기본 50% 는 코드 측 상수로 합산.
+        ManaRegen,          // 마나 회복량. TalentStartupApplier 에서 재능 ManaRegen 스탯 적용.
     }
 }

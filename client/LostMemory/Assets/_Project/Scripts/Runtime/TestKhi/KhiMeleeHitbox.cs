@@ -45,8 +45,8 @@ namespace LostMemory.TestKhi
             // baseline offset(Right 기준)을 현재 aim 각도로 회전시켜 실제 center 계산.
             Vector2 rotatedOffset = (Vector2)(Quaternion.Euler(0f, 0f, aimAngleDeg) * (Vector3)step.hitboxOffset);
             Vector2 center = (Vector2)request.Origin + rotatedOffset;
-            // CL-146: Range multiplier 적용 — 평타 hitbox 크기 확장
-            float rangeMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.Range) : 1f;
+            // CL-146: Range multiplier 적용 — 평타 hitbox 크기 확장. 상한 200%.
+            float rangeMul = statContainer != null ? statContainer.GetCappedMultiplier(StatId.Range, 1f) : 1f;
             Vector2 finalSize = step.hitboxSize * rangeMul;
             _debugCenter = center;
             _debugSize = finalSize;

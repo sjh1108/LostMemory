@@ -16,10 +16,13 @@ namespace LostMemory.Talents
         [SerializeField] private TalentRowView[] _rows;
         [SerializeField] private Button _resetButton;
         [SerializeField] private Button _saveButton;
+        [SerializeField] private Button _closeButton;
         [SerializeField] private bool _autoOpenOnStart = true;
         [SerializeField] private int _debugTotalPoints = 10;
 
         private TalentModel _model;
+
+        public bool IsOpen => gameObject.activeSelf;
 
         private void Start()
         {
@@ -38,11 +41,46 @@ namespace LostMemory.Talents
 
             _resetButton.onClick.AddListener(() => { _model.Reset(); Refresh(); });
             _saveButton.onClick.AddListener(OnSave);
+            if (_closeButton != null) _closeButton.onClick.AddListener(Close);
 
             if (_autoOpenOnStart)
                 gameObject.SetActive(true);
+            else
+                gameObject.SetActive(false);
 
             Refresh();
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+                Close();
+        }
+
+        // ── 외부 공개 API ────────────────────────────────────
+
+        /// <summary>NPC 상호작용 시 패널을 연다. 저장된 투자값을 다시 로드해 최신 상태로 표시.</summary>
+        public void Open()
+        {
+            var saved = TalentSaveService.Load();
+            _model = new TalentModel(_talentDatas, _debugTotalPoints, saved);
+            Refresh();
+            gameObject.SetActive(true);
+        }
+
+        /// <summary>패널을 열거나 닫는다.</summary>
+        public void Toggle()
+        {
+            if (IsOpen)
+                Close();
+            else
+                Open();
+        }
+
+        /// <summary>패널을 닫는다. 미저장 변경사항은 버려진다.</summary>
+        public void Close()
+        {
+            gameObject.SetActive(false);
         }
 
         private void Refresh()
