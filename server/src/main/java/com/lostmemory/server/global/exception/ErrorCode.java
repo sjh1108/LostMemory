@@ -18,7 +18,15 @@ public enum ErrorCode {
 
     USER_LOGIN_ID_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다"),
     USER_NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다"),
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다");
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"),
+
+    SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "세션을 찾을 수 없습니다"),
+    SESSION_FULL(HttpStatus.CONFLICT, "정원이 가득 찼습니다"),
+    SESSION_ALREADY_JOINED(HttpStatus.CONFLICT, "이미 참가한 세션입니다"),
+    SESSION_NOT_HOST(HttpStatus.FORBIDDEN, "호스트만 수행할 수 있습니다"),
+    SESSION_HOST_CANNOT_LEAVE(HttpStatus.CONFLICT, "호스트는 세션 종료를 사용해야 합니다"),
+    SESSION_INVALID_PRIVATE_CODE(HttpStatus.BAD_REQUEST, "비공개 코드가 일치하지 않습니다"),
+    SESSION_PRIVATE_CODE_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 입장 코드입니다");
 
     private final HttpStatus status;
     private final String message;

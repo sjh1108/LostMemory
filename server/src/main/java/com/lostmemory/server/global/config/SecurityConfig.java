@@ -23,10 +23,11 @@ public class SecurityConfig {
     private final RestAccessDeniedHandler accessDeniedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    /** 전역 Security 필터 체인: REST 무상태 + JWT 인증 필터 + 화이트리스트 외 authenticated() */
+    /** 전역 Security 필터 체인: REST 무상태 + CORS + JWT 인증 필터 + 화이트리스트 외 authenticated() */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(org.springframework.security.config.Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)

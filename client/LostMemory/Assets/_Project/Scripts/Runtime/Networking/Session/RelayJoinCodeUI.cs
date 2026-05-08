@@ -4,6 +4,10 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
+#if UNITY_EDITOR
+// using Unity.Multiplayer.PlayMode;   // ← 추가
+#endif
+
 namespace LostMemory.Networking.Session
 {
     /// <summary>
@@ -31,6 +35,52 @@ namespace LostMemory.Networking.Session
 
         [Header("Config")]
         [SerializeField, Min(2)] private int maxPlayers = 2;
+
+        [Header("Multi-Instance Override")]
+        [Tooltip("MPPM 가상 인스턴스에서 다른 계정으로 로그인하려면 채울 것. 메인은 비워둠.")]
+        [SerializeField] private string overrideLoginId;
+        [SerializeField] private string overrideNickname;
+
+        private void Awake()
+        {
+            // 임시 — Multiplayer Play Mode 인스턴스별 다른 자격증명.
+            // MPPM 윈도우에서 각 가상 Player 에 태그("Guest1"/"Guest2"/"Guest3") 부여 시 자동 적용.
+            // 메인 Editor (Player 1) 는 기본값(testuser) 그대로.
+            ApplyMppmCredentialOverride();
+        }
+
+        private void ApplyMppmCredentialOverride()
+        {
+            string dataPath = Application.dataPath.Replace('\\', '/');
+            NetLog.Info("UI", $"[MPPM] dataPath = {dataPath}");
+
+            // MPPM 가상 플레이어는 임시 클론 폴더에서 실행됨.
+            // Library/VP/{guid}/... 또는 .mppm/ 등 경로에 마커가 들어감.
+            bool isVirtualPlayer = dataPath.Contains("/mppm/")
+                                 || dataPath.Contains("/VP/")
+                                 || dataPath.Contains("/VirtualProjects/")
+                                 || dataPath.Contains("Library/VP");
+
+            if (!isVirtualPlayer)
+            {
+                NetLog.Info("UI", "[MPPM] Detected MAIN editor. Login as testuser.");
+                return;
+            }
+
+            // 가상 플레이어 — 폴더 경로 해시로 1/2/3 분기
+            int hash = System.Math.Abs(dataPath.GetHashCode());
+            int idx = (hash % 3) + 1;  // 1, 2, 3
+            RelaySession.AutoLoginId = $"testuser0{idx}";
+            RelaySession.AutoLoginNickname = $"테스터0{idx}";
+            NetLog.Info("UI", $"[MPPM] Detected VIRTUAL player. Login as testuser0{idx}");
+        }
+        private void Update()
+        {
+            // 임시 — UI 정리 전까지 키 입력으로 우회. UI 정상화되면 제거 권장.
+            if (Input.GetKeyDown(KeyCode.H) && !RelaySession.IsInSession) OnHostClicked();
+            if (Input.GetKeyDown(KeyCode.J) && !RelaySession.IsInSession) OnJoinClicked();
+            if (Input.GetKeyDown(KeyCode.L) && RelaySession.IsInSession) OnLeaveClicked();
+        }
 
         private void OnEnable()
         {
@@ -102,11 +152,16 @@ namespace LostMemory.Networking.Session
             NetworkManager nm = NetworkManager.Singleton;
             if (nm != null && nm.IsListening)
             {
-                nm.Shutdown();
+                nm.Shutdown(discardMessageQueue: true);   // ← discardMessageQueue 인자 추가
             }
             SetStatus("세션 종료.");
             if (joinCodeDisplay != null) joinCodeDisplay.text = string.Empty;
             RefreshButtonState();
+
+            // (선택) NGO 의 NetworkManager.Singleton 이 재진입 spawn 을 깨끗하게 못 하면 scene reload 로 fallback
+            // 사용 시 상단에 using UnityEngine.SceneManagement; 추가
+            // var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            // UnityEngine.SceneManagement.SceneManager.LoadScene(scene.buildIndex);
         }
 
         private void HandleJoined(bool asHost)
@@ -117,6 +172,7 @@ namespace LostMemory.Networking.Session
         private void HandleLeft()
         {
             if (joinCodeDisplay != null) joinCodeDisplay.text = string.Empty;
+            SetStatus("세션 이탈.");
             RefreshButtonState();
         }
 

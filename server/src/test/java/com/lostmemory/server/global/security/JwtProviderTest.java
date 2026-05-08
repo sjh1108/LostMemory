@@ -16,12 +16,13 @@ class JwtProviderTest {
     private static final String SECRET = "test-secret-should-be-at-least-32-bytes-long!!";
     private static final long ACCESS_EXP = 3600L;
     private static final long REFRESH_EXP = 1_209_600L;
+    private static final long SESSION_EXP = 600L;
 
     private JwtProvider provider;
 
     @BeforeEach
     void setUp() {
-        provider = new JwtProvider(new JwtProperties(SECRET, ACCESS_EXP, REFRESH_EXP));
+        provider = new JwtProvider(new JwtProperties(SECRET, ACCESS_EXP, REFRESH_EXP, SESSION_EXP));
     }
 
     @Test
@@ -56,7 +57,7 @@ class JwtProviderTest {
     @DisplayName("이미 만료된 토큰은 isValid 가 false 를 반환한다")
     void expiredToken_isInvalid() {
         // expiration 을 음수로 주면 생성 즉시 과거 시점이 되어 만료 상태
-        JwtProvider expiredProvider = new JwtProvider(new JwtProperties(SECRET, -1L, -1L));
+        JwtProvider expiredProvider = new JwtProvider(new JwtProperties(SECRET, -1L, -1L, -1L));
         String token = expiredProvider.createAccessToken(1L);
 
         assertThat(expiredProvider.isValid(token)).isFalse();
@@ -67,7 +68,7 @@ class JwtProviderTest {
     void differentSecret_isInvalid() {
         String token = provider.createAccessToken(1L);
         String otherSecret = "different-secret-also-at-least-32-bytes-long-!!";
-        JwtProvider otherProvider = new JwtProvider(new JwtProperties(otherSecret, ACCESS_EXP, REFRESH_EXP));
+        JwtProvider otherProvider = new JwtProvider(new JwtProperties(otherSecret, ACCESS_EXP, REFRESH_EXP, SESSION_EXP));
 
         assertThat(otherProvider.isValid(token)).isFalse();
     }

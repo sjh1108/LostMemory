@@ -70,7 +70,7 @@ namespace LostMemory.Networking.Session
             if (nm == null) return;
 
             // 이미 자발적으로 떠난 직후라면 재진입한 RaiseLeft 가 처리. 추가 상태 변경 없음.
-            if (RelaySession.Active == null)
+            if (!RelaySession.IsInSession)
             {
                 NetLog.Info("Lifecycle", $"Disconnect after session already cleared. clientId={clientId}");
                 return;
@@ -95,7 +95,7 @@ namespace LostMemory.Networking.Session
         private void HandleTransportFailure()
         {
             NetLog.Error("Lifecycle", "Transport failure detected. Ending session.");
-            if (RelaySession.Active != null)
+            if (RelaySession.IsInSession)
             {
                 RelaySession.RaiseFailed(SessionErrorKind.TransportStartFailed, "transport failure");
                 _ = RelaySession.LeaveAsync();
