@@ -13,6 +13,15 @@ java {
 	}
 }
 
+// Spring Boot Gradle plugin 의 resolveMainClassName 자동 추론은 @SpringBootApplication 가
+// 1개일 때만 동작. RelayApplication 추가로 후보가 2개 (ServerApplication / RelayApplication)
+// 가 되면서 bootJar fail. jar manifest 의 Main-Class 는 ServerApplication 으로 고정한다.
+// RelayApplication 은 compose entrypoint 의 PropertiesLauncher + -Dloader.main=... 으로
+// 런타임 override 한다 (S14P31C201-462 인프라 PR 참조).
+springBoot {
+	mainClass = 'com.lostmemory.server.ServerApplication'
+}
+
 repositories {
 	mavenCentral()
 }
