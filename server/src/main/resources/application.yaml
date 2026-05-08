@@ -27,10 +27,10 @@ jwt:
 
 # 자체 Relay 서버 (RelayApplication 으로 기동될 때만 사용. ServerApplication 에서는 무관)
 relay:
-  port: ${RELAY_PORT:7777}
+  port: ${RELAY_PORT}
   handshake-timeout-ms: ${HANDSHAKE_TIMEOUT_MS}  # UDP 통신 핸드셰이크 타임아웃 (밀리초)
-  peer-idle-timeout-ms: ${RELAY_PEER_IDLE_TIMEOUT_MS:10000}  # peer 가 이 시간 이상 패킷 미수신 시 dead 처리 (BYE 누락 fallback)
-  cleanup-interval-ms: ${RELAY_CLEANUP_INTERVAL_MS:2000}     # idle peer cleanup 주기 — peer-idle-timeout-ms 보다 짧게
+  peer-idle-timeout-ms: ${RELAY_PEER_IDLE_TIMEOUT_MS}  # peer 가 이 시간 이상 패킷 미수신 시 dead 처리 (BYE 누락 fallback)
+  cleanup-interval-ms: ${RELAY_CLEANUP_INTERVAL_MS}     # idle peer cleanup 주기 — peer-idle-timeout-ms 보다 짧게
 
 # CORS — Unity WebGL / Swagger 외부 호출 등에서 origin 검사 통과용
 # 콤마 구분 패턴. dev 는 "*", prod 는 도메인 화이트리스트
