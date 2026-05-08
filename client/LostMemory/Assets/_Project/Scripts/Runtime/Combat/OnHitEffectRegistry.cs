@@ -4,6 +4,7 @@ using LostMemory.Data;
 using LostMemory.Enemies;
 using LostMemory.Relics;
 using LostMemory.TestKhi;
+using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -53,6 +54,25 @@ namespace LostMemory.Combat
 
         [Tooltip("바람 검기 너비 (유닛). 좁을수록 직선상 적만 맞음.")]
         [SerializeField, Min(0.1f)] private float _windBladeWidth = 0.6f;
+
+        [Header("VFX Prefabs (CL-201)")]
+        [SerializeField] private GameObject _chainHitVFXPrefab;
+        [SerializeField] private GameObject _windAOEVFXPrefab;
+        [Tooltip("Wind VFX 인스턴스 자동 삭제 시간(초). 파티클 라이프타임보다 길어야 잘림 없음.")]
+        [SerializeField, Min(0.1f)] private float _windVFXLifetime = 1.2f;
+
+        [Header("SFX (CL-201)")]
+        [SerializeField] private AudioClip _chainHitSfx;
+        [SerializeField] private AudioClip _windBladeSfx;
+        [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
+
+        [Header("Hit Stop (CL-201)")]
+        [Tooltip("Chain 적중 1회 hitstop 지속(unscaled). 0이면 비활성.")]
+        [SerializeField, Min(0f)] private float _chainHitStopDuration = 0.05f;
+        [Tooltip("Wind 적중 1회 hitstop 지속(unscaled). 0이면 비활성.")]
+        [SerializeField, Min(0f)] private float _windHitStopDuration = 0.08f;
+        [Tooltip("Hit stop 동안 Time.timeScale 값. 0=완전 정지, 0.05=5% 슬로우, 1=정상속도(효과 없음).")]
+        [SerializeField, Range(0f, 1f)] private float _hitStopFrozenScale = 0f;
 
         [Header("Debug")]
         [SerializeField] private bool _logOnHitDispatch = false;
@@ -164,11 +184,22 @@ namespace LostMemory.Combat
 
             // 즉발 광역 — 모든 타겟에 동시 타격. 같은 적 중복은 FindNearbyEnemies 의 dedup 으로 차단.
             Vector3 origin = victim.transform.position;
+            int hitCount = 0;
             foreach (Health t in targets)
             {
                 if (t == null) continue;
                 t.Damage(chainDamage, gameObject, 0f, 0f, Vector3.zero);
-                DrawChainBolt(origin, t.transform.position);
+                SpawnChainVFX(origin, t.transform.position);
+                hitCount++;
+            }
+
+            if (hitCount > 0)
+            {
+                if (_chainHitSfx != null)
+                    AudioSource.PlayClipAtPoint(_chainHitSfx, origin, _sfxVolume);
+
+                if (_chainHitStopDuration > 0f && KhiHitStopController.Instance != null)
+                    KhiHitStopController.Instance.RequestFreeze(_chainHitStopDuration, _hitStopFrozenScale);
             }
 
             if (_logOnHitDispatch)
@@ -237,65 +268,85 @@ namespace LostMemory.Combat
                 hitCount++;
             }
 
-            // 시각화 — victim 에서 사거리 끝점까지 노란 직선 (Range 적용된 길이)
-            Vector3 endPoint = victimPos + (Vector3)(dir * effectiveLength);
-            DrawChainBolt(victimPos, endPoint);
+            // VFX — victim 위치에서 dir 방향으로 슬래시 + Whirlwind 광역 표시 (Range 반영된 length)
+            SpawnWindVFX(victimPos, dir, effectiveLength);
+
+            if (hitCount > 0)
+            {
+                if (_windBladeSfx != null)
+                    AudioSource.PlayClipAtPoint(_windBladeSfx, victimPos, _sfxVolume);
+
+                if (_windHitStopDuration > 0f && KhiHitStopController.Instance != null)
+                    KhiHitStopController.Instance.RequestFreeze(_windHitStopDuration, _hitStopFrozenScale);
+            }
 
             if (_logOnHitDispatch)
                 Debug.Log($"[OnHit] WindBlade {magnitude:P0} dir={dir} → {hitCount} hits, {bladeDamage:F1} each");
         }
 
-        // ── 체인 시각화 (placeholder) ───────────────────────
-        // 0.3초간 노란 LineRenderer 그렸다가 자동 삭제. 정식 lightning VFX 는 후속 ticket.
+        // ── VFX 스폰 (CL-201) ──────────────────────────────
 
-        private static readonly Color ChainBoltColor = new Color(1f, 0.95f, 0.3f, 1f);
-        private const float ChainBoltWidth = 0.18f;
-        private const float ChainBoltDuration = 0.3f;
-        private const int ChainBoltSortingOrder = 9999;
-
-        private static Material _chainMaterial;
-
-        private static Material GetChainMaterial()
+        private void SpawnChainVFX(Vector3 from, Vector3 to)
         {
-            if (_chainMaterial != null) return _chainMaterial;
-
-            // URP/Built-in 호환 shader 탐색
-            Shader sh = Shader.Find("Sprites/Default")
-                     ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Lit-Default")
-                     ?? Shader.Find("Universal Render Pipeline/Unlit")
-                     ?? Shader.Find("Unlit/Color");
-            if (sh == null)
-            {
-                Debug.LogError("[OnHit] ChainBolt: shader 0개 발견. LineRenderer 보이지 않음.");
-                return null;
-            }
-            _chainMaterial = new Material(sh) { color = ChainBoltColor };
-            Debug.Log($"[OnHit] ChainBolt material 생성 — shader='{sh.name}'");
-            return _chainMaterial;
-        }
-
-        private static void DrawChainBolt(Vector3 from, Vector3 to)
-        {
-            // 2D 평면 가시성 보장 — z=0 으로 통일
+            if (_chainHitVFXPrefab == null) return;
             from.z = 0f;
             to.z = 0f;
 
-            var go = new GameObject("ChainBolt");
-            go.transform.position = from;
-            var lr = go.AddComponent<LineRenderer>();
-            Material mat = GetChainMaterial();
-            if (mat != null) lr.sharedMaterial = mat;
-            lr.startColor = ChainBoltColor;
-            lr.endColor = ChainBoltColor;
-            lr.startWidth = ChainBoltWidth;
-            lr.endWidth = ChainBoltWidth;
-            lr.useWorldSpace = true;
-            lr.positionCount = 2;
-            lr.SetPosition(0, from);
-            lr.SetPosition(1, to);
-            lr.sortingOrder = ChainBoltSortingOrder;
-            lr.alignment = LineAlignment.View;
-            Object.Destroy(go, ChainBoltDuration);
+            GameObject go = VFXSpawner.Spawn(_chainHitVFXPrefab, from, Quaternion.identity, 0.3f);
+            if (go == null) return;
+
+            // 지그재그 번개 컴포넌트가 있으면 그쪽이 positionCount/SetPosition 다중 처리.
+            JaggedLightningLine jagged = go.GetComponentInChildren<JaggedLightningLine>();
+            if (jagged != null)
+            {
+                jagged.Init(from, to);
+                return;
+            }
+
+            // 폴백: 단순 2점 직선
+            LineRenderer lr = go.GetComponentInChildren<LineRenderer>();
+            if (lr != null)
+            {
+                lr.useWorldSpace = true;
+                lr.positionCount = 2;
+                lr.SetPosition(0, from);
+                lr.SetPosition(1, to);
+            }
+        }
+
+        private void SpawnWindVFX(Vector3 origin, Vector2 dir, float length)
+        {
+            if (_windAOEVFXPrefab == null) return;
+            origin.z = 0f;
+
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            GameObject go = VFXSpawner.Spawn(
+                _windAOEVFXPrefab,
+                origin,
+                Quaternion.Euler(0f, 0f, angle),
+                _windVFXLifetime);
+            if (go == null) return;
+
+            LineRenderer lr = go.GetComponentInChildren<LineRenderer>();
+            if (lr != null)
+            {
+                Vector3 endPoint = origin + (Vector3)(dir * length);
+                lr.useWorldSpace = true;
+                lr.positionCount = 2;
+                lr.SetPosition(0, origin);
+                lr.SetPosition(1, endPoint);
+            }
+
+            // Whirlwind 자식 ParticleSystem 의 Shape.radius 동적 조정 (Range 스탯 반영)
+            foreach (ParticleSystem ps in go.GetComponentsInChildren<ParticleSystem>())
+            {
+                if (ps.gameObject.name == "Whirlwind")
+                {
+                    ParticleSystem.ShapeModule shape = ps.shape;
+                    shape.radius = _windBladeWidth * 1.5f;
+                    break;
+                }
+            }
         }
 
         private static EnemyStatusEffect GetOrAddStatus(Health victim)
