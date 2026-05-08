@@ -725,6 +725,9 @@ EC2 SSH 후:
      JWT_SESSION_EXPIRATION=600
      RELAY_PORT=7777
      HANDSHAKE_TIMEOUT_MS=5000
+     RELAY_PEER_IDLE_TIMEOUT_MS=10000
+     RELAY_CLEANUP_INTERVAL_MS=2000
+     CORS_ALLOWED_ORIGIN_PATTERNS=https://k14c201.p.ssafy.io
      ```
    - "Replace" 로 갱신
 3. **EC2 워킹트리 sync** + `.env` 갱신:
