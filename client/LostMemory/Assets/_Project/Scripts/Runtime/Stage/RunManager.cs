@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using LostMemory.Memory;
 using LostMemory.Networking.Common;
 using LostMemory.Relics;
+using LostMemory.SceneFlow;
 using LostMemory.TestKhi;
 using LostMemory.UI;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
 
 namespace LostMemory.Stage
 {
@@ -54,6 +59,9 @@ namespace LostMemory.Stage
 
         [SerializeField, Tooltip("결과창의 마을로 버튼을 눌렀을 때 로드할 씬 이름.")]
         private string townSceneName = "Town";
+
+        [SerializeField, Tooltip("Editor Play Mode에서 Build Settings 이름 로드가 막힐 때 사용할 Town 씬 경로.")]
+        private string townScenePath = "Assets/_Project/Scenes/Town/Town.unity";
 
         [Header("Stage Progression")]
         [SerializeField, Min(1), Tooltip("이번 런에서 진행할 스테이지 수. 보스 클리어 포탈 진입 시 다음 스테이지가 없으면 결과 화면으로 간다.")]
@@ -233,8 +241,15 @@ namespace LostMemory.Stage
 
         public void ReturnToTown()
         {
-            if (!IsAuthority || townReturnInProgress)
+            if (townReturnInProgress)
             {
+                Debug.LogWarning("[RunManager] Town return is already in progress.", this);
+                return;
+            }
+
+            if (!IsAuthority)
+            {
+                Debug.LogWarning("[RunManager] Town return ignored because this instance has no authority.", this);
                 return;
             }
 
@@ -252,13 +267,15 @@ namespace LostMemory.Stage
                 return;
             }
 
-            if (!Application.CanStreamedLevelBeLoaded(townSceneName))
+            bool canLoadSceneName = Application.CanStreamedLevelBeLoaded(townSceneName);
+            if (!canLoadSceneName && !CanUseEditorTownScenePath(networkSessionActive))
             {
-                Debug.LogWarning($"[RunManager] Town scene '{townSceneName}' is not available. Add it to Build Settings.", this);
+                Debug.LogWarning($"[RunManager] Town scene '{townSceneName}' is not available. Add it to Build Settings or set a valid Town scene path.", this);
                 return;
             }
 
             townReturnInProgress = true;
+            TownSpawnRouter.RequestTownReturn(townSceneName);
             if (!TryCloseResulting())
             {
                 CleanupRunResultingState();
@@ -269,12 +286,34 @@ namespace LostMemory.Stage
             {
                 networkManager.SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
             }
-            else
+            else if (canLoadSceneName)
             {
                 SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
             }
+            else
+            {
+                LoadTownSceneInEditorPlayMode();
+            }
 
             Destroy(gameObject);
+        }
+
+        private bool CanUseEditorTownScenePath(bool networkSessionActive)
+        {
+#if UNITY_EDITOR
+            return !networkSessionActive && !string.IsNullOrWhiteSpace(townScenePath);
+#else
+            return false;
+#endif
+        }
+
+        private void LoadTownSceneInEditorPlayMode()
+        {
+#if UNITY_EDITOR
+            EditorSceneManager.LoadSceneInPlayMode(townScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+#else
+            Debug.LogWarning($"[RunManager] Town scene '{townSceneName}' is not available in this build.", this);
+#endif
         }
 
         private bool TryCloseResulting()
