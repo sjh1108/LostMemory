@@ -1,94 +1,108 @@
 using System;
 using System.Threading.Tasks;
 using LostMemory.Networking.Common;
-using Unity.Services.Authentication;
-using Unity.Services.Core;
-using Unity.Services.Multiplayer;
 
 namespace LostMemory.Networking.Session
 {
     /// <summary>
     /// 세션 공통 상태 + 초기화 진입점. Host/Client 양쪽이 공유.
     ///
-    /// 책임:
-    ///   - Unity Services 1회 초기화 보장
-    ///   - 익명 로그인 보장 (MVP — 로그인 흐름 본격 도입 전)
-    ///   - 활성 ISession 보유 (Host 또는 Client 진입 후 set)
+    /// (자체 Relay 마이그레이션 후) 책임:
+    ///   - 백엔드 로그인 1회 보장 (테스트 씬용 testuser 자동 로그인)
+    ///   - 활성 세션 메타 보유 (sessionId, isHost)
     ///   - 이벤트 게시 (Joined / Left / Failed)
+    ///
+    /// 다중 인스턴스 테스트 (Multiplayer Play Mode) 시:
+    ///   인스턴스마다 다른 자격증명 필요하면 AutoLoginId/Password/Nickname 을
+    ///   인스턴스 시작 시 (Awake 등) 다르게 설정. 예) "testuser" / "testuser01" / ...
     /// </summary>
     public static class RelaySession
     {
-        public static ISession Active { get; internal set; }
+        // 테스트 씬용 자동 로그인 자격증명. 본 게임에선 별도 로그인 화면으로 교체 예정.
+        public static string AutoLoginId = "testuser";
+        public static string AutoLoginPassword = "password123";
+        public static string AutoLoginNickname = "테스터";
 
-        public static bool IsInSession => Active != null;
+        public static long? ActiveSessionId { get; internal set; }
+        public static bool IsHost { get; internal set; }
+        public static bool IsInSession => ActiveSessionId.HasValue;
 
         /// <summary>호스트/클라 진입 성공 시 발화. 인자: 본인이 호스트인지.</summary>
         public static event Action<bool> Joined;
 
-        /// <summary>세션을 떠난 후 발화 (자발/타발 모두). UI 정리·씬 복귀 등에 사용.</summary>
+        /// <summary>세션을 떠난 후 발화. UI 정리·씬 복귀 등에 사용.</summary>
         public static event Action Left;
 
         /// <summary>실패 시 발화. SessionErrorPolicy.ToUserMessage 로 사용자 메시지 변환 가능.</summary>
         public static event Action<SessionErrorKind, string> Failed;
 
         /// <summary>
-        /// Unity Services 초기화 + 익명 로그인 보장. 여러 번 호출되어도 안전.
+        /// 백엔드 로그인 + myUserId 확보. 여러 번 호출돼도 안전 (캐시).
         /// 실패 시 Failed 이벤트 발화 + 예외 throw.
         /// </summary>
         internal static async Task EnsureInitializedAsync()
         {
+            if (SessionApiClient.IsLoggedIn) return;
+
+            // signup (이미 있으면 silent)
             try
             {
-                if (UnityServices.State != ServicesInitializationState.Initialized)
-                {
-                    NetLog.Info("Session", "Initializing UnityServices...");
-                    await UnityServices.InitializeAsync();
-                }
+                await SessionApiClient.TrySignupAsync(AutoLoginId, AutoLoginPassword, AutoLoginNickname);
             }
             catch (Exception ex)
             {
-                NetLog.Error("Session", $"UnityServices init failed: {ex.Message}");
-                RaiseFailed(SessionErrorKind.ServicesInitFailed, ex.Message);
-                throw;
+                NetLog.Warn("Session", $"signup threw (무시): {ex.Message}");
             }
 
-            try
+            // login
+            bool loginOk = await SessionApiClient.LoginAsync(AutoLoginId, AutoLoginPassword);
+            if (!loginOk)
             {
-                if (!AuthenticationService.Instance.IsSignedIn)
-                {
-                    NetLog.Info("Session", "Signing in anonymously...");
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                    NetLog.Info("Session", $"Signed in. PlayerId={AuthenticationService.Instance.PlayerId}");
-                }
+                RaiseFailed(SessionErrorKind.SignInFailed, "백엔드 로그인 실패");
+                throw new Exception("EnsureInitialized: backend login failed");
             }
-            catch (Exception ex)
+
+            // myUserId
+            bool meOk = await SessionApiClient.FetchMyUserIdAsync();
+            if (!meOk)
             {
-                NetLog.Error("Session", $"SignIn failed: {ex.Message}");
-                RaiseFailed(SessionErrorKind.SignInFailed, ex.Message);
-                throw;
+                RaiseFailed(SessionErrorKind.SignInFailed, "users/me 실패");
+                throw new Exception("EnsureInitialized: fetch /users/me failed");
             }
+
+            NetLog.Info("Session", $"EnsureLoggedIn: backend login OK ({AutoLoginId}, userId={SessionApiClient.MyUserId})");
         }
 
         /// <summary>
-        /// 활성 세션을 떠난다. 자발적 종료 경로. 결과적으로 NGO 도 정리됨.
+        /// 활성 세션을 떠난다. 호스트면 백엔드에 DELETE 까지 (CASCADE 로 session_joins 등 정리됨).
+        /// 게스트면 메타만 클리어 (백엔드 측 session_joins 정리는 호스트 DELETE 또는 timeout 에 위임).
         /// </summary>
         public static async Task LeaveAsync()
         {
-            ISession session = Active;
-            if (session == null) return;
+            long? sessionId = ActiveSessionId;
+            if (!sessionId.HasValue) return;
 
             try
             {
-                await session.LeaveAsync();
-                NetLog.Info("Session", "Left session.");
+                if (IsHost)
+                {
+                    await SessionApiClient.DeleteSessionAsync(sessionId.Value);
+                    NetLog.Info("Session", $"Host deleted session id={sessionId.Value}");
+                }
+                else
+                {
+                    await SessionApiClient.LeaveSessionAsync(sessionId.Value);
+                    NetLog.Info("Session", $"Guest left session id={sessionId.Value}");
+                }
             }
             catch (Exception ex)
             {
-                NetLog.Warn("Session", $"LeaveAsync threw: {ex.Message}");
+                NetLog.Warn("Session", $"Leave/DeleteSession threw: {ex.Message}");
             }
             finally
             {
-                Active = null;
+                ActiveSessionId = null;
+                IsHost = false;
                 RaiseLeft();
             }
         }

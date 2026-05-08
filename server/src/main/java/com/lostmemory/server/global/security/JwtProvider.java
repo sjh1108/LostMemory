@@ -25,6 +25,9 @@ public class JwtProvider {
     private static final String TYPE_CLAIM = "type";
     private static final String TYPE_ACCESS = "access";
     private static final String TYPE_REFRESH = "refresh";
+    private static final String TYPE_SESSION = "session";
+    private static final String SESSION_ID_CLAIM = "sessionId";
+    private static final String ROLE_CLAIM = "role";
 
     private final JwtProperties properties;
     private final SecretKey key;
@@ -62,6 +65,24 @@ public class JwtProvider {
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
         return new TokenIssueResult(token, jti);
+    }
+
+    /**
+     * Session 토큰 발급. 자체 Relay 가 검증할 단명 토큰.
+     * sub=userId, sessionId, role(HOST/GUEST), type=session 클레임 포함.
+     * Relay 는 동일 HMAC 비밀키로 검증해 sessionId 별 in-memory routing table 에 매핑한다.
+     */
+    public String createSessionToken(Long userId, Long sessionId, String role) {
+        long nowMs = System.currentTimeMillis();
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .issuedAt(new Date(nowMs))
+                .expiration(new Date(nowMs + properties.sessionExpiration() * 1000L))
+                .claim(TYPE_CLAIM, TYPE_SESSION)
+                .claim(SESSION_ID_CLAIM, sessionId)
+                .claim(ROLE_CLAIM, role)
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
     }
 
     /** 토큰 검증 후 sub 를 Long userId 로 반환 */
@@ -109,6 +130,40 @@ public class JwtProvider {
         }
         try {
             return Long.valueOf(subject);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+    }
+
+    /**
+     * Session 토큰 검증 후 SessionPrincipal 반환.
+     * 자체 Relay 가 핸드셰이크 직후 사용한다. 만료 시 AUTH_TOKEN_EXPIRED, 그 외(서명 불일치/형식 오류/wrong type/누락 클레임) AUTH_TOKEN_INVALID.
+     */
+    public SessionPrincipal parseSessionToken(String token) {
+        Claims claims;
+        try {
+            claims = parse(token);
+        } catch (ExpiredJwtException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        if (!TYPE_SESSION.equals(claims.get(TYPE_CLAIM))) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        String subject = claims.getSubject();
+        Object sessionIdObj = claims.get(SESSION_ID_CLAIM);
+        Object roleObj = claims.get(ROLE_CLAIM);
+        if (subject == null || sessionIdObj == null || roleObj == null) {
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+
+        try {
+            Long userId = Long.valueOf(subject);
+            Long sessionId = Long.valueOf(sessionIdObj.toString());
+            return new SessionPrincipal(userId, sessionId, roleObj.toString());
         } catch (NumberFormatException e) {
             throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
         }

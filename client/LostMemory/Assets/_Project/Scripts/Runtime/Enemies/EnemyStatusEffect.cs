@@ -1,33 +1,37 @@
+using System.Collections;
+using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
 namespace LostMemory.Enemies
 {
     /// <summary>
-    /// CL-142: 적의 Slow / Freeze status 관리. CL-143 에서 Burn 도트 추가 예정.
+    /// CL-142/143: 적의 Slow / Freeze / Burn status 관리.
+    /// CL-202: VFX 정식 교체 — placeholder SpriteRenderer 대신 OnHitEffectRegistry 가 주입한
+    ///          VFX 프리팹을 SpawnAttached 로 적에 부착. 다중 상태이상 시 정책 D 로 가장 최근 1개만 표시.
     ///
     /// OnHitEffectRegistry 가 첫 hit 시점에 자동 부착 (GetOrAdd) → 적 prefab 수정 불필요.
+    /// 동일 시점에 EnsureVFXPrefabs 로 freeze/burn/slow 프리팹 참조 1회 바인딩.
     ///
     /// TDE CharacterMovement.MovementSpeedMultiplier 를 조작해 이속 변화/정지 적용.
     /// 빙결 시 multiplier=0 으로 강제 정지.
     ///
-    /// 빙결 시각화: 적 위치에 파란 투명 SpriteRenderer 절차적 생성 (placeholder).
-    /// 정식 VFX 는 후속 ticket 에서 교체.
-    ///
     /// 중첩 정책 (사용자 결정):
     /// - Slow: 더 강한 magnitude 만 유지, 시간은 max 유지
     /// - Freeze: 새 시간으로 갱신
+    /// - Burn: 항상 갱신 (가장 최근 화상으로 교체)
+    /// - VFX 표시 우선순위: Freeze &gt; Burn &gt; Slow (정책 D — 효과는 모두 적용 / VFX 1개)
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class EnemyStatusEffect : MonoBehaviour
     {
-        // 빙결 visual 설정 (placeholder)
-        private static readonly Color FreezeVisualColor = new Color(0.4f, 0.7f, 1.0f, 0.55f);
-        private const int FreezeVisualSortingOrder = 9999;
+        [Tooltip("CL-202: VFX 만료 시 페이드아웃 시간(초). 정책 D 로 다른 효과 VFX 로 전환할 때도 사용.")]
+        [SerializeField, Min(0f)] private float _vfxFadeOutSeconds = 0.25f;
 
-        // 화상 visual 설정 (CL-143 placeholder)
-        private static readonly Color BurnVisualColor = new Color(1.0f, 0.3f, 0.15f, 0.45f);
-        private const int BurnVisualSortingOrder = 9998;
+        // CL-202: Slow / Burn tint 색은 OnHitEffectRegistry 가 SetXxxTintColor 로 push 한다.
+        // (이 컴포넌트는 런타임 AddComponent 라 인스펙터에서 디자인 타임 와이어링 불가)
+        private Color _slowTintColor = new Color(0.7f, 0.9f, 1f, 1f);
+        private Color _burnTintColor = new Color(1f, 0.6f, 0.4f, 1f);
 
         private CharacterMovement _movement;
         private Health _health;
@@ -44,10 +48,21 @@ namespace LostMemory.Enemies
         private float _burnNextTickAt;
         private GameObject _burnInstigator;
 
-        private GameObject _freezeVisual;
-        private bool _freezeVisualActive;
-        private GameObject _burnVisual;
-        private bool _burnVisualActive;
+        // CL-202: VFX 프리팹 참조 (OnHitEffectRegistry.EnsureVFXPrefabs 로 주입)
+        private GameObject _freezeVFXPrefab;
+        private GameObject _burnVFXPrefab;
+        private GameObject _slowVFXPrefab;
+        private bool _vfxPrefabsBound;
+
+        // CL-202: 정책 D — 활성 VFX 1개 추적
+        private enum StatusVisualType { None, Freeze, Burn, Slow }
+        private StatusVisualType _activeVisualType = StatusVisualType.None;
+        private GameObject _activeVisualInstance;
+
+        // CL-202: Slow 시 적 main sprite tint 처리 (Slow 는 prefab 대신 sprite 변색)
+        private SpriteRenderer _enemyMainSprite;
+        private Color _enemyOriginalColor;
+        private bool _enemyColorCached;
 
         private void Awake()
         {
@@ -58,18 +73,52 @@ namespace LostMemory.Enemies
                 _baseCaptured = true;
             }
             _health = GetComponent<Health>() ?? GetComponentInParent<Health>();
+
+            // CL-202: 적 깨끗한 시점의 sprite 색을 캐시 (Slow tint 후 복원용)
+            TryCacheEnemySprite();
         }
 
         private void OnDestroy()
         {
-            if (_freezeVisual != null)
-            {
-                Destroy(_freezeVisual);
-            }
-            if (_burnVisual != null)
-            {
-                Destroy(_burnVisual);
-            }
+            // 활성 VFX 는 적 자식이라 부모 destroy 시 함께 사라지지만, 명시적 cleanup.
+            if (_activeVisualInstance != null) Destroy(_activeVisualInstance);
+            // Slow / Burn tint 가 적용된 채 destroy 되어도 적 본체도 함께 사라지므로 색 복원은 안전 차원.
+            // 둘 다 originalColor 로 복원하므로 어느 쪽이 active 였든 무관.
+            RemoveSlowSpriteTint();
+        }
+
+        // ── VFX 프리팹 주입 (OnHitEffectRegistry 호출) ──────────
+
+        /// <summary>
+        /// CL-202: OnHitEffectRegistry 가 ApplyXxx 호출 직전 한 번 주입.
+        /// idempotent — 두 번째 호출부터는 noop.
+        /// </summary>
+        public void EnsureVFXPrefabs(GameObject freeze, GameObject burn, GameObject slow)
+        {
+            if (_vfxPrefabsBound) return;
+            _freezeVFXPrefab = freeze;
+            _burnVFXPrefab = burn;
+            _slowVFXPrefab = slow;
+            _vfxPrefabsBound = true;
+        }
+
+        /// <summary>
+        /// CL-202: Slow 시 적 main sprite 에 적용할 tint 색.
+        /// OnHitEffectRegistry 가 ApplySlow 마다 push — 인스펙터 변경 시 다음 ApplySlow 부터 즉시 반영.
+        /// LateUpdate 가 매 프레임 이 값을 읽기 때문에 활성 중인 슬로우 적도 다음 프레임에 색 갱신됨.
+        /// </summary>
+        public void SetSlowTintColor(Color color)
+        {
+            _slowTintColor = color;
+        }
+
+        /// <summary>
+        /// CL-202: Burn 시 적 main sprite 에 적용할 tint 색.
+        /// OnHitEffectRegistry 가 ApplyBurn 마다 push — 인스펙터 변경 시 다음 ApplyBurn 부터 즉시 반영.
+        /// </summary>
+        public void SetBurnTintColor(Color color)
+        {
+            _burnTintColor = color;
         }
 
         // ── 등록 API (OnHitEffectRegistry 호출) ─────────────
@@ -83,6 +132,7 @@ namespace LostMemory.Enemies
             }
             _slowExpiresAt = Mathf.Max(_slowExpiresAt, Time.time + duration);
             ApplyMovementMultiplier();
+            RefreshActiveVisual();
         }
 
         public void ApplyFreeze(float durationSeconds)
@@ -90,6 +140,7 @@ namespace LostMemory.Enemies
             // 갱신 정책: 항상 새 시간으로 (사용자 결정)
             _freezeExpiresAt = Time.time + durationSeconds;
             ApplyMovementMultiplier();
+            RefreshActiveVisual();
         }
 
         public void ApplyBurn(float damagePerTick, float duration, GameObject instigator)
@@ -101,7 +152,7 @@ namespace LostMemory.Enemies
             _burnExpiresAt = Time.time + duration;
             _burnNextTickAt = Time.time + 1f;        // 첫 틱은 1초 뒤
             _burnInstigator = instigator;
-            SetBurnVisualActive(true);
+            RefreshActiveVisual();
         }
 
         // ── 만료 처리 ───────────────────────────────────────
@@ -109,15 +160,19 @@ namespace LostMemory.Enemies
         private void Update()
         {
             bool moveChanged = false;
+            bool visualChanged = false;
+
             if (_slowMagnitude > 0f && Time.time >= _slowExpiresAt)
             {
                 _slowMagnitude = 0f;
                 moveChanged = true;
+                visualChanged = true;
             }
             if (_freezeExpiresAt > 0f && Time.time >= _freezeExpiresAt)
             {
                 _freezeExpiresAt = 0f;
                 moveChanged = true;
+                visualChanged = true;
             }
             if (moveChanged) ApplyMovementMultiplier();
 
@@ -128,7 +183,7 @@ namespace LostMemory.Enemies
                 {
                     _burnExpiresAt = 0f;
                     _burnDamagePerTick = 0f;
-                    SetBurnVisualActive(false);
+                    visualChanged = true;
                 }
                 else if (Time.time >= _burnNextTickAt)
                 {
@@ -138,6 +193,23 @@ namespace LostMemory.Enemies
                         _health.Damage(_burnDamagePerTick, _burnInstigator, 0f, 0f, Vector3.zero);
                     }
                 }
+            }
+
+            if (visualChanged) RefreshActiveVisual();
+        }
+
+        /// <summary>
+        /// CL-202: Slow / Burn tint 는 LateUpdate 에서 매 프레임 강제 — 다른 시스템(Health 데미지 플리커 등)이
+        /// Update 에서 색을 덮어써도 LateUpdate 가 프레임 가장 마지막이라 우리 tint 가 최종 결과.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (_enemyMainSprite == null) return;
+
+            switch (_activeVisualType)
+            {
+                case StatusVisualType.Slow: _enemyMainSprite.color = _slowTintColor; break;
+                case StatusVisualType.Burn: _enemyMainSprite.color = _burnTintColor; break;
             }
         }
 
@@ -163,101 +235,173 @@ namespace LostMemory.Enemies
                 : 1f;
             float effectiveMul = isFrozen ? 0f : (_baseSpeedMultiplier * slowFactor);
             _movement.MovementSpeedMultiplier = effectiveMul;
-
-            SetFreezeVisualActive(isFrozen);
         }
 
-        // ── 빙결 시각화 (placeholder) ───────────────────────
+        // ── 정책 D: 활성 VFX 1개 관리 (CL-202) ──────────────
 
-        private void SetFreezeVisualActive(bool active)
+        /// <summary>
+        /// 현재 활성 효과를 평가해 가장 우선순위 높은 1개의 VFX 만 표시.
+        /// 우선순위: Freeze &gt; Burn &gt; Slow. 효과는 모두 적용되지만 시각만 1개.
+        /// </summary>
+        private void RefreshActiveVisual()
         {
-            if (active == _freezeVisualActive && _freezeVisual != null) return;
+            bool freezeActive = _freezeExpiresAt > 0f && Time.time < _freezeExpiresAt;
+            bool burnActive = _burnExpiresAt > 0f && Time.time < _burnExpiresAt;
+            bool slowActive = _slowMagnitude > 0f && Time.time < _slowExpiresAt;
 
-            if (active)
-            {
-                EnsureFreezeVisual();
-                if (_freezeVisual != null) _freezeVisual.SetActive(true);
-            }
-            else if (_freezeVisual != null)
-            {
-                _freezeVisual.SetActive(false);
-            }
-            _freezeVisualActive = active;
+            if (freezeActive)
+                SetActiveVisual(StatusVisualType.Freeze, _freezeVFXPrefab);
+            else if (burnActive)
+                SetActiveVisual(StatusVisualType.Burn, _burnVFXPrefab);
+            else if (slowActive)
+                SetActiveVisual(StatusVisualType.Slow, _slowVFXPrefab);
+            else
+                SetActiveVisual(StatusVisualType.None, null);
         }
 
-        private void EnsureFreezeVisual()
+        private void SetActiveVisual(StatusVisualType type, GameObject prefab)
         {
-            if (_freezeVisual != null) return;
+            // Slow / Burn 은 instance 가 null 일 수 있음 (sprite tint 만 사용). type 만 비교.
+            if (_activeVisualType == type) return;
 
-            _freezeVisual = new GameObject("FreezeVisual");
-            _freezeVisual.transform.SetParent(transform, worldPositionStays: false);
-            _freezeVisual.transform.localPosition = Vector3.zero;
+            StatusVisualType prevType = _activeVisualType;
 
-            SpriteRenderer sr = _freezeVisual.AddComponent<SpriteRenderer>();
-            sr.sprite = Sprite.Create(
-                Texture2D.whiteTexture,
-                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
-                new Vector2(0.5f, 0.5f),
-                pixelsPerUnit: Texture2D.whiteTexture.width);
-            sr.color = FreezeVisualColor;
-            sr.sortingOrder = FreezeVisualSortingOrder;
-
-            // 적 sprite 크기 추정 → 같은 크기로 scale (없으면 기본 1×1.5)
-            SpriteRenderer enemySr = GetComponentInParent<SpriteRenderer>();
-            Vector3 scale = new Vector3(1f, 1.5f, 1f);
-            if (enemySr != null && enemySr.bounds.size.sqrMagnitude > 0f)
+            // 기존 prefab visual 은 자체 페이드아웃 코루틴이 끝나면 destroy. 병렬 실행 무관.
+            if (_activeVisualInstance != null)
             {
-                Vector2 size = enemySr.bounds.size;
-                scale = new Vector3(size.x, size.y, 1f);
+                StartCoroutine(FadeOutAndDestroy(_activeVisualInstance, _vfxFadeOutSeconds));
             }
-            _freezeVisual.transform.localScale = scale;
 
-            Debug.Log($"[EnemyStatusEffect] FreezeVisual 생성 — host={gameObject.name}, scale={scale}, color={FreezeVisualColor}, sortingOrder={FreezeVisualSortingOrder}, sprite={(sr.sprite != null ? "OK" : "NULL")}, material={(sr.sharedMaterial != null ? sr.sharedMaterial.shader.name : "NULL")}");
+            // Sprite tint 진입/이탈 — 떠나는 type 의 tint 제거 후 들어오는 type 의 tint 적용
+            OnLeaveVisualType(prevType);
+            OnEnterVisualType(type);
+
+            _activeVisualType = type;
+            _activeVisualInstance = (type == StatusVisualType.None || prefab == null)
+                ? null
+                : VFXSpawner.SpawnAttached(prefab, transform);
         }
 
-        // ── 화상 시각화 (CL-143 placeholder) ────────────────
-
-        private void SetBurnVisualActive(bool active)
+        private void OnEnterVisualType(StatusVisualType type)
         {
-            if (active == _burnVisualActive && _burnVisual != null) return;
-
-            if (active)
+            switch (type)
             {
-                EnsureBurnVisual();
-                if (_burnVisual != null) _burnVisual.SetActive(true);
+                case StatusVisualType.Slow: ApplySlowSpriteTint(); break;
+                case StatusVisualType.Burn: ApplyBurnSpriteTint(); break;
             }
-            else if (_burnVisual != null)
-            {
-                _burnVisual.SetActive(false);
-            }
-            _burnVisualActive = active;
         }
 
-        private void EnsureBurnVisual()
+        private void OnLeaveVisualType(StatusVisualType type)
         {
-            if (_burnVisual != null) return;
-
-            _burnVisual = new GameObject("BurnVisual");
-            _burnVisual.transform.SetParent(transform, worldPositionStays: false);
-            _burnVisual.transform.localPosition = Vector3.zero;
-
-            SpriteRenderer sr = _burnVisual.AddComponent<SpriteRenderer>();
-            sr.sprite = Sprite.Create(
-                Texture2D.whiteTexture,
-                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
-                new Vector2(0.5f, 0.5f),
-                pixelsPerUnit: Texture2D.whiteTexture.width);
-            sr.color = BurnVisualColor;
-            sr.sortingOrder = BurnVisualSortingOrder;
-
-            SpriteRenderer enemySr = GetComponentInParent<SpriteRenderer>();
-            Vector3 scale = new Vector3(1f, 1.5f, 1f);
-            if (enemySr != null && enemySr.bounds.size.sqrMagnitude > 0f)
+            switch (type)
             {
-                Vector2 size = enemySr.bounds.size;
-                scale = new Vector3(size.x, size.y, 1f);
+                case StatusVisualType.Slow: RemoveSlowSpriteTint(); break;
+                case StatusVisualType.Burn: RemoveBurnSpriteTint(); break;
             }
-            _burnVisual.transform.localScale = scale;
+        }
+
+        private void TryCacheEnemySprite()
+        {
+            if (_enemyColorCached) return;
+
+            // 적 root + 자식의 모든 SpriteRenderer 중 main body 후보 선택.
+            // shadow / vfx / effect / status / iceblock 등 보조 sprite 는 이름으로 제외.
+            // 그 후 가장 큰 bounds 의 SpriteRenderer 가 본체일 확률 ↑.
+            SpriteRenderer[] candidates = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+            SpriteRenderer best = null;
+            float bestArea = 0f;
+
+            foreach (SpriteRenderer sr in candidates)
+            {
+                if (sr == null || sr.sprite == null) continue;
+                string n = sr.gameObject.name;
+                if (n.IndexOf("shadow", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (n.IndexOf("vfx", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (n.IndexOf("effect", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (n.IndexOf("status", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (n.IndexOf("iceblock", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+
+                Bounds b = sr.bounds;
+                float area = b.size.x * b.size.y;
+                if (area > bestArea)
+                {
+                    bestArea = area;
+                    best = sr;
+                }
+            }
+
+            if (best != null)
+            {
+                _enemyMainSprite = best;
+                _enemyOriginalColor = best.color;
+                _enemyColorCached = true;
+            }
+            else
+            {
+                Debug.LogWarning($"[EnemyStatusEffect] tint 적용할 SpriteRenderer 0개 (shadow/vfx/effect 제외 후) host={gameObject.name}");
+            }
+        }
+
+        private void ApplySlowSpriteTint()
+        {
+            TryCacheEnemySprite();
+            if (_enemyMainSprite != null)
+                _enemyMainSprite.color = _slowTintColor;
+        }
+
+        private void RemoveSlowSpriteTint()
+        {
+            if (_enemyColorCached && _enemyMainSprite != null)
+                _enemyMainSprite.color = _enemyOriginalColor;
+        }
+
+        private void ApplyBurnSpriteTint()
+        {
+            TryCacheEnemySprite();
+            if (_enemyMainSprite != null)
+                _enemyMainSprite.color = _burnTintColor;
+        }
+
+        private void RemoveBurnSpriteTint()
+        {
+            if (_enemyColorCached && _enemyMainSprite != null)
+                _enemyMainSprite.color = _enemyOriginalColor;
+        }
+
+        private IEnumerator FadeOutAndDestroy(GameObject vfx, float duration)
+        {
+            if (vfx == null) yield break;
+
+            SpriteRenderer[] renderers = vfx.GetComponentsInChildren<SpriteRenderer>();
+            ParticleSystem[] particleSystems = vfx.GetComponentsInChildren<ParticleSystem>();
+
+            // ParticleSystem 은 emission 만 멈춰서 자연스럽게 흩어지게
+            foreach (ParticleSystem ps in particleSystems)
+            {
+                if (ps != null) ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            }
+
+            Color[] startColors = new Color[renderers.Length];
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null) startColors[i] = renderers[i].color;
+            }
+
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float k = 1f - Mathf.Clamp01(t / duration);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (renderers[i] == null) continue;
+                    Color c = startColors[i];
+                    renderers[i].color = new Color(c.r, c.g, c.b, c.a * k);
+                }
+                yield return null;
+            }
+
+            if (vfx != null) Destroy(vfx);
         }
     }
 }

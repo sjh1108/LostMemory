@@ -41,6 +41,10 @@ namespace LostMemory.Data
         [SerializeField, Min(0f)] private float _minimumChainInputDelay = 0.12f;
         [SerializeField, Min(0f)] private float _inputBufferDuration = 0.25f;
 
+        [Tooltip("회전 후 적용되는 글로벌 hitbox/VFX 오프셋. 캐릭터 발 기준 → 몸통 중앙으로 올리고 싶을 때 (0, 0.5) 등. " +
+                 "Quaternion 회전 뒤 더해지므로 좌/우/상/하 어느 방향이든 항상 같은 양만큼 시프트됨 (좌우 비대칭 X).")]
+        [SerializeField] private Vector2 _globalHitboxPostRotationOffset = Vector2.zero;
+
         [Header("Visual Common")]
         [Tooltip("좌반평면 aim (aim.x<0) 시 SlashRig 에 flipX + 회전 보정 적용. sprite 비대칭 (한 방향 arc curl) 일 때 ON.")]
         [SerializeField] private bool _autoMirrorOnLeftAim = true;
@@ -57,6 +61,7 @@ namespace LostMemory.Data
         public bool AutoMirrorOnLeftAim => _autoMirrorOnLeftAim;
         public float FrameInterval => _frameInterval;
         public AttackStepData[] Steps => _steps;
+        public Vector2 GlobalHitboxPostRotationOffset => _globalHitboxPostRotationOffset;
 
 #if UNITY_EDITOR
         /// <summary>

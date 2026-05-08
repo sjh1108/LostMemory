@@ -17,6 +17,7 @@ MonoBehaviour:
   _comboInputWindow: 0.6
   _minimumChainInputDelay: 0.12
   _inputBufferDuration: 0.25
+  _globalHitboxPostRotationOffset: {x: 0, y: 0.5}
   _autoMirrorOnLeftAim: 1
   _frameInterval: 0.04
   _steps:
@@ -27,13 +28,13 @@ MonoBehaviour:
     activeDuration: 0.1
     recoveryDuration: 0.15
     animatorTrigger: Attack_1
-    hitboxOffset: {x: 1.05, y: -0.2}
+    hitboxOffset: {x: 1.05, y: 0}
     hitboxSize: {x: 1.7, y: 1.1}
     slashFrames:
-    - {fileID: 21300000, guid: 3315fa77b6b2a0443a9d6132d25fe5c6, type: 3}
-    - {fileID: 21300000, guid: fa8fe33f866ff6549a4eb08bb95b6953, type: 3}
-    - {fileID: 21300000, guid: f2f431929a478ce468061acac0a29dd2, type: 3}
-    - {fileID: 21300000, guid: e359e862df8ba0d41a26d0a8160180cf, type: 3}
+    - {fileID: 21300000, guid: 24e9cf94dfb37af44810d4e70fb81f11, type: 3}
+    - {fileID: 21300000, guid: 944d0453804177e41ac46845e9ab93b6, type: 3}
+    - {fileID: 21300000, guid: 224256b2e85dd854f889543995b1befe, type: 3}
+    - {fileID: 21300000, guid: 78e4ce13e64603c4c865cfabd74f910a, type: 3}
     slashTint: {r: 1, g: 1, b: 1, a: 1}
   - label: "2\uD0C0: \uBC18\uB300 \uC0AC\uC120"
     comboStep: 2
@@ -42,7 +43,7 @@ MonoBehaviour:
     activeDuration: 0.12
     recoveryDuration: 0.2
     animatorTrigger: Attack_2
-    hitboxOffset: {x: 1.05, y: 0.2}
+    hitboxOffset: {x: 1.05, y: 0}
     hitboxSize: {x: 1.8, y: 1.2}
     slashFrames:
     - {fileID: 21300000, guid: c54fcf8661bb3a847a25c22335f99996, type: 3}
@@ -59,7 +60,7 @@ MonoBehaviour:
     recoveryDuration: 0.3
     animatorTrigger: 'Attack_3 '
     hitboxOffset: {x: 1.25, y: 0}
-    hitboxSize: {x: 2.5, y: 1.8}
+    hitboxSize: {x: 2, y: 1.8}
     slashFrames:
     - {fileID: 21300000, guid: 0ee1089f27d4cef428e5431f2aff4165, type: 3}
     - {fileID: 21300000, guid: 47b59f4a1043e61408188625dcf2a0cc, type: 3}

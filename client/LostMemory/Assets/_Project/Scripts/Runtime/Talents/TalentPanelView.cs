@@ -22,6 +22,8 @@ namespace LostMemory.Talents
 
         private TalentModel _model;
 
+        public bool IsOpen => gameObject.activeSelf;
+
         private void Start()
         {
             var saved = TalentSaveService.Load();
@@ -64,6 +66,15 @@ namespace LostMemory.Talents
             _model = new TalentModel(_talentDatas, _debugTotalPoints, saved);
             Refresh();
             gameObject.SetActive(true);
+        }
+
+        /// <summary>패널을 열거나 닫는다.</summary>
+        public void Toggle()
+        {
+            if (IsOpen)
+                Close();
+            else
+                Open();
         }
 
         /// <summary>패널을 닫는다. 미저장 변경사항은 버려진다.</summary>

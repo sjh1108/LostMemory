@@ -18,6 +18,9 @@ namespace LostMemory.Talents
 
         [Header("Config")]
         [SerializeField] private KeyCode _interactKey = KeyCode.F;
+        [SerializeField] private bool _requirePlayerInRange = true;
+        // Town disables the range gate so the talent panel can be toggled anywhere.
+        [SerializeField] private bool _togglePanelOnInteract;
         [Tooltip("플레이어 검증용 tag. 비워두면 모든 trigger 인식.")]
         [SerializeField] private string _playerTag = "Player";
         [Tooltip("(선택) 'F 누르세요' 안내 GameObject. 범위 진입 시 활성, 이탈 시 비활성.")]
@@ -35,7 +38,7 @@ namespace LostMemory.Talents
 
         private void Update()
         {
-            if (!_playerInRange) return;
+            if (_requirePlayerInRange && !_playerInRange) return;
             if (!Input.GetKeyDown(_interactKey)) return;
 
             if (_talentPanel == null)
@@ -45,11 +48,15 @@ namespace LostMemory.Talents
             }
 
             if (_logInteraction) Debug.Log("[TalentNpcInteractable] 재능 패널 열기.", this);
-            _talentPanel.Open();
+            if (_togglePanelOnInteract)
+                _talentPanel.Toggle();
+            else
+                _talentPanel.Open();
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            if (!_requirePlayerInRange) return;
             if (!IsPlayer(other)) return;
             _playerInRange = true;
             if (_promptObject != null) _promptObject.SetActive(true);
@@ -58,6 +65,7 @@ namespace LostMemory.Talents
 
         private void OnTriggerExit2D(Collider2D other)
         {
+            if (!_requirePlayerInRange) return;
             if (!IsPlayer(other)) return;
             _playerInRange = false;
             if (_promptObject != null) _promptObject.SetActive(false);
