@@ -72,12 +72,12 @@
 
 ### 네트워크 분리 구조
 
-게임의 네트워크는 두 계층으로 완전히 분리됩니다.
+게임의 네트워크는 두 계층으로 분리되며, 실시간 게임 트래픽은 두 가지 Relay 모드를 공존 운영합니다.
 
-**1. 실시간 게임 트래픽** (Unity Relay 담당)
-- 플레이어 PC ↔ Unity Relay ↔ 플레이어 PC
-- UDP 기반, 우리 서버를 거치지 않음
-- 초대코드 6자리로 접속 (포트포워딩 불필요)
+**1. 실시간 게임 트래픽** (Unity Relay 또는 자체 Relay 7777/UDP)
+- **옵션 A — Unity Relay**: 플레이어 PC ↔ Unity Relay ↔ 플레이어 PC (외부 인프라, 포트포워딩 불필요, 초대코드 6자리)
+- **옵션 B — 자체 Relay**: 플레이어 PC ↔ 싸피 VM Nginx (UDP 7777) ↔ 자체 Netty Relay 컨테이너 ↔ 플레이어 PC (백엔드 인프라)
+- 클라이언트가 NGO Transport 로 두 모드 중 선택. 자체 Relay 운영 절차는 [자체 Relay 운영 (UDP 7777)](#자체-relay-운영-udp-7777) 참고
 
 **2. 일반 서비스 요청** (우리 백엔드 담당)
 - 플레이어 PC → 싸피 VM (HTTPS)
@@ -89,8 +89,9 @@
 
 ```
 [싸피 VM]
- ├─ Nginx        (리버스 프록시, HTTPS 종단)
- ├─ Spring Boot  (백엔드 API)
+ ├─ Nginx        (리버스 프록시, HTTPS 종단 + UDP 7777 stream proxy)
+ ├─ Spring Boot  (백엔드 API — server-app:latest 의 ServerApplication main)
+ ├─ Relay        (자체 Netty UDP — server-app:latest 의 RelayApplication main 재사용)
  ├─ PostgreSQL   (데이터 영속)
  ├─ Redis        (세션/캐시)
  └─ Jenkins      (CI/CD)
@@ -696,6 +697,99 @@ curl -I https://k14c201.p.ssafy.io/nginx-health            # 200
 - prod 발급은 도메인당 주 5회 rate limit. 부트스트랩 스크립트가 staging dry-run 을 먼저 돌리는 이유.
 - certbot 은 webroot 모드로 동작하므로 nginx 가 80 에 계속 떠있어야 한다 (standalone 모드로 바꾸지 말 것).
 - `certbot_etc` 와 `certbot_webroot` 는 named volume 이라 호스트 경로로 직접 보지 못한다. 인증서 확인은 `docker compose --profile certbot run --rm --entrypoint sh certbot -c "ls /etc/letsencrypt/live/$DOMAIN/"` 로.
+
+---
+
+## 자체 Relay 운영 (UDP 7777)
+
+게임 멀티플레이용 자체 Relay 서버 (Netty UDP 7777). `server-app:latest` 단일 이미지 안에 두 main 클래스 (`ServerApplication` + `RelayApplication`) 가 패키징되며, **Dockerfile 변경 없이 compose 의 `relay` 서비스 entrypoint 에서 PropertiesLauncher 로 다른 main 을 띄우는** 구조다. nginx 의 `stream {}` 블록이 UDP 7777 외부 진입점을 담당하고 docker network 로 relay 컨테이너에 proxy 한다.
+
+### 정책
+
+- Unity Relay (외부 인프라) 와 자체 Relay (백엔드 인프라) 공존 — 클라이언트가 NGO Transport 로 모드 선택. [네트워크 분리 구조](#네트워크-분리-구조) 참고.
+- 같은 `server-app:latest` image 재사용 → relay 전용 빌드 불필요. `deploy.sh deploy/rollback` 가 `app + relay` 함께 force-recreate.
+- nginx 외부 진입점은 UDP 7777 (TCP X). AWS SG 인바운드 UDP 7777 허용 필수.
+- Relay 컨테이너는 DB / Redis 미사용 — `frontend` 네트워크만 연결. healthcheck 는 `pgrep -f RelayApplication` (UDP 라 HTTP healthcheck 불가).
+
+### 1회 등록 절차 (운영자)
+
+EC2 SSH 후:
+
+1. **AWS Security Group UDP 7777 인바운드 허용** (운영자 콘솔):
+   - Inbound rule: Custom UDP, Port 7777, Source `0.0.0.0/0` + `::/0`
+   - 보안상 더 좁히려면 클라이언트 가능 ip 범위로 제한
+2. **Jenkins credential `lostmemory-env` 갱신** (메모리 룰 — `.env` 변수 hardcode 추측 X):
+   - Jenkins UI → Manage Jenkins → Credentials → `lostmemory-env` (Secret file)
+   - 다운로드 → 텍스트 끝에 추가:
+     ```
+     JWT_SESSION_EXPIRATION=600
+     RELAY_PORT=7777
+     HANDSHAKE_TIMEOUT_MS=5000
+     RELAY_PEER_IDLE_TIMEOUT_MS=10000
+     RELAY_CLEANUP_INTERVAL_MS=2000
+     CORS_ALLOWED_ORIGIN_PATTERNS=https://k14c201.p.ssafy.io
+     ```
+   - "Replace" 로 갱신
+3. **EC2 워킹트리 sync** + `.env` 갱신:
+   ```bash
+   cd /home/ubuntu/lostmemory
+   git fetch origin && git switch develop && git pull --ff-only origin develop
+
+   # 호스트 .env 에도 같은 3개 키 추가 (Jenkins credential 과 일치)
+   sudo vi server/.env
+   ```
+4. **nginx 재기동** (stream {} 블록 신설 — `nginx -s reload` 로는 stream 모듈 활성화 안 될 수 있어 force-recreate 권장):
+   ```bash
+   cd server
+   docker compose --env-file .env exec nginx nginx -t
+   docker compose --env-file .env up -d --force-recreate nginx
+   ```
+5. **app + relay 기동** (백엔드 코드 RelayApplication 가 develop 머지된 상태 전제):
+   ```bash
+   docker compose --env-file .env build app
+   ./scripts/deploy.sh deploy <BUILD_NUMBER>
+   # 또는 수동: docker compose --env-file .env up -d app relay
+   ```
+
+### 검증 시퀀스
+
+```bash
+# (a) PropertiesLauncher 클래스 사전 점검 (1회)
+docker run --rm --entrypoint sh server-app:latest -c 'find /app -name "PropertiesLauncher*" | head -3'
+# → org/springframework/boot/loader/launch/PropertiesLauncher.class 보여야 함
+
+# (b) 컨테이너 healthy
+docker compose --env-file .env ps                        # app + relay 모두 healthy
+docker compose --env-file .env logs relay --tail=20      # "[Relay] UDP listener started on port 7777"
+
+# (c) app 회귀 — 기존 HTTPS 트래픽 정상
+curl -I https://k14c201.p.ssafy.io/api/actuator/health   # HTTP/2 200
+
+# (d) UDP 외부 도달성 검증 (운영자 PC)
+# macOS / Linux:
+nc -u k14c201.p.ssafy.io 7777
+# 임의 문자열 입력 → relay 로그에 "[Relay] Handshake failed from <ip>:..." 떠야 도달 확인
+# (JSON 핸드셰이크 아니라 거절은 정상)
+
+# Windows (PowerShell):
+$udp = New-Object System.Net.Sockets.UdpClient
+$bytes = [Text.Encoding]::UTF8.GetBytes("ping")
+$udp.Send($bytes, $bytes.Length, "k14c201.p.ssafy.io", 7777)
+# 동일하게 relay 로그에 Handshake failed 떠야 도달 확인
+```
+
+### 롤백
+
+- relay 만 stop: `docker compose --env-file .env stop relay`
+- relay + nginx stream block 함께 비활성: `docker-compose.yml` 에서 relay 서비스 + nginx ports 의 `7777:7777/udp` 주석, `nginx/nginx.conf` 의 `stream {}` 블록 주석 → `docker compose up -d --force-recreate nginx app`
+- 또는 본 PR `git revert`
+- AWS SG UDP 7777 차단 (Source 비움)
+
+### 주의
+
+- 백엔드 `RelayApplication` 클래스가 develop 에 머지되어 있어야 함 (compose 변경만으로는 불충분 — `ClassNotFoundException` 발생)
+- nginx 의 `stream {}` 블록 신설 후 첫 적용은 `nginx -s reload` 가 아닌 `up -d --force-recreate nginx` 권장 (master process 재시작 필요)
+- Relay 와 app 이 같은 image 공유하므로 `docker image prune -a` 같이 태그 붙은 이미지를 지우는 명령은 절대 사용 X (deploy.sh history rollback 자산 손실). `server/scripts/docker-prune.sh` 는 dangling 만 정리 — 안전.
 
 ---
 
