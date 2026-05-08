@@ -122,6 +122,10 @@ namespace LostMemory.Networking.Session
                     return JoinResult.Fail(SessionErrorKind.TransportStartFailed, "NetworkManager.StartClient() 실패");
                 }
 
+                // 호스트 강제 끊김·NGO 측 강제 disconnect 도 RelaySession.Left 로 흘리기
+                NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
+                NetworkManager.Singleton.OnClientStopped += OnClientStoppedHandler;
+
                 RelaySession.ActiveSessionId = data.sessionId;
                 RelaySession.IsHost = false;
                 RelaySession.RaiseJoined(asHost: false);
@@ -137,6 +141,17 @@ namespace LostMemory.Networking.Session
                 RelaySession.RaiseFailed(kind, ex.Message);
                 return JoinResult.Fail(kind, ex.Message);
             }
+        }
+
+        private static async void OnClientStoppedHandler(bool _)
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
+            }
+            if (!RelaySession.IsInSession) return;
+            try { await RelaySession.LeaveAsync(); }
+            catch (Exception ex) { NetLog.Warn("Client", $"Auto-leave threw: {ex.Message}"); }
         }
     }
 }

@@ -89,10 +89,15 @@ namespace LostMemory.Networking.Session
                     await SessionApiClient.DeleteSessionAsync(sessionId.Value);
                     NetLog.Info("Session", $"Host deleted session id={sessionId.Value}");
                 }
+                else
+                {
+                    await SessionApiClient.LeaveSessionAsync(sessionId.Value);
+                    NetLog.Info("Session", $"Guest left session id={sessionId.Value}");
+                }
             }
             catch (Exception ex)
             {
-                NetLog.Warn("Session", $"DeleteSession threw: {ex.Message}");
+                NetLog.Warn("Session", $"Leave/DeleteSession threw: {ex.Message}");
             }
             finally
             {

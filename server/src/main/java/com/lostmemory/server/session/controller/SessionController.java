@@ -64,4 +64,13 @@ public class SessionController {
         sessionService.deleteSession(userId, sessionId);
         return ApiResponse.ok();
     }
+
+    @Operation(summary = "세션 이탈 (게스트 전용, 본인 SessionJoin 만 삭제)")
+    @PostMapping("/{sessionId}/leave")
+    public ApiResponse<Void> leaveSession(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long sessionId) {
+        sessionService.leaveSession(userId, sessionId);
+        return ApiResponse.ok();
+    }
 }

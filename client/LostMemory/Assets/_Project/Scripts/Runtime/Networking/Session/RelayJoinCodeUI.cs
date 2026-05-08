@@ -152,11 +152,16 @@ namespace LostMemory.Networking.Session
             NetworkManager nm = NetworkManager.Singleton;
             if (nm != null && nm.IsListening)
             {
-                nm.Shutdown();
+                nm.Shutdown(discardMessageQueue: true);   // ← discardMessageQueue 인자 추가
             }
             SetStatus("세션 종료.");
             if (joinCodeDisplay != null) joinCodeDisplay.text = string.Empty;
             RefreshButtonState();
+
+            // (선택) NGO 의 NetworkManager.Singleton 이 재진입 spawn 을 깨끗하게 못 하면 scene reload 로 fallback
+            // 사용 시 상단에 using UnityEngine.SceneManagement; 추가
+            // var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            // UnityEngine.SceneManagement.SceneManager.LoadScene(scene.buildIndex);
         }
 
         private void HandleJoined(bool asHost)
@@ -167,6 +172,7 @@ namespace LostMemory.Networking.Session
         private void HandleLeft()
         {
             if (joinCodeDisplay != null) joinCodeDisplay.text = string.Empty;
+            SetStatus("세션 이탈.");
             RefreshButtonState();
         }
 

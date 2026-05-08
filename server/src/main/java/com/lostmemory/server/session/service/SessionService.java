@@ -123,6 +123,25 @@ public class SessionService {
         sessionRepository.delete(session);
     }
 
+    /**
+     * 게스트 자발 이탈: 본인 SessionJoin row 만 삭제 (정원 카운트 회복).
+     * - 호스트가 호출하면 거부 (호스트는 deleteSession 사용)
+     * - 이미 떠난 상태면 idempotent 하게 no-op (재시도 안전)
+     */
+    @Transactional
+    public void leaveSession(Long userId, Long sessionId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (session.getHost().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_HOST_CANNOT_LEAVE);
+        }
+
+        sessionJoinRepository
+                .findBySessionIdAndUserId(sessionId, userId)
+                .ifPresent(sessionJoinRepository::delete);
+    }
+
     /** 응답 조립 — 호스트/게스트 둘 다 멤버 목록 + 본인 sessionToken 을 받는다. */
     private SessionResponse buildResponse(Session session, Long callerUserId, SessionRole callerRole) {
         List<SessionMemberResponse> members = sessionJoinRepository

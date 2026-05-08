@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SessionJoinRepository extends JpaRepository<SessionJoin, Long> {
@@ -14,6 +15,8 @@ public interface SessionJoinRepository extends JpaRepository<SessionJoin, Long> 
     long countBySessionId(Long sessionId);
 
     boolean existsBySessionIdAndUserId(Long sessionId, Long userId);
+
+    Optional<SessionJoin> findBySessionIdAndUserId(Long sessionId, Long userId);
 
     /** 세션의 모든 멤버를 join_at 오름차순으로 (host 가 먼저, guest 입장 순) 반환 */
     @Query("SELECT sj FROM SessionJoin sj " +

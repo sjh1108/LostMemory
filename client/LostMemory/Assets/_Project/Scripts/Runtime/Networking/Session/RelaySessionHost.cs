@@ -92,6 +92,8 @@ namespace LostMemory.Networking.Session
                 {
                     return CreateResult.Fail(SessionErrorKind.TransportStartFailed, "NetworkManager.StartHost() 실패");
                 }
+                NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
+                NetworkManager.Singleton.OnClientStopped += OnClientStoppedHandler;
 
                 RelaySession.ActiveSessionId = data.sessionId;
                 RelaySession.IsHost = true;
@@ -108,6 +110,17 @@ namespace LostMemory.Networking.Session
                 RelaySession.RaiseFailed(kind, ex.Message);
                 return CreateResult.Fail(kind, ex.Message);
             }
+        }
+
+        private static async void OnClientStoppedHandler(bool _)
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
+            }
+            if (!RelaySession.IsInSession) return;
+            try { await RelaySession.LeaveAsync(); }
+            catch (Exception ex) { NetLog.Warn("Host", $"Auto-leave threw: {ex.Message}"); }
         }
 
         /// <summary>O/0/1/I 같이 헷갈리는 글자 제외한 6자리 영숫자 코드.</summary>

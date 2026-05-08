@@ -74,6 +74,10 @@ namespace LostMemory.Multiplayer
         private Thread _receiveThread;
         private volatile bool _running;
 
+        // keep-alive — 호스트가 게스트 합류 전 NGO 데이터 송신 0 인 동안 백엔드 idle timeout 방지
+        private Thread _keepAliveThread;
+        private static readonly byte[] _pingPacket = Encoding.UTF8.GetBytes("{\"type\":\"PING\"}");
+
         // 핸드셰이크 ACK 대기용
         private readonly ManualResetEventSlim _ackEvent = new(false);
         private volatile bool _ackOk;
@@ -145,6 +149,11 @@ namespace LostMemory.Multiplayer
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
             if (!_running) return;
+
+            if (verboseLog && payload.Count + 9 > 1400)
+            {
+                Debug.LogWarning($"[Relay] 큰 메시지 송신: payload={payload.Count}B, total={payload.Count + 9}B (UDP MTU 위험)");
+            }
 
             // wire frame: [MAGIC_DATA][senderUserId 8B BE][payload]
             byte[] wire = new byte[1 + 8 + payload.Count];
@@ -245,8 +254,16 @@ namespace LostMemory.Multiplayer
                     return false;
                 }
 
-                // 자기 자신 connect 이벤트 emit (NGO 가 로컬 client 가 연결됐다고 인식하도록)
-                EnqueueEvent(NetworkEvent.Connect, NGO_SERVER_CLIENT_ID, default);
+                // 자기 자신 connect 이벤트 emit — 게스트 입장에서만 필요.
+                // 호스트는 NGO 가 server+self-client 를 자체 묶어 처리하므로 emit 시 중복 경고 발생.
+                if (!_isHost)
+                {
+                    EnqueueEvent(NetworkEvent.Connect, NGO_SERVER_CLIENT_ID, default);
+                }
+
+                // keep-alive 스레드 시작 — Relay 의 idle timeout 방지
+                _keepAliveThread = new Thread(KeepAliveLoop) { IsBackground = true, Name = "LostMemoryRelay-KeepAlive" };
+                _keepAliveThread.Start();
 
                 if (verboseLog) Debug.Log($"[Relay] {roleLabel} 핸드셰이크 OK. myUserId={_myUserId}");
                 return true;
@@ -256,6 +273,29 @@ namespace LostMemory.Multiplayer
                 Debug.LogError($"[Relay] {roleLabel} 시작 실패: {e}");
                 ShutdownInternal("start-exception");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// 1초 간격으로 Relay 에 PING 송신. RoomRegistry.lastSeenAt 갱신용.
+        /// 호스트가 게스트 합류 전까진 NGO 자체 데이터 송신이 0 이라 백엔드 idle timeout 에 걸림.
+        /// </summary>
+        private void KeepAliveLoop()
+        {
+            while (_running)
+            {
+                try
+                {
+                    Thread.Sleep(1000);
+                    if (!_running) break;
+                    _udp?.Send(_pingPacket, _pingPacket.Length);
+                }
+                catch (ObjectDisposedException) { return; }
+                catch (SocketException) when (!_running) { return; }
+                catch (Exception e)
+                {
+                    if (verboseLog) Debug.LogWarning($"[Relay] keep-alive 송신 예외: {e.Message}");
+                }
             }
         }
 
@@ -296,7 +336,7 @@ namespace LostMemory.Multiplayer
                     }
                     else
                     {
-                        HandleHandshakeAck(data);
+                        HandleControlMessage(data);
                     }
                 }
                 catch (SocketException) when (!_running)
@@ -315,31 +355,61 @@ namespace LostMemory.Multiplayer
             }
         }
 
-        private void HandleHandshakeAck(byte[] data)
+        /// <summary>
+        /// 컨트롤 메시지 (JSON) 디스패치. type 별 처리:
+        ///  - ACK: 핸드셰이크 응답
+        ///  - PEER_LEFT: 같은 세션의 다른 peer 가 떠남 → NGO Disconnect 이벤트 emit
+        ///  - 그 외: 무시
+        /// </summary>
+        private void HandleControlMessage(byte[] data)
         {
             try
             {
                 string json = Encoding.UTF8.GetString(data);
                 JObject obj = JObject.Parse(json);
                 string type = obj.Value<string>("type");
-                if (type != "ACK") return;
 
+                if (type == "ACK")
+                {
+                    HandleAck(obj);
+                }
+                else if (type == "PEER_LEFT")
+                {
+                    HandlePeerLeft(obj);
+                }
+                // 그 외 type 은 무시
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Relay] 컨트롤 메시지 파싱 실패: {e.Message}");
+            }
+        }
+
+        private void HandleAck(JObject obj)
+        {
+            try
+            {
                 _ackOk = obj.Value<bool>("ok");
                 if (!_ackOk)
                 {
                     _ackFailReason = obj.Value<string>("reason");
                 }
             }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[Relay] ACK 파싱 실패: {e.Message}");
-                _ackOk = false;
-                _ackFailReason = "ACK parse error";
-            }
             finally
             {
                 _ackEvent.Set();
             }
+        }
+
+        private void HandlePeerLeft(JObject obj)
+        {
+            ulong leftUserId = obj.Value<ulong>("userId");
+            if (verboseLog) Debug.Log($"[Relay] PEER_LEFT 수신: userId={leftUserId}");
+
+            _knownRemoteUserIds.TryRemove(leftUserId, out _);
+
+            ulong ngoClientId = MapSenderToClientId(leftUserId);
+            EnqueueEvent(NetworkEvent.Disconnect, ngoClientId, default);
         }
 
         private void HandleDataPacket(byte[] data)
@@ -411,22 +481,45 @@ namespace LostMemory.Multiplayer
 
         private void ShutdownInternal(string reason)
         {
-            if (!_running) return;
+            if (!_running && _udp == null) return; // 이미 정리 끝난 두 번째 호출 가드
+
+            if (_ackOk && _udp != null)
+            {
+                try
+                {
+                    byte[] bye = Encoding.UTF8.GetBytes("{\"type\":\"BYE\"}");
+                    _udp.Send(bye, bye.Length);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[Relay] BYE 송신 실패: {e.Message}");
+                }
+            }
+
             _running = false;
 
-            try { _udp?.Close(); } catch { /* ignore */ }
-            try { _udp?.Dispose(); } catch { /* ignore */ }
+            try { _udp?.Close(); } catch { }
+            try { _udp?.Dispose(); } catch { }
+            _udp = null;
 
-            if (_receiveThread != null && _receiveThread.IsAlive)
-            {
-                _receiveThread.Join(500);
-            }
+            if (_receiveThread != null && _receiveThread.IsAlive) _receiveThread.Join(500);
+            _receiveThread = null;
+
+            if (_keepAliveThread != null && _keepAliveThread.IsAlive) _keepAliveThread.Join(500);
+            _keepAliveThread = null;
 
             _eventQueue.Clear();
             _knownRemoteUserIds.Clear();
             _ackEvent.Reset();
             _ackOk = false;
             _ackFailReason = null;
+
+            // 재진입 대비 — 세션 메타도 비움. 다음 SetSession() 호출이 다시 채움
+            _sessionToken = null;
+            _myUserId = 0;
+            _sessionConfigured = false;
+            _isHost = false;
+            _hostUserId = 0;
 
             if (verboseLog) Debug.Log($"[Relay] Transport shutdown ({reason})");
         }

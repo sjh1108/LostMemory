@@ -118,6 +118,12 @@ namespace LostMemory.Networking.Session
             await DeleteAsync($"/sessions/{sessionId}");
         }
 
+        /// <summary>게스트 자발 이탈. 백엔드가 본인 SessionJoin 만 삭제 → 정원 카운트 회복.</summary>
+        public static async Task LeaveSessionAsync(long sessionId)
+        {
+            await PostAsync<object>($"/sessions/{sessionId}/leave", new { });
+        }
+
         // ============================================================
         // HTTP helpers
         // ============================================================
