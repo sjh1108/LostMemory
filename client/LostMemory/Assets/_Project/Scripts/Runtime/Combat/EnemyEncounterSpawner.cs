@@ -32,7 +32,8 @@ namespace LostMemory.Combat
         {
             new HitAnimationRecoveryProfile("Orc_Hit", "Orc_Idle", "Orc_Walk"),
             new HitAnimationRecoveryProfile("OrcRider_Hurt", "OrcRider_Idle", "OrcRider_Walk"),
-            new HitAnimationRecoveryProfile("SkeletonArcher_Hurt", "SkeletonArcher_Idle", "SkeletonArcher_Walk")
+            new HitAnimationRecoveryProfile("SkeletonArcher_Hurt", "SkeletonArcher_Idle", "SkeletonArcher_Walk"),
+            new HitAnimationRecoveryProfile("Chobomb_Hurt", "Chobomb_Idle", "Chobomb_Walk")
         };
 
         public event Action<EnemySpawnedPayload> Spawned;
@@ -366,7 +367,8 @@ namespace LostMemory.Combat
             return stateInfo.shortNameHash == Animator.StringToHash(DeathAnimatorParameterName)
                 || stateInfo.shortNameHash == Animator.StringToHash("Orc_Death")
                 || stateInfo.shortNameHash == Animator.StringToHash("OrcRider_Death")
-                || stateInfo.shortNameHash == Animator.StringToHash("SkeletonArcher_Death");
+                || stateInfo.shortNameHash == Animator.StringToHash("SkeletonArcher_Death")
+                || stateInfo.shortNameHash == Animator.StringToHash("Chobomb_Death");
         }
 
         private static bool TryGetHitAnimationRecoveryProfile(AnimatorStateInfo stateInfo, out HitAnimationRecoveryProfile profile)
