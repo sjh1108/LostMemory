@@ -232,7 +232,7 @@ namespace LostMemory.TestKhi
                     finalDamage *= 1f + Mathf.Max(0f, critDmgBonus);
                 }
                 int sampledHitCount = hitbox != null
-                    ? hitbox.Sample(sampleRequest, step, finalDamage, _alreadyHitThisSwing, _hitsThisSample)
+                    ? hitbox.Sample(sampleRequest, step, weaponData.GlobalHitboxPostRotationOffset, finalDamage, _alreadyHitThisSwing, _hitsThisSample)
                     : 0;
                 hitAnyTarget |= sampledHitCount > 0;
 
