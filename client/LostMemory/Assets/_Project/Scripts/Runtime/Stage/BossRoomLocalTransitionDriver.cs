@@ -28,6 +28,39 @@ namespace LostMemory.Stage
             set => autoUnfreezePlayers = value;
         }
 
+        public bool TryStartRouteEntry(string bossRoomId, string bossEntryPointId, string bossSceneName)
+        {
+            BossRoomEntryPoint entryPoint = ResolveEntryPoint(bossEntryPointId);
+            if (entryPoint == null)
+            {
+                LogWarning("Boss room entry point not found for route entry: " + bossEntryPointId);
+                return false;
+            }
+
+            List<Character> players = CollectScenePlayers();
+            if (players.Count <= 0)
+            {
+                LogWarning("No eligible players were found for route boss entry.");
+                return false;
+            }
+
+            string resolvedEntryPointId = string.IsNullOrWhiteSpace(bossEntryPointId)
+                ? entryPoint.EntryPointId
+                : bossEntryPointId;
+
+            BossRoomEntryTransitionRequest request = new BossRoomEntryTransitionRequest(
+                doorController,
+                players[0],
+                bossRoomId,
+                resolvedEntryPointId,
+                bossSceneName,
+                players.Count,
+                players.Count);
+
+            TeleportPlayers(request, players, entryPoint);
+            return true;
+        }
+
         private void Reset()
         {
             doorController = GetComponent<BossRoomDoorController>();
@@ -126,6 +159,45 @@ namespace LostMemory.Stage
 
             players.Sort(CompareCharacters);
             return players;
+        }
+
+        private static List<Character> CollectScenePlayers()
+        {
+            List<Character> players = new List<Character>();
+            Character[] characters = FindObjectsByType<Character>(FindObjectsSortMode.None);
+            for (int i = 0; i < characters.Length; i++)
+            {
+                Character character = characters[i];
+                if (character == null ||
+                    character.CharacterType != Character.CharacterTypes.Player ||
+                    !character.gameObject.activeInHierarchy ||
+                    IsCharacterUnavailable(character))
+                {
+                    continue;
+                }
+
+                players.Add(character);
+            }
+
+            players.Sort(CompareCharacters);
+            return players;
+        }
+
+        private static bool IsCharacterUnavailable(Character character)
+        {
+            if (character == null || !character.gameObject.activeInHierarchy)
+            {
+                return true;
+            }
+
+            if (character.ConditionState != null &&
+                character.ConditionState.CurrentState == CharacterStates.CharacterConditions.Dead)
+            {
+                return true;
+            }
+
+            Health health = character.CharacterHealth;
+            return health != null && health.Initialized && health.CurrentHealth <= 0f;
         }
 
         private void TeleportPlayers(

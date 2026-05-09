@@ -63,6 +63,12 @@ namespace LostMemory.Stage
         [SerializeField, Tooltip("Editor Play Mode에서 Build Settings 이름 로드가 막힐 때 사용할 Town 씬 경로.")]
         private string townScenePath = "Assets/_Project/Scenes/Town/Town.unity";
 
+        [SerializeField, Tooltip("Result Restart button target dungeon start scene name.")]
+        private string restartDungeonSceneName = "Dungeon_1F_1R";
+
+        [SerializeField, Tooltip("Editor Play Mode fallback path for the restart dungeon start scene.")]
+        private string restartDungeonScenePath = "Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity";
+
         [Header("Stage Progression")]
         [SerializeField, Min(1), Tooltip("이번 런에서 진행할 스테이지 수. 보스 클리어 포탈 진입 시 다음 스테이지가 없으면 결과 화면으로 간다.")]
         private int totalStageCount = 1;
@@ -89,6 +95,8 @@ namespace LostMemory.Stage
         private int memoryFragments;
         private bool bossClearPortalReady;
         private bool townReturnInProgress;
+        private Coroutine refreshSceneSubscriptionsRoutine;
+        private RunResultPanelView subscribedRunResultPanelView;
 
         private void Awake()
         {
@@ -122,11 +130,9 @@ namespace LostMemory.Stage
             }
             // CL-113: RunResult 버튼 wiring. develop 의 단순 += CloseResulting 대신 우리 핸들러 채택 —
             // HandleRestartRequested 가 SceneManager.LoadScene 으로 씬 재로드까지 수행 (superset).
-            if (runResultPanelView != null)
-            {
-                runResultPanelView.OnLobby += ReturnToTown;
-                runResultPanelView.OnRestart += HandleRestartRequested;
-            }
+            BindRunResultPanelView(runResultPanelView);
+
+            SceneManager.sceneLoaded += HandleSceneLoaded;
         }
 
         private void OnDisable()
@@ -144,17 +150,166 @@ namespace LostMemory.Stage
                 playerDownController.DefeatedByTimeout -= HandlePlayerDefeatedDirect;
                 playerDownController.DefeatedSolo -= HandlePlayerDefeatedDirect;
             }
-            if (runResultPanelView != null)
+            UnbindRunResultPanelView();
+
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            if (refreshSceneSubscriptionsRoutine != null)
             {
-                runResultPanelView.OnLobby -= ReturnToTown;
-                runResultPanelView.OnRestart -= HandleRestartRequested;
+                StopCoroutine(refreshSceneSubscriptionsRoutine);
+                refreshSceneSubscriptionsRoutine = null;
             }
+
             UnsubscribeAllRoomControllers();
 
             if (Instance == this)
             {
                 Instance = null;
             }
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (Instance != this || StateMachine == null)
+            {
+                return;
+            }
+
+            if (StateMachine.Current != RunState.None &&
+                StateMachine.Current != RunState.Initializing &&
+                StateMachine.Current != RunState.InRun)
+            {
+                return;
+            }
+
+            if (refreshSceneSubscriptionsRoutine != null)
+            {
+                StopCoroutine(refreshSceneSubscriptionsRoutine);
+            }
+
+            refreshSceneSubscriptionsRoutine = StartCoroutine(RefreshSceneSubscriptionsNextFrame());
+        }
+
+        private IEnumerator RefreshSceneSubscriptionsNextFrame()
+        {
+            yield return null;
+            refreshSceneSubscriptionsRoutine = null;
+
+            bool adoptedRouteRun = TryBeginLoadedRouteRun();
+            if (StateMachine.Current != RunState.Initializing &&
+                StateMachine.Current != RunState.InRun)
+            {
+                yield break;
+            }
+
+            SubscribeAllRoomControllers();
+            if (rewardController != null)
+            {
+                rewardController.SubscribeAllRoomControllers();
+            }
+
+            ResolveRunResultPanelView();
+
+            if (adoptedRouteRun && StateMachine.Current == RunState.Initializing)
+            {
+                StateMachine.TryTransition(RunState.InRun);
+            }
+        }
+
+        private RunResultPanelView ResolveRunResultPanelView()
+        {
+            if (runResultPanelView != null)
+            {
+                BindRunResultPanelView(runResultPanelView);
+                return runResultPanelView;
+            }
+
+            RunResultPanelView[] views = FindObjectsByType<RunResultPanelView>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            for (int i = 0; i < views.Length; i++)
+            {
+                RunResultPanelView view = views[i];
+                if (view != null && view.gameObject.scene == activeScene)
+                {
+                    BindRunResultPanelView(view);
+                    return view;
+                }
+            }
+
+            if (views.Length > 0)
+            {
+                BindRunResultPanelView(views[0]);
+            }
+
+            return runResultPanelView;
+        }
+
+        private void BindRunResultPanelView(RunResultPanelView view)
+        {
+            if (subscribedRunResultPanelView == view)
+            {
+                return;
+            }
+
+            if (subscribedRunResultPanelView != null)
+            {
+                subscribedRunResultPanelView.OnLobby -= ReturnToTown;
+                subscribedRunResultPanelView.OnRestart -= HandleRestartRequested;
+            }
+
+            subscribedRunResultPanelView = null;
+            runResultPanelView = view;
+
+            if (view == null)
+            {
+                return;
+            }
+
+            subscribedRunResultPanelView = view;
+            subscribedRunResultPanelView.OnLobby += ReturnToTown;
+            subscribedRunResultPanelView.OnRestart += HandleRestartRequested;
+        }
+
+        private void UnbindRunResultPanelView()
+        {
+            if (subscribedRunResultPanelView != null)
+            {
+                subscribedRunResultPanelView.OnLobby -= ReturnToTown;
+                subscribedRunResultPanelView.OnRestart -= HandleRestartRequested;
+            }
+
+            subscribedRunResultPanelView = null;
+        }
+
+        private bool TryBeginLoadedRouteRun()
+        {
+            if (StateMachine.Current != RunState.None)
+            {
+                return false;
+            }
+
+            if (!IsAuthority || StageRouteManager.Instance == null)
+            {
+                return false;
+            }
+
+            CurrentStageIndex = 0;
+            bossClearPortalReady = false;
+            ResetRunResultTracking();
+
+            if (!StateMachine.TryTransition(RunState.Initializing))
+            {
+                return false;
+            }
+
+            if (logStageProgression)
+            {
+                Debug.Log("[RunManager] Adopted loaded route scene as active run.", this);
+            }
+
+            return true;
         }
 
         private void Start()
@@ -316,6 +471,24 @@ namespace LostMemory.Stage
 #endif
         }
 
+        private bool CanUseEditorRestartDungeonScenePath(bool networkSessionActive)
+        {
+#if UNITY_EDITOR
+            return !networkSessionActive && !string.IsNullOrWhiteSpace(restartDungeonScenePath);
+#else
+            return false;
+#endif
+        }
+
+        private void LoadRestartDungeonSceneInEditorPlayMode()
+        {
+#if UNITY_EDITOR
+            EditorSceneManager.LoadSceneInPlayMode(restartDungeonScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+#else
+            Debug.LogWarning($"[RunManager] Restart dungeon scene '{restartDungeonSceneName}' is not available in this build.", this);
+#endif
+        }
+
         private bool TryCloseResulting()
         {
             if (!StateMachine.TryTransition(RunState.None))
@@ -330,9 +503,10 @@ namespace LostMemory.Stage
         private void CleanupRunResultingState()
         {
             bossClearPortalReady = false;
-            if (runResultPanelView != null)
+            RunResultPanelView resultPanelView = ResolveRunResultPanelView();
+            if (resultPanelView != null)
             {
-                runResultPanelView.Hide();
+                resultPanelView.Hide();
             }
             UnsubscribeAllRoomControllers();
             // CL-110: RewardController 의 RoomCleared 구독도 해제.
@@ -511,13 +685,14 @@ namespace LostMemory.Stage
 
         private void ShowResultingUI()
         {
-            if (runResultPanelView == null)
+            RunResultPanelView resultPanelView = ResolveRunResultPanelView();
+            if (resultPanelView == null)
             {
                 Debug.Log("[RunManager] Resulting state — no RunResultPanelView wired (stub).");
                 return;
             }
 
-            runResultPanelView.Show(BuildRunResultData());
+            resultPanelView.Show(BuildRunResultData());
             Debug.Log("[RunManager] Resulting state — RunResultPanelView shown.");
         }
 
@@ -551,14 +726,55 @@ namespace LostMemory.Stage
             Debug.Log($"[RunManager] {prev} -> {current}");
         }
 
-        // CL-113: 결산 창의 Restart 버튼. CloseResulting → 현재 씬 재로드.
-        // SceneManager.LoadScene 은 *현재 활성 씬* 의 buildIndex 를 사용 — 별도 마을 씬 도입 (CL-117) 까지 단순.
+        // Result Restart button: restart the run from the first dungeon route scene.
         private void HandleRestartRequested()
         {
-            Debug.Log("[RunManager] Restart requested. Reloading current scene.");
-            CloseResulting();
-            Scene activeScene = SceneManager.GetActiveScene();
-            SceneManager.LoadScene(activeScene.buildIndex);
+            if (!IsAuthority)
+            {
+                Debug.LogWarning("[RunManager] Restart ignored because this instance has no authority.", this);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(restartDungeonSceneName))
+            {
+                Debug.LogWarning("[RunManager] Restart dungeon scene name is empty.", this);
+                return;
+            }
+
+            NetworkManager networkManager = NetworkManager.Singleton;
+            bool networkSessionActive = networkManager != null && networkManager.IsListening;
+            if (networkSessionActive && !networkManager.IsServer)
+            {
+                Debug.LogWarning("[RunManager] Restart must be requested on the server/host. Client request RPC is not wired yet.", this);
+                return;
+            }
+
+            bool canLoadSceneName = Application.CanStreamedLevelBeLoaded(restartDungeonSceneName);
+            if (!canLoadSceneName && !CanUseEditorRestartDungeonScenePath(networkSessionActive))
+            {
+                Debug.LogWarning($"[RunManager] Restart dungeon scene '{restartDungeonSceneName}' is not available. Add it to Build Settings or set a valid restart scene path.", this);
+                return;
+            }
+
+            Debug.Log($"[RunManager] Restart requested. Loading '{restartDungeonSceneName}'.");
+            if (!TryCloseResulting())
+            {
+                CleanupRunResultingState();
+            }
+            Time.timeScale = 1f;
+
+            if (networkSessionActive)
+            {
+                networkManager.SceneManager.LoadScene(restartDungeonSceneName, LoadSceneMode.Single);
+            }
+            else if (canLoadSceneName)
+            {
+                SceneManager.LoadScene(restartDungeonSceneName, LoadSceneMode.Single);
+            }
+            else
+            {
+                LoadRestartDungeonSceneInEditorPlayMode();
+            }
         }
 
         // CL-113: 결산 창의 Lobby 버튼. 마을 씬 도입 (CL-117) 까지 CloseResulting 만.
