@@ -16,8 +16,9 @@ namespace LostMemory.Editor
         private const string TownScenePath = "Assets/_Project/Scenes/Town/Town.unity";
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Characters/TestKhi_MinimalCharacter2D.prefab";
         private const string InputActionsPath = "Assets/InputSystem_Actions.inputactions";
-        private const string DungeonScenePath = "Assets/_Project/Scenes/Dungeon/Dungeon.unity";
-        private const string DungeonSceneName = "Dungeon";
+        private const string DungeonScenePath = "Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity";
+        private const string DungeonSceneName = "Dungeon_1F_1R";
+        private const string DungeonEntrySpawnId = "default";
         private const string PlayerId = "Player1";
         private const string ActionMapName = "TestKhi";
         private const string TownRootName = "TownRoot";
@@ -220,6 +221,8 @@ namespace LostMemory.Editor
 
             SceneLoadPortalController portalController = portal.AddComponent<SceneLoadPortalController>();
             portalController.Configure(DungeonSceneName, true, KeyCode.E, PlayerId);
+            portalController.ConfigureEditorScenePath(DungeonScenePath);
+            portalController.ConfigureDungeonRunEntry(true, 0, DungeonEntrySpawnId, true);
         }
 
         private static void CreateTempTownMap(Scene scene, Transform parent)
