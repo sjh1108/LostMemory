@@ -687,7 +687,7 @@ MonoBehaviour:
   statContainer: {fileID: 1496170365699431617}
   drawDebugGizmos: 1
   debugGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
-  showRuntimePreview: 1
+  showRuntimePreview: 0
   runtimePreviewColor: {r: 1, g: 0, b: 0, a: 0.28}
   runtimePreviewSortingOrder: 1000
 --- !u!114 &114910001000000003
@@ -1033,6 +1033,17 @@ MonoBehaviour:
   parryController: {fileID: 8099593820185299679}
   dashController: {fileID: 114646620809325970}
   playerShield: {fileID: 1105879407601961676}
+  _shieldVFXPrefab: {fileID: 2811312221154936084, guid: 58858736414ab304db1439a53da58edb,
+    type: 3}
+  _buffAuraVFXPrefab: {fileID: 2712362782939624297, guid: ce2f55fbeed751843950677084b5dcf8,
+    type: 3}
+  _attackSpeedAuraColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  _moveSpeedAuraColor: {r: 0.3, g: 0.6, b: 1, a: 1}
+  _shieldGrantedSfx: {fileID: 0}
+  _killBuffSfx: {fileID: 0}
+  _dashBuffSfx: {fileID: 0}
+  _sfxVolume: 0.6
+  _vfxFadeOutSeconds: 0.25
 --- !u!114 &4842836589957752715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1114,6 +1125,9 @@ MonoBehaviour:
   logHeals: 0
   _debugConsumableToUse: {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709,
     type: 2}
+  _healVFXPrefab: {fileID: 0}
+  _healSfx: {fileID: 0}
+  _sfxVolume: 0.6
 --- !u!114 &5492564548965125359
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1552,7 +1566,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6686641576278510502
 Transform:
   m_ObjectHideFlags: 0
