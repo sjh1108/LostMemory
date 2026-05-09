@@ -1,4 +1,5 @@
 using LostMemory.Relics;
+using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -20,6 +21,11 @@ namespace LostMemory.Combat
         [Header("Debug (CL-108 검증용 — 옵션 C 의 사용 트리거)")]
         [Tooltip("ContextMenu 'Use assigned consumable' 누르면 이 RelicData 의 효과 발동. CL-110 후속에서 정식 UI 로 대체.")]
         [SerializeField] private RelicData _debugConsumableToUse;
+
+        [Header("VFX / SFX (CL-203)")]
+        [SerializeField] private GameObject _healVFXPrefab;
+        [SerializeField] private AudioClip _healSfx;
+        [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.6f;
 
         private void Awake()
         {
@@ -52,6 +58,13 @@ namespace LostMemory.Combat
             if (consumable.EffectType != RelicEffectType.HealConsumablePercent) return;
             float baseAmount = (health != null ? health.MaximumHealth : 0f) * consumable.Magnitude;
             Heal(baseAmount, consumable);
+
+            // CL-203: 회복 VFX (1회성, 1.5초 후 자동 destroy)
+            if (_healVFXPrefab != null)
+                VFXSpawner.Spawn(_healVFXPrefab, transform.position, Quaternion.identity, 1.5f);
+
+            if (_healSfx != null)
+                AudioSource.PlayClipAtPoint(_healSfx, transform.position, _sfxVolume);
         }
 
         [ContextMenu("Debug — Use assigned consumable")]
