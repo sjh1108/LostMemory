@@ -42,6 +42,9 @@ namespace LostMemory.Editor.InventoryTest
         private ToolbarSearchField _searchField;
         private string _lastFilter = string.Empty;
 
+        // CL-221: RelicTag → BuildSetData.DisplayName (한글 세트명) 매핑. 좌측 트리 그룹 헤더용.
+        private Dictionary<RelicTag, string> _setDisplayNames = new();
+
         [MenuItem("LostMemory/Inventory Test Window")]
         public static void Open()
         {
@@ -145,6 +148,7 @@ namespace LostMemory.Editor.InventoryTest
         private void BuildLeftTree(VisualElement leftPanel)
         {
             _allRelics = LoadAllRelics();
+            _setDisplayNames = LoadSetDisplayNames();
 
             _treeView = new TreeView
             {
@@ -179,6 +183,25 @@ namespace LostMemory.Editor.InventoryTest
                 .ToList();
         }
 
+        // CL-221: 16개 BuildSetData 자산을 스캔해 RelicTag → 한글 DisplayName 매핑 빌드.
+        // 자산 누락 / DisplayName 미설정이면 enum 이름 fallback 으로 그룹 헤더 표기.
+        private static Dictionary<RelicTag, string> LoadSetDisplayNames()
+        {
+            var map = new Dictionary<RelicTag, string>();
+            var guids = AssetDatabase.FindAssets("t:BuildSetData");
+            foreach (var g in guids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(g);
+                var bsd = AssetDatabase.LoadAssetAtPath<BuildSetData>(path);
+                if (bsd == null) continue;
+                if (!map.ContainsKey(bsd.SetTag))
+                    map[bsd.SetTag] = string.IsNullOrEmpty(bsd.DisplayName)
+                        ? bsd.SetTag.ToString()
+                        : bsd.DisplayName;
+            }
+            return map;
+        }
+
         private List<TreeViewItemData<InventoryTreeNode>> BuildTreeData()
         {
             return BuildTreeData(_lastFilter);
@@ -199,7 +222,21 @@ namespace LostMemory.Editor.InventoryTest
 
             int id = 0;
             var roots = new List<TreeViewItemData<InventoryTreeNode>>();
-            if (permanents.Count > 0)  roots.Add(BuildGroup(ref id, "Permanent", permanents));
+
+            // CL-221: Permanent 를 RelicTag 별 16개 세트 그룹으로 분리. 듀얼 태그(Primary + Secondary)
+            // 인 RelicData 는 양쪽 그룹에 중복 leaf 로 노출 (옵션 A — 세트 빌드 검증성 우선).
+            // 그룹 표시 순서는 enum 정의 순서. 빈 그룹은 자동 숨김.
+            foreach (RelicTag tag in System.Enum.GetValues(typeof(RelicTag)))
+            {
+                if (tag == RelicTag.None) continue;
+                var members = permanents
+                    .Where(r => r.TagPrimary == tag || r.TagSecondary == tag)
+                    .ToList();
+                if (members.Count == 0) continue;
+                string label = _setDisplayNames.TryGetValue(tag, out var dn) ? dn : tag.ToString();
+                roots.Add(BuildGroup(ref id, label, members));
+            }
+
             if (consumables.Count > 0) roots.Add(BuildGroup(ref id, "Consumable", consumables));
             return roots;
         }
@@ -477,6 +514,7 @@ namespace LostMemory.Editor.InventoryTest
         private void OnRefreshClicked()
         {
             _allRelics = LoadAllRelics();
+            _setDisplayNames = LoadSetDisplayNames();
             // CL-183: _lastFilter 보존 — Refresh 후에도 검색 결과 유지
             RebuildTreeWithFilter();
             RefreshInventoryView();
