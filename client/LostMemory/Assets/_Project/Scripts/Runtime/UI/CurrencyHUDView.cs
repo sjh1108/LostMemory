@@ -1,58 +1,80 @@
-using LostMemory.Player;
 using TMPro;
 using UnityEngine;
 
 namespace LostMemory.UI
 {
     /// <summary>
-    /// 우하단 재화 표시 패널을 담당하는 뷰 컴포넌트.
-    /// PlayerWallet 이벤트를 구독해 골드 / 기억의 파편 텍스트를 자동으로 갱신한다.
+    /// 우하단 재화 표시 패널의 텍스트/영역 표시만 담당하는 뷰 컴포넌트.
+    /// 데이터 소스 연결은 던전/마을 Presenter 가 담당한다.
     /// </summary>
     [AddComponentMenu("Lost Memory/UI/Currency HUD View")]
     public class CurrencyHUDView : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI _goldText;
         [SerializeField] private TextMeshProUGUI _memoryFragmentsText;
+        [SerializeField] private GameObject _goldRoot;
+        [SerializeField] private GameObject _memoryFragmentsRoot;
 
-        private void Start()
-        {
-            if (PlayerWallet.Instance != null)
-            {
-                PlayerWallet.Instance.OnGoldChanged            += RefreshGold;
-                PlayerWallet.Instance.OnMemoryFragmentsChanged += RefreshMemoryFragments;
-
-                // 현재 값으로 즉시 갱신
-                RefreshGold(PlayerWallet.Instance.Gold);
-                RefreshMemoryFragments(PlayerWallet.Instance.MemoryFragments);
-            }
-            else
-            {
-                RefreshGold(0);
-                RefreshMemoryFragments(0);
-                Debug.LogWarning("[CurrencyHUDView] PlayerWallet.Instance가 없습니다. " +
-                                 "씬에 PlayerWallet 오브젝트를 배치했는지 확인하세요.");
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (PlayerWallet.Instance != null)
-            {
-                PlayerWallet.Instance.OnGoldChanged            -= RefreshGold;
-                PlayerWallet.Instance.OnMemoryFragmentsChanged -= RefreshMemoryFragments;
-            }
-        }
-
-        private void RefreshGold(int amount)
+        public void SetGold(int amount)
         {
             if (_goldText != null)
+            {
                 _goldText.text = amount.ToString("N0");
+            }
         }
 
-        private void RefreshMemoryFragments(int amount)
+        public void SetMemoryFragments(int amount)
         {
             if (_memoryFragmentsText != null)
-                _memoryFragmentsText.text = amount.ToString();
+            {
+                _memoryFragmentsText.text = amount.ToString("N0");
+            }
+        }
+
+        public void SetGoldVisible(bool visible)
+        {
+            SetRootVisible(ref _goldRoot, _goldText, "GoldArea", visible);
+        }
+
+        public void SetMemoryFragmentsVisible(bool visible)
+        {
+            SetRootVisible(ref _memoryFragmentsRoot, _memoryFragmentsText, "MemoryFragmentsArea", visible);
+        }
+
+        private void SetRootVisible(ref GameObject root, Component textComponent, string preferredName, bool visible)
+        {
+            if (root == null)
+            {
+                root = ResolveRoot(textComponent, preferredName);
+            }
+
+            if (root != null)
+            {
+                root.SetActive(visible);
+            }
+        }
+
+        private GameObject ResolveRoot(Component textComponent, string preferredName)
+        {
+            if (textComponent == null)
+            {
+                return null;
+            }
+
+            Transform cursor = textComponent.transform;
+            while (cursor != null && cursor != transform)
+            {
+                if (cursor.name == preferredName)
+                {
+                    return cursor.gameObject;
+                }
+
+                cursor = cursor.parent;
+            }
+
+            return textComponent.transform.parent != null
+                ? textComponent.transform.parent.gameObject
+                : textComponent.gameObject;
         }
     }
 }

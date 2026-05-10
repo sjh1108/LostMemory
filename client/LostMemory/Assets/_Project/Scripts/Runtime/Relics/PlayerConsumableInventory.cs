@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using LostMemory.Relics;
 using UnityEngine;
 
 namespace LostMemory.Relics
@@ -8,6 +8,8 @@ namespace LostMemory.Relics
     /// 단축키바에 들어가는 소모품 슬롯 4칸을 관리한다.
     /// PlayerRelicInventory와 별도로 존재하며, 소모품(IsConsumable=true)만 보관한다.
     /// </summary>
+    [DisallowMultipleComponent]
+    [AddComponentMenu("Lost Memory/Relics/Player Consumable Inventory")]
     public class PlayerConsumableInventory : MonoBehaviour
     {
         public const int SlotCount = 4;
@@ -16,6 +18,9 @@ namespace LostMemory.Relics
 
         /// <summary>슬롯 전체 목록 (null = 빈 칸)</summary>
         public IReadOnlyList<RelicData> Slots => _slots;
+
+        /// <summary>슬롯 내용이 바뀔 때 발생. ShortcutBarView 갱신용.</summary>
+        public event Action Changed;
 
         /// <summary>
         /// 소모품을 첫 번째 빈 칸에 추가한다.
@@ -35,6 +40,7 @@ namespace LostMemory.Relics
                 {
                     _slots[i] = consumable;
                     Debug.Log($"[PlayerConsumableInventory] 소모품 획득 (슬롯 {i + 1}): {consumable.DisplayName}");
+                    Changed?.Invoke();
                     return true;
                 }
             }
@@ -68,6 +74,7 @@ namespace LostMemory.Relics
 
             _slots[slot] = consumable;
             Debug.Log($"[PlayerConsumableInventory] 소모품 지정 배치 (슬롯 {slot + 1}): {consumable.DisplayName}");
+            Changed?.Invoke();
             return true;
         }
 
@@ -79,6 +86,7 @@ namespace LostMemory.Relics
 
             Debug.Log($"[PlayerConsumableInventory] 소모품 제거 (슬롯 {slotIndex + 1}): {_slots[slotIndex].DisplayName}");
             _slots[slotIndex] = null;
+            Changed?.Invoke();
             return true;
         }
 
@@ -96,13 +104,23 @@ namespace LostMemory.Relics
             if (indexB < 0 || indexB >= SlotCount) return;
             if (indexA == indexB) return;
             (_slots[indexA], _slots[indexB]) = (_slots[indexB], _slots[indexA]);
+            Changed?.Invoke();
         }
 
         /// <summary>런 종료 시 슬롯을 초기화한다.</summary>
         public void Clear()
         {
+            bool changed = false;
             for (int i = 0; i < SlotCount; i++)
+            {
+                changed |= _slots[i] != null;
                 _slots[i] = null;
+            }
+
+            if (changed)
+            {
+                Changed?.Invoke();
+            }
         }
     }
 }

@@ -54,9 +54,20 @@ namespace LostMemory.Combat
         /// </summary>
         public void UseConsumable(RelicData consumable)
         {
-            if (consumable == null || !consumable.IsConsumable) return;
-            if (consumable.EffectType != RelicEffectType.HealConsumablePercent) return;
-            float baseAmount = (health != null ? health.MaximumHealth : 0f) * consumable.Magnitude;
+            TryUseConsumable(consumable);
+        }
+
+        /// <summary>
+        /// 회복약 소모 사용. 성공 시 true 를 반환해 ShortcutBar 가 슬롯에서 제거할 수 있게 한다.
+        /// </summary>
+        public bool TryUseConsumable(RelicData consumable)
+        {
+            if (consumable == null || !consumable.IsConsumable) return false;
+            if (consumable.EffectType != RelicEffectType.HealConsumablePercent) return false;
+            if (health == null) health = GetComponent<Health>();
+            if (health == null) return false;
+
+            float baseAmount = health.MaximumHealth * consumable.Magnitude;
             Heal(baseAmount, consumable);
 
             // CL-203: 회복 VFX (1회성, 1.5초 후 자동 destroy)
@@ -65,6 +76,8 @@ namespace LostMemory.Combat
 
             if (_healSfx != null)
                 AudioSource.PlayClipAtPoint(_healSfx, transform.position, _sfxVolume);
+
+            return true;
         }
 
         [ContextMenu("Debug — Use assigned consumable")]

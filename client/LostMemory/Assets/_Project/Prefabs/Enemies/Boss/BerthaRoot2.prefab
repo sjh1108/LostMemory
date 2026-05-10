@@ -1081,8 +1081,8 @@ MonoBehaviour:
   Model: {fileID: 0}
   CurrentHealth: 1000
   Invulnerable: 0
-  InitialHealth: 1000
-  MaximumHealth: 1000
+  InitialHealth: 200
+  MaximumHealth: 200
   ResetHealthOnEnable: 1
   OnHealFeedback: {fileID: 0}
   ImmuneToDamage: 0
@@ -2309,8 +2309,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 1615596352621668811}
   neutralBrainStateName: Detecting
   animationLayer: 0
-  stunThresholdNormalized: 0.502
-  tiredThresholdNormalized: 0.208
+  stunThresholdNormalized: 0.8
+  tiredThresholdNormalized: 0.3
   toStunStateName: ToStun
   stunedStateName: Stuned
   shakeHeadStateName: ShakeHead
@@ -2333,8 +2333,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBossPhaseController
   health: {fileID: 4242752178306269673}
-  phase2ThresholdNormalized: 0.502
-  phase3ThresholdNormalized: 0.208
+  phase2ThresholdNormalized: 0.8
+  phase3ThresholdNormalized: 0.3
   debugLogging: 0
 --- !u!114 &5569211883825108730
 MonoBehaviour:

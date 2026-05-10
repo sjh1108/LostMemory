@@ -24,7 +24,7 @@ namespace LostMemory.Memory
     [AddComponentMenu("Lost Memory/Memory/Memory Piece Unlock Service")]
     public sealed class MemoryPieceUnlockService : MonoBehaviour
     {
-        [SerializeField] private MemoryProgressTracker _tracker;
+        [SerializeField] private MemoryShardWallet _wallet;
 
         // RelicSlotExpand 는 게임 재실행 시 _bonusSlots 가 초기화되므로
         // 즉시 AddSlots() 대신 SaveData.PermanentBonusRelicSlots 에 저장하고
@@ -46,10 +46,13 @@ namespace LostMemory.Memory
         /// </summary>
         public bool CanUnlock(MemoryFragmentData piece)
         {
-            if (piece == null || _tracker == null) return false;
+            if (piece == null) return false;
+            return CanUnlock(piece, ResolveWallet().SaveData);
+        }
 
-            MemorySaveData save = _tracker.SaveData;
-
+        private static bool CanUnlock(MemoryFragmentData piece, MemorySaveData save)
+        {
+            if (piece == null || save == null) return false;
             // 이미 해금됨
             if (save.UnlockedPieceIds.Contains(piece.FragmentId)) return false;
 
@@ -78,9 +81,9 @@ namespace LostMemory.Memory
         /// </summary>
         public bool TryUnlock(MemoryFragmentData piece)
         {
-            if (!CanUnlock(piece)) return false;
-
-            MemorySaveData save = _tracker.SaveData;
+            MemoryShardWallet wallet = ResolveWallet();
+            MemorySaveData save = wallet.SaveData;
+            if (!CanUnlock(piece, save)) return false;
 
             // 파편 차감
             save.AccumulatedShards -= piece.ShardCost;
@@ -92,7 +95,7 @@ namespace LostMemory.Memory
             ApplyReward(piece, save);
 
             // 저장
-            MemoryMetaService.Save(save);
+            wallet.SaveAndNotify();
 
             if (_logUnlocks)
             {
@@ -187,8 +190,17 @@ namespace LostMemory.Memory
         [ContextMenu("Debug — Log accumulated shards")]
         private void DebugLogShards()
         {
-            if (_tracker == null) { Debug.LogWarning("Tracker 미연결."); return; }
-            Debug.Log($"[MemoryPieceUnlockService] AccumulatedShards={_tracker.AccumulatedShards}");
+            Debug.Log($"[MemoryPieceUnlockService] AccumulatedShards={ResolveWallet().CurrentShards}");
+        }
+
+        private MemoryShardWallet ResolveWallet()
+        {
+            if (_wallet == null)
+            {
+                _wallet = MemoryShardWallet.EnsureInstance();
+            }
+
+            return _wallet;
         }
     }
 }

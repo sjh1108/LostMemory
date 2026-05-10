@@ -59,6 +59,16 @@ namespace LostMemory.Networking.Player
         public static event Action<KhiPlayerStateAggregator> LocalPlayerReady;
 
         /// <summary>
+        /// fallback 검색 없이 현재 명시 등록된 로컬 플레이어만 조회한다.
+        /// 네트워크 UI는 잘못된 첫 번째 플레이어 바인딩을 피하기 위해 이 경로를 우선 사용한다.
+        /// </summary>
+        public static bool TryGetRegisteredLocalPlayer(out KhiPlayerStateAggregator player)
+        {
+            player = _localPlayer;
+            return player != null;
+        }
+
+        /// <summary>
         /// Phase B-2 의 네트워크 플레이어 컴포넌트가 호출. 본인 클라이언트의 IsOwner 인 aggregator 를 등록.
         /// </summary>
         public static void Register(KhiPlayerStateAggregator player)
