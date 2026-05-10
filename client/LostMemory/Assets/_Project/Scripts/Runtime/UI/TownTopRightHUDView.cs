@@ -31,8 +31,6 @@ namespace LostMemory.UI
             if (_settingsButton != null)
                 _settingsButton.onClick.AddListener(ToggleSettingsPanel);
 
-            // 시작 시 패널 닫힘 상태로
-            _talentPanel?.Close();
             if (_settingsPanel != null)
                 _settingsPanel.gameObject.SetActive(false);
         }
@@ -64,9 +62,14 @@ namespace LostMemory.UI
             if (_talentPanel == null) return;
 
             if (_talentPanel.gameObject.activeSelf)
+            {
                 _talentPanel.Close();
+            }
             else
+            {
                 _talentPanel.Open();
+                _talentPanel.transform.SetAsLastSibling();
+            }
         }
 
         private void ToggleSettingsPanel()
@@ -78,7 +81,10 @@ namespace LostMemory.UI
 
             // 열릴 때 항상 최상단(Z축 최우선)으로
             if (willOpen)
+            {
+                transform.SetAsLastSibling();
                 _settingsPanel.transform.SetAsLastSibling();
+            }
         }
 
         /// <summary>
@@ -103,6 +109,7 @@ namespace LostMemory.UI
             // 아무것도 열려있지 않으면 SettingsPanel 열기
             if (_settingsPanel != null)
             {
+                transform.SetAsLastSibling();
                 _settingsPanel.gameObject.SetActive(true);
                 _settingsPanel.transform.SetAsLastSibling();
             }

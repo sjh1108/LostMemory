@@ -22,6 +22,9 @@ namespace LostMemory.Relics
         [Tooltip("그리드 세로 셀 수.")]
         [SerializeField, Min(1)] private int _maxRows = 5;
 
+        [Header("Consumables")]
+        [SerializeField] private PlayerConsumableInventory _consumableInventory;
+
         private readonly List<RelicData> _ownedRelics = new();
 
         // CL-146: 행운 3스택 (LuckSlotExpand) 효과로 추가되는 보너스 슬롯.
@@ -72,6 +75,7 @@ namespace LostMemory.Relics
         private void Awake()
         {
             _grid = new InventoryGrid(_maxCols, _maxRows);
+            ResolveConsumableInventory();
         }
 
         /// <summary>
@@ -87,9 +91,38 @@ namespace LostMemory.Relics
             MaxSlotsChanged?.Invoke(MaxSlots);
         }
 
+        private PlayerConsumableInventory ResolveConsumableInventory()
+        {
+            if (_consumableInventory != null)
+            {
+                return _consumableInventory;
+            }
+
+            _consumableInventory = GetComponent<PlayerConsumableInventory>();
+            if (_consumableInventory != null)
+            {
+                return _consumableInventory;
+            }
+
+            _consumableInventory = GetComponentInChildren<PlayerConsumableInventory>(true);
+            if (_consumableInventory != null)
+            {
+                return _consumableInventory;
+            }
+
+            _consumableInventory = GetComponentInParent<PlayerConsumableInventory>();
+            if (_consumableInventory != null)
+            {
+                return _consumableInventory;
+            }
+
+            _consumableInventory = gameObject.AddComponent<PlayerConsumableInventory>();
+            return _consumableInventory;
+        }
+
         /// <summary>
         /// 유물을 인벤토리에 추가한다.
-        /// 이미 보유 중이거나 소모품이면 추가하지 않는다.
+        /// 소모품은 PlayerConsumableInventory 로 라우팅하고, 일반 유물은 그리드 인벤토리에 배치한다.
         /// </summary>
         /// <returns>실제로 추가됐으면 true</returns>
         public bool TryAdd(RelicData relic)
@@ -100,18 +133,26 @@ namespace LostMemory.Relics
                 return false;
             }
 
+            if (relic.IsConsumable)
+            {
+                // 소모품은 단축키바(PlayerConsumableInventory)로 라우팅 — 유물 인벤토리 미등록
+                PlayerConsumableInventory consumableInventory = ResolveConsumableInventory();
+                if (consumableInventory == null)
+                {
+                    Debug.LogWarning($"[PlayerRelicInventory] 소모품 인벤토리 없음 — '{relic.DisplayName}' 추가 실패", this);
+                    return false;
+                }
+
+                bool added = consumableInventory.TryAdd(relic);
+                Debug.Log($"[PlayerRelicInventory] 소모품은 단축키바로 라우팅: {relic.DisplayName}, added={added}");
+                return added;
+            }
+
             // CL-151: 사이즈 초과 검증 (CL-150 const → _maxCols/_maxRows 정식 필드 교체)
             if (relic.Width > _maxCols || relic.Height > _maxRows)
             {
                 Debug.LogWarning($"[CL-151] {relic.DisplayName} 사이즈 ({relic.Width}×{relic.Height}) 가 인벤토리 ({_maxCols}×{_maxRows}) 초과 — TryAdd reject");
                 OnTryAddRejected?.Invoke(relic, "사이즈 초과");
-                return false;
-            }
-
-            if (relic.IsConsumable)
-            {
-                // 소모품은 단축키바(PlayerConsumableInventory)로 라우팅 — 유물 인벤토리 미등록
-                Debug.Log($"[PlayerRelicInventory] 소모품은 단축키바로 라우팅: {relic.DisplayName}");
                 return false;
             }
 
@@ -199,6 +240,7 @@ namespace LostMemory.Relics
         public void Clear()
         {
             _ownedRelics.Clear();
+            ResolveConsumableInventory()?.Clear();
 
             // CL-151: 그리드 점유 + placements 리셋
             _grid?.Reset();

@@ -102,13 +102,11 @@ namespace LostMemory.Shop
             }
 
             bool added = _inventory.TryAdd(item.Relic);
-            if (!added && !item.Relic.IsConsumable)
+            if (!added)
             {
-                // 비소모품인데 추가 실패 = 이미 보유 중 (랜덤박스로 받은 경우 등)
-                Debug.Log($"[ShopPanel] 이미 보유 중인 유물: {item.Relic.DisplayName}");
+                Debug.Log($"[ShopPanel] 아이템 추가 실패: {item.Relic.DisplayName}");
                 return;
             }
-            // 소모품(IsConsumable=true)은 TryAdd가 false를 반환하지만 구매는 정상 진행
 
             // 구매 성공
             _gold -= item.Price;

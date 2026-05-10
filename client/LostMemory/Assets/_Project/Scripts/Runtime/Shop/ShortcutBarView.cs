@@ -20,19 +20,39 @@ namespace LostMemory.Shop
         /// <summary>최초 1회 초기화 후 화면 갱신</summary>
         public void Init(PlayerConsumableInventory inventory)
         {
+            UnsubscribeSlots();
             _inventory = inventory;
 
-            foreach (var slot in _slots)
-                slot.OnSlotDropReceived += HandleSlotDrop;
+            SubscribeSlots();
 
             Refresh();
         }
 
         private void OnDestroy()
         {
+            UnsubscribeSlots();
+        }
+
+        private void SubscribeSlots()
+        {
             foreach (var slot in _slots)
+            {
                 if (slot != null)
+                {
+                    slot.OnSlotDropReceived += HandleSlotDrop;
+                }
+            }
+        }
+
+        private void UnsubscribeSlots()
+        {
+            foreach (var slot in _slots)
+            {
+                if (slot != null)
+                {
                     slot.OnSlotDropReceived -= HandleSlotDrop;
+                }
+            }
         }
 
         /// <summary>현재 인벤토리 상태를 화면에 반영한다.</summary>

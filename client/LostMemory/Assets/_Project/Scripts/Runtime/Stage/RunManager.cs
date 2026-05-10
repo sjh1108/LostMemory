@@ -108,6 +108,7 @@ namespace LostMemory.Stage
             }
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            ResolveEconomyRefs();
 
             StateMachine = new RunStateMachine();
             StateMachine.StateChanged += LogStateChange;
@@ -115,6 +116,8 @@ namespace LostMemory.Stage
 
         private void OnEnable()
         {
+            ResolveEconomyRefs();
+
             if (dungeonRunBootstrap != null)
             {
                 dungeonRunBootstrap.DungeonBuilt += HandleDungeonBuilt;
@@ -502,6 +505,7 @@ namespace LostMemory.Stage
 
         private void CleanupRunResultingState()
         {
+            ResolveEconomyRefs();
             bossClearPortalReady = false;
             RunResultPanelView resultPanelView = ResolveRunResultPanelView();
             if (resultPanelView != null)
@@ -575,6 +579,8 @@ namespace LostMemory.Stage
 
         private void HandleRoomCleared(RoomClearedPayload payload)
         {
+            ResolveEconomyRefs();
+
             if (StateMachine.Current != RunState.InRun)
             {
                 return;
@@ -591,8 +597,8 @@ namespace LostMemory.Stage
                 Debug.Log("[RunManager] Combat clear reward gold +50.");
                 goldWallet.Add(50);
             }
-            // 룸 타입에 따른 파편 지급.
-            memoryProgressTracker?.AddShardsForRoom(payload.Data.RoomType);
+            // 룸 타입/크기에 따른 파편 정산 카운트 기록. 영구 지급은 런 결과 정리 시점에 수행한다.
+            memoryProgressTracker?.RecordRoomClear(payload.Data);
             // develop: 보스방 외 클리어는 런 흐름에 영향 X (다음 방 자연 진입).
             if (payload.Data.RoomType != StageRoomType.Boss)
             {
@@ -698,6 +704,7 @@ namespace LostMemory.Stage
 
         private void ResetRunResultTracking()
         {
+            ResolveEconomyRefs();
             runStartedAt = Time.time;
             killCount = 0;
             bossKillCount = 0;
@@ -719,6 +726,27 @@ namespace LostMemory.Stage
                     ? memoryProgressTracker.ThisRunShards
                     : memoryFragments,
             };
+        }
+
+        private void ResolveEconomyRefs()
+        {
+            if (goldWallet == null)
+            {
+                goldWallet = GetComponent<GoldWallet>();
+                if (goldWallet == null)
+                {
+                    goldWallet = gameObject.AddComponent<GoldWallet>();
+                }
+            }
+
+            if (memoryProgressTracker == null)
+            {
+                memoryProgressTracker = GetComponent<MemoryProgressTracker>();
+                if (memoryProgressTracker == null)
+                {
+                    memoryProgressTracker = gameObject.AddComponent<MemoryProgressTracker>();
+                }
+            }
         }
 
         private void LogStateChange(RunState prev, RunState current)
