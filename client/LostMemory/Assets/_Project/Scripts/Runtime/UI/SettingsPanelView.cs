@@ -26,6 +26,7 @@ namespace LostMemory.UI
         // PlayerPrefs 저장 키
         private const string BGM_KEY = "Settings_BGMVolume";
         private const string SFX_KEY = "Settings_SFXVolume";
+        private static bool _warnedSoundManagerUnavailable;
 
         // ── 라이프사이클 ──────────────────────────────────────────────
 
@@ -73,14 +74,43 @@ namespace LostMemory.UI
 
         private static void ApplyBGM(float value)
         {
-            if (MMSoundManager.Instance != null)
-                MMSoundManager.Instance.SetVolumeMusic(value);
+            ApplyTrackVolume(MMSoundManager.MMSoundManagerTracks.Music, value);
         }
 
         private static void ApplySFX(float value)
         {
-            if (MMSoundManager.Instance != null)
-                MMSoundManager.Instance.SetVolumeSfx(value);
+            ApplyTrackVolume(MMSoundManager.MMSoundManagerTracks.Sfx, value);
+        }
+
+        private static void ApplyTrackVolume(MMSoundManager.MMSoundManagerTracks track, float value)
+        {
+            if (!MMSoundManager.HasInstance || MMSoundManager.Current == null)
+            {
+                WarnSoundManagerUnavailable();
+                return;
+            }
+
+            MMSoundManager soundManager = MMSoundManager.Current;
+            if (soundManager.settingsSo == null ||
+                soundManager.settingsSo.Settings == null ||
+                soundManager.settingsSo.TargetAudioMixer == null)
+            {
+                WarnSoundManagerUnavailable();
+                return;
+            }
+
+            soundManager.SetTrackVolume(track, value);
+        }
+
+        private static void WarnSoundManagerUnavailable()
+        {
+            if (_warnedSoundManagerUnavailable)
+            {
+                return;
+            }
+
+            _warnedSoundManagerUnavailable = true;
+            Debug.LogWarning("[SettingsPanelView] MMSoundManager is missing or not configured. Audio sliders were saved but not applied.");
         }
     }
 }
