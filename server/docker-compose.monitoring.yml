@@ -82,7 +82,8 @@ services:
       # containerd 직접 통신 — Docker 가 containerd shim 위에서 컨테이너 만드는 구조와 정합.
       - --containerd=/run/containerd/containerd.sock
       # Docker 컨테이너는 containerd 의 'moby' namespace 에 들어간다. 없으면 namespace mismatch.
-      - --containerd_namespace=moby
+      # cAdvisor 는 dash 하이픈 형태만 받는다 (underscore 는 unknown flag).
+      - --containerd-namespace=moby
       # name 라벨만 유지 (대시보드 식 {name!=""} 매칭). 그 외 docker label noise 제외.
       - --whitelisted_container_labels=name,io.kubernetes.container.name
     logging: *default-logging
