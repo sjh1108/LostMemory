@@ -2865,6 +2865,18 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 86eea663c3da48842820549051b45374, type: 3}
+--- !u!114 &1220081269 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2397023808437660775, guid: 86eea663c3da48842820549051b45374,
+    type: 3}
+  m_PrefabInstance: {fileID: 1220081268}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f4ce3576440b914687d9906b97f17a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Rewards.RewardPanelView
 --- !u!224 &1220081270 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 778855320372001419, guid: 86eea663c3da48842820549051b45374,
@@ -4714,6 +4726,78 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
+--- !u!114 &1683277796 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5492564548965125359, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de088c31fad134e4ca9c7b7d65df81cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildManager
+--- !u!114 &1683277797 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7232995058303238362, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33dad3eacfaf13e4fbbb7067c41f1d90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiWeaponPresenter
+--- !u!114 &1683277798 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8099593820185299679, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e91b5caa1ec5f7a428fe2e32f2b348d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiParryController
+--- !u!114 &1683277799 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114910001000000004, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce4d96451ada47fd91066a50793a9f2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiMeleeComboController
+--- !u!114 &1683277800 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114910001000000001, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ac875443dcb4ae0b3958b7545375b92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerAim
+--- !u!114 &1683277801 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114646620809325970, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f47b34d4ea84fbfba2cb67c6db59740, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1891080358
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5165,6 +5249,7 @@ GameObject:
   - component: {fileID: 2092617968}
   - component: {fileID: 2092617970}
   - component: {fileID: 2092617971}
+  - component: {fileID: 2092617972}
   m_Layer: 0
   m_Name: RunManager
   m_TagString: Untagged
@@ -5189,10 +5274,10 @@ MonoBehaviour:
   playerDownController: {fileID: 2006321065}
   runResultPanelView: {fileID: 298700296}
   playerRelicInventory: {fileID: 2006321053}
-  rewardController: {fileID: 0}
+  rewardController: {fileID: 2092617972}
   goldWallet: {fileID: 2092617970}
   memoryProgressTracker: {fileID: 2092617971}
-  autoStartOnAwake: 0
+  autoStartOnAwake: 1
   resultingDelaySeconds: 2
   townSceneName: Town
   townScenePath: Assets/_Project/Scenes/Town/Town.unity
@@ -5245,6 +5330,29 @@ MonoBehaviour:
   _shardPerLargeRoom: 2
   _shardPerBossRoom: 3
   _logChanges: 1
+--- !u!114 &2092617972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2092617967}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6f5c0effd19d654d8281cb59e488b36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RewardController
+  rewardPanelView: {fileID: 1220081269}
+  playerRelicInventory: {fileID: 2006321053}
+  playerAim: {fileID: 1683277800}
+  playerWeaponPresenter: {fileID: 1683277797}
+  playerMeleeCombo: {fileID: 1683277799}
+  playerDash: {fileID: 1683277801}
+  playerParry: {fileID: 1683277798}
+  inventoryToggle: {fileID: 0}
+  buildManager: {fileID: 1683277796}
+  rewardShowDelay: 0.5
+  logRewardFlow: 0
 --- !u!1001 &2147368425
 PrefabInstance:
   m_ObjectHideFlags: 0
