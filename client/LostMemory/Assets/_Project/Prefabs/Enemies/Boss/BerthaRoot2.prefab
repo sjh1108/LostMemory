@@ -89,7 +89,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 35c25fcd94534bc48b0d7a717f9cf78f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaDashHitGate
   TargetLayerMask:
     serializedVersion: 2
@@ -238,7 +238,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -477,7 +477,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eec89e4158bf96841b9bc830fc5385ca, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.Tools::MoreMountains.Tools.AIBrain
   Owner: {fileID: 0}
   States:
@@ -489,7 +489,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 2792108666340619252}
         TrueState: Moving
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: Moving
     Actions:
@@ -499,11 +499,11 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 2792108666340619252}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 8705858389273344973}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
   - StateName: LightTelegraph
@@ -514,7 +514,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 4456550899713715573}
         TrueState: LightAttack1
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: LightAttack1
     Actions:
@@ -524,7 +524,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 5666434423401631506}
         TrueState: LightRecover
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: LightRecover
     Actions:
@@ -533,12 +533,12 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 8705858389273344973}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 9083467332388578904}
         TrueState: Moving
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: Light2Telegraph
     Actions:
@@ -548,7 +548,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 1005396759329006041}
         TrueState: LightAttack2
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: LightAttack2
     Actions:
@@ -558,7 +558,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 6822767539509310232}
         TrueState: Light2Recover
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: Light2Recover
     Actions:
@@ -567,12 +567,12 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 8705858389273344973}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 3133833526744976610}
         TrueState: Moving
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: HeavyTelegraph
     Actions:
@@ -582,7 +582,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 460544095151215053}
         TrueState: HeavyAttack
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: HeavyAttack
     Actions:
@@ -592,7 +592,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 6717607133676049473}
         TrueState: HeavyRecover
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: HeavyRecover
     Actions:
@@ -601,12 +601,12 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 8705858389273344973}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 1789172295320091223}
         TrueState: Moving
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: NormalDashTelegraph
     Actions:
@@ -616,7 +616,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 8976215856326892969}
         TrueState: NormalDashCharge
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: NormalDashCharge
     Actions:
@@ -626,7 +626,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 8360470060110165727}
         TrueState: NormalDashRecover
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: NormalDashRecover
     Actions:
@@ -635,12 +635,12 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 8705858389273344973}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 3108538090558342324}
         TrueState: Moving
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: DashTelegraph
     Actions:
@@ -650,7 +650,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 3517200409424189287}
         TrueState: DashCharge
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: DashCharge
     Actions:
@@ -660,7 +660,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 1489690433698772430}
         TrueState: DashRecover
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: DashRecover
     Actions:
@@ -669,12 +669,12 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 8705858389273344973}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 5274613274942602237}
         TrueState: Moving
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: FullTelegraph
     Actions:
@@ -684,7 +684,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 2545731032735008387}
         TrueState: FullComboAttack
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: FullComboAttack
     Actions:
@@ -694,7 +694,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 4305096563852381850}
         TrueState: FullRecover
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: FullRecover
     Actions:
@@ -703,12 +703,80 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 8705858389273344973}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 8502536256325233743}
         TrueState: Moving
-        FalseState: 
+        FalseState:
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileBarrageTelegraph
+    Actions:
+      array:
+      - {fileID: 5466689045922151871}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: ProjectileBarrageAttack
+        FalseState:
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileBarrageAttack
+    Actions:
+      array:
+      - {fileID: 5466689045922151871}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: ProjectileBarrageRecover
+        FalseState:
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileBarrageRecover
+    Actions:
+      array:
+      - {fileID: 5466689045922151871}
+    Transitions:
+      array:
+      - Decision: {fileID: 8705858389273344973}
+        TrueState:
+        FalseState: Detecting
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 0}
+        TrueState: Moving
+        FalseState:
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileStormTelegraph
+    Actions:
+      array:
+      - {fileID: 5466689045922151871}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: ProjectileStormAttack
+        FalseState:
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileStormAttack
+    Actions:
+      array:
+      - {fileID: 5466689045922151871}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: ProjectileStormRecover
+        FalseState:
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileStormRecover
+    Actions:
+      array:
+      - {fileID: 5466689045922151871}
+    Transitions:
+      array:
+      - Decision: {fileID: 8705858389273344973}
+        TrueState:
+        FalseState: Detecting
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 0}
+        TrueState: Moving
+        FalseState:
         LastDecisionEvaluation: 0
   TimeInThisState: 0
   Target: {fileID: 0}
@@ -738,7 +806,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -753,7 +821,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8454ab40032250743b841041d6249550, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBossEncounterController
   brain: {fileID: 6457538628010552793}
   combatBehaviours:
@@ -771,11 +839,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d9db907e78fe22d40bd5ec13bc262b79, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossIntroSequenceController
   sequenceData: {fileID: 11400000, guid: f9df287f542a94f4ea3f8177e922f410, type: 2}
   bossAnimator: {fileID: 3739491042386699188}
-  entryTriggerName: 
+  entryTriggerName:
   entryStateName: Entry
   entryStateLayer: 0
   introVisibilityTargets: []
@@ -791,7 +859,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 069a5b9a0c73ae242852a21a8b4f932c, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossIntroDebugDialoguePlayer
   simulatedDialogueDuration: 1.5
   debugLogging: 1
@@ -805,7 +873,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6d44c378229489fb3bf0db7af2ed3b1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaLightAttack1Bootstrap
   visualRoot: {fileID: 4384374196753399433}
   combatRoot: {fileID: 739069783597370802}
@@ -879,6 +947,18 @@ MonoBehaviour:
   fullComboSize: {x: 7, y: 7}
   fullComboDamage: 24
   fullComboInvincibilityDuration: 0.5
+  projectileBarrageMinimumRange: 2.5
+  projectileBarrageRange: 12
+  projectileBarrageTelegraphDuration: 0.75
+  projectileBarrageDuration: 1.6
+  projectileBarrageRecoverDuration: 0.55
+  projectileBarrageCooldown: 12
+  projectileStormMinimumRange: 2.5
+  projectileStormRange: 12
+  projectileStormTelegraphDuration: 0.85
+  projectileStormDuration: 1.9
+  projectileStormRecoverDuration: 0.6
+  projectileStormCooldown: 14
   autoAssignProjectileFxFramesInEditMode: 1
   comboFxProjectileFrames:
   - {fileID: 21300000, guid: d9d49c44ea4c53941b159d65fe4121d8, type: 3}
@@ -892,15 +972,182 @@ MonoBehaviour:
   projectileSortingOrderOffset: 1
   heavyProjectileBursts:
   - Mode: 0
-    Delay: 0.82
-    ProjectileCount: 8
+    Delay: 0.72
+    ProjectileCount: 10
     SpreadAngle: 0
-    Speed: 9
+    Speed: 10
     Lifetime: 2
     Damage: 8
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
     AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.16
+    ProjectileCount: 7
+    SpreadAngle: 85
+    Speed: 8
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  projectileBarrageBursts:
+  - Mode: 0
+    Delay: 0.2
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.5
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.28
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.2
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 3.6
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.28
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.8
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 7.2
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.18
+    ProjectileCount: 7
+    SpreadAngle: 110
+    Speed: 8
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  projectileStormBursts:
+  - Mode: 0
+    Delay: 0.12
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.2
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.5
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 3.6
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.8
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 7.2
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.1
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 10.8
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.4
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 14.4
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.7
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 18
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 21.6
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8.3
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 25.2
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8.6
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 28.8
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 9
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 32.4
     SpawnDistance: 0.45
   fullComboProjectileBursts:
   - Mode: 1
@@ -944,9 +1191,11 @@ MonoBehaviour:
   movementSpeed: 3
   stunThresholdNormalized: 0.7
   tiredThresholdNormalized: 0.3
-  stunReactionDuration: 1.1
-  stunShakeHeadDuration: 5
-  tiredReactionDuration: 1.35
+  stunReactionDuration: 0.75
+  stunShakeHeadDuration: 1.1
+  tiredReactionDuration: 1
+  phaseTransitionInvulnerable: 1
+  phaseTransitionExitSettleDuration: 0.12
   hitFlashColor: {r: 1, g: 0.25, b: 0.25, a: 1}
   hitFlashStrength: 0.75
   hitFlashDuration: 0.14
@@ -1039,7 +1288,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 89ee7fe4b0037274d8dba40f605ae049, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.TopDownController2D
   Gravity: 40
   GravityActive: 1
@@ -1076,13 +1325,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01754710d9f92ec4d9a21b81f5682667, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
   Model: {fileID: 0}
   CurrentHealth: 1000
   Invulnerable: 0
-  InitialHealth: 200
-  MaximumHealth: 200
+  InitialHealth: 500
+  MaximumHealth: 500
   ResetHealthOnEnable: 1
   OnHealFeedback: {fileID: 0}
   ImmuneToDamage: 0
@@ -1122,11 +1371,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fe81ad80cb743b408fa90b048ad597f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Character
   CharacterDimension: 0
   CharacterType: 1
-  PlayerID: 
+  PlayerID:
   CharacterAnimator: {fileID: 3739491042386699188}
   UseDefaultMecanim: 1
   RunAnimatorSanityChecks: 0
@@ -1147,7 +1396,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 69614a4a3cfd06d4e8388acafdb774bd, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.CharacterMovement
   AbilityStartSfx: {fileID: 0}
   AbilityInProgressSfx: {fileID: 0}
@@ -1155,9 +1404,9 @@ MonoBehaviour:
   AbilityStartFeedbacks: {fileID: 0}
   AbilityStopFeedbacks: {fileID: 0}
   AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
+  BlockingMovementStates:
+  BlockingConditionStates:
+  BlockingWeaponStates:
   Movement: 0
   InputAuthorized: 1
   AnalogInput: 0
@@ -1181,7 +1430,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: af3b7ab2b51f5c2419cc72bff008ff0f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.CharacterOrientation2D
   AbilityStartSfx: {fileID: 0}
   AbilityInProgressSfx: {fileID: 0}
@@ -1189,9 +1438,9 @@ MonoBehaviour:
   AbilityStartFeedbacks: {fileID: 0}
   AbilityStopFeedbacks: {fileID: 0}
   AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
+  BlockingMovementStates:
+  BlockingConditionStates:
+  BlockingWeaponStates:
   FacingMode: 0
   FacingBase: 0
   ModelShouldFlip: 1
@@ -1216,7 +1465,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d6c7a273e1ea4f149fa4534d4480e5c1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AttackTelegraph2DView
   previewObjectName: AttackTelegraphPreview
   previewParent: {fileID: 8917022440390223556}
@@ -1238,7 +1487,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b3247f4c84dc4c829c4527c8a5cb4bd4, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AIBrainDashTelegraphDriver
   driverKey: NormalDash
   brain: {fileID: 6457538628010552793}
@@ -1279,7 +1528,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2620d37890657743b0e0a1bfa4eea34, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.CharacterDamageDash2D
   AbilityStartSfx: {fileID: 0}
   AbilityInProgressSfx: {fileID: 0}
@@ -1287,9 +1536,9 @@ MonoBehaviour:
   AbilityStartFeedbacks: {fileID: 0}
   AbilityStopFeedbacks: {fileID: 0}
   AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
+  BlockingMovementStates:
+  BlockingConditionStates:
+  BlockingWeaponStates:
   DashMode: 1
   DashSpace: 0
   DashDirection: {x: 0, y: 0, z: 1}
@@ -1340,7 +1589,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 561ab803e1e9aa94ab096724696e5475, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionDoNothing
   InitializationMode: 0
   Label: BerthaIdle
@@ -1354,7 +1603,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 47557c9dd44293a41bc6710b083332de, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionMoveTowardsTarget2D
   InitializationMode: 0
   Label: BerthaChase
@@ -1370,7 +1619,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8ecd66c04f2d5b9408dae7ed3b52f919, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionDash
   InitializationMode: 0
   Label: BerthaChargeDashLegacy
@@ -1386,7 +1635,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a946a428cb16e1409d657b9041c69be, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionDetectTargetRadius2D
   Label: DetectTarget
   Radius: 15
@@ -1412,7 +1661,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05f21b170839d044b8b9bf160d1be05b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTargetIsAlive
   Label: TargetIsAlive
 --- !u!114 &1087644271516851895
@@ -1425,7 +1674,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f86ab43e946467ea2d69dc23fab38f7, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AIDecisionDistanceToTargetAndDashReady
   Label: DashReady
   dashAbility: {fileID: 8237384659536254445}
@@ -1441,7 +1690,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: TelegraphDuration
   AfterTimeMin: 0.5
@@ -1456,7 +1705,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: ChargeDuration
   AfterTimeMin: 0.32
@@ -1471,7 +1720,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: RecoverDuration
   AfterTimeMin: 0.45
@@ -1486,7 +1735,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46a297b0af3742c995db3a7d47fef6c3, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaLightAttack1Controller
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
@@ -1522,7 +1771,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1148b739e4c74b8478868d1834fbcd66, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionFaceTowardsTarget2D
   InitializationMode: 0
   Label: BerthaFaceTarget
@@ -1537,7 +1786,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 206825d6db9c84741810b9da915cfb9c, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionDistanceToTarget
   Label: LightAttack1Range
   ComparisonMode: 1
@@ -1552,7 +1801,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: LightTelegraphDuration
   AfterTimeMin: 0.7
@@ -1567,7 +1816,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: LightAttack1Duration
   AfterTimeMin: 0.85
@@ -1582,7 +1831,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: LightRecoverDuration
   AfterTimeMin: 0.35
@@ -1597,7 +1846,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: adac9cbc56bf4824a91a15efd7e68375, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBrainAnimationController
   brain: {fileID: 6457538628010552793}
   animator: {fileID: 3739491042386699188}
@@ -1619,6 +1868,10 @@ MonoBehaviour:
   - FullRecover
   - NormalDashTelegraph
   - NormalDashRecover
+  - ProjectileBarrageTelegraph
+  - ProjectileBarrageRecover
+  - ProjectileStormTelegraph
+  - ProjectileStormRecover
   idleAnimationStateName: Idle
   walkAnimationStateName: Walk
   animationLayer: 0
@@ -1633,7 +1886,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d477e358aaa4d4d4689309661fe8366f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaLightAttack2Controller
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
@@ -1669,7 +1922,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7bbc9379d17d348ad9d75a0a025f72a4, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaHeavyAttackController
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
@@ -1705,7 +1958,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d2ced9db29d4f80b7d3da037f4f7af5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaFullComboController
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
@@ -1741,7 +1994,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f52fc88c3ee483f8c0f58c4951f7b22, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaCombatPatternSelector
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
@@ -1755,6 +2008,8 @@ MonoBehaviour:
   normalDashTelegraphStateName: NormalDashTelegraph
   dashTelegraphStateName: DashTelegraph
   fullComboTelegraphStateName: FullTelegraph
+  projectileBarrageTelegraphStateName: ProjectileBarrageTelegraph
+  projectileStormTelegraphStateName: ProjectileStormTelegraph
   lightAttack1Range: 2.5
   lightAttack2Range: 2.5
   heavyAttackRange: 3.25
@@ -1763,10 +2018,16 @@ MonoBehaviour:
   dashMinimumRange: 3
   dashMaximumRange: 20
   fullComboRange: 3
+  projectileBarrageMinimumRange: 2.5
+  projectileBarrageMaximumRange: 12
+  projectileStormMinimumRange: 2.5
+  projectileStormMaximumRange: 12
   specialUnlockHealthThresholdNormalized: 0.9
   normalDashCooldown: 5
   dashCooldown: 15
   fullComboCooldown: 15
+  projectileBarrageCooldown: 12
+  projectileStormCooldown: 14
   lightAttack1Weight: 3
   lightAttack2Weight: 3
   heavyAttackWeight: 2
@@ -1775,33 +2036,51 @@ MonoBehaviour:
   - Phase: 1
     AllowDashAttack: 0
     AllowFullCombo: 0
-    NormalDashCooldown: 10
+    NormalDashCooldown: 7
     DashCooldown: 15
     FullComboCooldown: 15
     LightAttack1Weight: 3
     LightAttack2Weight: 3
     HeavyAttackWeight: 2
     NormalDashWeight: 1
+    DashAttackWeight: 0
+    FullComboWeight: 0
+    ProjectileBarrageWeight: 0
+    ProjectileBarrageCooldown: 12
+    ProjectileStormWeight: 0
+    ProjectileStormCooldown: 14
   - Phase: 2
     AllowDashAttack: 1
     AllowFullCombo: 1
-    NormalDashCooldown: 8
-    DashCooldown: 12
-    FullComboCooldown: 12
+    NormalDashCooldown: 5
+    DashCooldown: 8
+    FullComboCooldown: 10
     LightAttack1Weight: 2
     LightAttack2Weight: 3
     HeavyAttackWeight: 3
     NormalDashWeight: 2
+    DashAttackWeight: 1
+    FullComboWeight: 1
+    ProjectileBarrageWeight: 1
+    ProjectileBarrageCooldown: 12
+    ProjectileStormWeight: 0
+    ProjectileStormCooldown: 14
   - Phase: 3
     AllowDashAttack: 1
     AllowFullCombo: 1
-    NormalDashCooldown: 6
-    DashCooldown: 9
-    FullComboCooldown: 9
+    NormalDashCooldown: 3.5
+    DashCooldown: 6
+    FullComboCooldown: 7
     LightAttack1Weight: 1
     LightAttack2Weight: 2
-    HeavyAttackWeight: 3
-    NormalDashWeight: 2
+    HeavyAttackWeight: 4
+    NormalDashWeight: 3
+    DashAttackWeight: 2
+    FullComboWeight: 2
+    ProjectileBarrageWeight: 2
+    ProjectileBarrageCooldown: 9
+    ProjectileStormWeight: 2
+    ProjectileStormCooldown: 14
   debugLogging: 0
 --- !u!114 &1005396759329006041
 MonoBehaviour:
@@ -1813,7 +2092,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: Light2TelegraphDuration
   AfterTimeMin: 0.5
@@ -1828,7 +2107,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: LightAttack2Duration
   AfterTimeMin: 0.55
@@ -1843,7 +2122,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: Light2RecoverDuration
   AfterTimeMin: 0.3
@@ -1858,7 +2137,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: HeavyTelegraphDuration
   AfterTimeMin: 0.9
@@ -1873,7 +2152,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: HeavyAttackDuration
   AfterTimeMin: 1
@@ -1888,7 +2167,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: HeavyRecoverDuration
   AfterTimeMin: 0.55
@@ -1903,7 +2182,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: DashTelegraphDuration
   AfterTimeMin: 0.5
@@ -1918,7 +2197,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: DashChargeDuration
   AfterTimeMin: 2.25
@@ -1933,7 +2212,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: DashRecoverDuration
   AfterTimeMin: 0.45
@@ -1948,7 +2227,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: FullTelegraphDuration
   AfterTimeMin: 0.75
@@ -1963,7 +2242,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: FullComboDuration
   AfterTimeMin: 3.2
@@ -1978,7 +2257,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: FullRecoverDuration
   AfterTimeMin: 0.65
@@ -1993,7 +2272,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48efc604f50545a38147afba8a26e1eb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaDashAttackController
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
@@ -2029,7 +2308,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f52d1fd55b04e618be8428207b92637, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaDashStartAction
   InitializationMode: 0
   Label: BerthaChargeDashOnce
@@ -2047,7 +2326,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74cf48a75e1e6467a9b78375d70ac7a5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectileBurstEmitter
   projectileRoot: {fileID: 858911127659874246}
   projectileSpawnOrigin: {fileID: 1625856087237583964}
@@ -2079,23 +2358,37 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bee0f2e2d80e54b1e891c70612563b60, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectilePatternDriver
   driverKey: HeavyProjectiles
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
   orientationAbility: {fileID: 7940307094650667150}
+  animator: {fileID: 0}
   projectileOrigin: {fileID: 1625856087237583964}
   burstEmitter: {fileID: 7717694166337342079}
   attackStateName: HeavyAttack
+  attackAnimationStateName:
+  attackAnimationLayer: 0
   burstSequence:
   - Mode: 0
-    Delay: 0.82
-    ProjectileCount: 8
+    Delay: 0.72
+    ProjectileCount: 10
     SpreadAngle: 0
-    Speed: 9
+    Speed: 10
     Lifetime: 2
     Damage: 8
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.16
+    ProjectileCount: 7
+    SpreadAngle: 85
+    Speed: 8
+    Lifetime: 2
+    Damage: 7
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
     AngleOffsetDegrees: 0
@@ -2111,15 +2404,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bee0f2e2d80e54b1e891c70612563b60, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectilePatternDriver
   driverKey: FullComboProjectiles
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
   orientationAbility: {fileID: 7940307094650667150}
+  animator: {fileID: 0}
   projectileOrigin: {fileID: 1625856087237583964}
   burstEmitter: {fileID: 7717694166337342079}
   attackStateName: FullComboAttack
+  attackAnimationStateName:
+  attackAnimationLayer: 0
   burstSequence:
   - Mode: 1
     Delay: 0.58
@@ -2165,7 +2461,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f52d1fd55b04e618be8428207b92637, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaDashStartAction
   InitializationMode: 0
   Label: BerthaNormalDashOnce
@@ -2183,7 +2479,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b3247f4c84dc4c829c4527c8a5cb4bd4, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AIBrainDashTelegraphDriver
   driverKey: DashAttack
   brain: {fileID: 6457538628010552793}
@@ -2224,7 +2520,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: NormalDashTelegraphDuration
   AfterTimeMin: 0.35
@@ -2239,7 +2535,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: NormalDashChargeDuration
   AfterTimeMin: 0.6666667
@@ -2254,7 +2550,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: NormalDashRecoverDuration
   AfterTimeMin: 0.35
@@ -2269,7 +2565,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a10973c4e3b8349bc8ffdc83ca6a3598, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaHitReactionPresenter
   health: {fileID: 4242752178306269673}
   character: {fileID: 4447270931488285520}
@@ -2299,26 +2595,31 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6bc6ef45441d43708dd6c77303737b9, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaHealthThresholdReactionController
   brain: {fileID: 6457538628010552793}
   character: {fileID: 4447270931488285520}
   health: {fileID: 4242752178306269673}
   dashAbility: {fileID: 8237384659536254445}
+  movementAbility: {fileID: 5427753241977694938}
+  controller: {fileID: 8360950066359862236}
+  body: {fileID: 8429790660943434944}
   animator: {fileID: 3739491042386699188}
   introSequenceController: {fileID: 1615596352621668811}
   neutralBrainStateName: Detecting
   animationLayer: 0
-  stunThresholdNormalized: 0.8
+  stunThresholdNormalized: 0.7
   tiredThresholdNormalized: 0.3
   toStunStateName: ToStun
   stunedStateName: Stuned
   shakeHeadStateName: ShakeHead
   outStunStateName: OutStun
-  stunLoopDuration: 1.1
-  shakeHeadDuration: 5
+  stunLoopDuration: 0.75
+  shakeHeadDuration: 1.1
   tiredStateName: Tired
-  tiredDuration: 1.35
+  tiredDuration: 1
+  invulnerableDuringReaction: 1
+  reactionExitSettleDuration: 0.12
   debugLogging: 0
 --- !u!114 &7750076076812265523
 MonoBehaviour:
@@ -2330,10 +2631,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0133e7f9eecd45e1892e5b0383084e82, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBossPhaseController
   health: {fileID: 4242752178306269673}
-  phase2ThresholdNormalized: 0.8
+  phase2ThresholdNormalized: 0.7
   phase3ThresholdNormalized: 0.3
   debugLogging: 0
 --- !u!114 &5569211883825108730
@@ -2346,7 +2647,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ddf343186ec14c02a5705090ea3d395d, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossDefeatRoomClearController
   bossHealth: {fileID: 4242752178306269673}
   roomController: {fileID: 0}

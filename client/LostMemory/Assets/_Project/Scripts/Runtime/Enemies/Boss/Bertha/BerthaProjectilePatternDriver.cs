@@ -34,9 +34,12 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private AIBrain brain;
         [SerializeField] private Character character;
         [SerializeField] private CharacterOrientation2D orientationAbility;
+        [SerializeField] private Animator animator;
         [SerializeField] private Transform projectileOrigin;
         [SerializeField] private BerthaProjectileBurstEmitter burstEmitter;
         [SerializeField] private string attackStateName = "HeavyAttack";
+        [SerializeField] private string attackAnimationStateName;
+        [SerializeField, Min(0)] private int attackAnimationLayer;
         [SerializeField] private BurstInstruction[] burstSequence = System.Array.Empty<BurstInstruction>();
         [SerializeField] private bool debugLogging;
 
@@ -92,6 +95,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             if (enteringState == attackStateName)
             {
                 LockDirection();
+                PlayAttackAnimation();
                 StopBurstRoutine();
                 _burstRoutine = StartCoroutine(RunBurstSequence());
                 return;
@@ -112,15 +116,21 @@ namespace LostMemory.Enemies.Boss.Bertha
             BerthaProjectileBurstEmitter configuredBurstEmitter,
             string configuredAttackStateName,
             BurstInstruction[] configuredBurstSequence,
-            bool configuredDebugLogging)
+            bool configuredDebugLogging,
+            Animator configuredAnimator = null,
+            string configuredAttackAnimationStateName = null,
+            int configuredAttackAnimationLayer = 0)
         {
             driverKey = configuredDriverKey;
             brain = configuredBrain;
             character = configuredCharacter;
             orientationAbility = configuredOrientationAbility;
+            animator = configuredAnimator;
             projectileOrigin = configuredProjectileOrigin;
             burstEmitter = configuredBurstEmitter;
             attackStateName = configuredAttackStateName;
+            attackAnimationStateName = configuredAttackAnimationStateName;
+            attackAnimationLayer = Mathf.Max(0, configuredAttackAnimationLayer);
             burstSequence = configuredBurstSequence != null
                 ? (BurstInstruction[])configuredBurstSequence.Clone()
                 : System.Array.Empty<BurstInstruction>();
@@ -206,6 +216,16 @@ namespace LostMemory.Enemies.Boss.Bertha
             orientationAbility ??= GetComponent<CharacterOrientation2D>();
             burstEmitter ??= GetComponent<BerthaProjectileBurstEmitter>();
             projectileOrigin ??= transform;
+        }
+
+        private void PlayAttackAnimation()
+        {
+            if (animator == null || string.IsNullOrWhiteSpace(attackAnimationStateName))
+            {
+                return;
+            }
+
+            animator.Play(attackAnimationStateName, attackAnimationLayer, 0f);
         }
 
         private void NormalizeBurstSequence()

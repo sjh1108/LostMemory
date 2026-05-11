@@ -151,6 +151,8 @@ GameObject:
   - component: {fileID: 114900000000100003}
   - component: {fileID: 114900000000100004}
   - component: {fileID: 114900000000100005}
+  - component: {fileID: 114900000000100006}
+  - component: {fileID: 114900000000100007}
   m_Layer: 13
   m_Name: Moose1_Test
   m_TagString: Enemy
@@ -469,7 +471,7 @@ MonoBehaviour:
   PreventTakeSelfDamage: 0
   ImmuneToKnockback: 0
   ImmuneToKnockbackIfZeroDamage: 0
-  KnockbackForceMultiplier: 1
+  KnockbackForceMultiplier: 0
   DestroyOnDeath: 0
   DelayBeforeDestruction: 0
   PointsWhenDestroyed: 0
@@ -1019,6 +1021,8 @@ MonoBehaviour:
   telegraphStateName: AttackTelegraph
   attackStateName: Attack
   recoverStateName: Recover
+  transitionToCancelStateOnCancel: 1
+  cancelStateName: Detecting
   attackAnimationStateName: Moose1_Attack
   attackAnimationLayer: 0
   impactTime: 1.4
@@ -11934,6 +11938,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4736116768674126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114900000000100006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45541621aca708e4ab1eca444c2ce200, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemyAttackHitReactionGuard
+  health: {fileID: 114767317845071676}
+  brain: {fileID: 114675271368606418}
+  animator: {fileID: 2126021325580802325}
+  movementAbility: {fileID: 114809083901408364}
+  controller: {fileID: 114002022934925870}
+  body2D: {fileID: 50872317139119918}
+  protectedBrainStateNames:
+  - Moving
+  - AttackTelegraph
+  - Attack
+  - Recover
+  damageTriggerName: Damage
+  lockMovementDuringHitReaction: 1
+  hitReactionMovementLockDuration: 0.6
+  cancelAttackOnHitReaction: 1
+  pauseBrainDuringHitReaction: 0
+  freezeMovementSpeedDuringHitReaction: 1
+  showSuperArmorVisualEffect: 1
+  superArmorVisualEffect: {fileID: 114900000000100007}
+  useTimedSuperArmor: 1
+  superArmorDuration: 5
+  superArmorCooldown: 3
+--- !u!114 &114900000000100007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac71e598b08f4d149c1ed81db1f315d0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemySuperArmorOutlineEffect
+  sourceRenderer: {fileID: 0}
+  visualRoot: {fileID: 2126021325580802323}
+  outlineRendererCount: 18
+  outlineOffset: 0.025
+  flowSpeed: 2
+  shimmerStrength: 0.084
+  sortingOrderOffset: -1
+  redOutlineColor: {r: 1, g: 0.05, b: 0.02, a: 0.85490197}
+  yellowOutlineColor: {r: 1, g: 0.82, b: 0.05, a: 0.92}
+  activeOnEnable: 0
+  hideSourceOutlineWhileVisible: 1
 --- !u!1001 &4880191076793379241
 PrefabInstance:
   m_ObjectHideFlags: 0

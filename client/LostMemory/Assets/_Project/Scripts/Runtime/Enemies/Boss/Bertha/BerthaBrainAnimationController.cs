@@ -25,6 +25,10 @@ namespace LostMemory.Enemies.Boss.Bertha
             "DashRecover",
             "FullTelegraph",
             "FullRecover",
+            "ProjectileBarrageTelegraph",
+            "ProjectileBarrageRecover",
+            "ProjectileStormTelegraph",
+            "ProjectileStormRecover",
             "Recover"
         };
 
@@ -32,7 +36,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private Animator animator;
         [SerializeField] private BossIntroSequenceController introSequenceController;
         [SerializeField] private string movingStateName = "Moving";
-        [SerializeField] private string[] idleStateNames = { "Detecting", "LightTelegraph", "LightRecover", "Light2Telegraph", "Light2Recover", "HeavyTelegraph", "HeavyRecover", "NormalDashTelegraph", "NormalDashRecover", "DashTelegraph", "DashRecover", "FullTelegraph", "FullRecover", "Recover" };
+        [SerializeField] private string[] idleStateNames = { "Detecting", "LightTelegraph", "LightRecover", "Light2Telegraph", "Light2Recover", "HeavyTelegraph", "HeavyRecover", "NormalDashTelegraph", "NormalDashRecover", "DashTelegraph", "DashRecover", "FullTelegraph", "FullRecover", "ProjectileBarrageTelegraph", "ProjectileBarrageRecover", "ProjectileStormTelegraph", "ProjectileStormRecover", "Recover" };
         [SerializeField] private string idleAnimationStateName = "Idle";
         [SerializeField] private string walkAnimationStateName = "Walk";
         [SerializeField, Min(0)] private int animationLayer;

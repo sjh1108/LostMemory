@@ -6,7 +6,7 @@ using UnityEngine;
 namespace LostMemory.Combat
 {
     [AddComponentMenu("Lost Memory/Combat/Animation Event Melee Weapon")]
-    public sealed class AnimationEventMeleeWeapon : MeleeWeapon
+    public sealed class AnimationEventMeleeWeapon : MeleeWeapon, ICancelableEnemyAttack
     {
         [SerializeField] private bool requireActiveWeaponState = true;
         [SerializeField] private bool lockControlsUntilRecovery = true;
@@ -20,6 +20,11 @@ namespace LostMemory.Combat
         private Coroutine animationEventDamageCoroutine;
         private bool controlLockActive;
         private float controlLockUntil;
+
+        public bool CanCancelAttack =>
+            controlLockActive
+            || _attackInProgress
+            || animationEventDamageCoroutine != null;
 
         public override void WeaponUse()
         {
@@ -72,6 +77,16 @@ namespace LostMemory.Combat
             StopAnimationEventDamage();
             ReleaseControlLock();
             HideTelegraph();
+        }
+
+        public void CancelAttack()
+        {
+            if (!CanCancelAttack)
+            {
+                return;
+            }
+
+            Interrupt();
         }
 
         protected override void OnDisable()
