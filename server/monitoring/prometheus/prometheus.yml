@@ -1,0 +1,44 @@
+# Prometheus scrape + alerting 설정 — INFRA-20 / INFRA-21
+#
+# 컨테이너 안에서 /etc/prometheus/prometheus.yml 로 마운트됨 (read-only).
+# 룰 파일은 rules/*.yml 자동 로딩, 핫리로드는 curl -X POST http://localhost:9090/-/reload.
+
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s        # alert rule expr 평가 주기
+  external_labels:
+    cluster: lostmemory
+    env: prod
+
+# Alert rule 파일 자동 로딩. server-health.yml 의 CPU/Mem/Disk 임계 정의.
+rule_files:
+  - rules/*.yml
+
+# 평가된 alert 를 Alertmanager 로 전달.
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]
+    metrics_path: /metrics

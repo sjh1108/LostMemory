@@ -1,0 +1,146 @@
+# 모니터링 스택 (Prometheus + Grafana + Alertmanager) — INFRA-20 / INFRA-21
+#
+# 기존 docker-compose.yml 과 별도 파일. Jenkins 자동 빌드 (deploy.sh) 가 건드리지 않음.
+# 운영자가 EC2 SSH 후 1회 기동:
+#   docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --env-file .env up -d \
+#     prometheus node-exporter cadvisor grafana alertmanager
+#
+# 외부 노출: nginx 의 /grafana/ location 만. Prometheus / Alertmanager / node-exporter /
+# cAdvisor 는 monitoring internal network 에 격리 (외부 미노출).
+
+# 컨테이너 stdout/stderr 로그 회전 정책 — server/docker-compose.yml 의 anchor 와 동일 정책 재선언.
+# (별도 compose 파일 간 YAML anchor 공유 불가)
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle           # curl -X POST /-/reload 로 rule/config 핫리로드
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    logging: *default-logging
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.0
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro,rslave
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      # 컨테이너 / docker overlay / proc / sys 가짜 fs 제외 — disk 패널 노이즈 차단
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/.+|rootfs/run/docker/.+)($$|/)
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$$
+    logging: *default-logging
+    networks:
+      - monitoring
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: unless-stopped
+    privileged: true                     # cAdvisor 가 cgroup 읽기 위해 필요 (Ubuntu 22.04)
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    command:
+      - --housekeeping_interval=15s      # 메트릭 수집 주기 (기본 1s → 부하 절감)
+      - --docker_only=true               # 호스트 cgroup 무시, docker 컨테이너만
+    logging: *default-logging
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    restart: unless-stopped
+    environment:
+      # Grafana 자체 admin 로그인. .env 의 GRAFANA_ADMIN_PASSWORD 필수.
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      # nginx /grafana/ reverse proxy 뒤에 위치 — sub-path 모드.
+      GF_SERVER_ROOT_URL: https://${DOMAIN}/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      # 익명 접근 차단 (기본값이지만 명시).
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # signup 차단 — 운영자만 계정 추가.
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      TZ: ${TZ}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    logging: *default-logging
+    networks:
+      - monitoring
+      - frontend                         # nginx 가 grafana:3000 접근하려면 frontend 공유
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    # MATTERMOST_WEBHOOK_URL env → /tmp/secrets/mattermost-webhook-url 파일 → api_url_file 참조.
+    # alertmanager.yml 평문에 URL 노출하지 않는 구조. 스크립트 본체는 entrypoint.sh 참고.
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    environment:
+      MATTERMOST_WEBHOOK_URL: ${MATTERMOST_WEBHOOK_URL}
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager:ro
+      - alertmanager_data:/alertmanager
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9093/-/healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    logging: *default-logging
+    networks:
+      - monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
+
+networks:
+  # 모니터링 컴포넌트 간 내부 통신 전용 (외부 차단).
+  monitoring:
+    internal: true
+  # nginx (frontend network) 가 grafana 접근 가능하도록 기존 server_frontend 참조.
+  # 본 compose 가 단독 실행되지 못하게 external 로 명시 — 운영자가 본체 compose 와 함께 -f 두 번 사용해야 함.
+  frontend:
+    external: true
+    name: server_frontend
