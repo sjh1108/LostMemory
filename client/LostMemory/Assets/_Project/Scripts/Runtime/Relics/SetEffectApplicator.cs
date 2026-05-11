@@ -147,7 +147,10 @@ namespace LostMemory.Relics
                     else
                         Debug.LogWarning($"[SetEffectApplicator] onHitRegistry null — {tier.EffectType} 적용 X. Inspector wiring 필요.");
                     break;
-                // ── 미소녀 라우팅 (CL-144 본격 처리) ──
+                // ── 미소녀 라우팅 (CL-204: SetCount 의미 = setBonus/ultimate flag) ──
+                // CL-144 → CL-204 변화: SetCount(N) 가 더 이상 미소녀 spawn/despawn 하지 않음.
+                // Spawner 가 inventory.OnRelicAcquired hook 에서 visual 단위로 spawn 관리.
+                // SetCount 는 N>=5 → setBonus + ultimate available 플래그만 갱신.
                 case RelicEffectType.MagicalGirlSummon:
                     if (magicalGirlSpawner != null)
                         magicalGirlSpawner.SetCount(tier.RequiredCount);
@@ -155,7 +158,7 @@ namespace LostMemory.Relics
                         Debug.LogWarning("[SetEffectApplicator] magicalGirlSpawner null — MagicalGirlSummon 적용 X. Inspector wiring 필요.");
                     break;
                 case RelicEffectType.MagicalGirlFusion:
-                    // CL-145: T5 의 RequiredCount=5 → SetCount(5) → Spawner 가 fusion 모드 진입
+                    // CL-204: T5 의 RequiredCount=5 → SetCount(5) → 5세트 강화 + ultimate(T/Y) 활성
                     if (magicalGirlSpawner != null)
                         magicalGirlSpawner.SetCount(tier.RequiredCount);
                     else
@@ -224,8 +227,9 @@ namespace LostMemory.Relics
             if (onHitRegistry != null)
                 onHitRegistry.UnregisterBySource(source);
 
-            // CL-144 / CL-145: MagicalGirlSummon / MagicalGirlFusion 비활성화 — newTier=-1 또는 tier 전환 케이스 대응.
-            // Tier 전환 (3→4, 4→5, 5→4 등) 시에도 0 으로 리셋되지만, 이어지는 ApplyTierEffect 가 newCount/fusion 으로 재spawn.
+            // CL-204: MagicalGirlSummon/Fusion 의 SetCount 는 미소녀 destroy 안 함 (flag-only).
+            // Tier 전환 시 일시적으로 SetCount(0) → setBonus/ultimate off → 직후 ApplyTierEffect 가 재계산.
+            // 미소녀 본체 destroy 는 inventory.OnCleared (Run 종료) 가 처리.
             if ((tier.EffectType == RelicEffectType.MagicalGirlSummon
                  || tier.EffectType == RelicEffectType.MagicalGirlFusion)
                 && magicalGirlSpawner != null)

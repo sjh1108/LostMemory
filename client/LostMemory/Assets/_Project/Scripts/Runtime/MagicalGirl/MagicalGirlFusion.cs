@@ -4,7 +4,6 @@ using LostMemory.Combat;
 using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace LostMemory.MagicalGirl
 {
@@ -31,9 +30,8 @@ namespace LostMemory.MagicalGirl
     [DisallowMultipleComponent]
     public sealed class MagicalGirlFusion : MonoBehaviour
     {
-        [Header("Common")]
-        [SerializeField, Min(0.1f)] private float spriteSize = 0.8f;        // 일반 미소녀 0.4의 2배
-        [SerializeField]            private int spriteSortingOrder = 101;
+        // CL-204 후속: SpriteRenderer 생성은 MagicalGirlSpawner.EnsureFusion 가 담당.
+        // 기존 절차적 SpriteRenderer 생성 (Awake) 은 spawner 의 SpriteRenderer 와 중복돼 NRE 발생 — 제거됨.
 
         [Header("Burst (Phase 2 — R 키)")]
         [Tooltip("Burst 지속시간 (초). R 누른 후 레이저 발화 길이.")]
@@ -50,7 +48,6 @@ namespace LostMemory.MagicalGirl
 
         [Header("Global AOE (Burst 시작 시 1회)")]
         [SerializeField, Min(0f)]   private float aoeDamageRatio = 3.0f;
-        [SerializeField, Min(0.05f)]private float screenFlashDuration = 0.2f;
 
         [Header("Camera Shake")]
         [Tooltip("Burst 시작 (= AOE 폭발) 시 카메라 흔들림 지속 (초).")]
@@ -71,7 +68,6 @@ namespace LostMemory.MagicalGirl
         [Header("Debug")]
         [SerializeField] private bool _logFusion = true;
 
-        private SpriteRenderer _sr;
         private bool _burstActive;
         private float _nextReadyAt;          // Time.time 기준, 초기값 0 = 즉시 사용 가능
         private Coroutine _shakeCoroutine;
@@ -81,6 +77,18 @@ namespace LostMemory.MagicalGirl
         private KhiPlayerAim _aim;
         private MagicalGirlSpawner _spawner;        // CL-145 Phase 2: cooldown 공유 source
 
+        // CL-204 후속: 궁극 VFX prefab — Spawner 가 Init 시 전달
+        private GameObject _laserMuzzlePrefab;
+        private GameObject _laserTrailPrefab;
+        private GameObject _aoeExplosionPrefab;
+        private GameObject _aoeShockwavePrefab;
+        private GameObject _aoeChargePrefab;
+
+        // CL-204 후속: 비정상 종료 (fusion destroy 등) 시 정리하기 위한 instance 참조.
+        // Trail/Line 은 fusion 자식이 아닌 root spawn 이라 fusion destroy 시 자동 정리 안 됨.
+        private GameObject _activeTrailGO;
+        private GameObject _activeLaserLineGO;
+
         private static Material _laserMaterial;
 
         // 레이저 visual 색상 (분홍 핑크빛)
@@ -88,99 +96,117 @@ namespace LostMemory.MagicalGirl
         private const float LaserBoltWidth = 0.4f;
         private const int LaserBoltSortingOrder = 9999;
 
-        private void Awake()
+        public void Init(PlayerStatModifierContainer stat, KhiMeleeComboController combat, KhiPlayerAim aim, MagicalGirlSpawner spawner)
         {
-            // 절차적 sprite — 분홍, 2x 크기, 약간 투명
-            _sr = gameObject.AddComponent<SpriteRenderer>();
-            _sr.sprite = Sprite.Create(
-                Texture2D.whiteTexture,
-                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
-                new Vector2(0.5f, 0.5f),
-                pixelsPerUnit: Texture2D.whiteTexture.width);
-            _sr.color = new Color(1f, 0.5f, 0.8f, 0.95f);
-            _sr.sortingOrder = spriteSortingOrder;
-            transform.localScale = new Vector3(spriteSize, spriteSize, 1f);
+            Init(stat, combat, aim, spawner, default);
         }
 
-        public void Init(PlayerStatModifierContainer stat, KhiMeleeComboController combat, KhiPlayerAim aim, MagicalGirlSpawner spawner)
+        public void Init(PlayerStatModifierContainer stat, KhiMeleeComboController combat, KhiPlayerAim aim, MagicalGirlSpawner spawner, FusionVfxBundle vfx)
         {
             _stat = stat;
             _combat = combat;
             _aim = aim;
             _spawner = spawner;
+            _laserMuzzlePrefab = vfx.laserMuzzle;
+            _laserTrailPrefab = vfx.laserTrail;
+            _aoeExplosionPrefab = vfx.aoeExplosion;
+            _aoeShockwavePrefab = vfx.aoeShockwave;
+            _aoeChargePrefab = vfx.aoeCharge;
             // Spawner 가 보관한 이전 cooldown 시점 적용 — 빌드 풀고 재진입해도 cooldown 유지.
             // 첫 fusion 진입 시 spawner._fusionCooldownEndsAt=0 → 즉시 사용 가능.
             if (_spawner != null)
                 _nextReadyAt = _spawner.FusionCooldownEndsAt;
         }
 
-        // ── Update — T (레이저) / Y (AOE) 키 listener (Phase 3) ─
-
-        private void Update()
+        [System.Serializable]
+        public struct FusionVfxBundle
         {
-            // Pause / reward panel 등 timeScale=0 상황에서는 입력 무시 (UI 모드).
-            if (Time.timeScale == 0f) return;
-            if (Keyboard.current == null) return;
-            if (Keyboard.current.tKey.wasPressedThisFrame) TryFireLaserBurst();
-            if (Keyboard.current.yKey.wasPressedThisFrame) TryFireAOE();
+            public GameObject laserMuzzle;
+            public GameObject laserTrail;
+            public GameObject aoeExplosion;
+            public GameObject aoeShockwave;
+            public GameObject aoeCharge;  // CL-204 후속: Y 키 빌드업 시 작게 등장해 커지는 charge VFX
         }
 
-        // T: 5초 레이저 burst (마우스 조준 지속) + 매 1초 펄스 흔들림
-        private void TryFireLaserBurst()
+        // ── CL-204: Spawner-driven 발동 ──────────────────────
+        // CL-204: T/Y 폴링은 MagicalGirlSpawner 가 담당. Fusion 은 임시로 spawn 되어 한 번 발화 후 destroy.
+        // public Trigger* 메서드만 노출, 쿨다운/cooldown gating 은 Spawner 가 처리.
+
+        /// <summary>CL-204: T 키 발동. 5초 레이저 burst + 매 1초 펄스 흔들림.</summary>
+        public void TriggerLaserBurst()
         {
-            if (_burstActive)
-            {
-                if (_logFusion) Debug.Log("[Fusion] T pressed but burst already active");
-                return;
-            }
-            if (Time.time < _nextReadyAt)
-            {
-                if (_logFusion) Debug.Log($"[Fusion] T pressed but cooldown remaining {_nextReadyAt - Time.time:F1}s");
-                return;
-            }
-
+            if (_burstActive) return;
             _burstActive = true;
-            if (_logFusion) Debug.Log($"[Fusion] T LASER BURST START (duration={burstDuration}s, cooldown={cooldown}s after)");
+            if (_logFusion) Debug.Log($"[Fusion] LASER BURST START (duration={burstDuration}s, cooldown={cooldown}s after)");
 
-            // 공유 쿨다운 예약: burst 종료 + cooldown
             if (_spawner != null)
                 _spawner.NotifyBurstStarted(burstDuration, cooldown);
 
-            // 레이저 시작 약한 흔들림 (펄스와 동급)
             TriggerCameraShake(periodicShakeDuration, periodicShakeIntensity);
-
-            // 5초 레이저 + 매 1초 펄스 흔들림 (1/2/3/4/5초 시점)
             StartCoroutine(BurstLaserCoroutine());
             StartCoroutine(PeriodicShakeCoroutine());
         }
 
-        // Y: AOE 즉발 화면 전체 + 강한 흔들림 + 화면 플래시
-        private void TryFireAOE()
+        /// <summary>CL-204 후속: Y 키 발동. Charge 빌드업 → AOE 폭발 패턴.</summary>
+        public void TriggerAOEPulse()
         {
-            if (_burstActive)
-            {
-                if (_logFusion) Debug.Log("[Fusion] Y pressed but burst already active");
-                return;
-            }
-            if (Time.time < _nextReadyAt)
-            {
-                if (_logFusion) Debug.Log($"[Fusion] Y pressed but cooldown remaining {_nextReadyAt - Time.time:F1}s");
-                return;
-            }
+            if (_burstActive) return;
+            _burstActive = true;
+            if (_logFusion) Debug.Log($"[Fusion] AOE CHARGE START (cooldown={cooldown}s after)");
 
-            if (_logFusion) Debug.Log($"[Fusion] Y AOE PULSE (cooldown={cooldown}s after)");
-
-            // 공유 쿨다운 예약: 즉발이라 burstDuration=0
             if (_spawner != null)
                 _spawner.NotifyBurstStarted(0f, cooldown);
-
-            // 로컬 _nextReadyAt 도 즉시 갱신 — 같은 fusion 인스턴스 내 Y 연타 차단
-            // (T 는 BurstLaserCoroutine 끝에서 갱신되지만 Y 는 즉발이라 여기서 직접)
             _nextReadyAt = Time.time + cooldown;
 
-            // AOE + 강한 흔들림 (화면 플래시는 FireGlobalAOE 안에서 자동)
+            StartCoroutine(ChargeAndFireAOECoroutine());
+        }
+
+        // CL-204 후속: AOE 빌드업 코루틴. charge VFX 가 startScale → endScale 로 커지면서 chargeDuration 동안 대기 → 펑.
+        private IEnumerator ChargeAndFireAOECoroutine()
+        {
+            float duration = _spawner != null ? _spawner.AoeChargeDuration : 0.5f;
+            float startScale = _spawner != null ? _spawner.AoeChargeStartScale : 0.3f;
+            float endScale = _spawner != null ? _spawner.AoeChargeEndScale : 2.0f;
+
+            // Camera 중앙 위치 계산 — charge VFX spawn 위치
+            Camera cam = Camera.main;
+            Vector3 chargeOrigin = Vector3.zero;
+            if (cam != null)
+            {
+                Vector2 vMin = cam.ViewportToWorldPoint(Vector2.zero);
+                Vector2 vMax = cam.ViewportToWorldPoint(Vector2.one);
+                chargeOrigin = new Vector3((vMin.x + vMax.x) * 0.5f, (vMin.y + vMax.y) * 0.5f, 0f);
+            }
+
+            // Charge VFX spawn (있을 때만) + 즉시 startScale 적용
+            GameObject chargeGO = null;
+            if (_aoeChargePrefab != null)
+            {
+                chargeGO = Instantiate(_aoeChargePrefab, chargeOrigin, Quaternion.identity);
+                chargeGO.transform.localScale = new Vector3(startScale, startScale, 1f);
+            }
+
+            // Scale lerp — duration 동안 startScale → endScale (커지는 빌드업)
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.Clamp01(t / duration);
+                if (chargeGO != null)
+                {
+                    float scale = Mathf.Lerp(startScale, endScale, k);
+                    chargeGO.transform.localScale = new Vector3(scale, scale, 1f);
+                }
+                yield return null;
+            }
+
+            // 펑 — charge VFX destroy + 데미지 + 메인 폭발/링/카메라 흔들림
+            if (chargeGO != null) Destroy(chargeGO);
+
             FireGlobalAOE();
             TriggerCameraShake(burstShakeDuration, burstShakeIntensity);
+            _burstActive = false;
+            if (_logFusion) Debug.Log("[Fusion] AOE BURST END");
         }
 
         private IEnumerator BurstLaserCoroutine()
@@ -211,7 +237,24 @@ namespace LostMemory.MagicalGirl
             float endsAt = Time.time + burstDuration;
             var damageBuf = new HashSet<Health>();   // 동일 틱 내 동일 적 중복 데미지 방지
             GameObject lineGO = CreateLaserLine();
+            _activeLaserLineGO = lineGO;
             int totalHits = 0;
+
+            // CL-204 후속: Muzzle burst — 시작점 1회 fire-and-forget (ParticleSystem Stop Action=Destroy 가 정리)
+            if (_laserMuzzlePrefab != null)
+            {
+                Vector2 muzzleOrigin = _combat != null ? (Vector2)_combat.transform.position : (Vector2)transform.position;
+                Instantiate(_laserMuzzlePrefab, muzzleOrigin, Quaternion.identity);
+            }
+
+            // CL-204 후속: Trail VFX — root 레벨 spawn (fusion 자식 X) → fusion 의 scale 5x 영향 안 받음.
+            // 파티클 sprite 회전은 prefab 의 Renderer Alignment=Local 로 처리.
+            GameObject trailGO = null;
+            if (_laserTrailPrefab != null)
+            {
+                trailGO = Instantiate(_laserTrailPrefab);  // parent 없음 = root 레벨
+                _activeTrailGO = trailGO;
+            }
 
             while (Time.time < endsAt && this != null)
             {
@@ -241,11 +284,38 @@ namespace LostMemory.MagicalGirl
                 }
 
                 UpdateLaserLine(lineGO, origin, endPoint);
+
+                if (trailGO != null)
+                {
+                    // CL-204 후속: 부모 GameObject Z 회전 (emission box 방향) + spawn 위치 보정 (빔 local X/Y → world)
+                    // 파티클 sprite 회전은 prefab 의 Renderer Render Alignment=Local 로 처리 (코드 sync 불필요)
+                    float parentOffset = _spawner != null ? _spawner.TrailRotationOffset : -45f;
+                    float parentAngleDeg = angleDeg + parentOffset;
+
+                    Vector2 spawnOffsetLocal = _spawner != null ? _spawner.TrailSpawnOffset : Vector2.zero;
+                    Vector2 perp = new Vector2(-dir.y, dir.x);  // dir 의 90° CCW 수직 벡터
+                    Vector2 spawnPos = boxCenter + dir * spawnOffsetLocal.x + perp * spawnOffsetLocal.y;
+
+                    trailGO.transform.SetPositionAndRotation(spawnPos, Quaternion.Euler(0f, 0f, parentAngleDeg));
+                }
+
                 yield return new WaitForSeconds(laserTickInterval);
             }
 
             if (lineGO != null) Destroy(lineGO);
+            if (trailGO != null) Destroy(trailGO);
+            _activeLaserLineGO = null;
+            _activeTrailGO = null;
             if (_logFusion) Debug.Log($"[Fusion] Laser ended — {totalHits} total hits");
+        }
+
+        // CL-204 후속: 비정상 종료 (fusion destroy 등) 시에도 trail/line 정리 보장.
+        // LaserCoroutine 가 정상 완료되면 위에서 이미 정리됨 (_active*GO = null).
+        // 정상 완료 전에 fusion 이 destroy 되면 코루틴이 취소되고 trail/line 이 orphan 됨 → OnDestroy 에서 처리.
+        private void OnDestroy()
+        {
+            if (_activeTrailGO != null) Destroy(_activeTrailGO);
+            if (_activeLaserLineGO != null) Destroy(_activeLaserLineGO);
         }
 
         // ── Pattern B: 전역 AOE ────────────────────────────
@@ -281,36 +351,13 @@ namespace LostMemory.MagicalGirl
                 }
             }
 
-            StartCoroutine(ScreenFlashCoroutine(center, size));
+            // CL-204 후속: 흰 ScreenFlash 제거 → 폭발 prefab + 링 shockwave prefab 2장 합성
+            if (_aoeExplosionPrefab != null)
+                Instantiate(_aoeExplosionPrefab, new Vector3(center.x, center.y, 0f), Quaternion.identity);
+            if (_aoeShockwavePrefab != null)
+                Instantiate(_aoeShockwavePrefab, new Vector3(center.x, center.y, 0f), Quaternion.identity);
+
             if (_logFusion) Debug.Log($"[Fusion] GlobalAOE → {hitCount} hits, {damage:F1} each");
-        }
-
-        private IEnumerator ScreenFlashCoroutine(Vector2 center, Vector2 size)
-        {
-            var go = new GameObject("FusionScreenFlash");
-            go.transform.position = new Vector3(center.x, center.y, 0f);
-            go.transform.localScale = new Vector3(size.x * 1.2f, size.y * 1.2f, 1f);
-            // Fusion 자식으로 parent 설정 — fusion destroy 시 자동 정리. worldPositionStays=true 로 화면 중앙 위치 유지.
-            // 0.2초 짧은 효과지만 burst 직후 inven clear 같은 case 에 잔존 방지.
-            go.transform.SetParent(transform, worldPositionStays: true);
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = Sprite.Create(
-                Texture2D.whiteTexture,
-                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
-                new Vector2(0.5f, 0.5f),
-                pixelsPerUnit: Texture2D.whiteTexture.width);
-            sr.color = new Color(1f, 1f, 1f, 0.5f);
-            sr.sortingOrder = 32000;
-
-            float t = 0f;
-            while (t < screenFlashDuration && go != null)
-            {
-                t += Time.deltaTime;
-                float alpha = Mathf.Lerp(0.5f, 0f, t / screenFlashDuration);
-                if (sr != null) sr.color = new Color(1f, 1f, 1f, alpha);
-                yield return null;
-            }
-            if (go != null) Destroy(go);
         }
 
         // ── 카메라 흔들림 (Phase 2) ────────────────────────
