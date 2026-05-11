@@ -1,0 +1,118 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2485305012617416280
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3723452942828465920}
+  - component: {fileID: 397158596884090501}
+  - component: {fileID: 8060322315518354148}
+  - component: {fileID: 6187295347798572174}
+  - component: {fileID: 4757365556073739106}
+  m_Layer: 0
+  m_Name: RunManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3723452942828465920
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2485305012617416280}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 32.66852, y: -5.63398, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &397158596884090501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2485305012617416280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3f81b52a5dc98746b589322d8f28663, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RunManager
+  dungeonRunBootstrap: {fileID: 0}
+  playerStateAggregator: {fileID: 0}
+  playerDownController: {fileID: 0}
+  runResultPanelView: {fileID: 0}
+  playerRelicInventory: {fileID: 0}
+  rewardController: {fileID: 4757365556073739106}
+  goldWallet: {fileID: 8060322315518354148}
+  memoryProgressTracker: {fileID: 6187295347798572174}
+  autoStartOnAwake: 1
+  resultingDelaySeconds: 2
+  townSceneName: Town
+  townScenePath: Assets/_Project/Scenes/Town/Town.unity
+  restartDungeonSceneName: Dungeon_1F_1R
+  restartDungeonScenePath: Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity
+  totalStageCount: 1
+  logStageProgression: 1
+--- !u!114 &8060322315518354148
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2485305012617416280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 692f3b727a0c07f4b8679bfa23474589, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.GoldWallet
+  initialGold: 0
+  logChanges: 1
+--- !u!114 &6187295347798572174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2485305012617416280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22fc23b57a12f0e479424fb3278845ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Memory.MemoryProgressTracker
+  _shardPerSmallRoom: 1
+  _shardPerLargeRoom: 2
+  _shardPerBossRoom: 3
+  _logChanges: 1
+--- !u!114 &4757365556073739106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2485305012617416280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6f5c0effd19d654d8281cb59e488b36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RewardController
+  rewardPanelView: {fileID: 0}
+  playerRelicInventory: {fileID: 0}
+  playerAim: {fileID: 0}
+  playerWeaponPresenter: {fileID: 0}
+  playerMeleeCombo: {fileID: 0}
+  playerDash: {fileID: 0}
+  playerParry: {fileID: 0}
+  inventoryToggle: {fileID: 0}
+  buildManager: {fileID: 0}
+  rewardShowDelay: 0.5
+  logRewardFlow: 0
