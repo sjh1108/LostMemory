@@ -8,7 +8,9 @@ using UnityEngine.Rendering;
 namespace LostMemory.Combat.Telegraph
 {
     [AddComponentMenu("Lost Memory/Combat/Telegraph/Telegraphed Area Attack Controller")]
-    public class TelegraphedAreaAttackController : MonoBehaviour, MMEventListener<AIStateEvent>
+    public class TelegraphedAreaAttackController : MonoBehaviour,
+        MMEventListener<AIStateEvent>,
+        ICancelableEnemyAttack
     {
         [SerializeField] private AIBrain brain;
         [SerializeField] private Character character;
@@ -20,6 +22,8 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private string telegraphStateName = "AttackTelegraph";
         [SerializeField] private string attackStateName = "Attack";
         [SerializeField] private string recoverStateName = "Recover";
+        [SerializeField] private bool transitionToCancelStateOnCancel = true;
+        [SerializeField] private string cancelStateName = "Detecting";
         [SerializeField] private string attackAnimationStateName = "Attack";
         [SerializeField, Min(0)] private int attackAnimationLayer;
         [SerializeField] private float impactTime = -1f;
@@ -80,6 +84,12 @@ namespace LostMemory.Combat.Telegraph
 
         public string TelegraphStateName => telegraphStateName;
         public string AttackStateName => attackStateName;
+        public bool CanCancelAttack =>
+            _hasLockedAttack
+            || _hasPendingAttackDamage
+            || _hasPendingFollowUpAreaAttack
+            || IsInState(telegraphStateName)
+            || IsInState(attackStateName);
 
         private static readonly int FacingDirection2DAnimatorParameter = Animator.StringToHash("FacingDirection2D");
         private static readonly int HorizontalDirectionAnimatorParameter = Animator.StringToHash("HorizontalDirection");
@@ -361,6 +371,29 @@ namespace LostMemory.Combat.Telegraph
         {
             damage = Mathf.Max(0f, configuredDamage);
             followUpAreaDamage = Mathf.Max(0f, configuredFollowUpAreaDamage);
+        }
+
+        public void CancelAttack()
+        {
+            if (!CanCancelAttack)
+            {
+                return;
+            }
+
+            telegraphView?.Hide();
+            ClearFollowUpAreaAttack(false);
+            ClearLockedAttack();
+
+            if (transitionToCancelStateOnCancel
+                && brain != null
+                && !string.IsNullOrWhiteSpace(cancelStateName)
+                && !IsInState(cancelStateName))
+            {
+                brain.TransitionToState(cancelStateName);
+            }
+
+            ReleaseMovementLock();
+            Log("Canceled attack.");
         }
 
         private Animator ResolveAnimator()

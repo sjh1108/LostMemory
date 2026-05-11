@@ -506,6 +506,18 @@ MonoBehaviour:
   fullComboSize: {x: 7, y: 7}
   fullComboDamage: 24
   fullComboInvincibilityDuration: 0.5
+  projectileBarrageMinimumRange: 2.5
+  projectileBarrageRange: 12
+  projectileBarrageTelegraphDuration: 0.75
+  projectileBarrageDuration: 1.6
+  projectileBarrageRecoverDuration: 0.55
+  projectileBarrageCooldown: 12
+  projectileStormMinimumRange: 2.5
+  projectileStormRange: 12
+  projectileStormTelegraphDuration: 0.85
+  projectileStormDuration: 1.9
+  projectileStormRecoverDuration: 0.6
+  projectileStormCooldown: 14
   autoAssignProjectileFxFramesInEditMode: 1
   comboFxProjectileFrames:
   - {fileID: 21300000, guid: d9d49c44ea4c53941b159d65fe4121d8, type: 3}
@@ -519,12 +531,23 @@ MonoBehaviour:
   projectileSortingOrderOffset: 1
   heavyProjectileBursts:
   - Mode: 0
-    Delay: 0.82
-    ProjectileCount: 8
+    Delay: 0.72
+    ProjectileCount: 10
     SpreadAngle: 0
-    Speed: 9
+    Speed: 10
     Lifetime: 2
     Damage: 8
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.16
+    ProjectileCount: 7
+    SpreadAngle: 85
+    Speed: 8
+    Lifetime: 2
+    Damage: 7
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
     AngleOffsetDegrees: 0
@@ -563,6 +586,162 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
+  projectileBarrageBursts:
+  - Mode: 0
+    Delay: 0.2
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.5
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.28
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.2
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 3.6
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.28
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.8
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 7.2
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.18
+    ProjectileCount: 7
+    SpreadAngle: 110
+    Speed: 8
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  projectileStormBursts:
+  - Mode: 0
+    Delay: 0.12
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.2
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.5
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 3.6
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.8
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 7.2
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.1
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 10.8
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.4
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 14.4
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.7
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 18
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 21.6
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8.3
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 25.2
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8.6
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 28.8
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 9
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 32.4
+    SpawnDistance: 0.45
   lightAttack1Weight: 3
   lightAttack2Weight: 3
   heavyAttackWeight: 2
@@ -571,9 +750,11 @@ MonoBehaviour:
   movementSpeed: 3
   stunThresholdNormalized: 0.7
   tiredThresholdNormalized: 0.3
-  stunReactionDuration: 1.1
-  stunShakeHeadDuration: 5
-  tiredReactionDuration: 1.35
+  stunReactionDuration: 0.75
+  stunShakeHeadDuration: 1.1
+  tiredReactionDuration: 1
+  phaseTransitionInvulnerable: 1
+  phaseTransitionExitSettleDuration: 0.12
   hitFlashColor: {r: 1, g: 0.25, b: 0.25, a: 1}
   hitFlashStrength: 0.75
   hitFlashDuration: 0.14
@@ -1382,6 +1563,8 @@ MonoBehaviour:
   normalDashTelegraphStateName: NormalDashTelegraph
   dashTelegraphStateName: DashTelegraph
   fullComboTelegraphStateName: FullTelegraph
+  projectileBarrageTelegraphStateName: ProjectileBarrageTelegraph
+  projectileStormTelegraphStateName: ProjectileStormTelegraph
   lightAttack1Range: 2.5
   lightAttack2Range: 2.5
   heavyAttackRange: 3.25
@@ -1390,10 +1573,16 @@ MonoBehaviour:
   dashMinimumRange: 3
   dashMaximumRange: 20
   fullComboRange: 3
+  projectileBarrageMinimumRange: 2.5
+  projectileBarrageMaximumRange: 12
+  projectileStormMinimumRange: 2.5
+  projectileStormMaximumRange: 12
   specialUnlockHealthThresholdNormalized: 0.9
   normalDashCooldown: 5
   dashCooldown: 15
   fullComboCooldown: 15
+  projectileBarrageCooldown: 12
+  projectileStormCooldown: 14
   lightAttack1Weight: 3
   lightAttack2Weight: 3
   heavyAttackWeight: 2
@@ -1402,33 +1591,51 @@ MonoBehaviour:
   - Phase: 1
     AllowDashAttack: 0
     AllowFullCombo: 0
-    NormalDashCooldown: 10
+    NormalDashCooldown: 7
     DashCooldown: 15
     FullComboCooldown: 15
     LightAttack1Weight: 3
     LightAttack2Weight: 3
     HeavyAttackWeight: 2
     NormalDashWeight: 1
+    DashAttackWeight: 0
+    FullComboWeight: 0
+    ProjectileBarrageWeight: 0
+    ProjectileBarrageCooldown: 12
+    ProjectileStormWeight: 0
+    ProjectileStormCooldown: 14
   - Phase: 2
     AllowDashAttack: 1
     AllowFullCombo: 1
-    NormalDashCooldown: 8
-    DashCooldown: 12
-    FullComboCooldown: 12
+    NormalDashCooldown: 5
+    DashCooldown: 8
+    FullComboCooldown: 10
     LightAttack1Weight: 2
     LightAttack2Weight: 3
     HeavyAttackWeight: 3
     NormalDashWeight: 2
+    DashAttackWeight: 1
+    FullComboWeight: 1
+    ProjectileBarrageWeight: 1
+    ProjectileBarrageCooldown: 12
+    ProjectileStormWeight: 0
+    ProjectileStormCooldown: 14
   - Phase: 3
     AllowDashAttack: 1
     AllowFullCombo: 1
-    NormalDashCooldown: 6
-    DashCooldown: 9
-    FullComboCooldown: 9
+    NormalDashCooldown: 3.5
+    DashCooldown: 6
+    FullComboCooldown: 7
     LightAttack1Weight: 1
     LightAttack2Weight: 2
-    HeavyAttackWeight: 3
-    NormalDashWeight: 2
+    HeavyAttackWeight: 4
+    NormalDashWeight: 3
+    DashAttackWeight: 2
+    FullComboWeight: 2
+    ProjectileBarrageWeight: 2
+    ProjectileBarrageCooldown: 9
+    ProjectileStormWeight: 2
+    ProjectileStormCooldown: 14
   debugLogging: 0
 --- !u!114 &1182081735964120779
 MonoBehaviour:
@@ -1932,6 +2139,9 @@ MonoBehaviour:
   character: {fileID: 676684734245497551}
   health: {fileID: 1476706992768293698}
   dashAbility: {fileID: 1093519577850685883}
+  movementAbility: {fileID: 6895068191541539650}
+  controller: {fileID: 1738832999183228866}
+  body: {fileID: 2333820762725903845}
   animator: {fileID: 6690013029932485984}
   introSequenceController: {fileID: 3451055990007121390}
   neutralBrainStateName: Detecting
@@ -1942,10 +2152,12 @@ MonoBehaviour:
   stunedStateName: Stuned
   shakeHeadStateName: ShakeHead
   outStunStateName: OutStun
-  stunLoopDuration: 1.1
-  shakeHeadDuration: 5
+  stunLoopDuration: 0.75
+  shakeHeadDuration: 1.1
   tiredStateName: Tired
-  tiredDuration: 1.35
+  tiredDuration: 1
+  invulnerableDuringReaction: 1
+  reactionExitSettleDuration: 0.12
   debugLogging: 0
 --- !u!114 &6772711072849941599
 MonoBehaviour:

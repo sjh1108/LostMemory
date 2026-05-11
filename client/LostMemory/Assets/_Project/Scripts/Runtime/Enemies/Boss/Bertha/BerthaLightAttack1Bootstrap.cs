@@ -61,6 +61,12 @@ namespace LostMemory.Enemies.Boss.Bertha
         private const string FullTelegraphStateName = "FullTelegraph";
         private const string FullComboAttackStateName = "FullComboAttack";
         private const string FullRecoverStateName = "FullRecover";
+        private const string ProjectileBarrageTelegraphStateName = "ProjectileBarrageTelegraph";
+        private const string ProjectileBarrageAttackStateName = "ProjectileBarrageAttack";
+        private const string ProjectileBarrageRecoverStateName = "ProjectileBarrageRecover";
+        private const string ProjectileStormTelegraphStateName = "ProjectileStormTelegraph";
+        private const string ProjectileStormAttackStateName = "ProjectileStormAttack";
+        private const string ProjectileStormRecoverStateName = "ProjectileStormRecover";
         private const string ComboProjectileFxFolder = "Assets/_Project/Art/Enemies/Boss/1_Bertha/Attacks/ComboAtk/FX";
 
         [Header("Scene Roots")]
@@ -151,6 +157,22 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private float fullComboDamage = 24f;
         [SerializeField] private float fullComboInvincibilityDuration = 0.5f;
 
+        [Header("Projectile Barrage")]
+        [SerializeField] private float projectileBarrageMinimumRange = 2.5f;
+        [SerializeField] private float projectileBarrageRange = 12f;
+        [SerializeField] private float projectileBarrageTelegraphDuration = 0.75f;
+        [SerializeField] private float projectileBarrageDuration = 1.6f;
+        [SerializeField] private float projectileBarrageRecoverDuration = 0.55f;
+        [SerializeField] private float projectileBarrageCooldown = 12f;
+
+        [Header("Final Projectile Storm")]
+        [SerializeField] private float projectileStormMinimumRange = 2.5f;
+        [SerializeField] private float projectileStormRange = 12f;
+        [SerializeField] private float projectileStormTelegraphDuration = 0.85f;
+        [SerializeField] private float projectileStormDuration = 1.9f;
+        [SerializeField] private float projectileStormRecoverDuration = 0.6f;
+        [SerializeField] private float projectileStormCooldown = 14f;
+
         [Header("Projectile Burst")]
         [SerializeField] private bool autoAssignProjectileFxFramesInEditMode = true;
         [SerializeField] private Sprite[] comboFxProjectileFrames = System.Array.Empty<Sprite>();
@@ -164,15 +186,231 @@ namespace LostMemory.Enemies.Boss.Bertha
             new BerthaProjectilePatternDriver.BurstInstruction
             {
                 Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
-                Delay = 0.82f,
-                ProjectileCount = 8,
+                Delay = 0.72f,
+                ProjectileCount = 10,
                 SpreadAngle = 0f,
-                Speed = 6.25f,
-                Lifetime = 1.15f,
+                Speed = 10f,
+                Lifetime = 2f,
                 Damage = 8f,
                 TargetInvincibilityDuration = 0.5f,
                 HitRadius = 0.35f,
                 AngleOffsetDegrees = 0f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Fan,
+                Delay = 0.16f,
+                ProjectileCount = 7,
+                SpreadAngle = 85f,
+                Speed = 8f,
+                Lifetime = 2f,
+                Damage = 7f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 0f,
+                SpawnDistance = 0.45f
+            }
+        };
+        [SerializeField] private BerthaProjectilePatternDriver.BurstInstruction[] projectileBarrageBursts =
+        {
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.2f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 6.5f,
+                Lifetime = 2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 0f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.28f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 7.2f,
+                Lifetime = 2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 3.6f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.28f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 7.8f,
+                Lifetime = 2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 7.2f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Fan,
+                Delay = 0.18f,
+                ProjectileCount = 7,
+                SpreadAngle = 110f,
+                Speed = 8f,
+                Lifetime = 2f,
+                Damage = 7f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 0f,
+                SpawnDistance = 0.45f
+            }
+        };
+        [SerializeField] private BerthaProjectilePatternDriver.BurstInstruction[] projectileStormBursts =
+        {
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.12f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 6.2f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 0f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 6.5f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 3.6f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 6.8f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 7.2f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 7.1f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 10.8f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 7.4f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 14.4f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 7.7f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 18f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 8f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 21.6f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 8.3f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 25.2f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 8.6f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 28.8f,
+                SpawnDistance = 0.45f
+            },
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
+                Delay = 0.14f,
+                ProjectileCount = 10,
+                SpreadAngle = 0f,
+                Speed = 9f,
+                Lifetime = 2.2f,
+                Damage = 6f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.35f,
+                AngleOffsetDegrees = 32.4f,
                 SpawnDistance = 0.45f
             }
         };
@@ -237,9 +475,11 @@ namespace LostMemory.Enemies.Boss.Bertha
         [Header("Health Threshold Reactions")]
         [SerializeField, Range(0f, 1f)] private float stunThresholdNormalized = 0.7f;
         [SerializeField, Range(0f, 1f)] private float tiredThresholdNormalized = 0.3f;
-        [SerializeField, Min(0f)] private float stunReactionDuration = 1.1f;
-        [SerializeField, Min(0f)] private float stunShakeHeadDuration = 5f;
-        [SerializeField, Min(0f)] private float tiredReactionDuration = 1.35f;
+        [SerializeField, Min(0f)] private float stunReactionDuration = 0.75f;
+        [SerializeField, Min(0f)] private float stunShakeHeadDuration = 1.1f;
+        [SerializeField, Min(0f)] private float tiredReactionDuration = 1f;
+        [SerializeField] private bool phaseTransitionInvulnerable = true;
+        [SerializeField, Min(0f)] private float phaseTransitionExitSettleDuration = 0.12f;
 
         [Header("Hit Feedback")]
         [SerializeField] private Color hitFlashColor = new Color(1f, 0.25f, 0.25f, 1f);
@@ -488,6 +728,36 @@ namespace LostMemory.Enemies.Boss.Bertha
                     fullComboProjectileBursts,
                     debugLogging);
 
+                BerthaProjectilePatternDriver projectileBarrageDriver = GetOrCreateProjectilePatternDriver("ProjectileBarrage");
+                projectileBarrageDriver.Configure(
+                    "ProjectileBarrage",
+                    brain,
+                    character,
+                    orientation,
+                    projectileSpawnOrigin,
+                    projectileBurstEmitter,
+                    ProjectileBarrageAttackStateName,
+                    projectileBarrageBursts,
+                    debugLogging,
+                    animator,
+                    "HeavyAtk",
+                    0);
+
+                BerthaProjectilePatternDriver projectileStormDriver = GetOrCreateProjectilePatternDriver("ProjectileStorm");
+                projectileStormDriver.Configure(
+                    "ProjectileStorm",
+                    brain,
+                    character,
+                    orientation,
+                    projectileSpawnOrigin,
+                    projectileBurstEmitter,
+                    ProjectileStormAttackStateName,
+                    projectileStormBursts,
+                    debugLogging,
+                    animator,
+                    "HeavyAtk",
+                    0);
+
                 BerthaDashAttackController dashAttackController = GetOrAdd<BerthaDashAttackController>(gameObject);
 
                 CharacterDamageDash2D dashAbility = GetOrAdd<CharacterDamageDash2D>(gameObject);
@@ -520,7 +790,9 @@ namespace LostMemory.Enemies.Boss.Bertha
                     stunReactionDuration,
                     stunShakeHeadDuration,
                     tiredReactionDuration,
-                    debugLogging);
+                    debugLogging,
+                    phaseTransitionInvulnerable,
+                    phaseTransitionExitSettleDuration);
                 dashAttackController.Configure(
                     brain,
                     character,
@@ -631,10 +903,16 @@ namespace LostMemory.Enemies.Boss.Bertha
                     dashMinimumRange,
                     dashRange,
                     fullComboRange,
+                    projectileBarrageMinimumRange,
+                    projectileBarrageRange,
+                    projectileStormMinimumRange,
+                    projectileStormRange,
                     specialPatternHealthThresholdNormalized,
                     normalDashCooldown,
                     specialPatternCooldown,
                     specialPatternCooldown,
+                    projectileBarrageCooldown,
+                    projectileStormCooldown,
                     lightAttack1Weight,
                     lightAttack2Weight,
                     heavyAttackWeight,
@@ -725,6 +1003,36 @@ namespace LostMemory.Enemies.Boss.Bertha
                 fullRecoverTimer.AfterTimeMin = fullComboRecoverDuration;
                 fullRecoverTimer.AfterTimeMax = fullComboRecoverDuration;
 
+                AIDecisionTimeInState projectileBarrageTelegraphTimer =
+                    GetOrAddTimeDecision("ProjectileBarrageTelegraphDuration");
+                projectileBarrageTelegraphTimer.AfterTimeMin = projectileBarrageTelegraphDuration;
+                projectileBarrageTelegraphTimer.AfterTimeMax = projectileBarrageTelegraphDuration;
+
+                AIDecisionTimeInState projectileBarrageAttackTimer =
+                    GetOrAddTimeDecision("ProjectileBarrageDuration");
+                projectileBarrageAttackTimer.AfterTimeMin = projectileBarrageDuration;
+                projectileBarrageAttackTimer.AfterTimeMax = projectileBarrageDuration;
+
+                AIDecisionTimeInState projectileBarrageRecoverTimer =
+                    GetOrAddTimeDecision("ProjectileBarrageRecoverDuration");
+                projectileBarrageRecoverTimer.AfterTimeMin = projectileBarrageRecoverDuration;
+                projectileBarrageRecoverTimer.AfterTimeMax = projectileBarrageRecoverDuration;
+
+                AIDecisionTimeInState projectileStormTelegraphTimer =
+                    GetOrAddTimeDecision("ProjectileStormTelegraphDuration");
+                projectileStormTelegraphTimer.AfterTimeMin = projectileStormTelegraphDuration;
+                projectileStormTelegraphTimer.AfterTimeMax = projectileStormTelegraphDuration;
+
+                AIDecisionTimeInState projectileStormAttackTimer =
+                    GetOrAddTimeDecision("ProjectileStormDuration");
+                projectileStormAttackTimer.AfterTimeMin = projectileStormDuration;
+                projectileStormAttackTimer.AfterTimeMax = projectileStormDuration;
+
+                AIDecisionTimeInState projectileStormRecoverTimer =
+                    GetOrAddTimeDecision("ProjectileStormRecoverDuration");
+                projectileStormRecoverTimer.AfterTimeMin = projectileStormRecoverDuration;
+                projectileStormRecoverTimer.AfterTimeMax = projectileStormRecoverDuration;
+
                 brain.States = BuildStates(
                     idleAction,
                     moveAction,
@@ -750,7 +1058,13 @@ namespace LostMemory.Enemies.Boss.Bertha
                     dashRecoverTimer,
                     fullTelegraphTimer,
                     fullAttackTimer,
-                    fullRecoverTimer);
+                    fullRecoverTimer,
+                    projectileBarrageTelegraphTimer,
+                    projectileBarrageAttackTimer,
+                    projectileBarrageRecoverTimer,
+                    projectileStormTelegraphTimer,
+                    projectileStormAttackTimer,
+                    projectileStormRecoverTimer);
 
                 for (int i = 0; i < brain.States.Count; i++)
                 {
@@ -815,6 +1129,18 @@ namespace LostMemory.Enemies.Boss.Bertha
             dashAttackDuration = Mathf.Max(dashDuration, dashAttackDuration);
             dashImpactTime = Mathf.Clamp(dashImpactTime, 0f, dashAttackDuration);
             fullComboImpactTime = Mathf.Clamp(fullComboImpactTime, 0f, fullComboDuration);
+            projectileBarrageMinimumRange = Mathf.Max(0f, projectileBarrageMinimumRange);
+            projectileBarrageRange = Mathf.Max(projectileBarrageMinimumRange, projectileBarrageRange);
+            projectileBarrageTelegraphDuration = Mathf.Max(0f, projectileBarrageTelegraphDuration);
+            projectileBarrageDuration = Mathf.Max(0.01f, projectileBarrageDuration);
+            projectileBarrageRecoverDuration = Mathf.Max(0f, projectileBarrageRecoverDuration);
+            projectileBarrageCooldown = Mathf.Max(0f, projectileBarrageCooldown);
+            projectileStormMinimumRange = Mathf.Max(0f, projectileStormMinimumRange);
+            projectileStormRange = Mathf.Max(projectileStormMinimumRange, projectileStormRange);
+            projectileStormTelegraphDuration = Mathf.Max(0f, projectileStormTelegraphDuration);
+            projectileStormDuration = Mathf.Max(0.01f, projectileStormDuration);
+            projectileStormRecoverDuration = Mathf.Max(0f, projectileStormRecoverDuration);
+            projectileStormCooldown = Mathf.Max(0f, projectileStormCooldown);
             specialPatternHealthThresholdNormalized = Mathf.Clamp01(specialPatternHealthThresholdNormalized);
             initialHealth = Mathf.Max(0f, initialHealth);
             movementSpeed = Mathf.Max(0f, movementSpeed);
@@ -824,6 +1150,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             stunReactionDuration = Mathf.Max(0f, stunReactionDuration);
             stunShakeHeadDuration = Mathf.Max(0f, stunShakeHeadDuration);
             tiredReactionDuration = Mathf.Max(0f, tiredReactionDuration);
+            phaseTransitionExitSettleDuration = Mathf.Max(0f, phaseTransitionExitSettleDuration);
             projectileAnimationFrameRate = Mathf.Max(0f, projectileAnimationFrameRate);
             projectileMaximumHits = Mathf.Max(1, projectileMaximumHits);
             hitFlashStrength = Mathf.Clamp01(hitFlashStrength);
@@ -835,6 +1162,8 @@ namespace LostMemory.Enemies.Boss.Bertha
             dashHitReactionMultiplier = Mathf.Max(1f, dashHitReactionMultiplier);
             NormalizeBurstSequence(heavyProjectileBursts);
             NormalizeBurstSequence(fullComboProjectileBursts);
+            NormalizeBurstSequence(projectileBarrageBursts);
+            NormalizeBurstSequence(projectileStormBursts);
         }
 
         private void ApplyRuntimeTuning()
@@ -886,7 +1215,9 @@ namespace LostMemory.Enemies.Boss.Bertha
                     stunReactionDuration,
                     stunShakeHeadDuration,
                     tiredReactionDuration,
-                    debugLogging);
+                    debugLogging,
+                    phaseTransitionInvulnerable,
+                    phaseTransitionExitSettleDuration);
             }
         }
 
@@ -1084,7 +1415,13 @@ namespace LostMemory.Enemies.Boss.Bertha
             AIDecisionTimeInState dashRecoverTimer,
             AIDecisionTimeInState fullTelegraphTimer,
             AIDecisionTimeInState fullAttackTimer,
-            AIDecisionTimeInState fullRecoverTimer)
+            AIDecisionTimeInState fullRecoverTimer,
+            AIDecisionTimeInState projectileBarrageTelegraphTimer,
+            AIDecisionTimeInState projectileBarrageAttackTimer,
+            AIDecisionTimeInState projectileBarrageRecoverTimer,
+            AIDecisionTimeInState projectileStormTelegraphTimer,
+            AIDecisionTimeInState projectileStormAttackTimer,
+            AIDecisionTimeInState projectileStormRecoverTimer)
         {
             return new List<AIState>
             {
@@ -1192,7 +1529,45 @@ namespace LostMemory.Enemies.Boss.Bertha
                     {
                         CreateTransition(fullAttackTimer, FullRecoverStateName, string.Empty)
                     }),
-                CreateRecoverState(FullRecoverStateName, idleAction, targetIsAlive, fullRecoverTimer)
+                CreateRecoverState(FullRecoverStateName, idleAction, targetIsAlive, fullRecoverTimer),
+                CreateState(
+                    ProjectileBarrageTelegraphStateName,
+                    new AIAction[] { idleAction },
+                    new[]
+                    {
+                        CreateTransition(projectileBarrageTelegraphTimer, ProjectileBarrageAttackStateName, string.Empty)
+                    }),
+                CreateState(
+                    ProjectileBarrageAttackStateName,
+                    new AIAction[] { idleAction },
+                    new[]
+                    {
+                        CreateTransition(projectileBarrageAttackTimer, ProjectileBarrageRecoverStateName, string.Empty)
+                    }),
+                CreateRecoverState(
+                    ProjectileBarrageRecoverStateName,
+                    idleAction,
+                    targetIsAlive,
+                    projectileBarrageRecoverTimer),
+                CreateState(
+                    ProjectileStormTelegraphStateName,
+                    new AIAction[] { idleAction },
+                    new[]
+                    {
+                        CreateTransition(projectileStormTelegraphTimer, ProjectileStormAttackStateName, string.Empty)
+                    }),
+                CreateState(
+                    ProjectileStormAttackStateName,
+                    new AIAction[] { idleAction },
+                    new[]
+                    {
+                        CreateTransition(projectileStormAttackTimer, ProjectileStormRecoverStateName, string.Empty)
+                    }),
+                CreateRecoverState(
+                    ProjectileStormRecoverStateName,
+                    idleAction,
+                    targetIsAlive,
+                    projectileStormRecoverTimer)
             };
         }
 

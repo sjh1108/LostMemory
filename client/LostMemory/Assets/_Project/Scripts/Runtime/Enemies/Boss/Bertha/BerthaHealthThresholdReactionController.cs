@@ -23,6 +23,9 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private Character character;
         [SerializeField] private Health health;
         [SerializeField] private CharacterDash2D dashAbility;
+        [SerializeField] private CharacterMovement movementAbility;
+        [SerializeField] private TopDownController2D controller;
+        [SerializeField] private Rigidbody2D body;
         [SerializeField] private Animator animator;
         [SerializeField] private BossIntroSequenceController introSequenceController;
         [SerializeField] private string neutralBrainStateName = "Detecting";
@@ -44,6 +47,10 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private string tiredStateName = "Tired";
         [SerializeField, Min(0f)] private float tiredDuration = 1.35f;
 
+        [Header("Reaction Lock")]
+        [SerializeField] private bool invulnerableDuringReaction = true;
+        [SerializeField, Min(0f)] private float reactionExitSettleDuration = 0.12f;
+
         [Header("Debug")]
         [SerializeField] private bool debugLogging;
 
@@ -56,6 +63,8 @@ namespace LostMemory.Enemies.Boss.Bertha
         private bool _reactionLocked;
         private bool _frozenByReaction;
         private bool _brainWasActive;
+        private bool _healthWasInvulnerable;
+        private bool _appliedReactionInvulnerability;
 
         private void Reset()
         {
@@ -118,7 +127,9 @@ namespace LostMemory.Enemies.Boss.Bertha
             float configuredStunLoopDuration,
             float configuredShakeHeadDuration,
             float configuredTiredDuration,
-            bool configuredDebugLogging)
+            bool configuredDebugLogging,
+            bool configuredInvulnerableDuringReaction = true,
+            float configuredReactionExitSettleDuration = 0.12f)
         {
             brain = configuredBrain;
             character = configuredCharacter;
@@ -131,6 +142,8 @@ namespace LostMemory.Enemies.Boss.Bertha
             stunLoopDuration = Mathf.Max(0f, configuredStunLoopDuration);
             shakeHeadDuration = Mathf.Max(0f, configuredShakeHeadDuration);
             tiredDuration = Mathf.Max(0f, configuredTiredDuration);
+            invulnerableDuringReaction = configuredInvulnerableDuringReaction;
+            reactionExitSettleDuration = Mathf.Max(0f, configuredReactionExitSettleDuration);
             debugLogging = configuredDebugLogging;
 
             RefreshReferences();
@@ -229,7 +242,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     break;
                 }
 
-                EndReaction();
+                yield return EndReactionRoutine();
                 yield return null;
             }
 
@@ -241,11 +254,14 @@ namespace LostMemory.Enemies.Boss.Bertha
             RefreshReferences();
             CacheAnimationStateDurations();
             _reactionLocked = true;
+            ApplyReactionInvulnerability();
 
             if (dashAbility != null)
             {
                 dashAbility.DashStop();
             }
+
+            StopReactionMotion();
 
             if (brain != null)
             {
@@ -271,7 +287,35 @@ namespace LostMemory.Enemies.Boss.Bertha
             }
         }
 
-        private void EndReaction()
+        private IEnumerator EndReactionRoutine()
+        {
+            if (!_reactionLocked)
+            {
+                yield break;
+            }
+
+            if (_frozenByReaction && character != null)
+            {
+                character.UnFreeze();
+                _frozenByReaction = false;
+            }
+
+            yield return WaitForExitSettle();
+
+            if (brain != null)
+            {
+                brain.BrainActive = _brainWasActive;
+                if (brain.BrainActive && !string.IsNullOrWhiteSpace(neutralBrainStateName))
+                {
+                    brain.TransitionToState(neutralBrainStateName);
+                }
+            }
+
+            RestoreReactionInvulnerability();
+            _reactionLocked = false;
+        }
+
+        private void EndReactionImmediately()
         {
             if (!_reactionLocked)
             {
@@ -293,6 +337,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                 }
             }
 
+            RestoreReactionInvulnerability();
             _reactionLocked = false;
         }
 
@@ -336,6 +381,29 @@ namespace LostMemory.Enemies.Boss.Bertha
                     yield break;
                 }
 
+                elapsed += Time.deltaTime;
+                StopReactionMotion();
+                yield return null;
+            }
+        }
+
+        private IEnumerator WaitForExitSettle()
+        {
+            if (reactionExitSettleDuration <= 0f)
+            {
+                StopReactionMotion();
+                yield break;
+            }
+
+            float elapsed = 0f;
+            while (elapsed < reactionExitSettleDuration)
+            {
+                if (health == null || health.CurrentHealth <= 0f)
+                {
+                    yield break;
+                }
+
+                StopReactionMotion();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
@@ -381,6 +449,9 @@ namespace LostMemory.Enemies.Boss.Bertha
             character ??= GetComponent<Character>();
             health ??= GetComponent<Health>();
             dashAbility ??= GetComponent<CharacterDash2D>();
+            movementAbility ??= GetComponent<CharacterMovement>();
+            controller ??= GetComponent<TopDownController2D>();
+            body ??= GetComponent<Rigidbody2D>();
             introSequenceController ??= GetComponent<BossIntroSequenceController>();
 
             if (animator == null)
@@ -399,6 +470,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             stunLoopDuration = Mathf.Max(0f, stunLoopDuration);
             shakeHeadDuration = Mathf.Max(0f, shakeHeadDuration);
             tiredDuration = Mathf.Max(0f, tiredDuration);
+            reactionExitSettleDuration = Mathf.Max(0f, reactionExitSettleDuration);
         }
 
         private float GetNormalizedHealth()
@@ -437,31 +509,63 @@ namespace LostMemory.Enemies.Boss.Bertha
 
             if (!restoreState)
             {
+                RestoreReactionInvulnerability();
                 _reactionLocked = false;
                 return;
             }
 
-            if (!_reactionLocked)
+            EndReactionImmediately();
+        }
+
+        private void ApplyReactionInvulnerability()
+        {
+            if (!invulnerableDuringReaction || health == null || _appliedReactionInvulnerability)
             {
                 return;
             }
 
-            if (_frozenByReaction && character != null)
+            _healthWasInvulnerable = health.Invulnerable;
+            health.DamageDisabled();
+            _appliedReactionInvulnerability = true;
+        }
+
+        private void RestoreReactionInvulnerability()
+        {
+            if (!_appliedReactionInvulnerability || health == null)
             {
-                character.UnFreeze();
-                _frozenByReaction = false;
+                _appliedReactionInvulnerability = false;
+                return;
             }
 
-            if (brain != null)
+            health.Invulnerable = _healthWasInvulnerable;
+            _appliedReactionInvulnerability = false;
+        }
+
+        private void StopReactionMotion()
+        {
+            if (dashAbility != null)
             {
-                brain.BrainActive = _brainWasActive;
-                if (brain.BrainActive && !string.IsNullOrWhiteSpace(neutralBrainStateName))
-                {
-                    brain.TransitionToState(neutralBrainStateName);
-                }
+                dashAbility.DashStop();
             }
 
-            _reactionLocked = false;
+            movementAbility?.SetMovement(Vector2.zero);
+
+            if (controller != null)
+            {
+                controller.SetMovement(Vector3.zero);
+                controller.CurrentMovement = Vector3.zero;
+                controller.Speed = Vector3.zero;
+                controller.Velocity = Vector3.zero;
+                controller.VelocityLastFrame = Vector3.zero;
+                controller.Acceleration = Vector3.zero;
+                controller.AddedForce = Vector3.zero;
+            }
+
+            if (body != null)
+            {
+                body.linearVelocity = Vector2.zero;
+                body.angularVelocity = 0f;
+            }
         }
 
         private void Log(string message)

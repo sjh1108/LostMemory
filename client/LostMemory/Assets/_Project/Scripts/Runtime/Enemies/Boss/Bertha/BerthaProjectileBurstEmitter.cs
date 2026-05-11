@@ -142,7 +142,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             projectileObject.transform.position = spawnPosition;
             projectileObject.transform.rotation = Quaternion.identity;
 
-            if (projectileRoot != null)
+            if (projectileRoot != null && !IsInOwnerHierarchy(owner, projectileRoot))
             {
                 projectileObject.transform.SetParent(projectileRoot, true);
             }
@@ -173,6 +173,16 @@ namespace LostMemory.Enemies.Boss.Bertha
                 projectileAnimationFrameRate);
 
             Log("Spawned projectile.");
+        }
+
+        private static bool IsInOwnerHierarchy(GameObject owner, Transform target)
+        {
+            if (owner == null || target == null)
+            {
+                return false;
+            }
+
+            return target == owner.transform || target.IsChildOf(owner.transform);
         }
 
         private void ApplySorting(SpriteRenderer projectileRenderer)

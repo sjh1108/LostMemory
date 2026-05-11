@@ -111,7 +111,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -152,6 +152,8 @@ GameObject:
   - component: {fileID: 114900000000100003}
   - component: {fileID: 114900000000100004}
   - component: {fileID: 114900000000100005}
+  - component: {fileID: 114900000000100007}
+  - component: {fileID: 114900000000100008}
   m_Layer: 13
   m_Name: StoneGolem_Test
   m_TagString: Enemy
@@ -277,8 +279,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 89ee7fe4b0037274d8dba40f605ae049, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   Gravity: -30
   GravityActive: 1
   CrouchedRaycastLengthMultiplier: 1
@@ -314,11 +316,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fe81ad80cb743b408fa90b048ad597f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   CharacterDimension: 0
   CharacterType: 1
-  PlayerID: 
+  PlayerID:
   CharacterAnimator: {fileID: 7975849498942803374}
   UseDefaultMecanim: 1
   RunAnimatorSanityChecks: 0
@@ -339,17 +341,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: af3b7ab2b51f5c2419cc72bff008ff0f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   AbilityStartSfx: {fileID: 0}
   AbilityInProgressSfx: {fileID: 0}
   AbilityStopSfx: {fileID: 0}
   AbilityStartFeedbacks: {fileID: 0}
   AbilityStopFeedbacks: {fileID: 0}
   AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
+  BlockingMovementStates:
+  BlockingConditionStates:
+  BlockingWeaponStates:
   FacingMode: 3
   FacingBase: 0
   ModelShouldFlip: 1
@@ -374,17 +376,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 69614a4a3cfd06d4e8388acafdb774bd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   AbilityStartSfx: {fileID: 0}
   AbilityInProgressSfx: {fileID: 0}
   AbilityStopSfx: {fileID: 0}
   AbilityStartFeedbacks: {fileID: 0}
   AbilityStopFeedbacks: {fileID: 0}
   AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
+  BlockingMovementStates:
+  BlockingConditionStates:
+  BlockingWeaponStates:
   Movement: 0
   InputAuthorized: 1
   AnalogInput: 0
@@ -409,17 +411,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d103439fc2940e347937487a70ea01e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   AbilityStartSfx: {fileID: 0}
   AbilityInProgressSfx: {fileID: 0}
   AbilityStopSfx: {fileID: 0}
   AbilityStartFeedbacks: {fileID: 0}
   AbilityStopFeedbacks: {fileID: 0}
   AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
+  BlockingMovementStates:
+  BlockingConditionStates:
+  BlockingWeaponStates:
   RunSpeed: 16
   AutoRun: 0
   AutoRunThreshold: 0.6
@@ -433,17 +435,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ed8c17a9a9fed854daff1f08f315ad69, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   AbilityStartSfx: {fileID: 0}
   AbilityInProgressSfx: {fileID: 0}
   AbilityStopSfx: {fileID: 0}
   AbilityStartFeedbacks: {fileID: 0}
   AbilityStopFeedbacks: {fileID: 0}
   AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
+  BlockingMovementStates:
+  BlockingConditionStates:
+  BlockingWeaponStates:
   FallingFeedback: {fileID: 0}
 --- !u!114 &114767317845071676
 MonoBehaviour:
@@ -455,8 +457,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01754710d9f92ec4d9a21b81f5682667, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   Model: {fileID: 0}
   CurrentHealth: 0
   Invulnerable: 0
@@ -470,7 +472,7 @@ MonoBehaviour:
   PreventTakeSelfDamage: 0
   ImmuneToKnockback: 0
   ImmuneToKnockbackIfZeroDamage: 0
-  KnockbackForceMultiplier: 1
+  KnockbackForceMultiplier: 0
   DestroyOnDeath: 0
   DelayBeforeDestruction: 0
   PointsWhenDestroyed: 0
@@ -501,8 +503,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eec89e4158bf96841b9bc830fc5385ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   Owner: {fileID: 0}
   States:
   - StateName: Detecting
@@ -513,7 +515,7 @@ MonoBehaviour:
       array:
       - Decision: {fileID: 114975266224184248}
         TrueState: Moving
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: Moving
     Actions:
@@ -523,16 +525,16 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 114975266224184248}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 114631777180868210}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 8095614620046919901}
         TrueState: AttackTelegraph
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: AttackTelegraph
     Actions:
@@ -542,12 +544,12 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 114631777180868210}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 114900000000100003}
         TrueState: Attack
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: Attack
     Actions:
@@ -556,12 +558,12 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 114631777180868210}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 114900000000100004}
         TrueState: Recover
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   - StateName: Recover
     Actions:
@@ -570,12 +572,12 @@ MonoBehaviour:
     Transitions:
       array:
       - Decision: {fileID: 114631777180868210}
-        TrueState: 
+        TrueState:
         FalseState: Detecting
         LastDecisionEvaluation: 0
       - Decision: {fileID: 114900000000100005}
         TrueState: Moving
-        FalseState: 
+        FalseState:
         LastDecisionEvaluation: 0
   TimeInThisState: 0
   Target: {fileID: 0}
@@ -598,9 +600,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a946a428cb16e1409d657b9041c69be, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Label: 
+  m_Name:
+  m_EditorClassIdentifier:
+  Label:
   Radius: 6
   DetectionOriginOffset: {x: 0, y: 0, z: 0}
   TargetLayer:
@@ -624,9 +626,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05f21b170839d044b8b9bf160d1be05b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Label: 
+  m_Name:
+  m_EditorClassIdentifier:
+  Label:
 --- !u!114 &114472236543704332
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -637,10 +639,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 561ab803e1e9aa94ab096724696e5475, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   InitializationMode: 0
-  Label: 
+  Label:
 --- !u!114 &114113908976523258
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -651,10 +653,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 47557c9dd44293a41bc6710b083332de, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   InitializationMode: 0
-  Label: 
+  Label:
   UseMinimumXDistance: 1
   MinimumXDistance: 0.1
 --- !u!114 &114778105809703722
@@ -667,8 +669,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8abe6344b7148db4687d3c84e7712904, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   HealthBarType: 1
   TimeScale: 0
   HealthBarPrefab: {fileID: 0}
@@ -880,10 +882,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1148b739e4c74b8478868d1834fbcd66, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionFaceTowardsTarget2D
   InitializationMode: 0
-  Label: 
+  Label:
   Mode: 0
 --- !u!114 &8095614620046919901
 MonoBehaviour:
@@ -895,9 +897,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 206825d6db9c84741810b9da915cfb9c, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionDistanceToTarget
-  Label: 
+  Label:
   ComparisonMode: 1
   Distance: 1.5
 --- !u!114 &3841032822885868042
@@ -910,7 +912,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a07c6668aa55403790d27b575279549, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.CharacterHandleWeapon
   AbilityStartSfx: {fileID: 0}
   AbilityInProgressSfx: {fileID: 0}
@@ -918,9 +920,9 @@ MonoBehaviour:
   AbilityStartFeedbacks: {fileID: 0}
   AbilityStopFeedbacks: {fileID: 0}
   AbilityPermitted: 1
-  BlockingMovementStates: 
-  BlockingConditionStates: 
-  BlockingWeaponStates: 
+  BlockingMovementStates:
+  BlockingConditionStates:
+  BlockingWeaponStates:
   InitialWeapon: {fileID: 2352508785994630202, guid: ccb51b185aebaba419e15d3a96f9a0cd,
     type: 3}
   CanPickupWeapons: 1
@@ -951,10 +953,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4b1affdc8ddb97d40b6a8b805c494909, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionShoot2D
   InitializationMode: 0
-  Label: 
+  Label:
   TargetHandleWeaponAbility: {fileID: 0}
   AimOrigin: 0
   FaceTarget: 0
@@ -971,10 +973,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1148b739e4c74b8478868d1834fbcd66, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIActionFaceTowardsTarget2D
   InitializationMode: 0
-  Label: 
+  Label:
   Mode: 0
 --- !u!114 &114900000000100001
 MonoBehaviour:
@@ -986,7 +988,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d6c7a273e1ea4f149fa4534d4480e5c1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AttackTelegraph2DView
   previewObjectName: AttackTelegraphPreview
   previewParent: {fileID: 4736116768674126}
@@ -1008,7 +1010,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8bae2c2af35b43408599828342239d09, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.TelegraphedAreaAttackController
   brain: {fileID: 114675271368606418}
   character: {fileID: 114184945564206620}
@@ -1020,6 +1022,8 @@ MonoBehaviour:
   telegraphStateName: AttackTelegraph
   attackStateName: Attack
   recoverStateName: Recover
+  transitionToCancelStateOnCancel: 1
+  cancelStateName: Detecting
   attackAnimationStateName: StoneGolem_Attack
   attackAnimationLayer: 0
   impactTime: 0.85
@@ -1079,7 +1083,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2f88f9a4d8c4dd486f5ec62ce8eb167, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.StoneGolemAttackKnockback
   knockbackForce: 500
   debugLogging: 0
@@ -1093,7 +1097,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: AttackTelegraphDuration
   AfterTimeMin: 0.7
@@ -1108,7 +1112,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: AttackDuration
   AfterTimeMin: 1.8
@@ -1123,11 +1127,68 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
   Label: RecoverDuration
   AfterTimeMin: 0.45
   AfterTimeMax: 0.45
+--- !u!114 &114900000000100007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45541621aca708e4ab1eca444c2ce200, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemyAttackHitReactionGuard
+  health: {fileID: 114767317845071676}
+  brain: {fileID: 114675271368606418}
+  animator: {fileID: 7975849498942803374}
+  movementAbility: {fileID: 114809083901408364}
+  controller: {fileID: 114002022934925870}
+  body2D: {fileID: 50872317139119918}
+  protectedBrainStateNames:
+  - Moving
+  - AttackTelegraph
+  - Attack
+  - Recover
+  damageTriggerName: Damage
+  lockMovementDuringHitReaction: 1
+  hitReactionMovementLockDuration: 1.2
+  cancelAttackOnHitReaction: 1
+  pauseBrainDuringHitReaction: 0
+  freezeMovementSpeedDuringHitReaction: 1
+  showSuperArmorVisualEffect: 1
+  superArmorVisualEffect: {fileID: 114900000000100008}
+  useTimedSuperArmor: 1
+  superArmorDuration: 5
+  superArmorCooldown: 10
+--- !u!114 &114900000000100008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac71e598b08f4d149c1ed81db1f315d0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemySuperArmorOutlineEffect
+  sourceRenderer: {fileID: 0}
+  visualRoot: {fileID: 7975849498942803372}
+  outlineRendererCount: 18
+  outlineOffset: 0.025
+  flowSpeed: 2
+  shimmerStrength: 0.084
+  sortingOrderOffset: -1
+  redOutlineColor: {r: 1, g: 0.05, b: 0.02, a: 0.85490197}
+  yellowOutlineColor: {r: 1, g: 0.82, b: 0.05, a: 0.92}
+  activeOnEnable: 0
+  hideSourceOutlineWhileVisible: 1
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
@@ -11024,8 +11085,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6da43522623d4704e979466dc7650b65, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   Feedbacks:
   - {fileID: 0}
   - {fileID: 0}
@@ -11328,7 +11389,7 @@ MonoBehaviour:
           m_RotationOrder: 4
         RemapRangeFalloff: {x: 0, y: 1}
         AutomaticShakerSetupButton:
-          ButtonText: 
+          ButtonText:
         Owner: {fileID: 2606192527695501269}
         DebugActive: 0
         Mode: 0
@@ -11385,8 +11446,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6da43522623d4704e979466dc7650b65, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   Feedbacks:
   - {fileID: 0}
   - {fileID: 0}
@@ -11565,7 +11626,7 @@ MonoBehaviour:
           m_RotationOrder: 4
         RemapRangeFalloff: {x: 0, y: 1}
         AutomaticShakerSetupButton:
-          ButtonText: 
+          ButtonText:
         Owner: {fileID: 3547864438223399480}
         DebugActive: 0
         BoundRenderer: {fileID: 212797044214329334}
@@ -11575,7 +11636,7 @@ MonoBehaviour:
         FlickerDuration: 0.2
         FlickerPeriod: 0.04
         FlickerColor: {r: 1, g: 0.078431375, b: 0.078431375, a: 1}
-        MaterialIndexes: 
+        MaterialIndexes:
         UseMaterialPropertyBlocks: 0
         SpriteRendererTextureProperty: _MainTex
     - rid: 1
@@ -11774,7 +11835,7 @@ MonoBehaviour:
           m_RotationOrder: 4
         RemapRangeFalloff: {x: 0, y: 1}
         AutomaticShakerSetupButton:
-          ButtonText: 
+          ButtonText:
         Owner: {fileID: 3547864438223399480}
         DebugActive: 0
         TargetGameObject: {fileID: 1422487604856424639}
@@ -11881,8 +11942,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76891b3b532f84acaaeed44c357bd00c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   TargetLayerMask:
     serializedVersion: 2
     m_Bits: 1024
@@ -11967,7 +12028,7 @@ PrefabInstance:
     - target: {fileID: 3248787690555597828, guid: 17bd4c4a974d8844ba51e5837e231100,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: e2ca7bf8a62241169f20277802ae4b6c, type: 2}
     - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
         type: 3}
@@ -12037,7 +12098,7 @@ PrefabInstance:
     - target: {fileID: 3248787690555597831, guid: 17bd4c4a974d8844ba51e5837e231100,
         type: 3}
       propertyPath: m_Controller
-      value: 
+      value:
       objectReference: {fileID: 9100000, guid: d3a8a495e4e84b77bb7ce982673ae15c, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12076,7 +12137,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f404d7d6653a4668bf73c452d06f5ca2, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.MeleeAnimationEventRelay
   targetWeapon: {fileID: 0}
   characterHandleWeapon: {fileID: 3841032822885868042}
