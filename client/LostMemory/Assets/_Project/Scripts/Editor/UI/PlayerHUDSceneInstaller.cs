@@ -16,6 +16,8 @@ namespace LostMemory.Editor
             new SceneInstallTarget("Assets/_Project/Scenes/Town/Town.unity", "TownUICanvas"),
             new SceneInstallTarget("Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity", "Canvas"),
             new SceneInstallTarget("Assets/_Project/Scenes/Dungeon/Dungeon_1F_2R.unity", "Canvas"),
+            new SceneInstallTarget("Assets/_Project/Scenes/Dungeon/Dungeon_1F_3R.unity", "Canvas"),
+            new SceneInstallTarget("Assets/_Project/Scenes/Dungeon/Dungeon_1F_4R.unity", "Canvas"),
             new SceneInstallTarget("Assets/_Project/Scenes/Dungeon/Dungeon_1F_Boss.unity", "Canvas"),
             new SceneInstallTarget("Assets/_Project/Scenes/Dungeon/Dungeon.unity", "Canvas"),
         };
