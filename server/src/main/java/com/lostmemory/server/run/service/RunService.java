@@ -116,17 +116,15 @@ public class RunService {
     }
 
     /**
-     * 런 단건 조회 — RunMember (본인이 참여한 런) 만 허용.
+     * 런 단건 조회 — 호스트만 허용.
      * 결과 row 가 없으면 (진행 중) null.
      */
     public RunDetailResponse getRun(Long userId, Long runId) {
         Run run = runRepository.findById(runId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RUN_NOT_FOUND));
 
-        boolean isMember = runMemberRepository.findAllByRunIdWithUser(runId).stream()
-                .anyMatch(m -> m.getUser().getId().equals(userId));
-        if (!isMember) {
-            throw new BusinessException(ErrorCode.RUN_NOT_MEMBER);
+        if (!run.getSession().getHost().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.RUN_NOT_HOST);
         }
 
         RunResultResponse resultResponse = runResultRepository.findById(runId)
