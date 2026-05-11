@@ -73,8 +73,18 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - /dev/disk/:/dev/disk:ro
+      # Ubuntu 22.04 cgroup v2 + systemd driver 환경에서 cAdvisor 가 docker socket 만으로는
+      # 컨테이너 cgroup 발견 못함. containerd 소켓 직접 마운트해서 cAdvisor 가
+      # moby namespace 의 컨테이너 listing 을 받아오게 한다 (S14P31C201-502).
+      - /run/containerd:/run/containerd:ro
     command:
       - --housekeeping_interval=15s      # 메트릭 수집 주기 (기본 1s → 부하 절감)
+      # containerd 직접 통신 — Docker 가 containerd shim 위에서 컨테이너 만드는 구조와 정합.
+      - --containerd=/run/containerd/containerd.sock
+      # Docker 컨테이너는 containerd 의 'moby' namespace 에 들어간다. 없으면 namespace mismatch.
+      - --containerd_namespace=moby
+      # name 라벨만 유지 (대시보드 식 {name!=""} 매칭). 그 외 docker label noise 제외.
+      - --whitelisted_container_labels=name,io.kubernetes.container.name
     logging: *default-logging
     networks:
       - monitoring
