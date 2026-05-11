@@ -19,6 +19,7 @@ public enum ErrorCode {
     USER_LOGIN_ID_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다"),
     USER_NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"),
+    USER_ALREADY_IN_SESSION(HttpStatus.CONFLICT, "이미 다른 세션에 참여 중입니다"),
 
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "세션을 찾을 수 없습니다"),
     SESSION_FULL(HttpStatus.CONFLICT, "정원이 가득 찼습니다"),

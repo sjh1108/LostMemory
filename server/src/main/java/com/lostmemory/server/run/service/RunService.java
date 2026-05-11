@@ -19,8 +19,6 @@ import com.lostmemory.server.session.entity.SessionJoin;
 import com.lostmemory.server.session.repository.SessionJoinRepository;
 import com.lostmemory.server.session.repository.SessionRepository;
 import com.lostmemory.server.user.entity.User;
-import com.lostmemory.server.user.entity.UserCurrency;
-import com.lostmemory.server.user.entity.UserRecord;
 import com.lostmemory.server.user.repository.UserCurrencyRepository;
 import com.lostmemory.server.user.repository.UserRecordRepository;
 import lombok.RequiredArgsConstructor;
@@ -138,22 +136,13 @@ public class RunService {
         return RunDetailResponse.of(RunResponse.from(run), resultResponse);
     }
 
-    /** 멤버 한 명에게 파편 적립 + 전적 갱신. row 없으면 INSERT, 있으면 UPDATE (UPSERT 패턴) */
+    /**
+     * 멤버 한 명에게 파편 적립 + 전적 갱신.
+     * PostgreSQL UPSERT (`INSERT ... ON CONFLICT DO UPDATE`) 로 원자 처리 — lost-update / PK 충돌 race 방지.
+     * SELECT-modify-WRITE 패턴 제거로 멤버 간 동시 endRun 도 안전.
+     */
     private void applyRewards(User user, int earnedShards, int chapterReached) {
-        UserCurrency currency = userCurrencyRepository.findById(user.getId())
-                .orElse(null);
-        if (currency == null) {
-            userCurrencyRepository.save(UserCurrency.create(user, earnedShards));
-        } else {
-            currency.addShards(earnedShards);
-        }
-
-        UserRecord record = userRecordRepository.findByUserId(user.getId())
-                .orElse(null);
-        if (record == null) {
-            userRecordRepository.save(UserRecord.create(user, chapterReached, 0));
-        } else {
-            record.updateMaxIfHigher(chapterReached, 0);
-        }
+        userCurrencyRepository.upsertShards(user.getId(), earnedShards);
+        userRecordRepository.upsertRecord(user.getId(), chapterReached, 0);
     }
 }
