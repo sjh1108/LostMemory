@@ -21,9 +21,10 @@ monitoring/
     │   └── dashboards/
     │       └── dashboards.yml      # /etc/grafana/dashboards 디렉토리 자동 스캔 설정
     └── dashboards/
-        ├── node-exporter-full.json # Grafana.com community ID 1860 (호스트 종합)
-        └── lostmemory-containers.json   # 자체 작성 (컨테이너 CPU/Mem/Network)
+        └── node-exporter-full.json # Grafana.com community ID 1860 (호스트 종합)
 ```
+
+> cAdvisor 컨테이너 metric 대시보드 (`lostmemory-containers.json`) 는 S14P31C201-502 진단으로 **본 PR 에서 보류**. cAdvisor service / volumes / command 옵션은 발판으로 유지되지만 prometheus scrape job 과 dashboard JSON 은 제거. 호스트 모니터링 (Node Exporter) + 임계 알림 (CPU/Mem/Disk) 은 정상 작동. 후속 hotfix 후보는 [server/README.md `## 모니터링 / 임계 알림`](../README.md#모니터링--임계-알림-prometheus--grafana--alertmanager) 의 cAdvisor 절 참고.
 
 ## 책임 / 의존
 
@@ -32,7 +33,7 @@ monitoring/
 | `prometheus/prometheus.yml` | scrape target / rule 파일 경로 / alertmanager 주소 | scrape target 추가 / 제거 시 hotreload 가능 (`/-/reload`) |
 | `prometheus/rules/server-health.yml` | 임계 알림 expr / for / 라벨 / annotation | 임계 조정 / 새 rule 추가는 hotreload 가능 |
 | `alertmanager/alertmanager.yml` | 알림 routing / grouping / repeat_interval / receiver 템플릿 | 변경 시 `wget -qO- --post-data='' http://alertmanager:9093/-/reload` |
-| `grafana/provisioning/datasources/prometheus.yml` | Prometheus datasource UID `prometheus` 고정 | dashboards/lostmemory-containers.json 가 같은 UID 참조 — 변경 시 둘 다 갱신 |
+| `grafana/provisioning/datasources/prometheus.yml` | Prometheus datasource UID `prometheus` 고정 | dashboard JSON 의 datasource UID 참조와 정합해야 함 |
 | `grafana/provisioning/dashboards/dashboards.yml` | 파일 기반 dashboards provider (30s 마다 폴링) | `updateIntervalSeconds` 조정 가능. `allowUiUpdates: true` 라 UI 임시 수정도 허용 |
 | `grafana/dashboards/*.json` | 시각화 대시보드 정의 | provider 의 폴링 주기로 자동 반영 (컨테이너 재기동 불필요) |
 

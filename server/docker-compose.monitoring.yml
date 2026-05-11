@@ -60,8 +60,18 @@ services:
     networks:
       - monitoring
 
+  # cAdvisor — 컨테이너 metric 수집 시도. **현재 상태: 미수집 (보류)** — S14P31C201-502 진단 결과:
+  #   1) Docker 가 containerd-snapshotter 모드 (driver-type: io.containerd.snapshotter.v1).
+  #   2) cAdvisor v0.49 / v0.51 모두 컨테이너 등록 시 표준 overlay2 의 layerdb/mounts/<hash>/mount-id
+  #      파일을 강제로 읽으려 하는데 containerd-snapshotter 모드는 그 파일을 안 만든다.
+  #      → "Failed to create existing container ... failed to identify the read-write layer ID"
+  #      → 컨테이너 등록 실패 → metric 에 name 라벨 안 채워짐 → 대시보드 No data.
+  # service 자체는 향후 후속 hotfix 의 발판으로 v0.51 + containerd 옵션을 그대로 보존하되,
+  # prometheus.yml 의 scrape job 과 Grafana dashboard 는 본 PR 에서 제거해서 시연 노출 차단.
+  # 후속 hotfix 후보: Docker storage driver 를 overlay2 로 회귀 / cAdvisor dev build /
+  # dockerd 의 자체 /metrics endpoint 사용 / cAdvisor 대신 dockerd-exporter.
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: gcr.io/cadvisor/cadvisor:v0.51.0   # v0.49 -> v0.51 (호환 시도, 미해결)
     restart: unless-stopped
     privileged: true                     # cAdvisor 가 cgroup 읽기 위해 필요 (Ubuntu 22.04)
     devices:
@@ -73,19 +83,16 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - /dev/disk/:/dev/disk:ro
-      # Ubuntu 22.04 cgroup v2 + systemd driver 환경에서 cAdvisor 가 docker socket 만으로는
-      # 컨테이너 cgroup 발견 못함. containerd 소켓 직접 마운트해서 cAdvisor 가
-      # moby namespace 의 컨테이너 listing 을 받아오게 한다 (S14P31C201-502).
+      # containerd 소켓 직접 통신 시도분 (호환 fix 발판 — 후속 hotfix 에서 활용).
       - /run/containerd:/run/containerd:ro
     command:
       - --housekeeping_interval=15s      # 메트릭 수집 주기 (기본 1s → 부하 절감)
-      # containerd 직접 통신 — Docker 가 containerd shim 위에서 컨테이너 만드는 구조와 정합.
       - --containerd=/run/containerd/containerd.sock
-      # Docker 컨테이너는 containerd 의 'moby' namespace 에 들어간다. 없으면 namespace mismatch.
-      # cAdvisor 는 dash 하이픈 형태만 받는다 (underscore 는 unknown flag).
+      # cAdvisor 는 dash 하이픈 형태만 받는다 (underscore --containerd_namespace 는 unknown flag).
       - --containerd-namespace=moby
-      # name 라벨만 유지 (대시보드 식 {name!=""} 매칭). 그 외 docker label noise 제외.
       - --whitelisted_container_labels=name,io.kubernetes.container.name
+      # disk metric 비활성화 — Docker containerd-snapshotter 모드의 layerdb 미존재로 인한 noise 차단.
+      - --disable_metrics=disk,advtcp,udp,referenced_memory,cpu_topology,resctrl
     logging: *default-logging
     networks:
       - monitoring

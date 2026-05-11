@@ -1003,7 +1003,7 @@ EC2 호스트와 컨테이너 자원을 시각화하고 (INFRA-20 / S14P31C201-1
 - **알림 채널** — Jenkins 빌드 알림과 동일한 `MATTERMOST_WEBHOOK_URL` 재사용. URL 은 alertmanager entrypoint 가 env → `/tmp/secrets/mattermost-webhook-url` 파일로 작성 후 `api_url_file` 참조 (YAML 평문 노출 X).
 - **대시보드** — `monitoring/grafana/dashboards/` 의 JSON 이 첫 기동 시 자동 import:
   - `node-exporter-full.json` — Grafana.com community ID 1860, 호스트 종합
-  - `lostmemory-containers.json` — 자체 작성, 컨테이너 CPU/Mem/Network (cAdvisor)
+- **cAdvisor 컨테이너 metric** — **보류** (S14P31C201-502 진단). Docker 가 `containerd-snapshotter` 모드 사용 (`driver-type: io.containerd.snapshotter.v1`) 인데 cAdvisor v0.49 / v0.51 모두 컨테이너 등록 시 표준 `overlay2` 의 `layerdb/mounts/<hash>/mount-id` 파일을 강제로 읽으려 해서 호환 안 됨. cAdvisor service 는 향후 hotfix 발판으로 v0.51 + containerd 옵션 그대로 보존되지만 prometheus scrape job 과 Grafana dashboard 는 본 PR 에서 제거. 호스트 모니터링 (Node Exporter) + 임계 알림 (CPU/Mem/Disk) 은 영향 없이 정상 작동. 후속 hotfix 후보: Docker storage driver overlay2 회귀 / cAdvisor dev build / dockerd `/metrics` endpoint.
 
 ### 1회 등록 절차 (운영자)
 
@@ -1035,7 +1035,7 @@ EC2 SSH 후 `server/` 디렉토리 기준:
 ```bash
 # (a) 컴포넌트 healthy
 docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --env-file .env ps
-# prometheus / node-exporter / cadvisor / grafana / alertmanager 모두 Up + healthy
+# prometheus / node-exporter / cadvisor / grafana / alertmanager 모두 Up (cadvisor 는 scrape 보류이지만 컨테이너 자체는 Up 유지)
 
 # (b) 내부 health endpoints (컨테이너 안)
 docker compose -f docker-compose.monitoring.yml --env-file .env exec prometheus   wget -qO- http://localhost:9090/-/healthy
@@ -1050,12 +1050,12 @@ docker compose -f docker-compose.monitoring.yml --env-file .env exec alertmanage
 # (d) Prometheus scrape targets (모두 up 이어야 함)
 docker compose -f docker-compose.monitoring.yml --env-file .env exec prometheus \
   wget -qO- 'http://localhost:9090/api/v1/targets?state=active' | head -c 500
-# → "health":"up" 표시. instance: node-exporter:9100 / cadvisor:8080 / grafana:3000 / alertmanager:9093 / localhost:9090
+# → "health":"up" 표시. instance: node-exporter:9100 / alertmanager:9093 / localhost:9090 (cadvisor scrape 은 S14P31C201-502 로 보류 — 본 PR 에서 prometheus.yml 에서 제거됨)
 
 # (e) Grafana UI (브라우저)
 # https://k14c201.p.ssafy.io/grafana/
 # 로그인: admin / GRAFANA_ADMIN_PASSWORD
-# Dashboards → Browse → "Node Exporter Full" + "LostMemory — Containers (cAdvisor)" 2개 자동 import 확인
+# Dashboards → Browse → "Node Exporter Full" 1개 자동 import 확인 (LostMemory Containers 는 S14P31C201-502 로 보류, 본 PR 에서 제거됨)
 # 두 대시보드 모두 패널이 실시간 값으로 갱신되는지 확인
 
 # (f) 알림 강제 트리거 (운영 영향 없음 — rule 임계만 임시 낮춤)
@@ -1076,7 +1076,7 @@ docker compose -f docker-compose.monitoring.yml --env-file .env exec prometheus 
 - **Mattermost 알림 미도착** — 먼저 `docker compose -f docker-compose.monitoring.yml --env-file .env logs alertmanager --tail=50` 으로 webhook 호출 에러 (4xx/5xx) 확인. `MATTERMOST_WEBHOOK_URL` 미설정 시 컨테이너가 startup fail (entrypoint exit 1) — `.env` 갱신 후 재기동.
 - **Grafana 502 (`/grafana/` 진입 시)** — `docker compose ps grafana` healthy 확인. nginx 가 `frontend` 네트워크 안에서 grafana 컨테이너 이름 해석 가능해야 함. nginx 만 재기동: `docker compose --env-file .env up -d --force-recreate nginx`.
 - **Prometheus Targets DOWN** — 같은 `monitoring` network 안에서 컨테이너끼리 통신 가능해야 함. `docker compose -f docker-compose.monitoring.yml --env-file .env exec prometheus wget -qO- http://node-exporter:9100/metrics` 로 확인.
-- **대시보드 빈 화면 / "No data"** — datasource UID 불일치. `monitoring/grafana/provisioning/datasources/prometheus.yml` 의 `uid: prometheus` 와 `dashboards/lostmemory-containers.json` 의 `"uid": "prometheus"` 가 정합해야 함. Node Exporter Full (1860) 은 dashboard variable 로 자동 바인딩 — variable 옵션에 "Prometheus" 가 안 보이면 datasource 미적용 상태.
+- **대시보드 빈 화면 / "No data"** — datasource UID 불일치. `monitoring/grafana/provisioning/datasources/prometheus.yml` 의 `uid: prometheus` 가 dashboard 의 datasource 참조와 정합해야 함. Node Exporter Full (1860) 은 dashboard variable 로 자동 바인딩 — variable 옵션에 "Prometheus" 가 안 보이면 datasource 미적용 상태.
 - **Alertmanager config 변경 후 즉시 반영** — `docker compose -f docker-compose.monitoring.yml --env-file .env exec alertmanager wget -qO- --post-data='' http://localhost:9093/-/reload` (Prometheus 도 같은 패턴).
 
 ### 알림 채널 분리 / 임계 조정
