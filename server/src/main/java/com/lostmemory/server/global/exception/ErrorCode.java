@@ -30,9 +30,10 @@ public enum ErrorCode {
     SESSION_PRIVATE_CODE_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 입장 코드입니다"),
 
     RUN_NOT_FOUND(HttpStatus.NOT_FOUND, "런을 찾을 수 없습니다"),
-    RUN_NOT_HOST(HttpStatus.FORBIDDEN, "호스트만 런을 시작/종료/조회할 수 있습니다"),
+    RUN_NOT_HOST(HttpStatus.FORBIDDEN, "호스트만 런을 시작/종료할 수 있습니다"),
     RUN_ALREADY_ENDED(HttpStatus.CONFLICT, "이미 종료된 런입니다"),
-    RUN_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "해당 세션에 이미 진행 중인 런이 있습니다");
+    RUN_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "해당 세션에 이미 진행 중인 런이 있습니다"),
+    RUN_NOT_MEMBER(HttpStatus.FORBIDDEN, "본인이 참여한 런만 조회할 수 있습니다");
 
     private final HttpStatus status;
     private final String message;

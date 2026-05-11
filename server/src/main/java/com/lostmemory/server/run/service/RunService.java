@@ -116,15 +116,20 @@ public class RunService {
     }
 
     /**
-     * 런 단건 조회 — 호스트만 허용.
+     * 런 단건 조회 — RunMember (본인이 참여한 런) 만 허용.
+     * 응답 (RunDetailResponse) 은 런 공통 결과 (run + run_results 4 필드) 만 노출하고
+     * run_member 의 멤버별 private 데이터 (final_hp / final_gold / JSONB 컬럼) 는 미포함이라
+     * 게스트가 호스트 결과 조회 = 공유된 4 필드만 보는 케이스. MVP 정책으로 RunMember 면 OK.
      * 결과 row 가 없으면 (진행 중) null.
      */
     public RunDetailResponse getRun(Long userId, Long runId) {
         Run run = runRepository.findById(runId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RUN_NOT_FOUND));
 
-        if (!run.getSession().getHost().getId().equals(userId)) {
-            throw new BusinessException(ErrorCode.RUN_NOT_HOST);
+        boolean isMember = runMemberRepository.findAllByRunIdWithUser(runId).stream()
+                .anyMatch(m -> m.getUser().getId().equals(userId));
+        if (!isMember) {
+            throw new BusinessException(ErrorCode.RUN_NOT_MEMBER);
         }
 
         RunResultResponse resultResponse = runResultRepository.findById(runId)

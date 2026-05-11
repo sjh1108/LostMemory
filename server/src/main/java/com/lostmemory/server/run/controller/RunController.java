@@ -44,7 +44,7 @@ public class RunController {
         return ApiResponse.of(runService.endRun(userId, runId, request));
     }
 
-    @Operation(summary = "런 단건 조회 — 호스트만 허용. 결과 row 없으면 result 필드 null")
+    @Operation(summary = "런 단건 조회 — 본인이 참여한 런만 허용. 결과 row 없으면 result 필드 null")
     @GetMapping("/{runId}")
     public ApiResponse<RunDetailResponse> getRun(
             @AuthenticationPrincipal Long userId,
