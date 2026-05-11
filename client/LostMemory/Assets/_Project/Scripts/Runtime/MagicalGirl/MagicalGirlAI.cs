@@ -7,37 +7,52 @@ using UnityEngine;
 namespace LostMemory.MagicalGirl
 {
     /// <summary>
-    /// CL-144: 개별 미소녀 자동 공격 컴포넌트.
+    /// CL-204 (CL-144 후속): 개별 미소녀 자동 공격 컴포넌트.
     ///
-    /// MagicalGirlSpawner 가 GameObject 생성 후 AddComponent 로 부착 → Init 호출.
-    /// Awake 에서 SpriteRenderer 절차적 생성 (CL-142 FreezeVisual / CL-143 BurnVisual 패턴 미러).
-    /// Update 에서 attackInterval 마다 가장 가까운 적(Character.AI) 검색 → Damage.
+    /// MagicalGirlSpawner 가 GameObject 생성 후 AddComponent → Init(stat, combat, catalog) → SetVisual(v) 호출.
+    /// SetVisual 이 catalog 에서 entry 조회하여 sprite + 공격 파라미터 결정.
+    /// Update 에서 attackInterval 마다 가장 가까운 적(Character.AI) 검색 → catalog.kind 분기:
+    ///   Projectile → 발사체 prefab Instantiate + Init
+    ///   AOEFollow / AOEStationary → AOE prefab Instantiate + Init
+    /// catalog 미설정/entry 없음 시 fallback = CL-144 즉시 데미지 (placeholder).
     ///
     /// 무적: Health 컴포넌트 없음. 적 공격에 영향 X.
     /// 충돌: Collider 없음. 적과 물리 충돌 X.
     ///
-    /// Character.AI 필터: CL-143 발견 이슈 (ArcherArrow 등 발사체에 OnHit 적용) 자체 해결.
+    /// 5세트 강화 (CL-204): SetSetBonusActive(true) → damage ×1.5 + attackInterval ×0.67.
+    /// Type=27 (Enhanced) RelicData 매칭 시 SetEnhanced(true) → 추가 ×1.5 / ×0.67.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MagicalGirlAI : MonoBehaviour
     {
-        [SerializeField, Min(0.1f)] private float attackInterval = 1.5f;
-        [SerializeField, Min(0.1f)] private float attackRange = 5f;
-        [SerializeField, Min(0f)]   private float damageRatio = 0.30f;
-        [SerializeField, Min(0.1f)] private float spriteSize = 0.4f;
-        [SerializeField]            private int   spriteSortingOrder = 100;
+        // CL-204: catalog 미설정 시 fallback 값 (placeholder)
+        private const float FallbackDamageRatio = 0.30f;
+        private const float FallbackAttackInterval = 1.5f;
+        private const float FallbackSpriteSize = 0.4f;
+        private const int FallbackSortingOrder = 100;
+
+        // 5세트/Enhanced multiplier 상수
+        private const float SetBonusDamageMul = 1.5f;
+        private const float SetBonusIntervalMul = 0.67f;
+        private const float EnhancedDamageMul = 1.5f;
+        private const float EnhancedIntervalMul = 0.67f;
 
         private SpriteRenderer _sr;
         private float _nextAttackAt;
         private PlayerStatModifierContainer _playerStat;
         private KhiMeleeComboController _playerCombat;
+        private MagicalGirlAttackCatalog _catalog;
+        private MagicalGirlVisual _visual = MagicalGirlVisual.Default;
+        private bool _setBonusActive;
+        private bool _enhanced;
 
         // 검색 임시 버퍼 (heap alloc 방지)
         private static readonly Collider2D[] _searchBuf = new Collider2D[16];
 
         private void Awake()
         {
-            // 절차적 sprite 생성 — 흰색 텍스처를 색상으로 틴트
+            // 절차적 SpriteRenderer — 이후 SetVisual 가 catalog sprite 로 교체.
+            // catalog 미설정 fallback 시 흰색 placeholder 가 보임.
             _sr = gameObject.AddComponent<SpriteRenderer>();
             _sr.sprite = Sprite.Create(
                 Texture2D.whiteTexture,
@@ -45,38 +60,71 @@ namespace LostMemory.MagicalGirl
                 new Vector2(0.5f, 0.5f),
                 pixelsPerUnit: Texture2D.whiteTexture.width);
             _sr.color = MagicalGirlVisualPalette.Get(MagicalGirlVisual.Default);
-            _sr.sortingOrder = spriteSortingOrder;
-            transform.localScale = new Vector3(spriteSize, spriteSize, 1f);
+            _sr.sortingOrder = FallbackSortingOrder;
+            transform.localScale = new Vector3(FallbackSpriteSize, FallbackSpriteSize, 1f);
         }
 
-        public void Init(PlayerStatModifierContainer stat, KhiMeleeComboController combat)
+        public void Init(PlayerStatModifierContainer stat, KhiMeleeComboController combat, MagicalGirlAttackCatalog catalog)
         {
             _playerStat = stat;
             _playerCombat = combat;
+            _catalog = catalog;
         }
+
+        public MagicalGirlVisual Visual => _visual;
 
         public void SetVisual(MagicalGirlVisual visual)
         {
+            _visual = visual;
+            ApplyVisualAppearance();
+        }
+
+        /// <summary>5세트 도달 시 spawner 가 모든 미소녀에 broadcast.</summary>
+        public void SetSetBonusActive(bool active)
+        {
+            _setBonusActive = active;
+        }
+
+        /// <summary>Type=27 RelicData 보유 시 spawner 가 해당 visual 미소녀에만 적용.</summary>
+        public void SetEnhanced(bool enhanced)
+        {
+            _enhanced = enhanced;
+        }
+
+        private void ApplyVisualAppearance()
+        {
             if (_sr == null) return;
-            _sr.color = MagicalGirlVisualPalette.Get(visual);
+            // catalog 에서 entry 찾으면 sprite 교체, 없으면 색상 tint 만 (placeholder).
+            if (_catalog != null && _catalog.TryGet(_visual, out var entry) && entry.sprite != null)
+            {
+                _sr.sprite = entry.sprite;
+                _sr.color = Color.white;  // sprite 자체 색상 사용
+            }
+            else
+            {
+                _sr.color = MagicalGirlVisualPalette.Get(_visual);
+            }
         }
 
         private void Update()
         {
             if (Time.time < _nextAttackAt) return;
-            Health target = FindClosestEnemy();
+            (Health target, Vector2 toTargetDir) = FindClosestEnemy();
             if (target == null) return;
-            Attack(target);
-            _nextAttackAt = Time.time + attackInterval;
+            Attack(target, toTargetDir);
+
+            float interval = ResolveAttackInterval();
+            _nextAttackAt = Time.time + interval;
         }
 
-        private Health FindClosestEnemy()
+        private (Health, Vector2) FindClosestEnemy()
         {
-            // CL-146: Range multiplier 적용 — 미소녀 사거리 확장
+            float baseRange = ResolveAttackRange();
             float rangeMul = _playerStat != null ? _playerStat.GetTotalMultiplier(StatId.Range) : 1f;
-            float effectiveRange = attackRange * rangeMul;
+            float effectiveRange = baseRange * rangeMul;
             int hits = Physics2D.OverlapCircleNonAlloc(transform.position, effectiveRange, _searchBuf);
             Health closest = null;
+            Vector2 closestDir = Vector2.right;
             float minDistSq = float.MaxValue;
             for (int i = 0; i < hits; i++)
             {
@@ -84,32 +132,124 @@ namespace LostMemory.MagicalGirl
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
                 if (h == null || h.CurrentHealth <= 0f) continue;
-                // CL-143 follow-up: Character.AI 만 — 발사체(ArcherArrow 등) / Player 제외
                 Character ch = h.GetComponentInParent<Character>();
                 if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
 
-                float dSq = ((Vector2)(h.transform.position - transform.position)).sqrMagnitude;
+                Vector2 to = h.transform.position - transform.position;
+                float dSq = to.sqrMagnitude;
                 if (dSq < minDistSq)
                 {
                     minDistSq = dSq;
                     closest = h;
+                    closestDir = to;
                 }
             }
-            return closest;
+            return (closest, closestDir);
         }
 
-        private void Attack(Health target)
+        private void Attack(Health target, Vector2 toTargetDir)
+        {
+            float damage = ComputeDamage();
+            if (damage <= 0f) return;
+
+            // catalog driven dispatch
+            if (_catalog != null && _catalog.TryGet(_visual, out var entry))
+            {
+                switch (entry.kind)
+                {
+                    case MagicalGirlAttackCatalog.AttackKind.Projectile:
+                        SpawnProjectile(entry, damage, toTargetDir);
+                        break;
+                    case MagicalGirlAttackCatalog.AttackKind.AOEFollow:
+                    case MagicalGirlAttackCatalog.AttackKind.AOEStationary:
+                        SpawnAOE(entry, damage, toTargetDir);
+                        break;
+                }
+            }
+            else
+            {
+                // fallback (placeholder): 기존 CL-144 즉시 데미지
+                target.Damage(damage, gameObject, 0f, 0f, Vector3.zero);
+            }
+
+            StartCoroutine(FlashCoroutine());
+        }
+
+        private void SpawnProjectile(MagicalGirlAttackCatalog.Entry entry, float damage, Vector2 dir)
+        {
+            if (entry.vfxPrefab == null) return;
+            Vector3 spawnPos = transform.position;
+            GameObject go = Instantiate(entry.vfxPrefab, spawnPos, Quaternion.identity);
+            var proj = go.GetComponent<MagicalGirlProjectile>();
+            if (proj == null) proj = go.AddComponent<MagicalGirlProjectile>();
+            proj.Init(dir, damage, entry.projectileSpeed, entry.projectileLifetime, entry.hitVfxPrefab);
+        }
+
+        private void SpawnAOE(MagicalGirlAttackCatalog.Entry entry, float damage, Vector2 dir)
+        {
+            if (entry.vfxPrefab == null) return;
+            // AOEStationary: 미소녀 전방 일정 거리 spawn. AOEFollow: 미소녀 위치 spawn (Init 에서 적 추적).
+            Vector3 spawnPos = transform.position;
+            if (entry.kind == MagicalGirlAttackCatalog.AttackKind.AOEStationary)
+            {
+                Vector2 forward = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.right;
+                spawnPos += (Vector3)(forward * Mathf.Max(2f, entry.aoeRadius * 1.5f));
+            }
+            GameObject go = Instantiate(entry.vfxPrefab, spawnPos, Quaternion.identity);
+            var aoe = go.GetComponent<MagicalGirlAOE>();
+            if (aoe == null) aoe = go.AddComponent<MagicalGirlAOE>();
+            // tick 데미지 = entry.damageRatio 기반이지만, catalog 에서 이미 1회 전달된 damage 를 tick 당 데미지로 사용.
+            // duration 동안 tickInterval 마다 동일 damage 적용 (대략 6~10회 tick).
+            aoe.Init(
+                entry.kind,
+                damage,
+                entry.aoeRadius,
+                entry.aoeDuration,
+                entry.aoeTickInterval,
+                entry.pullSpeed,
+                entry.slowMagnitude,
+                entry.slowDuration);
+        }
+
+        private float ComputeDamage()
         {
             float playerAtk = _playerCombat != null && _playerCombat.WeaponData != null
                 ? _playerCombat.WeaponData.BaseDamage
                 : 0f;
             if (_playerStat != null)
                 playerAtk *= _playerStat.GetTotalMultiplier(StatId.AttackPower);
-            float damage = playerAtk * damageRatio;
-            if (damage <= 0f) return;
 
-            target.Damage(damage, gameObject, 0f, 0f, Vector3.zero);
-            StartCoroutine(FlashCoroutine());
+            float ratio = ResolveDamageRatio();
+            float damage = playerAtk * ratio;
+            if (_setBonusActive) damage *= SetBonusDamageMul;
+            if (_enhanced) damage *= EnhancedDamageMul;
+            return damage;
+        }
+
+        private float ResolveDamageRatio()
+        {
+            if (_catalog != null && _catalog.TryGet(_visual, out var entry) && entry.damageRatio > 0f)
+                return entry.damageRatio;
+            return FallbackDamageRatio;
+        }
+
+        private float ResolveAttackInterval()
+        {
+            float baseInterval;
+            if (_catalog != null && _catalog.TryGet(_visual, out var entry) && entry.attackInterval > 0f)
+                baseInterval = entry.attackInterval;
+            else
+                baseInterval = FallbackAttackInterval;
+            if (_setBonusActive) baseInterval *= SetBonusIntervalMul;
+            if (_enhanced) baseInterval *= EnhancedIntervalMul;
+            return baseInterval;
+        }
+
+        private float ResolveAttackRange()
+        {
+            // CL-204: catalog 의 projectileLifetime × projectileSpeed 또는 aoeRadius 로부터 검색 반경 추정.
+            // 단순화: 5유닛 (CL-144 default) — 향후 catalog 에 별도 searchRange 필드 추가 가능.
+            return 5f;
         }
 
         private IEnumerator FlashCoroutine()
