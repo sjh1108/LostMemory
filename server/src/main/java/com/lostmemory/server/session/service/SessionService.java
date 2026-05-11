@@ -44,6 +44,12 @@ public class SessionService {
         User host = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        // 같은 유저가 다른 active 세션의 멤버이면 신규 세션 생성 차단
+        // (런 종료 시 같은 유저가 두 endRun 의 적립 대상이 되는 race 자체를 봉쇄)
+        if (sessionJoinRepository.existsByUserId(userId)) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_IN_SESSION);
+        }
+
         if (sessionRepository.existsByPrivateCode(request.privateCode())) {
             throw new BusinessException(ErrorCode.SESSION_PRIVATE_CODE_DUPLICATED);
         }
@@ -67,6 +73,12 @@ public class SessionService {
     public SessionResponse joinSession(Long userId, Long sessionId, JoinSessionRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 같은 유저가 다른 active 세션의 멤버이면 join 차단
+        // (런 종료 시 같은 유저가 두 endRun 의 적립 대상이 되는 race 자체를 봉쇄)
+        if (sessionJoinRepository.existsByUserId(userId)) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_IN_SESSION);
+        }
 
         Session session = sessionRepository.findByIdForUpdate(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));

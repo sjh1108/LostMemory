@@ -19,6 +19,7 @@ public enum ErrorCode {
     USER_LOGIN_ID_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다"),
     USER_NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"),
+    USER_ALREADY_IN_SESSION(HttpStatus.CONFLICT, "이미 다른 세션에 참여 중입니다"),
 
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "세션을 찾을 수 없습니다"),
     SESSION_FULL(HttpStatus.CONFLICT, "정원이 가득 찼습니다"),
@@ -26,7 +27,13 @@ public enum ErrorCode {
     SESSION_NOT_HOST(HttpStatus.FORBIDDEN, "호스트만 수행할 수 있습니다"),
     SESSION_HOST_CANNOT_LEAVE(HttpStatus.CONFLICT, "호스트는 세션 종료를 사용해야 합니다"),
     SESSION_INVALID_PRIVATE_CODE(HttpStatus.BAD_REQUEST, "비공개 코드가 일치하지 않습니다"),
-    SESSION_PRIVATE_CODE_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 입장 코드입니다");
+    SESSION_PRIVATE_CODE_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 입장 코드입니다"),
+
+    RUN_NOT_FOUND(HttpStatus.NOT_FOUND, "런을 찾을 수 없습니다"),
+    RUN_NOT_HOST(HttpStatus.FORBIDDEN, "호스트만 런을 시작/종료할 수 있습니다"),
+    RUN_ALREADY_ENDED(HttpStatus.CONFLICT, "이미 종료된 런입니다"),
+    RUN_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "해당 세션에 이미 진행 중인 런이 있습니다"),
+    RUN_NOT_MEMBER(HttpStatus.FORBIDDEN, "본인이 참여한 런만 조회할 수 있습니다");
 
     private final HttpStatus status;
     private final String message;
