@@ -57,6 +57,7 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
       SERVER_PORT: ${SERVER_PORT}
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
@@ -99,6 +100,7 @@ services:
     entrypoint: ["sh","-c","exec java $$JAVA_OPTS -cp /app -Dloader.main=com.lostmemory.relay.RelayApplication org.springframework.boot.loader.launch.PropertiesLauncher"]
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
       # JwtProperties record 4 필드 모두 요구 — 누락 시 binding fail
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
