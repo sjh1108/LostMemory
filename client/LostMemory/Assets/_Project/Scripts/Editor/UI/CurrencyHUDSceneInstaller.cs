@@ -22,6 +22,8 @@ namespace LostMemory.Editor
         {
             "Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity",
             "Assets/_Project/Scenes/Dungeon/Dungeon_1F_2R.unity",
+            "Assets/_Project/Scenes/Dungeon/Dungeon_1F_3R.unity",
+            "Assets/_Project/Scenes/Dungeon/Dungeon_1F_4R.unity",
             "Assets/_Project/Scenes/Dungeon/Dungeon_1F_Boss.unity",
             "Assets/_Project/Scenes/Dungeon/Dungeon.unity",
         };
