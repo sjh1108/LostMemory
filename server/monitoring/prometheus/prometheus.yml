@@ -38,7 +38,3 @@ scrape_configs:
     static_configs:
       - targets: ["alertmanager:9093"]
 
-  - job_name: grafana
-    static_configs:
-      - targets: ["grafana:3000"]
-    metrics_path: /metrics

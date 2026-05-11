@@ -71,10 +71,10 @@ services:
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - /dev/disk/:/dev/disk:ro
     command:
       - --housekeeping_interval=15s      # 메트릭 수집 주기 (기본 1s → 부하 절감)
-      - --docker_only=true               # 호스트 cgroup 무시, docker 컨테이너만
     logging: *default-logging
     networks:
       - monitoring
@@ -138,7 +138,6 @@ volumes:
 networks:
   # 모니터링 컴포넌트 간 내부 통신 전용 (외부 차단).
   monitoring:
-    internal: true
   # nginx (frontend network) 가 grafana 접근 가능하도록 기존 server_frontend 참조.
   # 본 compose 가 단독 실행되지 못하게 external 로 명시 — 운영자가 본체 compose 와 함께 -f 두 번 사용해야 함.
   frontend:

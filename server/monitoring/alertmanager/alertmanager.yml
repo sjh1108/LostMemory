@@ -24,8 +24,6 @@ receivers:
         # firing → resolved 전환 시 RESOLVED 알림 1회 추가 발송 — 사용자 정책 핵심.
         send_resolved: true
         # 채널/유저명은 Mattermost incoming webhook 설정이 우선. 여기 값은 무시되지만 schema 호환용.
-        channel: "#alerts"
-        username: "Prometheus Alertmanager"
         icon_emoji: ":rotating_light:"
         # 제목: "FIRING: HighCpuUsage" 또는 "RESOLVED: HighDiskUsage"
         title: '{{ .Status | toUpper }}: {{ .GroupLabels.alertname }} ({{ .Alerts.Firing | len }}건)'
