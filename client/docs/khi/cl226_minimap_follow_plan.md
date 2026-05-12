@@ -1,9 +1,14 @@
 # CL-226: 미니맵 추적 (FollowTarget) 모드
 
 **Epic**: H. UI / 연출 / 아트 적용
-**상태**: plan ⏳ 검토 / 코드 ⏳ / Editor ⏳ / 검증 ⏳
-**선행**: [CL-222](./cl222_minimap_camera_hud_plan.md) (코드 완료, Phase B/C 진행 중)
-**관련**: CL-223 (Fog of War), CL-224 (멀티플레이 통합) — 독립이라 순서 자유
+**상태**: ✅ **종결** (코드 ✅ / Editor ✅ / 검증 ✅) — 2026-05-12
+**선행**: [CL-222](./cl222_minimap_camera_hud_plan.md) (종결됨), [CL-223](./cl223_minimap_fog_of_war_plan.md) (종결됨)
+**관련**: CL-224 (멀티플레이 통합) — 독립이라 순서 자유
+
+> **개발 보고서**: [cl226_minimap_follow_report.md](./cl226_minimap_follow_report.md) — 최종 결과, 추적 모드 + 방 단위 reveal 묶음, PR 메시지 후보
+> **구현 실행 plan**: [cl226_follow_phaseAB_execution.md](./cl226_follow_phaseAB_execution.md) — Phase A 코드 + Phase B Editor 단계별 절차. CL-223 진행 후 변경 컨텍스트 반영
+>
+> ⚠️ **본 세션 추가 작업**: 방 단위 fog reveal (MinimapFog.RevealBounds + MinimapRoomReveal.cs) — 계획 외 추가, CL-226 안에 묶어 종결. 자세한 내용은 보고서 참조
 
 ---
 

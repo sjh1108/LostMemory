@@ -369,7 +369,7 @@ MonoBehaviour:
   falloff: 0.3
   updateHz: 10
   visibilityThreshold: 0.5
-  revealKinds: 3
+  revealKinds: 0
 --- !u!1 &6204779051317656293
 GameObject:
   m_ObjectHideFlags: 0
@@ -742,13 +742,14 @@ MonoBehaviour:
     m_Bits: 8390145
   backgroundColor: {r: 0.05, g: 0.05, b: 0.08, a: 1}
   cameraZ: -50
-  fitMode: 0
+  fitMode: 2
   manualCenter: {x: 0, y: 0}
   manualSize: 20
   autoBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 20, y: 20, z: 0.5}
   autoPadding: 1.05
+  followDamping: 5
 --- !u!1 &8819077443686403630
 GameObject:
   m_ObjectHideFlags: 0
