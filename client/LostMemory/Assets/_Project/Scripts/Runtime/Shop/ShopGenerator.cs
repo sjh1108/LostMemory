@@ -7,7 +7,14 @@ namespace LostMemory.Shop
 {
     /// <summary>
     /// 상점 방문 시 동적으로 ShopData를 생성하는 유틸리티.
-    /// 유물 3칸 + 비유물 1칸(포션 or 랜덤박스)으로 구성한다.
+    ///
+    /// Phase A 슬롯 구성:
+    ///   1. 유물 3칸 — RewardPool 에서 보유 필터 + 등급 가중 추첨
+    ///   2. 포션 1칸 (확정) — SmallPotion 또는 LargePotion 중 가중 추첨 (RandomBox 제외)
+    ///   3. 랜덤박스 1칸 (확률 등장) — config.RandomBoxAppearChance 확률로 슬롯 추가
+    ///
+    /// → 최소 4 슬롯 (RandomBox 미등장 시), 최대 5 슬롯 (등장 시).
+    /// → ShopPanel.prefab 의 _itemViews 배열 크기 ≥ 5 여야 5번째 슬롯이 표시됨.
     /// </summary>
     public static class ShopGenerator
     {
@@ -52,36 +59,43 @@ namespace LostMemory.Shop
                 excludedNames.Add(relic.name);   // 이번 상점 내 중복 방지
             }
 
-            // ── 비유물 슬롯 1개 (포션 or 랜덤박스) ──────────────────
-            var nonRelic = DrawNonRelicItem(config);
-            if (nonRelic != null)
+            // ── 포션 슬롯 1개 (확정) — Small or Large 가중 추첨 ─────
+            var potion = DrawPotionOnly(config);
+            if (potion != null)
                 items.Add(new ShopItemData
                 {
-                    Relic = nonRelic,
-                    Price = GetConsumablePrice(nonRelic, config)
+                    Relic = potion,
+                    Price = GetConsumablePrice(potion, config)
                 });
+
+            // ── 랜덤박스 슬롯 (확률 등장) ──────────────────────────
+            // config.RandomBoxAppearChance 로 한 번 굴려서 hit 시에만 5번째 슬롯 추가.
+            // miss 시 4 슬롯으로 종료. ShopPanelView 는 shopData.Items.Length 만큼만 표시.
+            if (config.RandomBox != null && Random.value < config.RandomBoxAppearChance)
+            {
+                items.Add(new ShopItemData
+                {
+                    Relic = config.RandomBox,
+                    Price = GetConsumablePrice(config.RandomBox, config)
+                });
+            }
 
             shopData.Items = items.ToArray();
             return shopData;
         }
 
-        // ── 비유물 추첨 ──────────────────────────────────────────────
+        // ── 포션 추첨 (Small vs Large, RandomBox 제외) ──────────────
 
-        private static RelicData DrawNonRelicItem(ShopConfig config)
+        private static RelicData DrawPotionOnly(ShopConfig config)
         {
-            int total = config.SmallPotionWeight + config.LargePotionWeight + config.RandomBoxWeight;
+            int total = config.SmallPotionWeight + config.LargePotionWeight;
             if (total <= 0) return config.SmallHealPotion;
 
             int roll = Random.Range(0, total);
-
             if (roll < config.SmallPotionWeight)
                 return config.SmallHealPotion;
-            roll -= config.SmallPotionWeight;
 
-            if (roll < config.LargePotionWeight)
-                return config.LargeHealPotion;
-
-            return config.RandomBox;
+            return config.LargeHealPotion;
         }
 
         // ── 가격 계산 ────────────────────────────────────────────────
