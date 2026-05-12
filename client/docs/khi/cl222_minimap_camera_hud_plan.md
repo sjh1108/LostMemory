@@ -1,9 +1,12 @@
 # CL-222: 미니맵 카메라 + HUD + 마커 (싱글)
 
 **Epic**: H. UI / 연출 / 아트 적용
-**상태**: 코드 ✅ 완료 (4 파일) / Editor 작업 ⏳ 대기 / 검증 ⏳ 대기
+**상태**: 코드 ✅ 완료 (4 파일) / Editor ⚠️ 부분 완료 (Player+Chobomb) / 검증 ⚠️ 부분 통과 (HUD/M키/풀링/멀티방 ✅, 적 6개+보스 2개 부착 대기)
 **선행**: 없음
-**후속**: CL-223 (Fog of War), CL-224 (멀티 통합)
+**후속**: CL-223 (Fog of War), CL-224 (멀티 통합), CL-226 (추적 모드)
+
+> **Phase B/C 실행 plan**: [cl222_minimap_phaseBC_execution.md](./cl222_minimap_phaseBC_execution.md) — 구체 prefab/씬명 + step-by-step Editor 작업 순서
+> **후속 추적 모드 plan**: [cl226_minimap_follow_plan.md](./cl226_minimap_follow_plan.md) — FollowTarget FitMode 추가
 
 ---
 
@@ -353,17 +356,27 @@ public sealed class MinimapCameraRig : MonoBehaviour
 
 ---
 
-## 결정 보류 — 미니맵 배경 정책
+## 결정 완료 — 미니맵 배경 정책 (2026-05-12)
 
-미니맵 카메라가 "무엇을 찍을지" 디자이너 합의 필요.
+**결정**: **화이트리스트 Culling Mask** — `MinimapCameraRig.cullingMask` 에 `Default` Layer 만 체크 (던전 sprite 만 노출).
 
-| 옵션 | 작업량 | 시각 |
+### 경위
+1. 1차 검증은 C(빈 배경 + 마커만) 로 시작 → 마커 동작 확인 ✅
+2. 던전 시각 노출 단계에서 블랙리스트 방식 시도 (`Everything - Enemies`) → enemy prefab 의 자식(예: `WeaponAttachment`)이 `Default` Layer 라 추적 불가능. 새 sub-object 추가 시 매번 손봐야 함
+3. **화이트리스트 전환** — `Default` Layer (던전 sprite) 만 체크. 적/이펙트/투사체/UI 모두 자동 차단. 유지보수 부담 0
+
+### 옵션 비교
+| 옵션 | 결과 | 채택 |
 |---|---|---|
-| **A. 실제 던전 sprite 그대로 찍기** | 0 (Layer 만 변경) | 실 게임 화면 축소판. 좀 지저분, 톤 안 맞을 수 있음 |
-| **B. 방마다 "Minimap" 레이어 프록시 sprite 두기** | 디자이너 작업 (각 방 prefab 에 도형 sprite 추가) | 깔끔, 디자인 통일 |
-| **C. 빈 배경 + 마커만** | 0 | 마커 위치만 보임 — 던전 형상 안 보임. 1차 검증용 OK |
+| A. 블랙리스트 (`Everything - Enemies`) | enemy 자식 Layer 추적 끝없음 | ❌ |
+| B. 프록시 sprite (Minimap Layer 전용 도형) | 디자이너 작업 동반 | 후속 폴리시 |
+| C. 빈 배경 + 마커만 | 던전 형상 안 보임 | 1차 검증용으로만 사용 |
+| **D. 화이트리스트 (Default Layer 만)** | **던전만 노출, 적/이펙트 자동 차단** | ✅ 채택 |
 
-**1차 검증은 C 로** (Phase B-2~3 빈 배경에서 마커 동작만 확인). 본 검증 후 디자이너와 A vs B 결정. 본 CL 완료 조건은 C 로 충분.
+### 적용
+- `MinimapRig.prefab > MinimapCamera > MinimapCameraRig.cullingMask` = `Default` 만 체크
+- 후속에 프록시 sprite 추가 시 `Minimap` Layer 도 함께 체크
+- 다른 Layer (Enemies/UI/이펙트 등) 분류 작업 불필요
 
 ---
 

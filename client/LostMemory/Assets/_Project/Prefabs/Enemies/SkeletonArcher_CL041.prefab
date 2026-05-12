@@ -158,6 +158,7 @@ GameObject:
   - component: {fileID: 2233445566778899011}
   - component: {fileID: 2233445566778899012}
   - component: {fileID: 2233445566778899013}
+  - component: {fileID: 3355731707548618052}
   m_Layer: 13
   m_Name: SkeletonArcher_CL041
   m_TagString: Enemy
@@ -1160,7 +1161,9 @@ MonoBehaviour:
   previewObjectName: AttackTelegraphPreview
   previewParent: {fileID: 4736116768674126}
   sortingReference: {fileID: 212797044214329334}
-  sortingOrder: -5
+  sortingOrderOffset: -5
+  renderOutsideSortingGroup: 1
+  sortingGroupReference: {fileID: 0}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
@@ -1236,6 +1239,24 @@ MonoBehaviour:
   Label: RecoverFinished
   AfterTimeMin: 2
   AfterTimeMax: 2
+--- !u!114 &3355731707548618052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9daeeaeeb3607b4ebd1d9f73ad959bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.Minimap.MinimapAgent
+  kind: 2
+  icon: {fileID: 21300000, guid: 69bdc1f611c0f8d4dbc71613a9b04b9b, type: 3}
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  iconScale: 1
+  rotateWithTransform: 0
+  priority: 0
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
