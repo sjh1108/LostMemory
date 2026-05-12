@@ -70,7 +70,10 @@ namespace LostMemory.Enemies.Boss.Bertha
             float targetInvincibilityDuration,
             float hitRadius,
             float baseAngleDegrees,
-            float spawnDistance)
+            float spawnDistance,
+            Transform homingTarget = null,
+            float homingTurnSpeedDegrees = 0f,
+            float homingDuration = 0f)
         {
             if (projectileCount <= 0)
             {
@@ -82,7 +85,18 @@ namespace LostMemory.Enemies.Boss.Bertha
             {
                 float angle = baseAngleDegrees + (angleStep * i);
                 Vector2 direction = AngleToDirection(angle);
-                SpawnProjectile(owner, direction, speed, lifetime, damage, targetInvincibilityDuration, hitRadius, spawnDistance);
+                SpawnProjectile(
+                    owner,
+                    direction,
+                    speed,
+                    lifetime,
+                    damage,
+                    targetInvincibilityDuration,
+                    hitRadius,
+                    spawnDistance,
+                    homingTarget,
+                    homingTurnSpeedDegrees,
+                    homingDuration);
             }
         }
 
@@ -97,7 +111,10 @@ namespace LostMemory.Enemies.Boss.Bertha
             float targetInvincibilityDuration,
             float hitRadius,
             float angleOffsetDegrees,
-            float spawnDistance)
+            float spawnDistance,
+            Transform homingTarget = null,
+            float homingTurnSpeedDegrees = 0f,
+            float homingDuration = 0f)
         {
             if (projectileCount <= 0)
             {
@@ -109,7 +126,18 @@ namespace LostMemory.Enemies.Boss.Bertha
 
             if (projectileCount == 1)
             {
-                SpawnProjectile(owner, AngleToDirection(originAngle), speed, lifetime, damage, targetInvincibilityDuration, hitRadius, spawnDistance);
+                SpawnProjectile(
+                    owner,
+                    AngleToDirection(originAngle),
+                    speed,
+                    lifetime,
+                    damage,
+                    targetInvincibilityDuration,
+                    hitRadius,
+                    spawnDistance,
+                    homingTarget,
+                    homingTurnSpeedDegrees,
+                    homingDuration);
                 return;
             }
 
@@ -119,7 +147,18 @@ namespace LostMemory.Enemies.Boss.Bertha
             for (int i = 0; i < projectileCount; i++)
             {
                 float angle = startAngle + (angleStep * i);
-                SpawnProjectile(owner, AngleToDirection(angle), speed, lifetime, damage, targetInvincibilityDuration, hitRadius, spawnDistance);
+                SpawnProjectile(
+                    owner,
+                    AngleToDirection(angle),
+                    speed,
+                    lifetime,
+                    damage,
+                    targetInvincibilityDuration,
+                    hitRadius,
+                    spawnDistance,
+                    homingTarget,
+                    homingTurnSpeedDegrees,
+                    homingDuration);
             }
         }
 
@@ -131,7 +170,10 @@ namespace LostMemory.Enemies.Boss.Bertha
             float damage,
             float targetInvincibilityDuration,
             float hitRadius,
-            float spawnDistance)
+            float spawnDistance,
+            Transform homingTarget,
+            float homingTurnSpeedDegrees,
+            float homingDuration)
         {
             Vector2 normalizedDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right;
             Vector3 spawnOrigin = projectileSpawnOrigin != null ? projectileSpawnOrigin.position : transform.position;
@@ -170,7 +212,10 @@ namespace LostMemory.Enemies.Boss.Bertha
                 destroyProjectileOnHit,
                 faceProjectileDirection,
                 projectileAnimationFrames,
-                projectileAnimationFrameRate);
+                projectileAnimationFrameRate,
+                homingTarget,
+                homingTurnSpeedDegrees,
+                homingDuration);
 
             Log("Spawned projectile.");
         }

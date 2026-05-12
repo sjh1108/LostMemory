@@ -257,10 +257,9 @@ namespace LostMemory.Enemies.Boss.Bertha
             _hitTargetsThisAttack.Clear();
 
             Vector2 direction = _hasLockedAttack ? _lockedImpactDirection : ResolveAttackDirection();
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             Vector2 center = _hasLockedAttack ? _lockedImpactCenter : ResolveImpactCenter(ResolveOriginPosition(), direction);
 
-            int hitCount = Physics2D.OverlapBoxNonAlloc(center, attackSize, angle, _overlapBuffer, targetLayerMask);
+            int hitCount = OverlapCircleTargets(center, ResolveCircleRadius(attackSize));
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -355,7 +354,7 @@ namespace LostMemory.Enemies.Boss.Bertha
 
             return new AttackTelegraphRequest2D
             {
-                Shape = AttackTelegraphShape2D.Box,
+                Shape = AttackTelegraphShape2D.Circle,
                 Center = _lockedImpactCenter,
                 Direction = normalizedDirection,
                 Size = attackSize,
@@ -383,6 +382,19 @@ namespace LostMemory.Enemies.Boss.Bertha
         {
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             return origin + (Vector2)(Quaternion.Euler(0f, 0f, angle) * (Vector3)attackOffset);
+        }
+
+        private static float ResolveCircleRadius(Vector2 size)
+        {
+            return Mathf.Max(Mathf.Abs(size.x), Mathf.Abs(size.y)) * 0.5f;
+        }
+
+        private int OverlapCircleTargets(Vector2 center, float radius)
+        {
+            ContactFilter2D contactFilter = new ContactFilter2D();
+            contactFilter.SetLayerMask(targetLayerMask);
+            contactFilter.useTriggers = Physics2D.queriesHitTriggers;
+            return Physics2D.OverlapCircle(center, radius, contactFilter, _overlapBuffer);
         }
 
         private void ClearLockedAttack()

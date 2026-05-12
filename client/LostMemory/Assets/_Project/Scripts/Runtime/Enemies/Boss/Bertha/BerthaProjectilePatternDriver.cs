@@ -28,18 +28,22 @@ namespace LostMemory.Enemies.Boss.Bertha
             [Min(0.05f)] public float HitRadius;
             public float AngleOffsetDegrees;
             [Min(0f)] public float SpawnDistance;
+            [Min(0f)] public float HomingTurnSpeedDegrees;
+            [Min(0f)] public float HomingDuration;
         }
 
         [SerializeField] private string driverKey = "ProjectilePattern";
         [SerializeField] private AIBrain brain;
         [SerializeField] private Character character;
         [SerializeField] private CharacterOrientation2D orientationAbility;
+        [SerializeField] private BerthaBossPhaseController phaseController;
         [SerializeField] private Animator animator;
         [SerializeField] private Transform projectileOrigin;
         [SerializeField] private BerthaProjectileBurstEmitter burstEmitter;
         [SerializeField] private string attackStateName = "HeavyAttack";
         [SerializeField] private string attackAnimationStateName;
         [SerializeField, Min(0)] private int attackAnimationLayer;
+        [SerializeField] private BerthaBossPhase minimumPhase = BerthaBossPhase.Phase1;
         [SerializeField] private BurstInstruction[] burstSequence = System.Array.Empty<BurstInstruction>();
         [SerializeField] private bool debugLogging;
 
@@ -47,6 +51,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         private Vector2 _lockedDirection = Vector2.right;
 
         public string DriverKey => driverKey;
+        public string AttackStateName => attackStateName;
 
         private void Reset()
         {
@@ -94,6 +99,12 @@ namespace LostMemory.Enemies.Boss.Bertha
 
             if (enteringState == attackStateName)
             {
+                if (!CanStartPattern())
+                {
+                    StopBurstRoutine();
+                    return;
+                }
+
                 LockDirection();
                 PlayAttackAnimation();
                 StopBurstRoutine();
@@ -119,24 +130,34 @@ namespace LostMemory.Enemies.Boss.Bertha
             bool configuredDebugLogging,
             Animator configuredAnimator = null,
             string configuredAttackAnimationStateName = null,
-            int configuredAttackAnimationLayer = 0)
+            int configuredAttackAnimationLayer = 0,
+            BerthaBossPhaseController configuredPhaseController = null,
+            BerthaBossPhase configuredMinimumPhase = BerthaBossPhase.Phase1)
         {
             driverKey = configuredDriverKey;
             brain = configuredBrain;
             character = configuredCharacter;
             orientationAbility = configuredOrientationAbility;
+            phaseController = configuredPhaseController;
             animator = configuredAnimator;
             projectileOrigin = configuredProjectileOrigin;
             burstEmitter = configuredBurstEmitter;
             attackStateName = configuredAttackStateName;
             attackAnimationStateName = configuredAttackAnimationStateName;
             attackAnimationLayer = Mathf.Max(0, configuredAttackAnimationLayer);
+            minimumPhase = configuredMinimumPhase;
             burstSequence = configuredBurstSequence != null
                 ? (BurstInstruction[])configuredBurstSequence.Clone()
                 : System.Array.Empty<BurstInstruction>();
             debugLogging = configuredDebugLogging;
             RefreshReferences();
             NormalizeBurstSequence();
+        }
+
+        public void StopAndDisable()
+        {
+            StopBurstRoutine();
+            enabled = false;
         }
 
         private IEnumerator RunBurstSequence()
@@ -167,6 +188,8 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void EmitBurst(BurstInstruction burst)
         {
+            LockDirection();
+
             float baseAngle = Mathf.Atan2(_lockedDirection.y, _lockedDirection.x) * Mathf.Rad2Deg + burst.AngleOffsetDegrees;
             Vector3 originalPosition = transform.position;
 
@@ -189,7 +212,10 @@ namespace LostMemory.Enemies.Boss.Bertha
                         burst.TargetInvincibilityDuration,
                         burst.HitRadius,
                         burst.AngleOffsetDegrees,
-                        burst.SpawnDistance);
+                        burst.SpawnDistance,
+                        brain != null ? brain.Target : null,
+                        burst.HomingTurnSpeedDegrees,
+                        burst.HomingDuration);
                     break;
 
                 default:
@@ -202,7 +228,10 @@ namespace LostMemory.Enemies.Boss.Bertha
                         burst.TargetInvincibilityDuration,
                         burst.HitRadius,
                         baseAngle,
-                        burst.SpawnDistance);
+                        burst.SpawnDistance,
+                        brain != null ? brain.Target : null,
+                        burst.HomingTurnSpeedDegrees,
+                        burst.HomingDuration);
                     break;
             }
 
@@ -214,6 +243,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             brain ??= GetComponent<AIBrain>();
             character ??= GetComponent<Character>();
             orientationAbility ??= GetComponent<CharacterOrientation2D>();
+            phaseController ??= GetComponent<BerthaBossPhaseController>();
             burstEmitter ??= GetComponent<BerthaProjectileBurstEmitter>();
             projectileOrigin ??= transform;
         }
@@ -248,13 +278,56 @@ namespace LostMemory.Enemies.Boss.Bertha
                 burst.TargetInvincibilityDuration = Mathf.Max(0f, burst.TargetInvincibilityDuration);
                 burst.HitRadius = Mathf.Max(0.05f, burst.HitRadius);
                 burst.SpawnDistance = Mathf.Max(0f, burst.SpawnDistance);
+                burst.HomingTurnSpeedDegrees = Mathf.Max(0f, burst.HomingTurnSpeedDegrees);
+                burst.HomingDuration = Mathf.Max(0f, burst.HomingDuration);
                 burstSequence[i] = burst;
             }
         }
 
         private void LockDirection()
         {
-            _lockedDirection = ResolveFacingDirection();
+            _lockedDirection = ResolveAimDirection();
+            ApplyLockedFacing();
+        }
+
+        private Vector2 ResolveAimDirection()
+        {
+            if (TryResolveTargetDirection(out Vector2 targetDirection))
+            {
+                return targetDirection;
+            }
+
+            return ResolveFacingDirection();
+        }
+
+        private bool TryResolveTargetDirection(out Vector2 targetDirection)
+        {
+            targetDirection = Vector2.zero;
+
+            if (brain == null || brain.Target == null)
+            {
+                return false;
+            }
+
+            Vector2 origin = projectileOrigin != null ? projectileOrigin.position : transform.position;
+            Vector2 targetOffset = (Vector2)brain.Target.position - origin;
+            if (targetOffset.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            targetDirection = targetOffset.normalized;
+            return true;
+        }
+
+        private void ApplyLockedFacing()
+        {
+            if (orientationAbility == null || Mathf.Abs(_lockedDirection.x) <= 0.0001f)
+            {
+                return;
+            }
+
+            orientationAbility.FaceDirection(_lockedDirection.x >= 0f ? 1 : -1);
         }
 
         private Vector2 ResolveFacingDirection()
@@ -282,9 +355,25 @@ namespace LostMemory.Enemies.Boss.Bertha
         {
             return burstEmitter != null
                 && !IsDead()
+                && CanUseInCurrentPhase()
                 && brain != null
                 && brain.CurrentState != null
                 && brain.CurrentState.StateName == attackStateName;
+        }
+
+        private bool CanStartPattern()
+        {
+            return !IsDead() && CanUseInCurrentPhase();
+        }
+
+        private bool CanUseInCurrentPhase()
+        {
+            if (phaseController == null)
+            {
+                return minimumPhase <= BerthaBossPhase.Phase1;
+            }
+
+            return phaseController.IsAtLeast(minimumPhase);
         }
 
         private bool IsDead()

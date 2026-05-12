@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
@@ -12,6 +13,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private Health health;
         [SerializeField] private Character character;
         [SerializeField] private AIBrain brain;
+        [SerializeField] private BerthaHealthThresholdReactionController thresholdReactionController;
         [SerializeField] private Transform shakeTarget;
         [SerializeField] private SpriteRenderer[] targetRenderers = System.Array.Empty<SpriteRenderer>();
         [SerializeField] private Color hitTintColor = new Color(1f, 0.45f, 0.45f, 1f);
@@ -26,11 +28,14 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private bool useUnscaledTime = true;
         [SerializeField] private bool debugLogging;
 
+        private const bool ClearNonReactionInvulnerabilityAfterHit = true;
+
         private Color[] _baseColors = System.Array.Empty<Color>();
         private Vector3 _restLocalPosition;
         private Vector3 _restLocalScale = Vector3.one;
         private float _effectStartTime;
         private float _stateReactionMultiplier = 1f;
+        private Coroutine _clearInvulnerabilityRoutine;
         private bool _isActive;
 
         private void Awake()
@@ -60,6 +65,12 @@ namespace LostMemory.Enemies.Boss.Bertha
             if (health != null)
             {
                 health.OnHit -= HandleHit;
+            }
+
+            if (_clearInvulnerabilityRoutine != null)
+            {
+                StopCoroutine(_clearInvulnerabilityRoutine);
+                _clearInvulnerabilityRoutine = null;
             }
 
             RestoreState();
@@ -126,7 +137,39 @@ namespace LostMemory.Enemies.Boss.Bertha
             _effectStartTime = GetCurrentTime();
             _stateReactionMultiplier = ResolveStateReactionMultiplier();
             _isActive = true;
+            QueueNonReactionInvulnerabilityClear();
             Log("Hit reaction triggered.");
+        }
+
+        private void QueueNonReactionInvulnerabilityClear()
+        {
+            if (!ClearNonReactionInvulnerabilityAfterHit || !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            if (_clearInvulnerabilityRoutine != null)
+            {
+                StopCoroutine(_clearInvulnerabilityRoutine);
+            }
+
+            _clearInvulnerabilityRoutine = StartCoroutine(ClearNonReactionInvulnerabilityAfterDamageFrame());
+        }
+
+        private IEnumerator ClearNonReactionInvulnerabilityAfterDamageFrame()
+        {
+            yield return null;
+
+            _clearInvulnerabilityRoutine = null;
+
+            if (health == null
+                || health.CurrentHealth <= 0f
+                || IsThresholdReactionInvulnerabilityActive())
+            {
+                yield break;
+            }
+
+            health.Invulnerable = false;
         }
 
         private bool UpdateTint(float now)
@@ -213,6 +256,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             health ??= GetComponent<Health>();
             character ??= GetComponent<Character>();
             brain ??= GetComponent<AIBrain>();
+            thresholdReactionController ??= GetComponent<BerthaHealthThresholdReactionController>();
 
             if (shakeTarget == null)
             {
@@ -343,6 +387,12 @@ namespace LostMemory.Enemies.Boss.Bertha
             }
 
             return false;
+        }
+
+        private bool IsThresholdReactionInvulnerabilityActive()
+        {
+            return thresholdReactionController != null
+                && thresholdReactionController.IsReactionInvulnerabilityActive;
         }
 
         private float GetCurrentTime()
