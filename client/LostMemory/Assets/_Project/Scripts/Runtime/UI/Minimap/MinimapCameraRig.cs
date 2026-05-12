@@ -10,16 +10,22 @@ namespace LostMemory.UI.Minimap
     /// FitMode:
     /// - Manual: manualCenter / manualSize 인스펙터 값 사용. MVP 검증용.
     /// - AutoFromBounds: SetAutoBounds() 외부 호출로 bounds 갱신 (DungeonRunBootstrap.DungeonBuilt 시점 등).
+    /// - FollowTarget: MinimapAgent.All 중 Kind=PlayerLocal 자동 탐색, Vector3.Lerp 로 부드럽게 추적 (CL-226).
+    ///
+    /// LateUpdate 가 MinimapMarkerOverlay 보다 먼저 실행되도록 [DefaultExecutionOrder(-100)] —
+    /// 추적 모드에서 카메라 위치 갱신 후 마커가 새 위치 기준으로 그려져 1프레임 어긋남 방지.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Lost Memory/UI/Minimap/Minimap Camera Rig")]
     [RequireComponent(typeof(Camera))]
+    [DefaultExecutionOrder(-100)]
     public sealed class MinimapCameraRig : MonoBehaviour
     {
         public enum FitMode
         {
             Manual,
-            AutoFromBounds
+            AutoFromBounds,
+            FollowTarget
         }
 
         [Header("Camera")]
@@ -45,7 +51,12 @@ namespace LostMemory.UI.Minimap
         [SerializeField, Range(1f, 1.5f), Tooltip("자동 fit 시 가장자리 여유. 1.0=꽉 차게, 1.05=5% 여유.")]
         private float autoPadding = 1.05f;
 
+        [Header("Follow")]
+        [SerializeField, Min(0.1f), Tooltip("Lerp 강도. 클수록 빠른 추적. 5 권장. (FollowTarget 모드 전용)")]
+        private float followDamping = 5f;
+
         private Camera _camera;
+        private Transform _cachedFollowTarget;
 
         public RenderTexture TargetTexture => targetTexture;
 
@@ -76,6 +87,48 @@ namespace LostMemory.UI.Minimap
             ApplyFit();
         }
 #endif
+
+        /// <summary>FollowTarget 모드 한정: 매 프레임 PlayerLocal 위치를 부드럽게 추적.</summary>
+        private void LateUpdate()
+        {
+            if (fitMode != FitMode.FollowTarget || _camera == null)
+            {
+                return;
+            }
+
+            Transform target = GetFollowTarget();
+            if (target == null)
+            {
+                return;
+            }
+
+            Vector3 current = transform.position;
+            Vector3 desired = new Vector3(target.position.x, target.position.y, cameraZ);
+            // damping 기반 부드러운 추적. Time.deltaTime * damping 가 1.0 을 넘으면 사실상 즉시.
+            float t = Mathf.Clamp01(Time.deltaTime * followDamping);
+            transform.position = Vector3.Lerp(current, desired, t);
+        }
+
+        /// <summary>MinimapAgent.All 에서 Kind=PlayerLocal 첫 번째 transform. 비활성/파괴되면 재탐색.</summary>
+        private Transform GetFollowTarget()
+        {
+            if (_cachedFollowTarget != null && _cachedFollowTarget.gameObject.activeInHierarchy)
+            {
+                return _cachedFollowTarget;
+            }
+
+            var agents = MinimapAgent.All;
+            for (int i = 0; i < agents.Count; i++)
+            {
+                if (agents[i] != null && agents[i].Kind == MinimapAgent.AgentKind.PlayerLocal)
+                {
+                    _cachedFollowTarget = agents[i].transform;
+                    return _cachedFollowTarget;
+                }
+            }
+
+            return null;
+        }
 
         /// <summary>인스펙터 값이 외부에서 바뀐 경우 다시 적용.</summary>
         public void RefreshFit() => ApplyFit();
@@ -145,6 +198,16 @@ namespace LostMemory.UI.Minimap
                 float halfWidth = autoBounds.size.x * 0.5f;
                 float halfHeight = autoBounds.size.y * 0.5f;
                 orthographicSize = Mathf.Max(halfWidth, halfHeight) * autoPadding;
+            }
+            else if (fitMode == FitMode.FollowTarget)
+            {
+                // 추적 모드: size 는 manualSize 그대로. 위치는 target 있으면 그 위치, 없으면 manualCenter fallback.
+                // 매 프레임 LateUpdate 가 위치 갱신 — 본 ApplyFit 은 초기 위치/모드 전환 시점에만 호출됨.
+                orthographicSize = manualSize;
+                Transform target = GetFollowTarget();
+                center = target != null
+                    ? new Vector3(target.position.x, target.position.y, 0f)
+                    : new Vector3(manualCenter.x, manualCenter.y, 0f);
             }
             else
             {

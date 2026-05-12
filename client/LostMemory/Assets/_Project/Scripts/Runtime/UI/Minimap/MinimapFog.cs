@@ -109,6 +109,56 @@ namespace LostMemory.UI.Minimap
             return a < (byte)(visibilityThreshold * 255f);
         }
 
+        /// <summary>
+        /// 외부 호출: 직사각 world bounds 영역 전체를 영구 reveal.
+        /// 방 진입 시 MinimapRoomReveal 등이 호출. 영구 누적이라 같은 영역 재호출은 무비용.
+        /// </summary>
+        public void RevealBounds(Bounds worldBounds)
+        {
+            EnsureMask();
+            if (_maskBuffer == null || cameraRig == null) return;
+
+            Vector2 fogCenter = cameraRig.ManualCenter;
+            float fogHalf = cameraRig.ManualSize;
+            if (fogHalf <= 0f) return;
+
+            float fogSpan = fogHalf * 2f;
+
+            // world bounds → fog 마스크 픽셀 범위
+            float uMin = (worldBounds.min.x - (fogCenter.x - fogHalf)) / fogSpan;
+            float uMax = (worldBounds.max.x - (fogCenter.x - fogHalf)) / fogSpan;
+            float vMin = (worldBounds.min.y - (fogCenter.y - fogHalf)) / fogSpan;
+            float vMax = (worldBounds.max.y - (fogCenter.y - fogHalf)) / fogSpan;
+
+            int xMin = Mathf.Clamp((int)(uMin * maskResolution), 0, maskResolution - 1);
+            int xMax = Mathf.Clamp((int)(uMax * maskResolution), 0, maskResolution - 1);
+            int yMin = Mathf.Clamp((int)(vMin * maskResolution), 0, maskResolution - 1);
+            int yMax = Mathf.Clamp((int)(vMax * maskResolution), 0, maskResolution - 1);
+
+            // 영역 전체 완전 reveal (alpha = 0). 영구 누적 — 이미 reveal 된 픽셀은 변화 없음.
+            bool anyChanged = false;
+            for (int y = yMin; y <= yMax; y++)
+            {
+                int rowBase = y * maskResolution;
+                for (int x = xMin; x <= xMax; x++)
+                {
+                    int idx = rowBase + x;
+                    if (_maskBuffer[idx].a > 0)
+                    {
+                        _maskBuffer[idx].a = 0;
+                        anyChanged = true;
+                    }
+                }
+            }
+
+            // 즉시 적용 — 다음 throttle 사이클 기다리지 않음
+            if (anyChanged && _mask != null)
+            {
+                _mask.SetPixels32(_maskBuffer);
+                _mask.Apply(false);
+            }
+        }
+
         /// <summary>외부에서 fog 마스크를 초기 상태(전부 검정)로 되돌림. 새 run 시작 등.</summary>
         public void ResetMask()
         {
