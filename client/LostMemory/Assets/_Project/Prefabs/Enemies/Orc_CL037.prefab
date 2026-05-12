@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4067358023085436}
   - component: {fileID: 212797044214329334}
   - component: {fileID: 95175321394988512}
+  - component: {fileID: 1149903716500133701}
   m_Layer: 13
   m_Name: OrcModel
   m_TagString: Untagged
@@ -104,7 +105,7 @@ Animator:
   m_GameObject: {fileID: 1089166889239254}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 46c5eb6f44ac4ef44ae83d56f15343e2, type: 2}
+  m_Controller: {fileID: 9100000, guid: ac98c1bc05e4402c9375165781c5ada2, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -116,6 +117,23 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1149903716500133701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1089166889239254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69d2138ffb3b482da4de0cac3274c7b8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.AnimationEventSfxRelay
+  attackSwingSfx: {fileID: 8300000, guid: d46323e22e74e46baa241cbf48c85671, type: 3}
+  attackSwingVolume: 1
+  minPitch: 1
+  maxPitch: 1
+  fallbackWithoutSoundManager: 1
 --- !u!1 &1561694053617324
 GameObject:
   m_ObjectHideFlags: 0
@@ -888,7 +906,7 @@ MonoBehaviour:
   BlockingMovementStates: 
   BlockingConditionStates: 
   BlockingWeaponStates: 
-  InitialWeapon: {fileID: 2352508785994630202, guid: 863faa2920c0457dac17c34a95b0fa9a,
+  InitialWeapon: {fileID: 2352508785994630202, guid: e997d26a963a42bca9d4a698eb800291,
     type: 3}
   CanPickupWeapons: 1
   WeaponUseFeedback: {fileID: 0}
@@ -11039,7 +11057,7 @@ MonoBehaviour:
           ButtonText: Automatic Shaker Setup
         Owner: {fileID: 2606192527695501269}
         DebugActive: 0
-        Sfx: {fileID: 8300000, guid: 51f2769dc716d1148844990d0d22ecd9, type: 3}
+        Sfx: {fileID: 0}
         RandomSfx: []
         TestPlayButton:
           ButtonText: Debug Play Sound
@@ -11485,7 +11503,7 @@ MonoBehaviour:
           ButtonText: Automatic Shaker Setup
         Owner: {fileID: 3547864438223399480}
         DebugActive: 0
-        Sfx: {fileID: 8300000, guid: a4ce1e0e50d887641b42f7507d3951bb, type: 3}
+        Sfx: {fileID: 0}
         RandomSfx: []
         TestPlayButton:
           ButtonText: Debug Play Sound

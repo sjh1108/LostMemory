@@ -11286,7 +11286,7 @@ MonoBehaviour:
           ButtonText: Automatic Shaker Setup
         Owner: {fileID: 2606192527695501269}
         DebugActive: 0
-        Sfx: {fileID: 8300000, guid: 51f2769dc716d1148844990d0d22ecd9, type: 3}
+        Sfx: {fileID: 0}
         RandomSfx: []
         TestPlayButton:
           ButtonText: Debug Play Sound
@@ -11732,7 +11732,7 @@ MonoBehaviour:
           ButtonText: Automatic Shaker Setup
         Owner: {fileID: 3547864438223399480}
         DebugActive: 0
-        Sfx: {fileID: 8300000, guid: a4ce1e0e50d887641b42f7507d3951bb, type: 3}
+        Sfx: {fileID: 0}
         RandomSfx: []
         TestPlayButton:
           ButtonText: Debug Play Sound
@@ -12132,6 +12132,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4775608305527192301}
+    - targetCorrespondingSourceObject: {fileID: 3248787690555597830, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6781647779425106242}
   m_SourcePrefab: {fileID: 100100000, guid: 17bd4c4a974d8844ba51e5837e231100, type: 3}
 --- !u!4 &7975849498942803372 stripped
 Transform:
@@ -12165,3 +12169,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.MeleeAnimationEventRelay
   targetWeapon: {fileID: 0}
   characterHandleWeapon: {fileID: 3841032822885868042}
+--- !u!114 &6781647779425106242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7975849498942803375}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69d2138ffb3b482da4de0cac3274c7b8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.AnimationEventSfxRelay
+  attackSwingSfx: {fileID: 8300000, guid: b70e1a6846e708049a6b56dd2b4099d5, type: 3}
+  attackSwingVolume: 1
+  minPitch: 1
+  maxPitch: 1
+  fallbackWithoutSoundManager: 1
