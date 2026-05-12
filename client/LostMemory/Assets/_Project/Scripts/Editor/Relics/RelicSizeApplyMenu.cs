@@ -28,6 +28,54 @@ namespace LostMemory.Editor.Relics
         [MenuItem("LostMemory/Relics/Apply Rarity-based Sizes")]
         public static void Apply() => Run(dryRun: false);
 
+        // ── 1×1 강제 리셋 — IsSizeLocked 무시하고 전부 (1,1) ─────────────────────────
+        [MenuItem("LostMemory/Relics/Reset All Sizes to 1×1 (Dry Run)")]
+        public static void Reset1x1DryRun() => RunReset1x1(dryRun: true);
+
+        [MenuItem("LostMemory/Relics/Reset All Sizes to 1×1")]
+        public static void Reset1x1Apply() => RunReset1x1(dryRun: false);
+
+        private static void RunReset1x1(bool dryRun)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:RelicData");
+            int changeCount = 0, sameCount = 0;
+            var changeList = new List<string>();
+            Vector2Int target = new Vector2Int(1, 1);
+
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                RelicData so = AssetDatabase.LoadAssetAtPath<RelicData>(path);
+                if (so == null) continue;
+
+                Vector2Int current = so.Size;
+                if (current == target) { sameCount++; continue; }
+
+                changeList.Add($"  {so.name}: ({current.x},{current.y}) → (1,1)" + (so.IsSizeLocked ? " [Locked 무시]" : ""));
+                changeCount++;
+
+                if (!dryRun)
+                {
+                    var sObj = new SerializedObject(so);
+                    sObj.FindProperty("_size").vector2IntValue = target;
+                    sObj.ApplyModifiedProperties();
+                    EditorUtility.SetDirty(so);
+                }
+            }
+
+            if (!dryRun)
+            {
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+
+            string mode = dryRun ? "[DRY RUN]" : "[APPLIED]";
+            string changeBlock = changeList.Count > 0
+                ? $"\n변경 예정 목록:\n{string.Join("\n", changeList)}"
+                : "";
+            Debug.Log($"[Reset1x1] {mode} 변경 {changeCount}개 / 이미 (1,1) {sameCount}개{changeBlock}");
+        }
+
         private static void Run(bool dryRun)
         {
             string[] guids = AssetDatabase.FindAssets("t:RelicData");

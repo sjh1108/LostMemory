@@ -216,6 +216,16 @@ namespace LostMemory.MagicalGirl
                 inventory.OnRelicAcquired += HandleRelicAcquired;
                 // CL-204: Run 종료 시 모든 미소녀 + 강화 플래그 정리.
                 inventory.OnCleared += HandleInventoryCleared;
+
+                // 씬 전환 시 Player 가 새로 스폰되어 본 Spawner 도 함께 새로 생성되므로,
+                // PlayerRunState 로 복구된 인벤토리에 이미 들어있는 미소녀 유물에 대해 visual 재 spawn.
+                // 첫 게임 시작 시 OwnedRelics 가 비어 있으면 무동작.
+                IReadOnlyList<RelicData> owned = inventory.OwnedRelics;
+                for (int i = 0; i < owned.Count; i++)
+                {
+                    RelicData r = owned[i];
+                    if (r != null) HandleRelicAcquired(r);
+                }
             }
         }
 

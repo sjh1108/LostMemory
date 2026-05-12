@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using LostMemory.Player;
 using UnityEngine;
 
 namespace LostMemory.Relics
@@ -8,7 +9,12 @@ namespace LostMemory.Relics
     /// <summary>
     /// 런(Run) 중 플레이어가 보유한 유물 목록을 관리한다.
     /// RunManager 또는 Player GameObject에 부착한다.
+    ///
+    /// DefaultExecutionOrder(-100): PlayerRunState 스냅샷 복원이 같은 GameObject 의 다른
+    /// 컴포넌트(MagicalGirlSpawner / RelicEffectRegistry / BuildManager 등) OnEnable 보다
+    /// *먼저* 끝나야 OwnedRelics 가 빈 상태로 OnEnable replay 가 헛돌지 않는다.
     /// </summary>
+    [DefaultExecutionOrder(-100)]
     public class PlayerRelicInventory : MonoBehaviour
     {
         [Header("CL-146 Inventory Capacity")]
@@ -76,6 +82,89 @@ namespace LostMemory.Relics
         {
             _grid = new InventoryGrid(_maxCols, _maxRows);
             ResolveConsumableInventory();
+
+            // 씬 전환 직전 StageRouteManager 가 캡처한 스냅샷이 있으면 데이터 복구.
+            // 이벤트 발화는 OnPlacementChanged 한 번만 — OnRelicAcquired 는 발화하지 않음
+            // (RelicEffectRegistry 는 OnEnable replay 경로로 effect 재등록).
+            PlayerRunState runState = PlayerRunState.Instance;
+            if (runState != null && runState.HasSnapshot)
+            {
+                LoadFrom(runState.Snapshot);
+                _restoredFromSnapshot = true;
+            }
+        }
+
+        // Awake 시점 LoadFrom 으로 채워진 데이터에 대해 UI(InventoryPanelView 등)는 OnPlacementChanged
+        // 를 통해 갱신된다. 그러나 OnPlacementChanged 구독은 다른 컴포넌트들의 OnEnable 단계에서
+        // 일어나므로 Awake 안에서 발화하면 일부 구독자가 누락된다. Start 단계에서 1회 발화 → 모두 구독 완료 후 갱신.
+        private bool _restoredFromSnapshot;
+
+        private void Start()
+        {
+            if (!_restoredFromSnapshot) return;
+            OnPlacementChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 씬 전환을 대비해 현재 인벤토리 상태(배치 좌표 + 보너스 슬롯)를 스냅샷으로 반환.
+        /// 호출 측: StageRouteManager.TryLoadRouteNode 의 씬 로드 직전 (PlayerRunState.Capture 로 보관).
+        /// </summary>
+        public void CaptureSnapshotInto(ref PlayerSnapshot snapshot)
+        {
+            snapshot.Placements = new List<RelicPlacementSnapshot>(_placements.Count);
+            for (int i = 0; i < _placements.Count; i++)
+            {
+                RelicPlacement p = _placements[i];
+                if (p.Relic == null) continue;
+                snapshot.Placements.Add(new RelicPlacementSnapshot
+                {
+                    Data = p.Relic,
+                    X = p.X,
+                    Y = p.Y,
+                });
+            }
+            snapshot.BonusSlots = _bonusSlots;
+        }
+
+        /// <summary>
+        /// 스냅샷으로부터 인벤토리 데이터를 복구.
+        /// 이벤트 발화 정책: OnRelicAcquired 는 호출하지 않음 (effect 중복 등록 방지).
+        /// RelicEffectRegistry 는 OnEnable 단계에서 OwnedRelics 를 순회해 자체 replay.
+        /// BuildManager 는 OnEnable 에서 _isDirty=true 로 LateUpdate 재계산하므로 추가 신호 불필요.
+        /// </summary>
+        public void LoadFrom(PlayerSnapshot snapshot)
+        {
+            if (_grid == null) _grid = new InventoryGrid(_maxCols, _maxRows);
+            _grid.Reset();
+            _placements.Clear();
+            _ownedRelics.Clear();
+            _bonusSlots = Mathf.Max(0, snapshot.BonusSlots);
+
+            if (snapshot.Placements != null)
+            {
+                for (int i = 0; i < snapshot.Placements.Count; i++)
+                {
+                    RelicPlacementSnapshot s = snapshot.Placements[i];
+                    if (s.Data == null) continue;
+
+                    int w = s.Data.Width;
+                    int h = s.Data.Height;
+                    if (w <= 0 || h <= 0) continue;
+                    if (s.X < 0 || s.Y < 0 || s.X + w > _maxCols || s.Y + h > _maxRows)
+                    {
+                        Debug.LogWarning($"[PlayerRelicInventory] LoadFrom: {s.Data.name} 좌표 ({s.X},{s.Y}) 그리드 범위 초과 — 스킵");
+                        continue;
+                    }
+
+                    _grid.Mark(s.X, s.Y, w, h, true);
+                    _placements.Add(new RelicPlacement
+                    {
+                        Relic = s.Data,
+                        Origin = new Vector2Int(s.X, s.Y),
+                    });
+                    _ownedRelics.Add(s.Data);
+                }
+            }
         }
 
         /// <summary>

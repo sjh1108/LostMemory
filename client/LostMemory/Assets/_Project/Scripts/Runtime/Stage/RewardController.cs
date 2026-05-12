@@ -162,6 +162,12 @@ namespace LostMemory.Stage
         /// </summary>
         public void ShowReward()
         {
+            // 씬 전환 시 RewardController 가 DontDestroyOnLoad GameObject 에 부착되어 따라오면
+            // rewardPanelView / playerRelicInventory 인스펙터 reference 가 씬 로컬이라 stale 이 됨.
+            // 매번 lazy resolve 로 새 씬의 객체를 자동 재 wiring.
+            ResolveRewardPanelView();
+            ResolvePlayerRelicInventory();
+
             if (rewardPanelView == null || playerRelicInventory == null)
             {
                 Debug.LogError("[RewardController] rewardPanelView 또는 playerRelicInventory 가 null. wiring 확인.", this);
@@ -230,6 +236,42 @@ namespace LostMemory.Stage
                 Debug.LogWarning("[RewardController] _pendingController is null; cannot open exits. (정상: 외부 ShowReward 호출 흐름)");
             }
             // _pendingController == null 이면 RoomCleared 경유 안 한 외부 트리거 (정상).
+        }
+
+        /// <summary>
+        /// 씬 전환 시 stale 이 된 rewardPanelView 참조를 활성 씬의 새 객체로 갈아끼움.
+        /// RewardSelected 구독도 새 객체로 재등록.
+        /// </summary>
+        private RewardPanelView ResolveRewardPanelView()
+        {
+            if (rewardPanelView != null) return rewardPanelView;
+
+            RewardPanelView[] views = FindObjectsByType<RewardPanelView>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+            if (views.Length == 0) return null;
+
+            UnityEngine.SceneManagement.Scene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            RewardPanelView found = null;
+            for (int i = 0; i < views.Length; i++)
+            {
+                if (views[i] != null && views[i].gameObject.scene == activeScene)
+                {
+                    found = views[i];
+                    break;
+                }
+            }
+            if (found == null) found = views[0];
+
+            rewardPanelView = found;
+            rewardPanelView.RewardSelected += HandleRewardSelected;
+            return rewardPanelView;
+        }
+
+        private PlayerRelicInventory ResolvePlayerRelicInventory()
+        {
+            if (playerRelicInventory != null) return playerRelicInventory;
+            playerRelicInventory = FindAnyObjectByType<PlayerRelicInventory>();
+            return playerRelicInventory;
         }
 
         // 보상 패널 동안 공격 / 대쉬 / 패링 input + 칼 회전 일괄 토글. timeScale=0 만으론 Update 기반 동작이 막히지 않아 별도 차단.

@@ -55,16 +55,27 @@ namespace LostMemory.UI.Minimap
         [SerializeField, Min(0.1f), Tooltip("Lerp 강도. 클수록 빠른 추적. 5 권장. (FollowTarget 모드 전용)")]
         private float followDamping = 5f;
 
+        [Header("Fog Coverage")]
+        [SerializeField, Tooltip("Fog mask 가 덮을 world 영역의 중심. 카메라 줌(manualSize)과 분리.")]
+        private Vector2 fogCoverageCenter = Vector2.zero;
+        [SerializeField, Min(1f), Tooltip("Fog mask 가 덮을 world 영역의 반변. 카메라 줌(manualSize)과 분리.")]
+        private float fogCoverageHalfSize = 50f;
+
         private Camera _camera;
         private Transform _cachedFollowTarget;
 
         public RenderTexture TargetTexture => targetTexture;
 
-        /// <summary>Manual fit 중심 좌표 (world space). MinimapFog 가 fog 영역 정의에 사용.</summary>
-        public Vector2 ManualCenter => manualCenter;
+        /// <summary>
+        /// Fog mask 가 사용하는 영역 중심 (world space). 카메라 줌과 무관 — 던전 전체 커버용으로 따로 설정.
+        /// MinimapFog 가 IsRevealedAtWorld / PaintCircle 좌표 변환에 사용.
+        /// </summary>
+        public Vector2 ManualCenter => fogCoverageCenter;
 
-        /// <summary>Manual fit 절반 크기 (world space). MinimapFog 가 fog 영역 크기에 사용.</summary>
-        public float ManualSize => manualSize;
+        /// <summary>
+        /// Fog mask 가 덮는 영역의 반변 (world space). manualSize 와 분리되어 던전 전체를 커버.
+        /// </summary>
+        public float ManualSize => fogCoverageHalfSize;
 
         /// <summary>현재 카메라의 world 중심 (x,y). 추적 모드에서 매 프레임 변함.</summary>
         public Vector2 GetCurrentCameraCenter()
@@ -150,6 +161,66 @@ namespace LostMemory.UI.Minimap
         {
             fitMode = mode;
             ApplyFit();
+        }
+
+        /// <summary>
+        /// Fog 가 덮는 영역만 동적으로 설정. 카메라 줌(manualSize)은 변경하지 않음.
+        /// 던전 빌드 후 RoomEntryRuntimeController 들의 bounds 로 호출되는 게 표준.
+        /// </summary>
+        public void SetFogCoverage(Vector2 center, float halfSize)
+        {
+            fogCoverageCenter = center;
+            fogCoverageHalfSize = Mathf.Max(1f, halfSize);
+        }
+
+        private void Start()
+        {
+            AutoFitToRooms();
+        }
+
+        /// <summary>
+        /// 씬의 모든 RoomEntryRuntimeController 자식 콜라이더(2D) bounds 를 union 해서
+        /// ManualCenter/Size 를 자동 설정. fog 영역이 던전 전체를 덮도록 함.
+        /// 방을 못 찾으면 인스펙터 기본값 유지.
+        /// </summary>
+        private void AutoFitToRooms()
+        {
+            var rooms = FindObjectsByType<LostMemory.Stage.RoomEntryRuntimeController>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+            if (rooms == null || rooms.Length == 0) return;
+
+            bool init = false;
+            Bounds union = default;
+            for (int i = 0; i < rooms.Length; i++)
+            {
+                if (rooms[i] == null) continue;
+                Collider2D[] cols = rooms[i].GetComponentsInChildren<Collider2D>(true);
+                for (int c = 0; c < cols.Length; c++)
+                {
+                    if (cols[c] == null || !cols[c].enabled) continue;
+                    Bounds b = cols[c].bounds;
+                    if (!init) { union = b; init = true; }
+                    else union.Encapsulate(b);
+                }
+                // 콜라이더가 없으면 transform.position 으로라도 fallback
+                if (!init)
+                {
+                    union = new Bounds(rooms[i].transform.position, Vector3.zero);
+                    init = true;
+                }
+                else
+                {
+                    union.Encapsulate(rooms[i].transform.position);
+                }
+            }
+            if (!init) return;
+
+            // 던전 가장자리 여유 패딩
+            union.Expand(5f);
+
+            Vector2 center = new Vector2(union.center.x, union.center.y);
+            float half = Mathf.Max(union.extents.x, union.extents.y);
+            SetFogCoverage(center, half);
         }
 
         private void ConfigureCamera()

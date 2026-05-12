@@ -91,6 +91,13 @@ namespace LostMemory.Shop
                 if (logShopFlow) Debug.Log("[ShopController] Open 무시 — 이미 열림.");
                 return;
             }
+
+            // ShopController 가 RunManager 같은 DontDestroyOnLoad GameObject 옆에 부착돼 있으면
+            // 인스펙터 reference (panel/inventoryPanel/shortcutBar/playerRelicInventory/playerConsumableInventory/
+            // goldWallet 등) 가 이전 씬의 객체를 가리키다 stale null 이 됨.
+            // 매 진입 시 활성 씬의 새 객체로 재 wiring (RewardController.ResolveRewardPanelView 와 동일 패턴).
+            ResolveSceneLocalRefs();
+
             if (panel == null || playerRelicInventory == null || goldWallet == null)
             {
                 Debug.LogError("[ShopController] Refs 누락 — panel/inventory/goldWallet wiring 확인.", this);
@@ -151,6 +158,48 @@ namespace LostMemory.Shop
         {
             if (IsOpen) Close();
             else Open(shopData);
+        }
+
+        /// <summary>
+        /// 씬 전환 시 stale null 이 된 씬 로컬 reference 를 활성 씬 객체로 재 wiring.
+        /// ShopController 가 DontDestroyOnLoad GameObject 옆에 있을 때만 의미 있고,
+        /// 씬 로컬 컴포넌트라면 reference 들이 정상이므로 no-op.
+        /// 활성 씬 우선 → fallback FindAnyObjectByType.
+        /// </summary>
+        private void ResolveSceneLocalRefs()
+        {
+            UnityEngine.SceneManagement.Scene active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            panel = ResolveInActiveScene<ShopPanelView>(panel, active);
+            inventoryPanel = ResolveInActiveScene<InventoryPanelView>(inventoryPanel, active);
+            shortcutBar = ResolveInActiveScene<ShortcutBarView>(shortcutBar, active);
+            playerRelicInventory = ResolveInActiveScene<PlayerRelicInventory>(playerRelicInventory, active);
+            playerConsumableInventory = ResolveInActiveScene<PlayerConsumableInventory>(playerConsumableInventory, active);
+            goldWallet = ResolveInActiveScene<GoldWallet>(goldWallet, active);
+            playerAim = ResolveInActiveScene<KhiPlayerAim>(playerAim, active);
+            playerMovement = ResolveInActiveScene<CharacterMovement>(playerMovement, active);
+            playerWeaponPresenter = ResolveInActiveScene<KhiWeaponPresenter>(playerWeaponPresenter, active);
+            playerMeleeCombo = ResolveInActiveScene<KhiMeleeComboController>(playerMeleeCombo, active);
+            playerDash = ResolveInActiveScene<KhiDashController>(playerDash, active);
+            playerParry = ResolveInActiveScene<KhiParryController>(playerParry, active);
+        }
+
+        private static T ResolveInActiveScene<T>(T current, UnityEngine.SceneManagement.Scene active) where T : Component
+        {
+            // 현재 reference 가 살아있고 활성 씬 소속이면 그대로 사용
+            if (current != null && current.gameObject.scene == active)
+            {
+                return current;
+            }
+
+            T[] all = FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && all[i].gameObject.scene == active)
+                {
+                    return all[i];
+                }
+            }
+            return all.Length > 0 ? all[0] : null;
         }
 
         // ──────────────────────────────────────────────────────────

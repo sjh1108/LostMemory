@@ -57,12 +57,24 @@ namespace LostMemory.Editor.InventoryTest
         private void OnEnable()
         {
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
+            // 씬 전환 시 Player 가 새로 스폰되므로 기존 _relicInv 참조가 stale 이 됨.
+            // sceneLoaded 구독 → PlayMode 중 씬 전환마다 인스턴스 재검색.
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         private void OnDisable()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
             UnsubscribeInventoryEvents();
+        }
+
+        private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            if (!EditorApplication.isPlaying) return;
+            // 새 씬에 Player 가 spawn 된 직후 인스턴스 재검색 — 1프레임 정도 늦춰주면 더 안전하나
+            // FindAnyObjectByType 가 이미 활성 객체를 찾으므로 즉시 호출도 동작.
+            RefreshPlayerInstances();
         }
 
         public void CreateGUI()
@@ -513,6 +525,9 @@ namespace LostMemory.Editor.InventoryTest
 
         private void OnRefreshClicked()
         {
+            // Refresh 버튼은 좌측 RelicData 트리 + 우측 인벤토리 뷰 모두 재구축한다.
+            // 씬 전환 직후 stale 참조 복구 케이스도 같은 버튼으로 처리하도록 Player 인스턴스 재검색 포함.
+            if (EditorApplication.isPlaying) RefreshPlayerInstances();
             _allRelics = LoadAllRelics();
             _setDisplayNames = LoadSetDisplayNames();
             // CL-183: _lastFilter 보존 — Refresh 후에도 검색 결과 유지
