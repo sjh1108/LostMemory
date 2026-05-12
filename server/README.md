@@ -1003,7 +1003,7 @@ EC2 호스트와 컨테이너 자원을 시각화하고 (INFRA-20 / S14P31C201-1
 - **알림 채널** — Jenkins 빌드 알림과 동일한 `MATTERMOST_WEBHOOK_URL` 재사용. URL 은 alertmanager entrypoint 가 env → `/tmp/secrets/mattermost-webhook-url` 파일로 작성 후 `api_url_file` 참조 (YAML 평문 노출 X).
 - **대시보드** — `monitoring/grafana/dashboards/` 의 JSON 이 첫 기동 시 자동 import:
   - `node-exporter-full.json` — Grafana.com community ID 1860, 호스트 종합
-- **cAdvisor 컨테이너 metric** — **보류** (S14P31C201-502 진단). Docker 가 `containerd-snapshotter` 모드 사용 (`driver-type: io.containerd.snapshotter.v1`) 인데 cAdvisor v0.49 / v0.51 모두 컨테이너 등록 시 표준 `overlay2` 의 `layerdb/mounts/<hash>/mount-id` 파일을 강제로 읽으려 해서 호환 안 됨. cAdvisor service 는 향후 hotfix 발판으로 v0.51 + containerd 옵션 그대로 보존되지만 prometheus scrape job 과 Grafana dashboard 는 본 PR 에서 제거. 호스트 모니터링 (Node Exporter) + 임계 알림 (CPU/Mem/Disk) 은 영향 없이 정상 작동. 후속 hotfix 후보: Docker storage driver overlay2 회귀 / cAdvisor dev build / dockerd `/metrics` endpoint.
+  - `lostmemory-containers.json` — 자체 작성, 컨테이너별 CPU/Mem/Network/Running count (cAdvisor 데이터 소스)
 
 ### 1회 등록 절차 (운영자)
 
@@ -1035,7 +1035,7 @@ EC2 SSH 후 `server/` 디렉토리 기준:
 ```bash
 # (a) 컴포넌트 healthy
 docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --env-file .env ps
-# prometheus / node-exporter / cadvisor / grafana / alertmanager 모두 Up (cadvisor 는 scrape 보류이지만 컨테이너 자체는 Up 유지)
+# prometheus / node-exporter / cadvisor / grafana / alertmanager 모두 Up + healthy
 
 # (b) 내부 health endpoints (컨테이너 안)
 docker compose -f docker-compose.monitoring.yml --env-file .env exec prometheus   wget -qO- http://localhost:9090/-/healthy
@@ -1050,12 +1050,12 @@ docker compose -f docker-compose.monitoring.yml --env-file .env exec alertmanage
 # (d) Prometheus scrape targets (모두 up 이어야 함)
 docker compose -f docker-compose.monitoring.yml --env-file .env exec prometheus \
   wget -qO- 'http://localhost:9090/api/v1/targets?state=active' | head -c 500
-# → "health":"up" 표시. instance: node-exporter:9100 / alertmanager:9093 / localhost:9090 (cadvisor scrape 은 S14P31C201-502 로 보류 — 본 PR 에서 prometheus.yml 에서 제거됨)
+# → "health":"up" 표시. instance: node-exporter:9100 / alertmanager:9093 / localhost:9090 / cadvisor:8080
 
 # (e) Grafana UI (브라우저)
 # https://k14c201.p.ssafy.io/grafana/
 # 로그인: admin / GRAFANA_ADMIN_PASSWORD
-# Dashboards → Browse → "Node Exporter Full" 1개 자동 import 확인 (LostMemory Containers 는 S14P31C201-502 로 보류, 본 PR 에서 제거됨)
+# Dashboards → Browse → "Node Exporter Full" / "LostMemory — Containers (cAdvisor)" 2개 자동 import 확인
 # 두 대시보드 모두 패널이 실시간 값으로 갱신되는지 확인
 
 # (f) 알림 강제 트리거 (운영 영향 없음 — rule 임계만 임시 낮춤)
