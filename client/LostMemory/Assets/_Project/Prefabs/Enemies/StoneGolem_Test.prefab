@@ -152,6 +152,7 @@ GameObject:
   - component: {fileID: 114900000000100003}
   - component: {fileID: 114900000000100004}
   - component: {fileID: 114900000000100005}
+  - component: {fileID: 5469346294151336104}
   - component: {fileID: 114900000000100007}
   - component: {fileID: 114900000000100008}
   m_Layer: 13
@@ -1132,6 +1133,24 @@ MonoBehaviour:
   Label: RecoverDuration
   AfterTimeMin: 0.45
   AfterTimeMax: 0.45
+--- !u!114 &5469346294151336104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9daeeaeeb3607b4ebd1d9f73ad959bb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.Minimap.MinimapAgent
+  kind: 2
+  icon: {fileID: 21300000, guid: 69bdc1f611c0f8d4dbc71613a9b04b9b, type: 3}
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  iconScale: 1
+  rotateWithTransform: 0
+  priority: 0
 --- !u!114 &114900000000100007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12094,6 +12113,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: StoneGolem
+      objectReference: {fileID: 0}
+    - target: {fileID: 3248787690555597830, guid: 17bd4c4a974d8844ba51e5837e231100,
+        type: 3}
+      propertyPath: m_Layer
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 3248787690555597831, guid: 17bd4c4a974d8844ba51e5837e231100,
         type: 3}
