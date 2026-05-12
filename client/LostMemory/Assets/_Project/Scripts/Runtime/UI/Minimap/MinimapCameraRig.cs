@@ -49,6 +49,20 @@ namespace LostMemory.UI.Minimap
 
         public RenderTexture TargetTexture => targetTexture;
 
+        /// <summary>Manual fit 중심 좌표 (world space). MinimapFog 가 fog 영역 정의에 사용.</summary>
+        public Vector2 ManualCenter => manualCenter;
+
+        /// <summary>Manual fit 절반 크기 (world space). MinimapFog 가 fog 영역 크기에 사용.</summary>
+        public float ManualSize => manualSize;
+
+        /// <summary>현재 카메라의 world 중심 (x,y). 추적 모드에서 매 프레임 변함.</summary>
+        public Vector2 GetCurrentCameraCenter()
+            => new Vector2(transform.position.x, transform.position.y);
+
+        /// <summary>현재 카메라의 orthographicSize. fit 모드에 따라 변할 수 있음.</summary>
+        public float GetCurrentCameraOrthographicSize()
+            => _camera != null ? _camera.orthographicSize : manualSize;
+
         private void Awake()
         {
             ConfigureCamera();
