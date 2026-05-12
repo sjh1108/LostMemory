@@ -38,6 +38,15 @@ namespace LostMemory.Enemies
         [SerializeField] private Color warningColor = new Color(1f, 0.2f, 0.05f, 0.38f);
         [SerializeField, Min(0.05f)] private float selfDestroyDelay = 0.75f;
 
+        [Header("SFX")]
+        [SerializeField] private AudioClip warningSfx;
+        [SerializeField] private AudioClip explosionSfx;
+        [SerializeField, Range(0f, 1f)] private float warningSfxVolume = 1f;
+        [SerializeField, Range(0f, 1f)] private float explosionSfxVolume = 1f;
+        [SerializeField, Range(0.1f, 3f)] private float minPitch = 1f;
+        [SerializeField, Range(0.1f, 3f)] private float maxPitch = 1f;
+        [SerializeField] private bool fallbackWithoutSoundManager = true;
+
         private readonly HashSet<Health> _hitTargets = new HashSet<Health>();
         private Collider2D[] _overlapBuffer;
         private Coroutine _selfDestructRoutine;
@@ -107,6 +116,13 @@ namespace LostMemory.Enemies
             targetInvincibilityDuration = Mathf.Max(0f, targetInvincibilityDuration);
             maximumHits = Mathf.Max(1, maximumHits);
             selfDestroyDelay = Mathf.Max(0.05f, selfDestroyDelay);
+            minPitch = Mathf.Max(0.1f, minPitch);
+            maxPitch = Mathf.Max(0.1f, maxPitch);
+            if (maxPitch < minPitch)
+            {
+                maxPitch = minPitch;
+            }
+
             EnsureBuffer();
         }
 
@@ -237,6 +253,7 @@ namespace LostMemory.Enemies
 
         private void PlayWarningAnimation()
         {
+            PlaySfx(warningSfx, warningSfxVolume);
             SetAnimatorTriggerResetIfPresent(DamageParameterName);
             SetAnimatorBoolIfPresent(AttackParameterName, true);
             PlayAnimatorStateIfPresent(WarningStateName);
@@ -245,6 +262,7 @@ namespace LostMemory.Enemies
         private void Explode()
         {
             Vector2 center = transform.position;
+            PlaySfx(explosionSfx, explosionSfxVolume);
             DealExplosionDamage(center);
 
             SetAnimatorBoolIfPresent(AttackParameterName, false);
@@ -294,6 +312,36 @@ namespace LostMemory.Enemies
                     targetInvincibilityDuration,
                     targetInvincibilityDuration,
                     new Vector3(knockbackDirection.x, knockbackDirection.y, 0f));
+            }
+        }
+
+        private void PlaySfx(AudioClip clip, float volume)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            float pitch = Mathf.Approximately(minPitch, maxPitch)
+                ? minPitch
+                : Random.Range(minPitch, maxPitch);
+
+            if (MMSoundManager.HasInstance && MMSoundManager.Current != null)
+            {
+                MMSoundManagerPlayOptions options = MMSoundManagerPlayOptions.Default;
+                options.MmSoundManagerTrack = MMSoundManager.MMSoundManagerTracks.Sfx;
+                options.Location = transform.position;
+                options.Volume = volume;
+                options.Pitch = pitch;
+                options.Loop = false;
+
+                MMSoundManagerSoundPlayEvent.Trigger(clip, options);
+                return;
+            }
+
+            if (fallbackWithoutSoundManager)
+            {
+                AudioSource.PlayClipAtPoint(clip, transform.position, volume);
             }
         }
 

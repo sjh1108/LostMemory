@@ -159,6 +159,7 @@ GameObject:
   - component: {fileID: 2233445566778899012}
   - component: {fileID: 2233445566778899013}
   - component: {fileID: 3355731707548618052}
+  - component: {fileID: 6781647779425106242}
   m_Layer: 13
   m_Name: SkeletonArcher_CL041
   m_TagString: Enemy
@@ -1257,6 +1258,28 @@ MonoBehaviour:
   iconScale: 1
   rotateWithTransform: 0
   priority: 0
+--- !u!114 &6781647779425106242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eedf76f9244641409015a89f1699941a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.SkeletonArcherSfxRelay
+  brain: {fileID: 114675271368606418}
+  bowPullStateName: AimReady
+  bowShootStateName: Attack
+  bowPullSfx: {fileID: 8300000, guid: 82003cb50e178604982cad549b7c57ef, type: 3}
+  bowShootSfx: {fileID: 8300000, guid: b586ea5de6240494ba8ab3ef9fa90ee2, type: 3}
+  bowPullVolume: 1
+  bowShootVolume: 1
+  minPitch: 1
+  maxPitch: 1
+  fallbackWithoutSoundManager: 1
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
@@ -11335,7 +11358,7 @@ MonoBehaviour:
           ButtonText: Automatic Shaker Setup
         Owner: {fileID: 2606192527695501269}
         DebugActive: 0
-        Sfx: {fileID: 8300000, guid: 51f2769dc716d1148844990d0d22ecd9, type: 3}
+        Sfx: {fileID: 0}
         RandomSfx: []
         TestPlayButton:
           ButtonText: Debug Play Sound
@@ -11781,7 +11804,7 @@ MonoBehaviour:
           ButtonText: Automatic Shaker Setup
         Owner: {fileID: 3547864438223399480}
         DebugActive: 0
-        Sfx: {fileID: 8300000, guid: a4ce1e0e50d887641b42f7507d3951bb, type: 3}
+        Sfx: {fileID: 0}
         RandomSfx: []
         TestPlayButton:
           ButtonText: Debug Play Sound

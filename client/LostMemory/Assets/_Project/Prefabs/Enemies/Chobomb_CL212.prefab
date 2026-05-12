@@ -999,6 +999,13 @@ MonoBehaviour:
     m_Bits: 1024
   warningColor: {r: 1, g: 0.2, b: 0.05, a: 0.38}
   selfDestroyDelay: 0.75
+  warningSfx: {fileID: 8300000, guid: 4e1ff8faed12a475eba9be0e46072269, type: 3}
+  explosionSfx: {fileID: 8300000, guid: ffb159a21c8a04135a5616979c828fab, type: 3}
+  warningSfxVolume: 1
+  explosionSfxVolume: 1
+  minPitch: 1
+  maxPitch: 1
+  fallbackWithoutSoundManager: 1
 --- !u!114 &1780141686214286046
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11109,7 +11116,7 @@ MonoBehaviour:
           ButtonText: Automatic Shaker Setup
         Owner: {fileID: 2606192527695501269}
         DebugActive: 0
-        Sfx: {fileID: 8300000, guid: 51f2769dc716d1148844990d0d22ecd9, type: 3}
+        Sfx: {fileID: 0}
         RandomSfx: []
         TestPlayButton:
           ButtonText: Debug Play Sound
@@ -11555,7 +11562,7 @@ MonoBehaviour:
           ButtonText: Automatic Shaker Setup
         Owner: {fileID: 3547864438223399480}
         DebugActive: 0
-        Sfx: {fileID: 8300000, guid: a4ce1e0e50d887641b42f7507d3951bb, type: 3}
+        Sfx: {fileID: 0}
         RandomSfx: []
         TestPlayButton:
           ButtonText: Debug Play Sound
