@@ -30,12 +30,9 @@ scrape_configs:
     static_configs:
       - targets: ["node-exporter:9100"]
 
-  # cadvisor scrape 보류 (S14P31C201-502) — Docker containerd-snapshotter 모드 호환 미해결.
-  # cAdvisor 가 컨테이너 등록을 못해 metric 의 name 라벨이 비고 시연 가치 없음.
-  # 후속 hotfix 에서 호환 fix 후 아래 블록 복원:
-  #   - job_name: cadvisor
-  #     static_configs:
-  #       - targets: ["cadvisor:8080"]
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
 
   - job_name: alertmanager
     static_configs:

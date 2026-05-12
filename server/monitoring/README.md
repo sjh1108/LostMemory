@@ -21,10 +21,9 @@ monitoring/
     │   └── dashboards/
     │       └── dashboards.yml      # /etc/grafana/dashboards 디렉토리 자동 스캔 설정
     └── dashboards/
-        └── node-exporter-full.json # Grafana.com community ID 1860 (호스트 종합)
+        ├── node-exporter-full.json   # Grafana.com community ID 1860 (호스트 종합)
+        └── lostmemory-containers.json # 자체 작성 (컨테이너별 CPU/Mem/Network, cAdvisor)
 ```
-
-> cAdvisor 컨테이너 metric 대시보드 (`lostmemory-containers.json`) 는 S14P31C201-502 진단으로 **본 PR 에서 보류**. cAdvisor service / volumes / command 옵션은 발판으로 유지되지만 prometheus scrape job 과 dashboard JSON 은 제거. 호스트 모니터링 (Node Exporter) + 임계 알림 (CPU/Mem/Disk) 은 정상 작동. 후속 hotfix 후보는 [server/README.md `## 모니터링 / 임계 알림`](../README.md#모니터링--임계-알림-prometheus--grafana--alertmanager) 의 cAdvisor 절 참고.
 
 ## 책임 / 의존
 

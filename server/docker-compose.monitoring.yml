@@ -60,18 +60,8 @@ services:
     networks:
       - monitoring
 
-  # cAdvisor — 컨테이너 metric 수집 시도. **현재 상태: 미수집 (보류)** — S14P31C201-502 진단 결과:
-  #   1) Docker 가 containerd-snapshotter 모드 (driver-type: io.containerd.snapshotter.v1).
-  #   2) cAdvisor v0.49 / v0.51 모두 컨테이너 등록 시 표준 overlay2 의 layerdb/mounts/<hash>/mount-id
-  #      파일을 강제로 읽으려 하는데 containerd-snapshotter 모드는 그 파일을 안 만든다.
-  #      → "Failed to create existing container ... failed to identify the read-write layer ID"
-  #      → 컨테이너 등록 실패 → metric 에 name 라벨 안 채워짐 → 대시보드 No data.
-  # service 자체는 향후 후속 hotfix 의 발판으로 v0.51 + containerd 옵션을 그대로 보존하되,
-  # prometheus.yml 의 scrape job 과 Grafana dashboard 는 본 PR 에서 제거해서 시연 노출 차단.
-  # 후속 hotfix 후보: Docker storage driver 를 overlay2 로 회귀 / cAdvisor dev build /
-  # dockerd 의 자체 /metrics endpoint 사용 / cAdvisor 대신 dockerd-exporter.
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.51.0   # v0.49 -> v0.51 (호환 시도, 미해결)
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
     restart: unless-stopped
     privileged: true                     # cAdvisor 가 cgroup 읽기 위해 필요 (Ubuntu 22.04)
     devices:
