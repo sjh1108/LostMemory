@@ -72,29 +72,107 @@
 
 ### 네트워크 분리 구조
 
-게임의 네트워크는 두 계층으로 분리되며, 실시간 게임 트래픽은 두 가지 Relay 모드를 공존 운영합니다.
+게임의 네트워크는 두 계층으로 분리됩니다. 실시간 게임 트래픽은 자체 Relay 7777/UDP 단독으로 운영하며, 일반 서비스 요청은 HTTPS 로 백엔드가 처리합니다.
 
-**1. 실시간 게임 트래픽** (Unity Relay 또는 자체 Relay 7777/UDP)
-- **옵션 A — Unity Relay**: 플레이어 PC ↔ Unity Relay ↔ 플레이어 PC (외부 인프라, 포트포워딩 불필요, 초대코드 6자리)
-- **옵션 B — 자체 Relay**: 플레이어 PC ↔ 싸피 VM Nginx (UDP 7777) ↔ 자체 Netty Relay 컨테이너 ↔ 플레이어 PC (백엔드 인프라)
-- 클라이언트가 NGO Transport 로 두 모드 중 선택. 자체 Relay 운영 절차는 [자체 Relay 운영 (UDP 7777)](#자체-relay-운영-udp-7777) 참고
+**1. 실시간 게임 트래픽** (자체 Relay 7777/UDP)
+- 플레이어 PC ↔ 싸피 VM Nginx (UDP 7777 stream proxy) ↔ 자체 Netty Relay 컨테이너 ↔ 플레이어 PC
+- Unity NGO Transport 가 자체 Relay 단독 사용 (UGS Sessions 제거 후 자체 Relay + 백엔드 Sessions API 로 전환됨)
+- 자체 Relay 운영 절차는 [자체 Relay 운영 (UDP 7777)](#자체-relay-운영-udp-7777) 참고
 
 **2. 일반 서비스 요청** (우리 백엔드 담당)
 - 플레이어 PC → 싸피 VM (HTTPS)
-- 인증, 진행 저장, 런 결과, 데이터 서빙
+- 인증, 매칭룸 (Sessions API), 진행 저장, 런 결과, 데이터 서빙
 
-### 배포 구조
+### 컨테이너 배치도
 
-싸피 VM 1대에 다음 컨테이너가 함께 기동됩니다.
+EC2 (`k14c201.p.ssafy.io`) 위에 13개 컨테이너가 4개 docker network 그룹으로 배치됩니다.
 
+```mermaid
+graph TB
+    player["Player PC<br/>(Unity Game Client)"]
+
+    subgraph external["외부 의존"]
+        gitlab["GitLab<br/>lab.ssafy.com"]
+        mattermost["Mattermost<br/>meeting.ssafy.com"]
+        letsencrypt["Let's Encrypt"]
+    end
+
+    subgraph ec2["EC2 — k14c201.p.ssafy.io"]
+        subgraph net_front["frontend network (외부 노출)"]
+            nginx["Nginx<br/>:80 :443 :7777/udp"]
+            certbot["Certbot<br/>(--profile certbot)"]
+            grafana["Grafana<br/>:3000"]
+            relay["Relay<br/>RelayApplication<br/>:7777/udp"]
+        end
+
+        subgraph net_back["backend network (internal)"]
+            app["Spring Boot app<br/>ServerApplication<br/>:8080"]
+            postgres["PostgreSQL :5432"]
+            redis["Redis :6379"]
+        end
+
+        subgraph net_mon["monitoring network"]
+            prometheus["Prometheus :9090"]
+            alertmanager["Alertmanager :9093"]
+            node_exporter["Node Exporter :9100"]
+            cadvisor["cAdvisor :8080"]
+        end
+
+        subgraph host_proc["host-mode (network: host)"]
+            gitlab_runner["gitlab-runner<br/>(자체 docker run)"]
+            jenkins["Jenkins<br/>:8080 (별도 compose)"]
+        end
+    end
+
+    player <-->|HTTPS| nginx
+    player <-->|UDP 7777| nginx
+    gitlab -. webhook .-> gitlab_runner
+    letsencrypt -. ACME .- certbot
+    alertmanager -. webhook .-> mattermost
+    jenkins -. webhook .-> mattermost
 ```
-[싸피 VM]
- ├─ Nginx        (리버스 프록시, HTTPS 종단 + UDP 7777 stream proxy)
- ├─ Spring Boot  (백엔드 API — server-app:latest 의 ServerApplication main)
- ├─ Relay        (자체 Netty UDP — server-app:latest 의 RelayApplication main 재사용)
- ├─ PostgreSQL   (데이터 영속)
- ├─ Redis        (세션/캐시)
- └─ Jenkins      (CI/CD)
+
+### 데이터 흐름
+
+네 가지 흐름 (런타임 서비스 / CI-CD / 모니터링+알림 / 인증서 갱신) 으로 나누어 표현합니다.
+
+```mermaid
+flowchart LR
+    subgraph runtime["런타임 서비스 흐름"]
+        direction LR
+        client1["Player PC"] -->|"HTTPS /api/*"| nginx1["Nginx"]
+        client1 -->|"UDP 7777"| nginx1
+        nginx1 -->|"/api proxy"| app1["Spring Boot"]
+        nginx1 -->|"stream proxy"| relay1["Relay"]
+        nginx1 -->|"/grafana proxy"| grafana1["Grafana"]
+        app1 --> postgres1["PostgreSQL"]
+        app1 --> redis1["Redis"]
+    end
+
+    subgraph cicd["CI/CD 흐름 (develop push 시)"]
+        direction LR
+        dev["개발자"] -->|"git push"| gitlab2["GitLab"]
+        gitlab2 -->|".gitlab-ci.yml job"| runner2["gitlab-runner"]
+        runner2 -->|"curl /buildByToken"| jenkins2["Jenkins"]
+        jenkins2 -->|"deploy.sh deploy"| target["server-app:latest<br/>(app + relay)"]
+        jenkins2 -.->|"빌드 결과"| mm1["Mattermost"]
+    end
+
+    subgraph monit["모니터링 + 알림 흐름"]
+        direction LR
+        prom["Prometheus"] -.->|"scrape /metrics"| ne["node-exporter"]
+        prom -.->|"scrape /metrics"| cad["cAdvisor"]
+        prom -.->|"scrape /metrics"| am1["Alertmanager"]
+        prom -->|"alert rule 트립"| am1
+        am1 -->|"slack_configs webhook"| mm2["Mattermost"]
+        graf["Grafana"] -.->|"datasource"| prom
+    end
+
+    subgraph cert["인증서 갱신 (월요일 03:17 cron)"]
+        direction LR
+        cb["Certbot"] <-.->|"ACME HTTP-01<br/>:80 /.well-known"| le["Let's Encrypt"]
+        cb -->|"renewed cert"| nginx_cert["Nginx (HTTPS reload)"]
+    end
 ```
 
 **호스트 기반 + Relay 선택 이유**
@@ -102,6 +180,13 @@
 - Relay 사용 시 플레이어의 포트포워딩/공유기 설정 불필요
 - 백엔드/인프라 2인으로 5주 내 구현 가능한 범위
 - Steam 출시 시점에 NGO Transport 계층만 교체하여 전용 서버로 마이그레이션 가능
+
+### 발표용 다이어그램
+
+위의 Mermaid 가 canonical 입니다. 발표 보조용 drawio 가 별도로 있습니다:
+
+- [드라이브 링크](https://drive.google.com/file/d/1_DZXDeVczKLq5ENJEAKp7-S4qiL2oFZx/view?usp=sharing) — 본 README 의 Mermaid 와 동일 정보를 시각적으로 풀어쓴 발표 자산. 발표 D-1 에 본 README 와 정합 점검.
+- Drive 권한이 anyone-with-link viewable 상태여야 외부 협업자/심사자 열람 가능. 운영 인계 시 owner 권한도 함께 이전.
 
 ---
 
