@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Memory;
 using LostMemory.Networking.Common;
+using LostMemory.Player;
 using LostMemory.Relics;
 using LostMemory.SceneFlow;
 using LostMemory.TestKhi;
@@ -530,6 +531,8 @@ namespace LostMemory.Stage
             }
             // 이번 런 파편 영구 저장.
             memoryProgressTracker?.SaveRunShards();
+            // 씬 전환 시 캐리오버용 Player 스냅샷도 함께 초기화 — 다음 런은 빈 인벤토리/풀HP.
+            PlayerRunState.Instance?.Clear();
         }
 
         private void HandleDungeonBuilt()

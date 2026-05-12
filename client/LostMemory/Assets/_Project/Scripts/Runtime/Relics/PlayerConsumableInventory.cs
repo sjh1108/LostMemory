@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LostMemory.Player;
 using UnityEngine;
 
 namespace LostMemory.Relics
@@ -9,6 +10,7 @@ namespace LostMemory.Relics
     /// PlayerRelicInventory와 별도로 존재하며, 소모품(IsConsumable=true)만 보관한다.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-100)]
     [AddComponentMenu("Lost Memory/Relics/Player Consumable Inventory")]
     public class PlayerConsumableInventory : MonoBehaviour
     {
@@ -21,6 +23,45 @@ namespace LostMemory.Relics
 
         /// <summary>슬롯 내용이 바뀔 때 발생. ShortcutBarView 갱신용.</summary>
         public event Action Changed;
+
+        private bool _restoredFromSnapshot;
+
+        private void Awake()
+        {
+            // 씬 전환 시 PlayerRunState 가 보관한 스냅샷이 있으면 슬롯 복구.
+            // Changed 발화는 Start 단계로 미룸 — UI 구독자(ShortcutBarView)들이 OnEnable 에서 구독 완료한 후 갱신.
+            PlayerRunState runState = PlayerRunState.Instance;
+            if (runState != null && runState.HasSnapshot)
+            {
+                LoadFrom(runState.Snapshot.ConsumableSlots);
+                _restoredFromSnapshot = true;
+            }
+        }
+
+        private void Start()
+        {
+            if (!_restoredFromSnapshot) return;
+            Changed?.Invoke();
+        }
+
+        /// <summary>현재 슬롯을 새 배열로 복사해 반환. 씬 전환 캡처용.</summary>
+        public RelicData[] CaptureSnapshot()
+        {
+            RelicData[] copy = new RelicData[SlotCount];
+            Array.Copy(_slots, copy, SlotCount);
+            return copy;
+        }
+
+        /// <summary>
+        /// 스냅샷으로 슬롯을 일괄 복원. 길이가 SlotCount 미만이면 나머지는 null 유지.
+        /// </summary>
+        public void LoadFrom(RelicData[] snapshotSlots)
+        {
+            for (int i = 0; i < SlotCount; i++)
+            {
+                _slots[i] = snapshotSlots != null && i < snapshotSlots.Length ? snapshotSlots[i] : null;
+            }
+        }
 
         /// <summary>
         /// 소모품을 첫 번째 빈 칸에 추가한다.

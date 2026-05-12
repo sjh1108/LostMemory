@@ -19,6 +19,22 @@ namespace LostMemory.Player
         // ── 싱글턴 ──────────────────────────────────────────────────
         public static PlayerWallet Instance { get; private set; }
 
+        // 어느 씬에서 단독 PlayMode 로 시작해도 지갑이 작동하도록 자동 부트스트랩.
+        // Bootstrap 씬에 PlayerWallet GameObject 가 존재하면 그쪽이 Instance 가 되고 본 메서드는 no-op.
+        // PlayerRunState / MemoryShardWallet 와 동일 패턴.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Bootstrap()
+        {
+            EnsureInstance();
+        }
+
+        public static PlayerWallet EnsureInstance()
+        {
+            if (Instance != null) return Instance;
+            GameObject go = new GameObject("PlayerWallet");
+            return go.AddComponent<PlayerWallet>();
+        }
+
         private void Awake()
         {
             if (Instance != null && Instance != this)

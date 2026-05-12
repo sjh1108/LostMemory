@@ -104,6 +104,20 @@ namespace LostMemory.Relics
             {
                 inventory.OnRelicAcquired += HandleAcquired;
                 inventory.OnCleared += HandleRunCleared;
+
+                // 씬 전환 시 PlayerRunState 가 복구한 인벤토리에 대해 effect 를 재등록.
+                // 첫 게임 시작 시 OwnedRelics 는 비어 있으므로 무동작. PlayerWallet 패턴 결과로
+                // Player 가 매 씬 새로 스폰될 때 본 Registry 도 함께 새로 생성되므로 이 replay 가
+                // 없으면 영속 모디파이어가 모두 풀린 상태로 진입한다.
+                if (_authority.IsAuthority)
+                {
+                    IReadOnlyList<RelicData> owned = inventory.OwnedRelics;
+                    for (int i = 0; i < owned.Count; i++)
+                    {
+                        RelicData relic = owned[i];
+                        if (relic != null) HandleAcquired(relic);
+                    }
+                }
             }
             if (combatController != null) combatController.EnemyKilledByPlayer += HandleEnemyKilled;
             if (parryController != null) parryController.ParrySucceeded += HandleParrySuccess;

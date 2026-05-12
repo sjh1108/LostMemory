@@ -1,5 +1,7 @@
 using System;
 using LostMemory.Networking.Common;
+using LostMemory.Player;
+using LostMemory.Relics;
 using MoreMountains.TopDownEngine;
 using Unity.Netcode;
 using UnityEngine;
@@ -232,6 +234,10 @@ namespace LostMemory.Stage
             pendingSpawnId = node.EntrySpawnId;
             loadInProgress = true;
 
+            // 씬 전환 직전 Player 의 인벤토리/HP 를 PlayerRunState 로 스냅샷. 새 씬에서
+            // Player 가 다시 스폰될 때 인벤토리/Health 컴포넌트들이 자체 복구한다.
+            CapturePlayerSnapshot();
+
             bool started = StartSceneLoad(node);
             if (!started)
             {
@@ -351,6 +357,54 @@ namespace LostMemory.Stage
             }
 
             return false;
+        }
+
+        private void CapturePlayerSnapshot()
+        {
+            PlayerRunState runState = PlayerRunState.Instance;
+            if (runState == null)
+            {
+                return;
+            }
+
+            Character[] characters = FindObjectsOfType<Character>();
+            Character player = null;
+            for (int i = 0; i < characters.Length; i++)
+            {
+                Character c = characters[i];
+                if (c != null && c.CharacterType == Character.CharacterTypes.Player)
+                {
+                    player = c;
+                    break;
+                }
+            }
+
+            if (player == null)
+            {
+                return;
+            }
+
+            PlayerSnapshot snapshot = default;
+
+            PlayerRelicInventory relicInventory = player.GetComponentInChildren<PlayerRelicInventory>(true);
+            if (relicInventory != null)
+            {
+                relicInventory.CaptureSnapshotInto(ref snapshot);
+            }
+
+            PlayerConsumableInventory consumableInventory = player.GetComponentInChildren<PlayerConsumableInventory>(true);
+            if (consumableInventory != null)
+            {
+                snapshot.ConsumableSlots = consumableInventory.CaptureSnapshot();
+            }
+
+            PlayerHealthSnapshotter healthSnapshotter = player.GetComponentInChildren<PlayerHealthSnapshotter>(true);
+            if (healthSnapshotter != null)
+            {
+                healthSnapshotter.CaptureInto(ref snapshot);
+            }
+
+            runState.Capture(snapshot);
         }
 
         private void PlacePlayersAtSpawn(string spawnId)
