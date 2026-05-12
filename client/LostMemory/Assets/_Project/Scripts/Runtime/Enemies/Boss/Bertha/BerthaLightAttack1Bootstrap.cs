@@ -23,6 +23,8 @@ namespace LostMemory.Enemies.Boss.Bertha
         private static readonly Vector2 LegacyAttackSize = new Vector2(2.4f, 1.3f);
         private static readonly Vector2 RequestedAttackOffset = Vector2.zero;
         private static readonly Vector2 RequestedAttackSize = new Vector2(5f, 5f);
+        private static readonly Vector2 LegacyFullComboSize = new Vector2(7f, 7f);
+        private static readonly Vector2 RequestedFullComboSize = new Vector2(8f, 8f);
         private static readonly Color LightAttack1TelegraphColor = new Color(1f, 0.34f, 0.08f, 0.32f);
         private static readonly Color LightAttack2TelegraphColor = new Color(1f, 0.44f, 0.12f, 0.32f);
         private static readonly Color HeavyTelegraphColor = new Color(1f, 0.16f, 0.05f, 0.38f);
@@ -41,6 +43,11 @@ namespace LostMemory.Enemies.Boss.Bertha
         private const float DashAttackAnimationDuration = 27f / 12f;
         private const float DashAttackImpactTime = 26f / 12f;
         private const float FullComboDefaultImpactTime = 3.2f;
+        private const float LegacyFullComboRange = 3f;
+        private const float PreviousFullComboRange = 3.5f;
+        private const float RequestedFullComboRange = 4f;
+        private const float RequestedLightProjectileLifetime = 6f;
+        private const float RequestedLightProjectileHomingTurnSpeedDegrees = 60f;
         private const string DetectingStateName = "Detecting";
         private const string MovingStateName = "Moving";
         private const string LightTelegraphStateName = "LightTelegraph";
@@ -61,6 +68,9 @@ namespace LostMemory.Enemies.Boss.Bertha
         private const string FullTelegraphStateName = "FullTelegraph";
         private const string FullComboAttackStateName = "FullComboAttack";
         private const string FullRecoverStateName = "FullRecover";
+        private const string LightProjectileTelegraphStateName = "LightProjectileTelegraph";
+        private const string LightProjectileAttackStateName = "LightProjectileAttack";
+        private const string LightProjectileRecoverStateName = "LightProjectileRecover";
         private const string ProjectileBarrageTelegraphStateName = "ProjectileBarrageTelegraph";
         private const string ProjectileBarrageAttackStateName = "ProjectileBarrageAttack";
         private const string ProjectileBarrageRecoverStateName = "ProjectileBarrageRecover";
@@ -147,27 +157,29 @@ namespace LostMemory.Enemies.Boss.Bertha
         [Header("Full Combo")]
         [SerializeField, Range(0f, 1f)] private float specialPatternHealthThresholdNormalized = 0.9f;
         [SerializeField] private float specialPatternCooldown = 15f;
-        [SerializeField] private float fullComboRange = 3f;
+        [SerializeField] private float fullComboRange = RequestedFullComboRange;
         [SerializeField] private float fullComboTelegraphDuration = 0.75f;
         [SerializeField] private float fullComboDuration = 3.2f;
         [SerializeField] private float fullComboImpactTime = FullComboDefaultImpactTime;
         [SerializeField] private float fullComboRecoverDuration = 0.65f;
         [SerializeField] private Vector2 fullComboOffset = Vector2.zero;
-        [SerializeField] private Vector2 fullComboSize = new Vector2(7f, 7f);
+        [SerializeField] private Vector2 fullComboSize = RequestedFullComboSize;
         [SerializeField] private float fullComboDamage = 24f;
         [SerializeField] private float fullComboInvincibilityDuration = 0.5f;
 
+        [Header("Light Projectile")]
+        [SerializeField] private float lightProjectileTelegraphDuration = 0.45f;
+        [SerializeField] private float lightProjectileDuration = 0.45f;
+        [SerializeField] private float lightProjectileRecoverDuration = 0.35f;
+        [SerializeField] private float lightProjectileCooldown = 10f;
+
         [Header("Projectile Barrage")]
-        [SerializeField] private float projectileBarrageMinimumRange = 2.5f;
-        [SerializeField] private float projectileBarrageRange = 12f;
         [SerializeField] private float projectileBarrageTelegraphDuration = 0.75f;
         [SerializeField] private float projectileBarrageDuration = 1.6f;
         [SerializeField] private float projectileBarrageRecoverDuration = 0.55f;
         [SerializeField] private float projectileBarrageCooldown = 12f;
 
         [Header("Final Projectile Storm")]
-        [SerializeField] private float projectileStormMinimumRange = 2.5f;
-        [SerializeField] private float projectileStormRange = 12f;
         [SerializeField] private float projectileStormTelegraphDuration = 0.85f;
         [SerializeField] private float projectileStormDuration = 1.9f;
         [SerializeField] private float projectileStormRecoverDuration = 0.6f;
@@ -181,6 +193,25 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private bool destroyProjectileOnHit = true;
         [SerializeField] private bool faceProjectileDirection = true;
         [SerializeField] private int projectileSortingOrderOffset = 1;
+        [SerializeField] private BerthaProjectilePatternDriver.BurstInstruction[] lightProjectileBursts =
+        {
+            new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Fan,
+                Delay = 0.08f,
+                ProjectileCount = 3,
+                SpreadAngle = 34f,
+                Speed = 6f,
+                Lifetime = RequestedLightProjectileLifetime,
+                Damage = 5f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.3f,
+                AngleOffsetDegrees = 0f,
+                SpawnDistance = 0.45f,
+                HomingTurnSpeedDegrees = RequestedLightProjectileHomingTurnSpeedDegrees,
+                HomingDuration = RequestedLightProjectileLifetime
+            }
+        };
         [SerializeField] private BerthaProjectilePatternDriver.BurstInstruction[] heavyProjectileBursts =
         {
             new BerthaProjectilePatternDriver.BurstInstruction
@@ -714,7 +745,29 @@ namespace LostMemory.Enemies.Boss.Bertha
                     projectileBurstEmitter,
                     HeavyAttackStateName,
                     heavyProjectileBursts,
-                    debugLogging);
+                    debugLogging,
+                    null,
+                    null,
+                    0,
+                    phaseController,
+                    BerthaBossPhase.Phase1);
+
+                BerthaProjectilePatternDriver lightProjectileDriver = GetOrCreateProjectilePatternDriver("LightProjectile");
+                lightProjectileDriver.Configure(
+                    "LightProjectile",
+                    brain,
+                    character,
+                    orientation,
+                    projectileSpawnOrigin,
+                    projectileBurstEmitter,
+                    LightProjectileAttackStateName,
+                    lightProjectileBursts,
+                    debugLogging,
+                    animator,
+                    "LightAtk2",
+                    0,
+                    phaseController,
+                    BerthaBossPhase.Phase1);
 
                 BerthaProjectilePatternDriver fullComboProjectileDriver = GetOrCreateProjectilePatternDriver("FullComboProjectiles");
                 fullComboProjectileDriver.Configure(
@@ -726,7 +779,12 @@ namespace LostMemory.Enemies.Boss.Bertha
                     projectileBurstEmitter,
                     FullComboAttackStateName,
                     fullComboProjectileBursts,
-                    debugLogging);
+                    debugLogging,
+                    null,
+                    null,
+                    0,
+                    phaseController,
+                    BerthaBossPhase.Phase2);
 
                 BerthaProjectilePatternDriver projectileBarrageDriver = GetOrCreateProjectilePatternDriver("ProjectileBarrage");
                 projectileBarrageDriver.Configure(
@@ -741,7 +799,9 @@ namespace LostMemory.Enemies.Boss.Bertha
                     debugLogging,
                     animator,
                     "HeavyAtk",
-                    0);
+                    0,
+                    phaseController,
+                    BerthaBossPhase.Phase2);
 
                 BerthaProjectilePatternDriver projectileStormDriver = GetOrCreateProjectilePatternDriver("ProjectileStorm");
                 projectileStormDriver.Configure(
@@ -756,7 +816,16 @@ namespace LostMemory.Enemies.Boss.Bertha
                     debugLogging,
                     animator,
                     "HeavyAtk",
-                    0);
+                    0,
+                    phaseController,
+                    BerthaBossPhase.Phase3);
+
+                DisableUnexpectedProjectilePatternDrivers(
+                    heavyProjectileDriver,
+                    lightProjectileDriver,
+                    fullComboProjectileDriver,
+                    projectileBarrageDriver,
+                    projectileStormDriver);
 
                 BerthaDashAttackController dashAttackController = GetOrAdd<BerthaDashAttackController>(gameObject);
 
@@ -903,14 +972,11 @@ namespace LostMemory.Enemies.Boss.Bertha
                     dashMinimumRange,
                     dashRange,
                     fullComboRange,
-                    projectileBarrageMinimumRange,
-                    projectileBarrageRange,
-                    projectileStormMinimumRange,
-                    projectileStormRange,
                     specialPatternHealthThresholdNormalized,
                     normalDashCooldown,
                     specialPatternCooldown,
                     specialPatternCooldown,
+                    lightProjectileCooldown,
                     projectileBarrageCooldown,
                     projectileStormCooldown,
                     lightAttack1Weight,
@@ -1003,6 +1069,21 @@ namespace LostMemory.Enemies.Boss.Bertha
                 fullRecoverTimer.AfterTimeMin = fullComboRecoverDuration;
                 fullRecoverTimer.AfterTimeMax = fullComboRecoverDuration;
 
+                AIDecisionTimeInState lightProjectileTelegraphTimer =
+                    GetOrAddTimeDecision("LightProjectileTelegraphDuration");
+                lightProjectileTelegraphTimer.AfterTimeMin = lightProjectileTelegraphDuration;
+                lightProjectileTelegraphTimer.AfterTimeMax = lightProjectileTelegraphDuration;
+
+                AIDecisionTimeInState lightProjectileAttackTimer =
+                    GetOrAddTimeDecision("LightProjectileDuration");
+                lightProjectileAttackTimer.AfterTimeMin = lightProjectileDuration;
+                lightProjectileAttackTimer.AfterTimeMax = lightProjectileDuration;
+
+                AIDecisionTimeInState lightProjectileRecoverTimer =
+                    GetOrAddTimeDecision("LightProjectileRecoverDuration");
+                lightProjectileRecoverTimer.AfterTimeMin = lightProjectileRecoverDuration;
+                lightProjectileRecoverTimer.AfterTimeMax = lightProjectileRecoverDuration;
+
                 AIDecisionTimeInState projectileBarrageTelegraphTimer =
                     GetOrAddTimeDecision("ProjectileBarrageTelegraphDuration");
                 projectileBarrageTelegraphTimer.AfterTimeMin = projectileBarrageTelegraphDuration;
@@ -1059,6 +1140,9 @@ namespace LostMemory.Enemies.Boss.Bertha
                     fullTelegraphTimer,
                     fullAttackTimer,
                     fullRecoverTimer,
+                    lightProjectileTelegraphTimer,
+                    lightProjectileAttackTimer,
+                    lightProjectileRecoverTimer,
                     projectileBarrageTelegraphTimer,
                     projectileBarrageAttackTimer,
                     projectileBarrageRecoverTimer,
@@ -1128,15 +1212,25 @@ namespace LostMemory.Enemies.Boss.Bertha
             dashDuration = Mathf.Max(0.01f, dashDuration);
             dashAttackDuration = Mathf.Max(dashDuration, dashAttackDuration);
             dashImpactTime = Mathf.Clamp(dashImpactTime, 0f, dashAttackDuration);
+            if (Mathf.Approximately(fullComboRange, LegacyFullComboRange)
+                || Mathf.Approximately(fullComboRange, PreviousFullComboRange))
+            {
+                fullComboRange = RequestedFullComboRange;
+            }
+            fullComboRange = Mathf.Max(0f, fullComboRange);
+            if (Approximately(fullComboSize, LegacyFullComboSize))
+            {
+                fullComboSize = RequestedFullComboSize;
+            }
             fullComboImpactTime = Mathf.Clamp(fullComboImpactTime, 0f, fullComboDuration);
-            projectileBarrageMinimumRange = Mathf.Max(0f, projectileBarrageMinimumRange);
-            projectileBarrageRange = Mathf.Max(projectileBarrageMinimumRange, projectileBarrageRange);
+            lightProjectileTelegraphDuration = Mathf.Max(0f, lightProjectileTelegraphDuration);
+            lightProjectileDuration = Mathf.Max(0.01f, lightProjectileDuration);
+            lightProjectileRecoverDuration = Mathf.Max(0f, lightProjectileRecoverDuration);
+            lightProjectileCooldown = Mathf.Max(0f, lightProjectileCooldown);
             projectileBarrageTelegraphDuration = Mathf.Max(0f, projectileBarrageTelegraphDuration);
             projectileBarrageDuration = Mathf.Max(0.01f, projectileBarrageDuration);
             projectileBarrageRecoverDuration = Mathf.Max(0f, projectileBarrageRecoverDuration);
             projectileBarrageCooldown = Mathf.Max(0f, projectileBarrageCooldown);
-            projectileStormMinimumRange = Mathf.Max(0f, projectileStormMinimumRange);
-            projectileStormRange = Mathf.Max(projectileStormMinimumRange, projectileStormRange);
             projectileStormTelegraphDuration = Mathf.Max(0f, projectileStormTelegraphDuration);
             projectileStormDuration = Mathf.Max(0.01f, projectileStormDuration);
             projectileStormRecoverDuration = Mathf.Max(0f, projectileStormRecoverDuration);
@@ -1160,6 +1254,8 @@ namespace LostMemory.Enemies.Boss.Bertha
             hitScaleMultiplier = Mathf.Max(1f, hitScaleMultiplier);
             hitScaleDuration = Mathf.Max(0f, hitScaleDuration);
             dashHitReactionMultiplier = Mathf.Max(1f, dashHitReactionMultiplier);
+            lightProjectileBursts = NormalizeLightProjectileBurstSequence(lightProjectileBursts);
+            NormalizeBurstSequence(lightProjectileBursts);
             NormalizeBurstSequence(heavyProjectileBursts);
             NormalizeBurstSequence(fullComboProjectileBursts);
             NormalizeBurstSequence(projectileBarrageBursts);
@@ -1416,6 +1512,9 @@ namespace LostMemory.Enemies.Boss.Bertha
             AIDecisionTimeInState fullTelegraphTimer,
             AIDecisionTimeInState fullAttackTimer,
             AIDecisionTimeInState fullRecoverTimer,
+            AIDecisionTimeInState lightProjectileTelegraphTimer,
+            AIDecisionTimeInState lightProjectileAttackTimer,
+            AIDecisionTimeInState lightProjectileRecoverTimer,
             AIDecisionTimeInState projectileBarrageTelegraphTimer,
             AIDecisionTimeInState projectileBarrageAttackTimer,
             AIDecisionTimeInState projectileBarrageRecoverTimer,
@@ -1530,6 +1629,25 @@ namespace LostMemory.Enemies.Boss.Bertha
                         CreateTransition(fullAttackTimer, FullRecoverStateName, string.Empty)
                     }),
                 CreateRecoverState(FullRecoverStateName, idleAction, targetIsAlive, fullRecoverTimer),
+                CreateState(
+                    LightProjectileTelegraphStateName,
+                    new AIAction[] { idleAction },
+                    new[]
+                    {
+                        CreateTransition(lightProjectileTelegraphTimer, LightProjectileAttackStateName, string.Empty)
+                    }),
+                CreateState(
+                    LightProjectileAttackStateName,
+                    new AIAction[] { idleAction },
+                    new[]
+                    {
+                        CreateTransition(lightProjectileAttackTimer, LightProjectileRecoverStateName, string.Empty)
+                    }),
+                CreateRecoverState(
+                    LightProjectileRecoverStateName,
+                    idleAction,
+                    targetIsAlive,
+                    lightProjectileRecoverTimer),
                 CreateState(
                     ProjectileBarrageTelegraphStateName,
                     new AIAction[] { idleAction },
@@ -1779,6 +1897,45 @@ namespace LostMemory.Enemies.Boss.Bertha
             return unassignedDriver != null ? unassignedDriver : gameObject.AddComponent<BerthaProjectilePatternDriver>();
         }
 
+        private void DisableUnexpectedProjectilePatternDrivers(params BerthaProjectilePatternDriver[] expectedDrivers)
+        {
+            BerthaProjectilePatternDriver[] existingDrivers = GetComponents<BerthaProjectilePatternDriver>();
+            for (int i = 0; i < existingDrivers.Length; i++)
+            {
+                BerthaProjectilePatternDriver driver = existingDrivers[i];
+                if (driver == null)
+                {
+                    continue;
+                }
+
+                if (ContainsDriver(expectedDrivers, driver))
+                {
+                    driver.enabled = true;
+                    continue;
+                }
+
+                driver.StopAndDisable();
+            }
+        }
+
+        private static bool ContainsDriver(BerthaProjectilePatternDriver[] drivers, BerthaProjectilePatternDriver target)
+        {
+            if (drivers == null || target == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < drivers.Length; i++)
+            {
+                if (drivers[i] == target)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private SpriteRenderer ResolveProjectileSortingReference()
         {
             if (visualRoot != null)
@@ -1842,8 +1999,58 @@ namespace LostMemory.Enemies.Boss.Bertha
                 burst.TargetInvincibilityDuration = Mathf.Max(0f, burst.TargetInvincibilityDuration);
                 burst.HitRadius = Mathf.Max(0.05f, burst.HitRadius);
                 burst.SpawnDistance = Mathf.Max(0f, burst.SpawnDistance);
+                burst.HomingTurnSpeedDegrees = Mathf.Max(0f, burst.HomingTurnSpeedDegrees);
+                burst.HomingDuration = Mathf.Max(0f, burst.HomingDuration);
                 burstSequence[i] = burst;
             }
+        }
+
+        private static BerthaProjectilePatternDriver.BurstInstruction[] NormalizeLightProjectileBurstSequence(
+            BerthaProjectilePatternDriver.BurstInstruction[] burstSequence)
+        {
+            if (burstSequence == null || burstSequence.Length == 0)
+            {
+                return new[]
+                {
+                    CreateDefaultLightProjectileBurst()
+                };
+            }
+
+            BerthaProjectilePatternDriver.BurstInstruction burst = burstSequence[0];
+            burst.Mode = BerthaProjectilePatternDriver.BurstPatternMode.Fan;
+            burst.ProjectileCount = 3;
+            burst.SpreadAngle = Mathf.Max(0f, burst.SpreadAngle);
+            burst.Speed = Mathf.Max(0.01f, burst.Speed);
+            burst.Lifetime = Mathf.Max(burst.Lifetime, RequestedLightProjectileLifetime);
+            burst.HomingTurnSpeedDegrees = Mathf.Max(
+                burst.HomingTurnSpeedDegrees,
+                RequestedLightProjectileHomingTurnSpeedDegrees);
+            burst.HomingDuration = Mathf.Max(burst.HomingDuration, burst.Lifetime);
+
+            return new[]
+            {
+                burst
+            };
+        }
+
+        private static BerthaProjectilePatternDriver.BurstInstruction CreateDefaultLightProjectileBurst()
+        {
+            return new BerthaProjectilePatternDriver.BurstInstruction
+            {
+                Mode = BerthaProjectilePatternDriver.BurstPatternMode.Fan,
+                Delay = 0.08f,
+                ProjectileCount = 3,
+                SpreadAngle = 34f,
+                Speed = 6f,
+                Lifetime = RequestedLightProjectileLifetime,
+                Damage = 5f,
+                TargetInvincibilityDuration = 0.5f,
+                HitRadius = 0.3f,
+                AngleOffsetDegrees = 0f,
+                SpawnDistance = 0.45f,
+                HomingTurnSpeedDegrees = RequestedLightProjectileHomingTurnSpeedDegrees,
+                HomingDuration = RequestedLightProjectileLifetime
+            };
         }
 
 #if UNITY_EDITOR

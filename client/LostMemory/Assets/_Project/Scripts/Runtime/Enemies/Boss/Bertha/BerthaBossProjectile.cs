@@ -22,6 +22,9 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private bool faceMovementDirection = true;
         [SerializeField, Min(0f)] private float animationFrameRate = 12f;
         [SerializeField] private Sprite[] animationFrames = System.Array.Empty<Sprite>();
+        [SerializeField] private Transform homingTarget;
+        [SerializeField, Min(0f)] private float homingTurnSpeedDegrees;
+        [SerializeField, Min(0f)] private float homingDuration;
         [SerializeField] private bool debugLogging;
 
         private readonly HashSet<Health> _hitTargets = new HashSet<Health>();
@@ -29,6 +32,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         private Vector2 _direction = Vector2.right;
         private float _elapsedLifetime;
         private float _animationElapsed;
+        private float _homingElapsed;
 
         private void Reset()
         {
@@ -42,6 +46,8 @@ namespace LostMemory.Enemies.Boss.Bertha
             lifetime = Mathf.Max(0.01f, lifetime);
             hitRadius = Mathf.Max(0.05f, hitRadius);
             maximumHits = Mathf.Max(1, maximumHits);
+            homingTurnSpeedDegrees = Mathf.Max(0f, homingTurnSpeedDegrees);
+            homingDuration = Mathf.Max(0f, homingDuration);
             spriteRenderer ??= GetComponent<SpriteRenderer>();
             EnsureBuffer();
         }
@@ -68,7 +74,10 @@ namespace LostMemory.Enemies.Boss.Bertha
             bool configuredDestroyOnHit,
             bool configuredFaceMovementDirection,
             Sprite[] configuredAnimationFrames,
-            float configuredAnimationFrameRate)
+            float configuredAnimationFrameRate,
+            Transform configuredHomingTarget = null,
+            float configuredHomingTurnSpeedDegrees = 0f,
+            float configuredHomingDuration = 0f)
         {
             owner = configuredOwner;
             spriteRenderer = configuredSpriteRenderer;
@@ -85,8 +94,12 @@ namespace LostMemory.Enemies.Boss.Bertha
             faceMovementDirection = configuredFaceMovementDirection;
             animationFrames = configuredAnimationFrames ?? System.Array.Empty<Sprite>();
             animationFrameRate = Mathf.Max(0f, configuredAnimationFrameRate);
+            homingTarget = configuredHomingTarget;
+            homingTurnSpeedDegrees = Mathf.Max(0f, configuredHomingTurnSpeedDegrees);
+            homingDuration = Mathf.Max(0f, configuredHomingDuration);
             _elapsedLifetime = 0f;
             _animationElapsed = 0f;
+            _homingElapsed = 0f;
             _hitTargets.Clear();
             EnsureBuffer();
             ApplyVisualState();
@@ -95,6 +108,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         private void Update()
         {
             float deltaTime = Time.deltaTime;
+            UpdateHoming(deltaTime);
             float movementDistance = speed * deltaTime;
             if (ProcessObstacleCollision(movementDistance))
             {
@@ -118,7 +132,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         {
             EnsureBuffer();
 
-            int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, hitRadius, _overlapBuffer, targetLayerMask);
+            int hitCount = OverlapCircleTargets(transform.position, hitRadius);
             bool appliedHit = false;
 
             for (int i = 0; i < hitCount; i++)
@@ -188,14 +202,39 @@ namespace LostMemory.Enemies.Boss.Bertha
             }
 
             _animationElapsed += deltaTime;
-            int frameIndex = Mathf.Min(
-                animationFrames.Length - 1,
-                Mathf.FloorToInt(_animationElapsed * animationFrameRate));
+            int frameIndex = Mathf.FloorToInt(_animationElapsed * animationFrameRate) % animationFrames.Length;
 
             if (frameIndex >= 0 && frameIndex < animationFrames.Length)
             {
                 spriteRenderer.sprite = animationFrames[frameIndex];
             }
+        }
+
+        private void UpdateHoming(float deltaTime)
+        {
+            if (homingTarget == null
+                || homingTurnSpeedDegrees <= 0f
+                || homingDuration <= 0f
+                || _homingElapsed >= homingDuration)
+            {
+                return;
+            }
+
+            Vector2 targetDirection = (Vector2)(homingTarget.position - transform.position);
+            if (targetDirection.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            float maxRadiansDelta = homingTurnSpeedDegrees * Mathf.Deg2Rad * deltaTime;
+            Vector3 rotatedDirection = Vector3.RotateTowards(
+                _direction,
+                targetDirection.normalized,
+                maxRadiansDelta,
+                0f);
+
+            _direction = ((Vector2)rotatedDirection).normalized;
+            _homingElapsed += deltaTime;
         }
 
         private void ApplyVisualState()
@@ -234,6 +273,14 @@ namespace LostMemory.Enemies.Boss.Bertha
             {
                 _overlapBuffer = new Collider2D[Mathf.Max(1, maximumHits)];
             }
+        }
+
+        private int OverlapCircleTargets(Vector2 center, float radius)
+        {
+            ContactFilter2D contactFilter = new ContactFilter2D();
+            contactFilter.SetLayerMask(targetLayerMask);
+            contactFilter.useTriggers = Physics2D.queriesHitTriggers;
+            return Physics2D.OverlapCircle(center, radius, contactFilter, _overlapBuffer);
         }
 
         private static bool IsOwnedByAttacker(Health health, GameObject attacker)

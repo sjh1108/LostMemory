@@ -337,6 +337,74 @@ MonoBehaviour:
         TrueState: Moving
         FalseState: 
         LastDecisionEvaluation: 0
+  - StateName: ProjectileBarrageTelegraph
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: ProjectileBarrageAttack
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileBarrageAttack
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: ProjectileBarrageRecover
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileBarrageRecover
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 960971720350858582}
+        TrueState: 
+        FalseState: Detecting
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 0}
+        TrueState: Moving
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileStormTelegraph
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: ProjectileStormAttack
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileStormAttack
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: ProjectileStormRecover
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: ProjectileStormRecover
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 960971720350858582}
+        TrueState: 
+        FalseState: Detecting
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 0}
+        TrueState: Moving
+        FalseState: 
+        LastDecisionEvaluation: 0
   TimeInThisState: 0
   Target: {fileID: 0}
   _lastKnownTargetPosition: {x: 0, y: 0, z: 0}
@@ -552,40 +620,6 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
-  fullComboProjectileBursts:
-  - Mode: 1
-    Delay: 0.58
-    ProjectileCount: 5
-    SpreadAngle: 70
-    Speed: 6
-    Lifetime: 2
-    Damage: 7
-    TargetInvincibilityDuration: 0.5
-    HitRadius: 0.35
-    AngleOffsetDegrees: 0
-    SpawnDistance: 0.45
-  - Mode: 1
-    Delay: 0.72
-    ProjectileCount: 6
-    SpreadAngle: 95
-    Speed: 9
-    Lifetime: 2
-    Damage: 7
-    TargetInvincibilityDuration: 0.5
-    HitRadius: 0.35
-    AngleOffsetDegrees: 0
-    SpawnDistance: 0.45
-  - Mode: 0
-    Delay: 0.78
-    ProjectileCount: 8
-    SpreadAngle: 0
-    Speed: 9
-    Lifetime: 2
-    Damage: 9
-    TargetInvincibilityDuration: 0.5
-    HitRadius: 0.35
-    AngleOffsetDegrees: 0
-    SpawnDistance: 0.45
   projectileBarrageBursts:
   - Mode: 0
     Delay: 0.2
@@ -741,6 +775,40 @@ MonoBehaviour:
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
     AngleOffsetDegrees: 32.4
+    SpawnDistance: 0.45
+  fullComboProjectileBursts:
+  - Mode: 1
+    Delay: 0.58
+    ProjectileCount: 5
+    SpreadAngle: 70
+    Speed: 6
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.72
+    ProjectileCount: 6
+    SpreadAngle: 95
+    Speed: 9
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 0
+    Delay: 0.78
+    ProjectileCount: 8
+    SpreadAngle: 0
+    Speed: 9
+    Lifetime: 2
+    Damage: 9
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
     SpawnDistance: 0.45
   lightAttack1Weight: 3
   lightAttack2Weight: 3
@@ -1427,6 +1495,10 @@ MonoBehaviour:
   - FullRecover
   - NormalDashTelegraph
   - NormalDashRecover
+  - ProjectileBarrageTelegraph
+  - ProjectileBarrageRecover
+  - ProjectileStormTelegraph
+  - ProjectileStormRecover
   idleAnimationStateName: Idle
   walkAnimationStateName: Walk
   animationLayer: 0
@@ -1919,17 +1991,31 @@ MonoBehaviour:
   brain: {fileID: 3462389258332619980}
   character: {fileID: 676684734245497551}
   orientationAbility: {fileID: 4263005936322895720}
+  animator: {fileID: 0}
   projectileOrigin: {fileID: 6163745977444960121}
   burstEmitter: {fileID: 7493932597098213808}
   attackStateName: HeavyAttack
+  attackAnimationStateName: 
+  attackAnimationLayer: 0
   burstSequence:
   - Mode: 0
-    Delay: 0.82
-    ProjectileCount: 8
+    Delay: 0.72
+    ProjectileCount: 10
     SpreadAngle: 0
-    Speed: 9
+    Speed: 10
     Lifetime: 2
     Damage: 8
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+  - Mode: 1
+    Delay: 0.16
+    ProjectileCount: 7
+    SpreadAngle: 85
+    Speed: 8
+    Lifetime: 2
+    Damage: 7
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
     AngleOffsetDegrees: 0
@@ -1951,9 +2037,12 @@ MonoBehaviour:
   brain: {fileID: 3462389258332619980}
   character: {fileID: 676684734245497551}
   orientationAbility: {fileID: 4263005936322895720}
+  animator: {fileID: 0}
   projectileOrigin: {fileID: 6163745977444960121}
   burstEmitter: {fileID: 7493932597098213808}
   attackStateName: FullComboAttack
+  attackAnimationStateName: 
+  attackAnimationLayer: 0
   burstSequence:
   - Mode: 1
     Delay: 0.58
@@ -2108,6 +2197,7 @@ MonoBehaviour:
   health: {fileID: 1476706992768293698}
   character: {fileID: 676684734245497551}
   brain: {fileID: 3462389258332619980}
+  thresholdReactionController: {fileID: 3376448376559293711}
   shakeTarget: {fileID: 8187067237525618016}
   targetRenderers:
   - {fileID: 3792553533832178344}

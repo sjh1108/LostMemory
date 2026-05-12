@@ -66,6 +66,8 @@ namespace LostMemory.Enemies.Boss.Bertha
         private bool _healthWasInvulnerable;
         private bool _appliedReactionInvulnerability;
 
+        public bool IsReactionInvulnerabilityActive => _reactionLocked && _appliedReactionInvulnerability;
+
         private void Reset()
         {
             RefreshReferences();
@@ -382,6 +384,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                 }
 
                 elapsed += Time.deltaTime;
+                MaintainReactionInvulnerability();
                 StopReactionMotion();
                 yield return null;
             }
@@ -404,6 +407,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                 }
 
                 StopReactionMotion();
+                MaintainReactionInvulnerability();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
@@ -527,6 +531,16 @@ namespace LostMemory.Enemies.Boss.Bertha
             _healthWasInvulnerable = health.Invulnerable;
             health.DamageDisabled();
             _appliedReactionInvulnerability = true;
+        }
+
+        private void MaintainReactionInvulnerability()
+        {
+            if (!_appliedReactionInvulnerability || health == null)
+            {
+                return;
+            }
+
+            health.Invulnerable = true;
         }
 
         private void RestoreReactionInvulnerability()
