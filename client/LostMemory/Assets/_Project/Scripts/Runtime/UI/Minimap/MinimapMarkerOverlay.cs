@@ -36,6 +36,10 @@ namespace LostMemory.UI.Minimap
 
         [SerializeField, Min(0)] private int initialPoolSize = 16;
 
+        [Header("Fog of War")]
+        [SerializeField, Tooltip("fog 가시성 검사. null 이면 모든 마커 항상 표시 (CL-222 기본 동작). PlayerLocal/PlayerRemote 는 fog 와 무관하게 항상 표시.")]
+        private MinimapFog fog;
+
         private readonly List<Image> _pool = new List<Image>();
         private readonly List<Image> _activeMarkers = new List<Image>();
 
@@ -67,7 +71,14 @@ namespace LostMemory.UI.Minimap
             for (int i = 0; i < agents.Count; i++)
             {
                 MinimapAgent agent = agents[i];
-                if (agent == null || agent.Icon == null)
+                if (agent == null)
+                {
+                    continue;
+                }
+
+                // icon fallback — agent.Icon 비어있으면 markerPrefab 의 sprite 사용 (CL-223 결정).
+                Sprite spriteToUse = agent.Icon != null ? agent.Icon : markerPrefab.sprite;
+                if (spriteToUse == null)
                 {
                     continue;
                 }
@@ -89,8 +100,17 @@ namespace LostMemory.UI.Minimap
                     viewportPoint.y = Mathf.Clamp01(viewportPoint.y);
                 }
 
+                // fog 가시성 검사 — Player(Local/Remote) 외 agent 는 fog 가린 영역 skip.
+                if (fog != null && !IsAlwaysVisible(agent.Kind))
+                {
+                    if (!fog.IsRevealedAtWorld(agent.WorldPosition))
+                    {
+                        continue;
+                    }
+                }
+
                 Image marker = AcquireMarker();
-                marker.sprite = agent.Icon;
+                marker.sprite = spriteToUse;
                 marker.color = agent.Tint;
 
                 RectTransform rt = (RectTransform)marker.transform;
@@ -150,5 +170,10 @@ namespace LostMemory.UI.Minimap
 
             _activeMarkers.Clear();
         }
+
+        /// <summary>fog 가림과 무관하게 항상 표시되는 kind. Player 본인/팀원.</summary>
+        private static bool IsAlwaysVisible(MinimapAgent.AgentKind kind)
+            => kind == MinimapAgent.AgentKind.PlayerLocal
+            || kind == MinimapAgent.AgentKind.PlayerRemote;
     }
 }

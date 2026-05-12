@@ -27,7 +27,7 @@ LostMemory(절차생성 던전 코옵)에 미니맵이 없어 자기 위치/적�
 | 통합 prefab 사용 | **`MinimapRig.prefab`** (MinimapCamera + MinimapCanvas 통합) | prefab 끼리 ref 불가 문제 해결 위해 옵션 B(통합) 선택. 다른 씬 재사용 용이 |
 | 미니맵 배경 정책 (최종) | **화이트리스트 Culling Mask = `Default` Layer 만** | C 로 1차 검증 후 던전 시각 노출 단계에서 결정. enemy 자식(WeaponAttachment 등) Layer 추적 회피. [상세](./cl222_minimap_camera_hud_plan.md#결정-완료--미니맵-배경-정책-2026-05-12) |
 | Player Icon 슬롯 | `icon_minimap_player.png` (DungeonArchitect 샘플) | plan 의 "Icon 비움" spec 결함 우회 — `MinimapMarkerOverlay.cs:70` 에서 `agent.Icon == null` 이면 skip 하는 코드 발견. Editor 옵션 1 로 우회 |
-| 부착 진행 현황 | Player ✅ / Chobomb_CL212 ✅ / **Enemy 6개 + Boss 2개 대기** | enemy 담당자 협업 일정 합의 후 진행 |
+| 부착 진행 현황 | **Player ✅ / Enemy 9개 ✅ / Boss 2개 ✅** (전부 완료) | 2026-05-12 모두 부착 완료 |
 
 ### 알려진 spec 결함 (후속 정리 후보)
 - **`MinimapMarkerOverlay.cs:70`** 의 `agent.Icon == null` skip 조건 — plan 의 "Icon 비움 → prefab Image 사용" 의도와 어긋남. 정석은 `agent.Icon ?? markerPrefab.sprite` fallback. 본 CL 에선 Editor 우회로 진행, 후속에 코드 정리 권장
@@ -121,7 +121,7 @@ LostMemory(절차생성 던전 코옵)에 미니맵이 없어 자기 위치/적�
   - Rotate With Transform: **true** (이동 방향 화살표 — 안 돌아가면 후속에 false 로 회귀)
   - Priority: 100
 
-### Step 10. Enemy 7개 prefab — MinimapAgent ⚠️ (Chobomb_CL212 ✅ / 나머지 6개 담당자 협업 대기)
+### Step 10. Enemy 7개 prefab — MinimapAgent ✅
 `Assets/_Project/Prefabs/Enemies/` 하위 다음 7개 각각에 `MinimapAgent` 추가, **Kind=Enemy, Tint=빨강(1.0, 0.2, 0.2, 1.0), Icon Scale=0.8, Rotate With Transform=false, Priority=10**:
 - `Orc_CL037`
 - `OrcRider_CL039`
@@ -131,7 +131,7 @@ LostMemory(절차생성 던전 코옵)에 미니맵이 없어 자기 위치/적�
 - `StoneGolem_Test`
 - `MapMaker_LM`
 
-### Step 11. Boss 2개 — MinimapAgent ⏳ (담당자 협업 대기)
+### Step 11. Boss 2개 — MinimapAgent ✅
 `Assets/_Project/Prefabs/Enemies/Boss/` 의 `BerthaRoot.prefab`, `BerthaRoot2.prefab` 각각에:
 - Kind: **Boss**
 - Tint: **주황** (1.0, 0.55, 0.0, 1.0)
@@ -151,7 +151,7 @@ LostMemory(절차생성 던전 코옵)에 미니맵이 없어 자기 위치/적�
    - 마커가 화면 밖으로 나가면 `Manual Size` 키움
 4. 회전 → 마커 화살표 회전 (안 되면 `MinimapAgent.rotateWithTransform=false` 로 회귀)
 
-### C-2. 적 마커 ⚠️ (Chobomb 확인 ✅ / 나머지 적+보스 부착 후 재검증 필요)
+### C-2. 적 마커 ✅
 5. 적 스폰 트리거 → 빨강 마커
 6. 처치 → 마커 사라짐
 7. **풀링 검증** → 같은 방에서 적 재스폰 시 두 번째도 마커 정상 (콘솔에 디버그 로그 임시 추가 권장)
@@ -162,7 +162,7 @@ LostMemory(절차생성 던전 코옵)에 미니맵이 없어 자기 위치/적�
 10. 큰 맵에서도 마커 동일 동작
 11. 큰 맵 열고도 게임 계속 진행 (pauseTimeWhenBigMapOpen=false)
 
-### C-4. 보스 (Dungeon_1F_Boss.unity) ⏳ (Boss prefab MinimapAgent 부착 후 진행)
+### C-4. 보스 (Dungeon_1F_Boss.unity) ✅
 12. 보스방 입장 → **주황 큰 마커** (Icon Scale 1.8) 가 다른 적과 구분됨
 
 ### C-5. 풀링 안전성 (Dungeon.unity) ✅ (메인 던전 정상 동작, 멀티 방 검증 통과)

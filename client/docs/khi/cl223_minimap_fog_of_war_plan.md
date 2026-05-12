@@ -1,9 +1,12 @@
 # CL-223: 미니맵 Fog of War
 
 **Epic**: H. UI / 연출 / 아트 적용
-**상태**: 코드 ⏳ 대기 / Editor 작업 ⏳ 대기 / 검증 ⏳ 대기
-**선행**: CL-222 (미니맵 카메라 + HUD + 마커 — 코드 완료, Editor/검증 진행 중)
-**후속**: CL-224 (멀티플레이 통합)
+**상태**: ✅ **종결** (코드 ✅ / Editor ✅ / 검증 ✅) — 2026-05-12
+**선행**: CL-222 (미니맵 카메라 + HUD + 마커 — 종결됨)
+**후속**: CL-224 (멀티플레이 통합), CL-226 (추적 모드)
+
+> **개발 보고서**: [cl223_minimap_fog_of_war_report.md](./cl223_minimap_fog_of_war_report.md) — 최종 결과, 변경 파일, 결정 사항, PR 메시지 후보
+> **구현 실행 plan**: [cl223_fog_phaseAB_execution.md](./cl223_fog_phaseAB_execution.md) — Phase A 코드 + Phase B Editor 단계별 절차, 본 설계 plan 의 일부 결정 사항 변경 반영 (fog 좌표계 viewport → **world space**, MarkerOverlay icon null skip 결함 같이 정리)
 
 ---
 
