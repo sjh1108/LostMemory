@@ -16,10 +16,17 @@ namespace LostMemory.Shop
         public RelicData LargeHealPotion;
         public RelicData RandomBox;
 
-        [Header("비유물 슬롯 가중치 (합산 기준 확률)")]
-        public int SmallPotionWeight = 50;   // 50%
-        public int LargePotionWeight = 25;   // 25%
-        public int RandomBoxWeight   = 25;   // 25%
+        [Header("포션 슬롯 가중치 — Small vs Large (RandomBox 제외)")]
+        [Tooltip("매 상점 4번째 슬롯에 확정 등장하는 포션의 종류 가중치.")]
+        public int SmallPotionWeight = 50;   // 67% (50 / 75)
+        public int LargePotionWeight = 25;   // 33% (25 / 75)
+        [System.Obsolete("Phase A 이후 비사용. 랜덤박스는 RandomBoxAppearChance 로 독립 슬롯 등장.", false)]
+        public int RandomBoxWeight   = 25;   // deprecated
+
+        [Header("랜덤박스 슬롯 등장 (Phase A)")]
+        [Tooltip("매 상점에서 랜덤박스 슬롯이 등장할 확률. 0=절대 미등장, 1=항상 등장.")]
+        [Range(0f, 1f)]
+        public float RandomBoxAppearChance = 0.3f;
 
         // ── 랜덤박스 설정 ────────────────────────────────────────────
         [Header("랜덤박스 유물 등급 가중치")]

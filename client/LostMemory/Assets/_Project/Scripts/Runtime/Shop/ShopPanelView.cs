@@ -49,10 +49,18 @@ namespace LostMemory.Shop
         /// <param name="gold">현재 보유 골드</param>
         public void Init(ShopData shopData, PlayerRelicInventory inventory, int gold)
         {
+            // Phase A: 같은 ShopData 인스턴스로 재호출되면 (= 같은 상점 재오픈) 품절 상태 보존.
+            // 다른 인스턴스면 (= 새 상점) 클리어. ShopNpcInteractable 의 캐시가 동일 참조를 재사용.
+            bool sameShop = ReferenceEquals(_shopData, shopData);
+
             _shopData  = shopData;
             _inventory = inventory;
             _gold      = gold;
-            _soldOutIndices.Clear();
+
+            if (!sameShop)
+            {
+                _soldOutIndices.Clear();
+            }
 
             for (int i = 0; i < _itemViews.Length; i++)
             {
@@ -65,6 +73,11 @@ namespace LostMemory.Shop
                         capturedItem,
                         item => TryBuy(capturedIndex, item),
                         item => ShowDetail(item.Relic));
+                    // 같은 상점 재오픈 시 품절 시각 상태 복원 — Init 이 visual 리셋했으므로 다시 표시.
+                    if (sameShop && _soldOutIndices.Contains(i))
+                    {
+                        _itemViews[i].SetSoldOut(true);
+                    }
                 }
                 else
                 {

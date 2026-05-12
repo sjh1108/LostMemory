@@ -27,7 +27,11 @@ namespace LostMemory.Shop
         [SerializeField] private ShopPanelView panel;
         [Tooltip("CL-113: Shop 열림과 동시에 표시할 인벤토리 패널 (null 허용 — 표시 안 함). 구매 시 자동 Refresh.")]
         [SerializeField] private InventoryPanelView inventoryPanel;
+        [Tooltip("Shop 열림과 동시에 표시할 단축키바 (null 허용 — 표시 안 함). 소모품 구매 후 자동 Refresh.")]
+        [SerializeField] private ShortcutBarView shortcutBar;
         [SerializeField] private PlayerRelicInventory playerRelicInventory;
+        [Tooltip("ShortcutBar 표시용 소모품 인벤토리. null 허용 — null 이면 ShortcutBar 도 표시 안 됨. 라우팅 자체는 PlayerRelicInventory.TryAdd 가 자동 처리.")]
+        [SerializeField] private PlayerConsumableInventory playerConsumableInventory;
         [SerializeField] private GoldWallet goldWallet;
         [Tooltip("CL-113: 패널 떠있는 동안 마우스 조준 차단. (참고: KhiPlayerAim 자체엔 Update 가 없어 enabled 토글 효과 없음 — 실제 칼 회전 차단은 playerWeaponPresenter 슬롯)")]
         [SerializeField] private KhiPlayerAim playerAim;
@@ -107,6 +111,12 @@ namespace LostMemory.Shop
                 inventoryPanel.gameObject.SetActive(true);
                 inventoryPanel.Init(playerRelicInventory, goldWallet.Current);
             }
+            // 단축키바 동시 표시 — 소모품(포션) 구매 즉시 슬롯에 추가됨을 확인 가능.
+            if (shortcutBar != null && playerConsumableInventory != null)
+            {
+                shortcutBar.gameObject.SetActive(true);
+                shortcutBar.Init(playerConsumableInventory);
+            }
             SuppressPlayerControls();
 
             if (logShopFlow) Debug.Log($"[ShopController] Opened. gold={goldWallet.Current}");
@@ -125,6 +135,11 @@ namespace LostMemory.Shop
             if (inventoryPanel != null)
             {
                 inventoryPanel.gameObject.SetActive(false);
+            }
+            // 단축키바도 같이 닫음.
+            if (shortcutBar != null)
+            {
+                shortcutBar.gameObject.SetActive(false);
             }
             RestorePlayerControls();
 
@@ -169,6 +184,13 @@ namespace LostMemory.Shop
             if (inventoryPanel != null && inventoryPanel.gameObject.activeSelf)
             {
                 inventoryPanel.Refresh(playerRelicInventory, goldWallet != null ? goldWallet.Current : 0);
+            }
+            // 단축키바 갱신 — 소모품 구매 시 PlayerRelicInventory.TryAdd 가 자동으로
+            // PlayerConsumableInventory.TryAdd 로 라우팅하므로, UI 만 강제 Refresh.
+            // 유물 구매에도 호출되지만 ShortcutBar 슬롯은 비어있는 채라 노옵에 가깝다.
+            if (shortcutBar != null && shortcutBar.gameObject.activeSelf)
+            {
+                shortcutBar.Refresh();
             }
 
             if (logShopFlow) Debug.Log($"[ShopController] Purchased '{item.Relic?.DisplayName}' price={item.Price}");
