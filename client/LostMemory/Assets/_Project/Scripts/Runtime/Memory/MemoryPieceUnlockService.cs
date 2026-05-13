@@ -24,7 +24,12 @@ namespace LostMemory.Memory
     [AddComponentMenu("Lost Memory/Memory/Memory Piece Unlock Service")]
     public sealed class MemoryPieceUnlockService : MonoBehaviour
     {
+        public static MemoryPieceUnlockService Instance { get; private set; }
+
         [SerializeField] private MemoryShardWallet _wallet;
+
+        [Header("캔버스 순서 (index 0 = 첫 번째 기억)")]
+        [SerializeField] private MemoryData[] _allCanvases;
 
         // RelicSlotExpand 는 게임 재실행 시 _bonusSlots 가 초기화되므로
         // 즉시 AddSlots() 대신 SaveData.PermanentBonusRelicSlots 에 저장하고
@@ -32,6 +37,21 @@ namespace LostMemory.Memory
 
         [Header("Debug")]
         [SerializeField] private bool _logUnlocks = true;
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
 
         /// <summary>조각 해금 성공 시 발화. UI 갱신·연출 트리거용.</summary>
         public event Action<MemoryFragmentData> OnPieceUnlocked;
@@ -50,26 +70,29 @@ namespace LostMemory.Memory
             return CanUnlock(piece, ResolveWallet().SaveData);
         }
 
-        private static bool CanUnlock(MemoryFragmentData piece, MemorySaveData save)
+        private bool CanUnlock(MemoryFragmentData piece, MemorySaveData save)
         {
             if (piece == null || save == null) return false;
             // 이미 해금됨
             if (save.UnlockedPieceIds.Contains(piece.FragmentId)) return false;
 
-            // 이전 조각이 해금되어 있는지 확인 (Order > 0 인 경우)
-            if (piece.Order > 0 && piece.ParentCanvas != null)
+            // 이전 캔버스의 조각이 모두 해금되어 있는지 확인
+            // (같은 캔버스 내에서는 순서 제한 없이 자유롭게 해금 가능)
+            if (_allCanvases != null && piece.ParentCanvas != null)
             {
-                bool prevUnlocked = false;
-                foreach (var frag in piece.ParentCanvas.Fragments)
+                int canvasIndex = System.Array.IndexOf(_allCanvases, piece.ParentCanvas);
+                if (canvasIndex > 0)
                 {
-                    if (frag.Order == piece.Order - 1 &&
-                        save.UnlockedPieceIds.Contains(frag.FragmentId))
+                    MemoryData prevCanvas = _allCanvases[canvasIndex - 1];
+                    if (prevCanvas?.Fragments != null)
                     {
-                        prevUnlocked = true;
-                        break;
+                        foreach (var frag in prevCanvas.Fragments)
+                        {
+                            if (!save.UnlockedPieceIds.Contains(frag.FragmentId))
+                                return false;
+                        }
                     }
                 }
-                if (!prevUnlocked) return false;
             }
 
             // 파편 충분 여부
