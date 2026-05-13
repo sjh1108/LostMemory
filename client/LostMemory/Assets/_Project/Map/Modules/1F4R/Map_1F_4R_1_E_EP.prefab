@@ -8491,13 +8491,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5f1b47db33bcc5409105e8ded726822, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
-  roomData: {fileID: 11400000, guid: 36147e9079431fc4a88b4bd8c2fa8efa, type: 2}
+  roomData: {fileID: 0}
   enemyCatalog: {fileID: 0}
   encounterAnchor: {fileID: 6226433339382925121}
   encounterSpawner: {fileID: 2858573164609050546}
   entryAnchors:
   - {fileID: 1844252135554814179}
-  - {fileID: 0}
   exitWalls:
   - {fileID: 6458718689760484826}
   - {fileID: 8638413723329143538}
@@ -8517,11 +8516,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b3ca1bba5ac48145ac9b32e8bbe062f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterAnchor
-  cachedSpawnPoints:
-  - {fileID: 2594599671565261260}
-  - {fileID: 3420571013899019023}
-  - {fileID: 6521147205546602596}
-  - {fileID: 2909222370131965533}
+  cachedSpawnPoints: []
 --- !u!114 &2858573164609050546
 MonoBehaviour:
   m_ObjectHideFlags: 0

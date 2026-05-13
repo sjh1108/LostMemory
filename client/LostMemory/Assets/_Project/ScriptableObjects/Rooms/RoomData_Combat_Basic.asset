@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4230b088672fd884da551aec6d2bc52a, type: 3}
-  m_Name: RoomData_Sample_Combat_Small
+  m_Name: RoomData_Combat_Basic
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomData
-  roomId: room_combat_small_sample
-  displayName: "\uC0D8\uD50C \uC791\uC740 \uC804\uD22C\uBC29"
+  roomId: room_combat_basic
+  displayName: "\uAE30\uBCF8\uC870\uD569"
   roomType: 1
   category: 0
   bossEntryRequirementMode: 0
@@ -30,21 +30,14 @@ MonoBehaviour:
       startDelay: 0
       triggerNextWaveDeathRatio: 0.5
       enemies:
-      - enemyId: enemy_moose1
-        count: 1
-        spawnGroupFilter: near_door
-      - enemyId: enemy_stonegolem
-        count: 1
-        spawnGroupFilter: far
+      - enemyId: enemy_orc
+        count: 2
+        spawnGroupFilter: orc
       - enemyId: enemy_skeletonarcher
         count: 1
-        spawnGroupFilter: far
-    - label: Wave 2
-      startDelay: 5
-      triggerNextWaveDeathRatio: 0.5
-      enemies:
-      - enemyId: enemy_ranged_basic
+        spawnGroupFilter: skeletonarcher
+      - enemyId: enemy_chobomb
         count: 1
-        spawnGroupFilter: far
+        spawnGroupFilter: chobomb
   clearCondition: 0
   exits: []
