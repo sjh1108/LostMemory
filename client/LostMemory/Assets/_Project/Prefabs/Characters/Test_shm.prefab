@@ -40,7 +40,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4319614708212260}
-  - component: {fileID: -2329858528211713496}
   - component: {fileID: 114307563035583202}
   - component: {fileID: 50838826569141916}
   - component: {fileID: 210605697109731884}
@@ -84,7 +83,10 @@ GameObject:
   - component: {fileID: 2592970996598394060}
   - component: {fileID: 6026814209459650701}
   - component: {fileID: 2913988551999795102}
-  - component: {fileID: 4078354618594769143}
+  - component: {fileID: 249564988669907132}
+  - component: {fileID: 6772676563777854037}
+  - component: {fileID: 7840569536198065617}
+  - component: {fileID: 913541847266967726}
   m_Layer: 10
   m_Name: Test_shm
   m_TagString: Player
@@ -113,31 +115,6 @@ Transform:
   - {fileID: 6400602724049874252}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &-2329858528211713496
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1790328835693532}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1206000960
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!114 &114307563035583202
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1153,7 +1130,8 @@ MonoBehaviour:
   logHeals: 0
   _debugConsumableToUse: {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709,
     type: 2}
-  _healVFXPrefab: {fileID: 0}
+  _healVFXPrefab: {fileID: 5254158234669054749, guid: 187ed6a1951e5304891714b0b79c579d,
+    type: 3}
   _healSfx: {fileID: 0}
   _sfxVolume: 0.6
 --- !u!114 &5492564548965125359
@@ -1271,8 +1249,68 @@ MonoBehaviour:
   playerCombat: {fileID: 114910001000000004}
   inventory: {fileID: 1736420558605640635}
   playerAim: {fileID: 114910001000000001}
+  attackCatalog: {fileID: 11400000, guid: 29478b12ee5061e4681807b24f6d22c5, type: 2}
   ringRadius: 1.5
+  ultimateFadeSeconds: 0.3
+  ultimateLaserBurstDuration: 5
+  ultimateAOERestoreDelay: 0.5
+  ultimateCooldown: 25
   _logSpawn: 1
+  followSmoothTime: 0.3
+  followBobAmplitude: 0.1
+  followBobSpeed: 1.5
+  clusterScale: 0.66
+  clusterCenter: {x: 0, y: 0.5}
+  fusionSprite: {fileID: 1936450746, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  fusionSortingOrder: 130
+  fusionScale: 0.75
+  fusionAnimationFrames:
+  - {fileID: 1936450746, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  - {fileID: 2144692561, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  - {fileID: -28029100, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  - {fileID: 1319361932, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  - {fileID: 553230996, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  - {fileID: -920096453, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  - {fileID: 2073306416, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  - {fileID: -994515931, guid: e81c3581d3fa3ec4fb3768a892715ce1, type: 3}
+  fusionAnimationFrameInterval: 0.15
+  fusionFadeInDuration: 0.4
+  fusionFadeOutDuration: 0.4
+  fusionGradientStart: 0.45
+  fusionGradientEnd: 1
+  fusionPositionOffset: {x: 0, y: 0}
+  fusionDescentHeight: 0.5
+  fusionDescentHorizontalOffset: 0
+  fusionDescentDuration: 1
+  fusionAscentDuration: 1
+  fusionMirrorXOnFacing: 1
+  fusionBobAmplitude: 0
+  aoeChargeDuration: 0.5
+  aoeChargeStartScale: 0.3
+  aoeChargeEndScale: 40
+  fusionVfx:
+    laserMuzzle: {fileID: 0}
+    laserTrail: {fileID: 5254158234669054749, guid: 442847aa5dd2dde448af0544d7c4bc20,
+      type: 3}
+    aoeExplosion: {fileID: 5254158234669054749, guid: 45a18dd7a9fc07b4e895edc287f244f9,
+      type: 3}
+    aoeShockwave: {fileID: 0}
+    aoeCharge: {fileID: 5254158234669054749, guid: 45a18dd7a9fc07b4e895edc287f244f9,
+      type: 3}
+  debugSkipCooldown: 0
+  trailRotationOffset: 90
+  trailSpawnOffset: {x: 8, y: 0}
+  formationOffsets:
+  - visual: 1
+    offset: {x: -2.5, y: 0.5}
+  - visual: 2
+    offset: {x: -2.7, y: 1.5}
+  - visual: 3
+    offset: {x: -1.3, y: 1.5}
+  - visual: 4
+    offset: {x: -2, y: 2.5}
+  - visual: 5
+    offset: {x: -1.5, y: 0.5}
 --- !u!114 &6026814209459650701
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1300,7 +1338,63 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dcd05997336ce9042bfb91b72d5dafa4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerConsumableInventory
---- !u!114 &4078354618594769143
+--- !u!114 &249564988669907132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9daeeaeeb3607b4ebd1d9f73ad959bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.Minimap.MinimapAgent
+  kind: 0
+  icon: {fileID: 0}
+  tint: {r: 0.19339621, g: 0.37685585, b: 1, a: 1}
+  iconScale: 1.2
+  rotateWithTransform: 1
+  priority: 100
+--- !u!114 &6772676563777854037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0bd3316ed58a2c4f9306075e55b3258, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Player.PlayerHealthSnapshotter
+  health: {fileID: 114871673569860628}
+--- !u!114 &7840569536198065617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &913541847266967726
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1313,7 +1407,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.PlayerMovementSync
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
+  NetworkTransformExpanded: 1
   AutoOwnerAuthorityTickOffset: 1
   PositionInterpolationType: 0
   RotationInterpolationType: 0
