@@ -21,7 +21,7 @@ namespace LostMemory.Networking.Session
     public static class SessionApiClient
     {
         /// <summary>백엔드 베이스 URL. dev: localhost, prod: k14c201.p.ssafy.io</summary>
-        public static string BaseUrl = "http://localhost:8080/api";
+        public static string BaseUrl = "https://k14c201.p.ssafy.io/api";
 
         private static readonly HttpClient http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
 

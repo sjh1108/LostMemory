@@ -81,6 +81,8 @@ namespace LostMemory.Networking.Session
                 var transport = NetworkManager.Singleton.GetComponent<LostMemoryRelayTransport>();
                 if (transport == null)
                 {
+                    // 백엔드 sessions row rollback — UDP transport 자체가 없으니 호스트 시작 불가
+                    await TryRollbackSessionAsync(data.sessionId);
                     return CreateResult.Fail(SessionErrorKind.TransportStartFailed,
                         "LostMemoryRelayTransport 컴포넌트가 NetworkManager 에 부착돼있지 않음");
                 }
@@ -90,6 +92,9 @@ namespace LostMemory.Networking.Session
                 bool started = NetworkManager.Singleton.StartHost();
                 if (!started)
                 {
+                    // 백엔드 sessions row rollback — StartHost 실패 시 row 가 잔존하면 다음 시도가
+                    // USER_ALREADY_IN_SESSION 가드에 차단됨. 호스트 본인이 DELETE 호출.
+                    await TryRollbackSessionAsync(data.sessionId);
                     return CreateResult.Fail(SessionErrorKind.TransportStartFailed, "NetworkManager.StartHost() 실패");
                 }
                 NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
@@ -121,6 +126,24 @@ namespace LostMemory.Networking.Session
             if (!RelaySession.IsInSession) return;
             try { await RelaySession.LeaveAsync(); }
             catch (Exception ex) { NetLog.Warn("Host", $"Auto-leave threw: {ex.Message}"); }
+        }
+
+        /// <summary>
+        /// createSession 으로 만든 백엔드 sessions row 를 명시 삭제 — StartHost 실패 등으로
+        /// 클라 측 ActiveSessionId 가 set 안 됐을 때 백엔드 row 잔존을 막아 다음 시도가
+        /// USER_ALREADY_IN_SESSION 가드에 차단되지 않게 한다.
+        /// </summary>
+        private static async Task TryRollbackSessionAsync(long sessionId)
+        {
+            try
+            {
+                await SessionApiClient.DeleteSessionAsync(sessionId);
+                NetLog.Info("Host", $"Rollback OK — session id={sessionId} deleted.");
+            }
+            catch (Exception ex)
+            {
+                NetLog.Warn("Host", $"Rollback 실패 (session id={sessionId}): {ex.Message}");
+            }
         }
 
         /// <summary>O/0/1/I 같이 헷갈리는 글자 제외한 6자리 영숫자 코드.</summary>
