@@ -35,10 +35,24 @@ namespace LostMemory.Talents
         // 이전 런에서 AddSlots() 로 적용한 보너스 슬롯 수. 재실행 시 차감 후 재적용.
         private int _appliedRelicSlots;
 
+        private void Awake()
+        {
+            ResolveRefsIfNeeded();
+        }
+
         private void OnEnable()
         {
+            // Awake 시점에 다른 컴포넌트가 늦게 spawn 됐을 수 있어 한 번 더 resolve.
+            if (_bootstrap == null || _container == null || _relicInventory == null)
+            {
+                ResolveRefsIfNeeded();
+            }
+
             if (_bootstrap != null)
                 _bootstrap.DungeonBuilt += Apply;
+            else
+                Debug.LogWarning("[TalentStartupApplier] DungeonRunBootstrap 미연결 — 자동 resolve 실패. " +
+                                 "씬에 Bootstrap 이 있는지 확인하거나 Inspector 에서 직접 드래그.", this);
         }
 
         private void OnDisable()
@@ -47,10 +61,45 @@ namespace LostMemory.Talents
                 _bootstrap.DungeonBuilt -= Apply;
         }
 
+        private void Start()
+        {
+            // DungeonArchitect 로 build 되지 않는 사전 제작 씬(1F-2R 등)에선 DungeonBuilt 이벤트가
+            // 발화되지 않아 Apply 가 호출 안 됨. Start 시점에 명시적으로 한 번 호출해 보장.
+            // DA 씬(1F-1R 등)에선 OnEnable 구독으로 Apply 가 별도 호출되지만,
+            // Apply 내부에서 _container.RemoveBySource(this) 로 이전 modifier 를 클리어하므로 중복 누적 X.
+            Apply();
+        }
+
+        /// <summary>
+        /// Inspector 에 직접 할당되지 않은 참조를 씬에서 자동 검색.
+        /// 던전 씬마다 수동 와이어링 부담을 줄임 (할당돼 있으면 그것 우선).
+        /// </summary>
+        private void ResolveRefsIfNeeded()
+        {
+            if (_container == null)
+            {
+                _container = FindAnyObjectByType<PlayerStatModifierContainer>(FindObjectsInactive.Include);
+            }
+            if (_bootstrap == null)
+            {
+                _bootstrap = FindAnyObjectByType<DungeonRunBootstrap>(FindObjectsInactive.Include);
+            }
+            if (_relicInventory == null)
+            {
+                _relicInventory = FindAnyObjectByType<PlayerRelicInventory>(FindObjectsInactive.Include);
+            }
+        }
+
         // ── 적용 진입점 ──────────────────────────────────────
 
         private void Apply()
         {
+            // 던전 빌드 시점에 플레이어가 늦게 spawn 된 케이스 — 마지막 한 번 더 resolve 시도.
+            if (_container == null || _relicInventory == null)
+            {
+                ResolveRefsIfNeeded();
+            }
+
             if (_container == null)
             {
                 Debug.LogWarning("[TalentStartupApplier] PlayerStatModifierContainer 미연결.", this);
@@ -83,8 +132,8 @@ namespace LostMemory.Talents
                 _container.AddPermanent(StatId.Defense, stats.Defense, this);
             if (stats.MaxHealth != 0f)
                 _container.AddPermanent(StatId.MaxHealth, stats.MaxHealth, this);
-            if (stats.ManaRegen != 0f)
-                _container.AddPermanent(StatId.ManaRegen, stats.ManaRegen, this);
+            if (stats.MoveSpeed != 0f)
+                _container.AddPermanent(StatId.MoveSpeed, stats.MoveSpeed, this);
 
             if (_logApply)
             {
@@ -92,7 +141,8 @@ namespace LostMemory.Talents
                           $"Critical={stats.CriticalRate:+0.0%;-0.0%;0%} " +
                           $"AttackSpeed={stats.AttackSpeed:+0.0%;-0.0%;0%} " +
                           $"Defense={stats.Defense:F2} " +
-                          $"MaxHealth={stats.MaxHealth:+0.0%;-0.0%;0%}", this);
+                          $"MaxHealth={stats.MaxHealth:+0.0%;-0.0%;0%} " +
+                          $"MoveSpeed={stats.MoveSpeed:+0.0%;-0.0%;0%}", this);
             }
         }
 

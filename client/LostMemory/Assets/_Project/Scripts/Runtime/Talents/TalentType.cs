@@ -8,7 +8,7 @@ namespace LostMemory.Talents
         CriticalRate,   // 치명타 확률
         AttackSpeed,    // 공격 속도
         Defense,        // 방어력
-        ManaRegen,      // 마나 회복
+        MoveSpeed,      // 이동 속도
         MaxHealth       // 최대 체력
     }
 }

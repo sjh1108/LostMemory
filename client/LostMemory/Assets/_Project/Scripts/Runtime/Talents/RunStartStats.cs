@@ -15,8 +15,8 @@ namespace LostMemory.Talents
         /// <summary>방어력 증가량</summary>
         public float Defense;
 
-        /// <summary>마나 회복 증가량</summary>
-        public float ManaRegen;
+        /// <summary>이동 속도 증가량</summary>
+        public float MoveSpeed;
 
         /// <summary>최대 체력 증가량</summary>
         public float MaxHealth;

@@ -18,7 +18,7 @@ namespace LostMemory.Talents
                 CriticalRate = model.GetStatValue(TalentType.CriticalRate),
                 AttackSpeed  = model.GetStatValue(TalentType.AttackSpeed),
                 Defense      = model.GetStatValue(TalentType.Defense),
-                ManaRegen    = model.GetStatValue(TalentType.ManaRegen),
+                MoveSpeed    = model.GetStatValue(TalentType.MoveSpeed),
                 MaxHealth    = model.GetStatValue(TalentType.MaxHealth),
             };
         }
