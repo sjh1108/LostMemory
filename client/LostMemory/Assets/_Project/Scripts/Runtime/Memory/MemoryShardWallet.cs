@@ -37,9 +37,18 @@ namespace LostMemory.Memory
 
         public static MemoryShardWallet EnsureInstance()
         {
-            if (Instance != null)
+            if (Instance != null) return Instance;
+
+            // 에디터 모드(Awake 미실행)에서 씬에 이미 존재하는 인스턴스 재사용
+#if UNITY_2023_1_OR_NEWER
+            var existing = FindFirstObjectByType<MemoryShardWallet>();
+#else
+            var existing = FindObjectOfType<MemoryShardWallet>();
+#endif
+            if (existing != null)
             {
-                return Instance;
+                Instance = existing;
+                return existing;
             }
 
             GameObject walletObject = new GameObject("MemoryShardWallet");
