@@ -340,7 +340,32 @@ namespace LostMemory.UI
 
         private void ResolveBossReferences()
         {
-            if (!autoResolveBerthaBoss || targetHealth != null)
+            if (!autoResolveBerthaBoss)
+            {
+                return;
+            }
+
+            if (IsActiveSceneObject(targetHealth))
+            {
+                if (!IsActiveSceneObject(introSequenceController))
+                {
+                    introSequenceController = targetHealth.GetComponent<BossIntroSequenceController>();
+                }
+
+                SubscribeTarget();
+                SubscribeIntro();
+                return;
+            }
+
+            if (targetHealth != null)
+            {
+                UnsubscribeTarget();
+                UnsubscribeIntro();
+                targetHealth = null;
+                introSequenceController = null;
+            }
+
+            if (TryAssignBossController(GetComponentInParent<BerthaBossEncounterController>(includeInactive: true)))
             {
                 return;
             }
@@ -351,23 +376,48 @@ namespace LostMemory.UI
             for (int i = 0; i < controllers.Length; i++)
             {
                 BerthaBossEncounterController controller = controllers[i];
-                if (controller == null || !controller.gameObject.scene.IsValid())
+                if (controller != null &&
+                    controller.gameObject.scene == gameObject.scene &&
+                    TryAssignBossController(controller))
                 {
-                    continue;
+                    return;
                 }
-
-                Health health = controller.GetComponent<Health>();
-                if (health == null)
-                {
-                    continue;
-                }
-
-                targetHealth = health;
-                introSequenceController ??= controller.GetComponent<BossIntroSequenceController>();
-                SubscribeTarget();
-                SubscribeIntro();
-                return;
             }
+
+            for (int i = 0; i < controllers.Length; i++)
+            {
+                if (TryAssignBossController(controllers[i]))
+                {
+                    return;
+                }
+            }
+        }
+
+        private bool TryAssignBossController(BerthaBossEncounterController controller)
+        {
+            if (!IsActiveSceneObject(controller))
+            {
+                return false;
+            }
+
+            Health health = controller.GetComponent<Health>();
+            if (!IsActiveSceneObject(health))
+            {
+                return false;
+            }
+
+            targetHealth = health;
+            introSequenceController = controller.GetComponent<BossIntroSequenceController>();
+            SubscribeTarget();
+            SubscribeIntro();
+            return true;
+        }
+
+        private static bool IsActiveSceneObject(Component component)
+        {
+            return component != null &&
+                   component.gameObject.scene.IsValid() &&
+                   component.gameObject.activeInHierarchy;
         }
 
         private void ApplyStaticSprites()
