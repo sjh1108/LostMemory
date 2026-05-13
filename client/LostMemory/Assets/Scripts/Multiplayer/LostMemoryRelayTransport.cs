@@ -128,6 +128,22 @@ namespace LostMemory.Multiplayer
 
         public override ulong ServerClientId => NGO_SERVER_CLIENT_ID;
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor 진입 시 dev relay (localhost) 강제. prefab 의 Inspector 값은 prod 유지하되
+        /// Editor 에서만 자동 우회 — 빌드본은 Inspector 값 그대로 사용.
+        /// </summary>
+        private void Awake()
+        {
+            const string editorRelayHost = "localhost";
+            if (relayHost != editorRelayHost)
+            {
+                Debug.Log($"[RelayTransport] Editor override: relayHost {relayHost} → {editorRelayHost}");
+                relayHost = editorRelayHost;
+            }
+        }
+#endif
+
         public override void Initialize(NetworkManager networkManager = null)
         {
             // 의존성 0. 별도 init 작업 불필요
