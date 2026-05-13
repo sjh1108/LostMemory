@@ -11,6 +11,7 @@ namespace LostMemory.UI
     public sealed class TownCurrencyHUDPresenter : MonoBehaviour
     {
         [SerializeField] private CurrencyHUDView _view;
+        // Inspector 연결 불필요 — 런타임에 MemoryShardWallet.Instance 로 자동 탐색
         [SerializeField] private MemoryShardWallet _memoryShardWallet;
 
         private MemoryShardWallet _subscribedMemoryShardWallet;
@@ -43,10 +44,9 @@ namespace LostMemory.UI
 
         private void ResolveWallet()
         {
-            if (_memoryShardWallet == null)
-            {
-                _memoryShardWallet = MemoryShardWallet.EnsureInstance();
-            }
+            // Inspector 연결값이 있어도 항상 싱글톤으로 덮어써서
+            // 중복 인스턴스 문제로 인한 이벤트 미수신을 방지한다.
+            _memoryShardWallet = MemoryShardWallet.Instance ?? MemoryShardWallet.EnsureInstance();
         }
 
         private void SubscribeWallet()
