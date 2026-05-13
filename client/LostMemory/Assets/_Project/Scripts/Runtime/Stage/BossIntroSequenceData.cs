@@ -18,6 +18,11 @@ namespace LostMemory.Stage
         [SerializeField, Min(0f)] private float delayBeforeDialogue = 0.2f;
         [SerializeField, Min(0f)] private float delayAfterDialogue = 0.2f;
 
+        [Header("SFX")]
+        [SerializeField] private AudioClip entryLandingSfx;
+        [SerializeField, Range(0f, 1f)] private float entryLandingSfxVolume = 1f;
+        [SerializeField, Min(0f)] private float entryLandingSfxDelay;
+
         [Header("Dialogue")]
         [SerializeField] private bool playDialogue;
         [SerializeField] private string[] dialogueCueIds = System.Array.Empty<string>();
@@ -30,6 +35,9 @@ namespace LostMemory.Stage
         public float EntryDuration => entryDuration;
         public float DelayBeforeDialogue => delayBeforeDialogue;
         public float DelayAfterDialogue => delayAfterDialogue;
+        public AudioClip EntryLandingSfx => entryLandingSfx;
+        public float EntryLandingSfxVolume => entryLandingSfxVolume;
+        public float EntryLandingSfxDelay => entryLandingSfxDelay;
         public bool PlayDialogue => playDialogue;
         public string[] DialogueCueIds => dialogueCueIds ?? System.Array.Empty<string>();
         public bool HasDialogueCueIds => dialogueCueIds != null && dialogueCueIds.Length > 0;

@@ -42,7 +42,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         private const float NormalDashAnimationDuration = 8f / 12f;
         private const float DashAttackAnimationDuration = 27f / 12f;
         private const float DashAttackImpactTime = 26f / 12f;
-        private const float FullComboDefaultImpactTime = 3.2f;
+        private const float FullComboDefaultImpactTime = 36f / 12f;
         private const float LegacyFullComboRange = 3f;
         private const float PreviousFullComboRange = 3.5f;
         private const float RequestedFullComboRange = 4f;
@@ -78,6 +78,57 @@ namespace LostMemory.Enemies.Boss.Bertha
         private const string ProjectileStormAttackStateName = "ProjectileStormAttack";
         private const string ProjectileStormRecoverStateName = "ProjectileStormRecover";
         private const string ComboProjectileFxFolder = "Assets/_Project/Art/Enemies/Boss/1_Bertha/Attacks/ComboAtk/FX";
+
+        [System.Serializable]
+        private struct ProjectileBurstSfxSettings
+        {
+            [SerializeField] private AudioClip clip;
+            [SerializeField, Range(0f, 1f)] private float volume;
+            [SerializeField, Range(0.1f, 3f)] private float minPitch;
+            [SerializeField, Range(0.1f, 3f)] private float maxPitch;
+            [SerializeField, Min(0f)] private float minimumInterval;
+            [SerializeField] private bool fallbackWithoutSoundManager;
+
+            public static ProjectileBurstSfxSettings Create(
+                float defaultVolume,
+                float defaultMinPitch,
+                float defaultMaxPitch,
+                float defaultMinimumInterval)
+            {
+                return new ProjectileBurstSfxSettings
+                {
+                    volume = defaultVolume,
+                    minPitch = defaultMinPitch,
+                    maxPitch = defaultMaxPitch,
+                    minimumInterval = defaultMinimumInterval,
+                    fallbackWithoutSoundManager = true
+                };
+            }
+
+            public void Normalize()
+            {
+                volume = Mathf.Clamp01(volume);
+                minPitch = Mathf.Clamp(minPitch, 0.1f, 3f);
+                maxPitch = Mathf.Clamp(maxPitch, minPitch, 3f);
+                minimumInterval = Mathf.Max(0f, minimumInterval);
+            }
+
+            public void ApplyTo(BerthaProjectilePatternDriver driver)
+            {
+                if (driver == null || clip == null)
+                {
+                    return;
+                }
+
+                driver.ConfigureBurstSfx(
+                    clip,
+                    volume,
+                    minPitch,
+                    maxPitch,
+                    minimumInterval,
+                    fallbackWithoutSoundManager);
+            }
+        }
 
         [Header("Scene Roots")]
         [SerializeField] private Transform visualRoot;
@@ -193,6 +244,19 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private bool destroyProjectileOnHit = true;
         [SerializeField] private bool faceProjectileDirection = true;
         [SerializeField] private int projectileSortingOrderOffset = 1;
+
+        [Header("Projectile Burst SFX")]
+        [SerializeField] private ProjectileBurstSfxSettings lightProjectileBurstSfx =
+            ProjectileBurstSfxSettings.Create(0.8f, 0.98f, 1.08f, 0f);
+        [SerializeField] private ProjectileBurstSfxSettings heavyProjectileBurstSfx =
+            ProjectileBurstSfxSettings.Create(0.9f, 0.96f, 1.04f, 0.08f);
+        [SerializeField] private ProjectileBurstSfxSettings fullComboProjectileBurstSfx =
+            ProjectileBurstSfxSettings.Create(0.95f, 0.96f, 1.04f, 0f);
+        [SerializeField] private ProjectileBurstSfxSettings projectileBarrageBurstSfx =
+            ProjectileBurstSfxSettings.Create(0.75f, 0.94f, 1.08f, 0.08f);
+        [SerializeField] private ProjectileBurstSfxSettings projectileStormBurstSfx =
+            ProjectileBurstSfxSettings.Create(0.65f, 0.94f, 1.08f, 0.12f);
+
         [SerializeField] private BerthaProjectilePatternDriver.BurstInstruction[] lightProjectileBursts =
         {
             new BerthaProjectilePatternDriver.BurstInstruction
@@ -452,42 +516,42 @@ namespace LostMemory.Enemies.Boss.Bertha
                 Mode = BerthaProjectilePatternDriver.BurstPatternMode.Fan,
                 Delay = 0.58f,
                 ProjectileCount = 5,
-                SpreadAngle = 70f,
-                Speed = 6f,
-                Lifetime = 1.1f,
+                SpreadAngle = 55f,
+                Speed = 6.5f,
+                Lifetime = 2f,
                 Damage = 7f,
                 TargetInvincibilityDuration = 0.5f,
                 HitRadius = 0.35f,
-                AngleOffsetDegrees = 0f,
+                AngleOffsetDegrees = -10f,
                 SpawnDistance = 0.45f
             },
             new BerthaProjectilePatternDriver.BurstInstruction
             {
                 Mode = BerthaProjectilePatternDriver.BurstPatternMode.Fan,
-                Delay = 0.72f,
-                ProjectileCount = 6,
-                SpreadAngle = 95f,
-                Speed = 6.2f,
-                Lifetime = 1.15f,
+                Delay = 0.66f,
+                ProjectileCount = 7,
+                SpreadAngle = 115f,
+                Speed = 7.6f,
+                Lifetime = 2f,
                 Damage = 7f,
                 TargetInvincibilityDuration = 0.5f,
                 HitRadius = 0.35f,
-                AngleOffsetDegrees = 0f,
-                SpawnDistance = 0.45f
+                AngleOffsetDegrees = 10f,
+                SpawnDistance = 0.5f
             },
             new BerthaProjectilePatternDriver.BurstInstruction
             {
                 Mode = BerthaProjectilePatternDriver.BurstPatternMode.Radial,
-                Delay = 0.78f,
-                ProjectileCount = 8,
+                Delay = 0.74f,
+                ProjectileCount = 10,
                 SpreadAngle = 0f,
-                Speed = 6.5f,
-                Lifetime = 1.2f,
+                Speed = 8.8f,
+                Lifetime = 2f,
                 Damage = 9f,
                 TargetInvincibilityDuration = 0.5f,
                 HitRadius = 0.35f,
-                AngleOffsetDegrees = 0f,
-                SpawnDistance = 0.45f
+                AngleOffsetDegrees = 18f,
+                SpawnDistance = 0.55f
             }
         };
 
@@ -733,7 +797,8 @@ namespace LostMemory.Enemies.Boss.Bertha
                     fullComboDamage,
                     fullComboInvincibilityDuration,
                     fullComboImpactTime,
-                    "BerthaFullCombo");
+                    "BerthaFullCombo",
+                    false);
 
                 BerthaProjectilePatternDriver heavyProjectileDriver = GetOrCreateProjectilePatternDriver("HeavyProjectiles");
                 heavyProjectileDriver.Configure(
@@ -751,6 +816,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     0,
                     phaseController,
                     BerthaBossPhase.Phase1);
+                heavyProjectileBurstSfx.ApplyTo(heavyProjectileDriver);
 
                 BerthaProjectilePatternDriver lightProjectileDriver = GetOrCreateProjectilePatternDriver("LightProjectile");
                 lightProjectileDriver.Configure(
@@ -768,6 +834,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     0,
                     phaseController,
                     BerthaBossPhase.Phase1);
+                lightProjectileBurstSfx.ApplyTo(lightProjectileDriver);
 
                 BerthaProjectilePatternDriver fullComboProjectileDriver = GetOrCreateProjectilePatternDriver("FullComboProjectiles");
                 fullComboProjectileDriver.Configure(
@@ -785,6 +852,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     0,
                     phaseController,
                     BerthaBossPhase.Phase2);
+                fullComboProjectileBurstSfx.ApplyTo(fullComboProjectileDriver);
 
                 BerthaProjectilePatternDriver projectileBarrageDriver = GetOrCreateProjectilePatternDriver("ProjectileBarrage");
                 projectileBarrageDriver.Configure(
@@ -802,6 +870,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     0,
                     phaseController,
                     BerthaBossPhase.Phase2);
+                projectileBarrageBurstSfx.ApplyTo(projectileBarrageDriver);
 
                 BerthaProjectilePatternDriver projectileStormDriver = GetOrCreateProjectilePatternDriver("ProjectileStorm");
                 projectileStormDriver.Configure(
@@ -819,6 +888,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     0,
                     phaseController,
                     BerthaBossPhase.Phase3);
+                projectileStormBurstSfx.ApplyTo(projectileStormDriver);
 
                 DisableUnexpectedProjectilePatternDrivers(
                     heavyProjectileDriver,
@@ -1260,6 +1330,11 @@ namespace LostMemory.Enemies.Boss.Bertha
             NormalizeBurstSequence(fullComboProjectileBursts);
             NormalizeBurstSequence(projectileBarrageBursts);
             NormalizeBurstSequence(projectileStormBursts);
+            lightProjectileBurstSfx.Normalize();
+            heavyProjectileBurstSfx.Normalize();
+            fullComboProjectileBurstSfx.Normalize();
+            projectileBarrageBurstSfx.Normalize();
+            projectileStormBurstSfx.Normalize();
         }
 
         private void ApplyRuntimeTuning()
@@ -1273,7 +1348,12 @@ namespace LostMemory.Enemies.Boss.Bertha
             GetComponent<BerthaLightAttack1Controller>()?.SetImpactTime(attackImpactTime);
             GetComponent<BerthaLightAttack2Controller>()?.SetImpactTime(lightAttack2ImpactTime);
             GetComponent<BerthaHeavyAttackController>()?.SetImpactTime(heavyAttackImpactTime);
-            GetComponent<BerthaFullComboController>()?.SetImpactTime(fullComboImpactTime);
+            BerthaFullComboController fullComboController = GetComponent<BerthaFullComboController>();
+            if (fullComboController != null)
+            {
+                fullComboController.SetImpactTime(fullComboImpactTime);
+                fullComboController.SetImpactDamageEnabled(false);
+            }
 
             Health health = GetComponent<Health>();
             ApplyResolvedHealth(health);
@@ -1333,7 +1413,8 @@ namespace LostMemory.Enemies.Boss.Bertha
             float configuredDamage,
             float configuredInvincibilityDuration,
             float configuredImpactTime,
-            string debugName)
+            string debugName,
+            bool enableImpactDamage = true)
         {
             controller.Configure(
                 brain,
@@ -1354,6 +1435,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                 configuredInvincibilityDuration,
                 configuredImpactTime,
                 debugName);
+            controller.SetImpactDamageEnabled(enableImpactDamage);
         }
 
         private void EnsureCoreCombatComponents(Animator animator)
