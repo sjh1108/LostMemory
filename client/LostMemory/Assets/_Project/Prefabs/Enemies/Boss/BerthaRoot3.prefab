@@ -987,7 +987,7 @@ MonoBehaviour:
   fullComboRange: 4
   fullComboTelegraphDuration: 0.75
   fullComboDuration: 3.2
-  fullComboImpactTime: 3.2
+  fullComboImpactTime: 3
   fullComboRecoverDuration: 0.65
   fullComboOffset: {x: 0, y: 0}
   fullComboSize: {x: 8, y: 8}
@@ -1016,6 +1016,41 @@ MonoBehaviour:
   destroyProjectileOnHit: 1
   faceProjectileDirection: 1
   projectileSortingOrderOffset: 1
+  lightProjectileBurstSfx:
+    clip: {fileID: 8300000, guid: aeb67eefa66f34ffeae4fd8422461e84, type: 3}
+    volume: 0.8
+    minPitch: 0.98
+    maxPitch: 1.08
+    minimumInterval: 0
+    fallbackWithoutSoundManager: 1
+  heavyProjectileBurstSfx:
+    clip: {fileID: 8300000, guid: e22a6d5f894934efb88b6d9f9e0095ee, type: 3}
+    volume: 0.9
+    minPitch: 0.96
+    maxPitch: 1.04
+    minimumInterval: 0.08
+    fallbackWithoutSoundManager: 1
+  fullComboProjectileBurstSfx:
+    clip: {fileID: 8300000, guid: 3bd1b135c71344b8d9231852e865a8e0, type: 3}
+    volume: 0.95
+    minPitch: 0.96
+    maxPitch: 1.04
+    minimumInterval: 0
+    fallbackWithoutSoundManager: 1
+  projectileBarrageBurstSfx:
+    clip: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
+    volume: 0.75
+    minPitch: 0.94
+    maxPitch: 1.08
+    minimumInterval: 0.08
+    fallbackWithoutSoundManager: 1
+  projectileStormBurstSfx:
+    clip: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
+    volume: 0.65
+    minPitch: 0.94
+    maxPitch: 1.08
+    minimumInterval: 0.12
+    fallbackWithoutSoundManager: 1
   lightProjectileBursts:
   - Mode: 1
     Delay: 0.08
@@ -1245,40 +1280,40 @@ MonoBehaviour:
   - Mode: 1
     Delay: 0.58
     ProjectileCount: 5
-    SpreadAngle: 70
-    Speed: 6
+    SpreadAngle: 55
+    Speed: 6.5
     Lifetime: 2
     Damage: 7
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
-    AngleOffsetDegrees: 0
+    AngleOffsetDegrees: -10
     SpawnDistance: 0.45
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
   - Mode: 1
-    Delay: 0.72
-    ProjectileCount: 6
-    SpreadAngle: 95
-    Speed: 9
+    Delay: 0.66
+    ProjectileCount: 7
+    SpreadAngle: 115
+    Speed: 7.6
     Lifetime: 2
     Damage: 7
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
-    AngleOffsetDegrees: 0
-    SpawnDistance: 0.45
+    AngleOffsetDegrees: 10
+    SpawnDistance: 0.5
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
   - Mode: 0
-    Delay: 0.78
-    ProjectileCount: 8
+    Delay: 0.74
+    ProjectileCount: 10
     SpreadAngle: 0
-    Speed: 9
+    Speed: 8.8
     Lifetime: 2
     Damage: 9
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
-    AngleOffsetDegrees: 0
-    SpawnDistance: 0.45
+    AngleOffsetDegrees: 18
+    SpawnDistance: 0.55
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
   lightAttack1Weight: 3
@@ -1857,6 +1892,11 @@ MonoBehaviour:
   damage: 8
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  impactSfx: {fileID: 8300000, guid: aeb67eefa66f34ffeae4fd8422461e84, type: 3}
+  impactSfxVolume: 0.85
+  impactSfxMinPitch: 0.96
+  impactSfxMaxPitch: 1.04
+  fallbackWithoutSoundManager: 1
   debugName: BerthaLightAttack1
   debugLogging: 0
 --- !u!114 &6969340457324957080
@@ -2010,6 +2050,11 @@ MonoBehaviour:
   damage: 10
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  impactSfx: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
+  impactSfxVolume: 0.9
+  impactSfxMinPitch: 0.96
+  impactSfxMaxPitch: 1.04
+  fallbackWithoutSoundManager: 1
   debugName: BerthaLightAttack2
   debugLogging: 0
 --- !u!114 &6962191900613930180
@@ -2046,6 +2091,11 @@ MonoBehaviour:
   damage: 16
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  impactSfx: {fileID: 8300000, guid: e22a6d5f894934efb88b6d9f9e0095ee, type: 3}
+  impactSfxVolume: 1
+  impactSfxMinPitch: 0.98
+  impactSfxMaxPitch: 1.02
+  fallbackWithoutSoundManager: 1
   debugName: BerthaHeavyAttack
   debugLogging: 0
 --- !u!114 &8992845529933551555
@@ -2071,7 +2121,7 @@ MonoBehaviour:
   attackStateName: FullComboAttack
   attackAnimationStateName: FullCombo
   attackAnimationLayer: 0
-  impactTime: 3.2
+  impactTime: 3
   telegraphColor: {r: 1, g: 0.12, b: 0.05, a: 0.42}
   attackOffset: {x: 0, y: 0}
   attackSize: {x: 8, y: 8}
@@ -2082,6 +2132,12 @@ MonoBehaviour:
   damage: 24
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 0
+  impactSfx: {fileID: 8300000, guid: 3bd1b135c71344b8d9231852e865a8e0, type: 3}
+  impactSfxVolume: 1
+  impactSfxMinPitch: 0.98
+  impactSfxMaxPitch: 1.02
+  fallbackWithoutSoundManager: 1
   debugName: BerthaFullCombo
   debugLogging: 0
 --- !u!114 &1605648264636854615
@@ -2401,6 +2457,11 @@ MonoBehaviour:
   damage: 10
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  impactSfx: {fileID: 8300000, guid: 3bd1b135c71344b8d9231852e865a8e0, type: 3}
+  impactSfxVolume: 0.95
+  impactSfxMinPitch: 0.98
+  impactSfxMaxPitch: 1.02
+  fallbackWithoutSoundManager: 1
   debugName: BerthaDashAttack
   debugLogging: 0
 --- !u!114 &6658194656890361925
@@ -2504,6 +2565,12 @@ MonoBehaviour:
     SpawnDistance: 0.45
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
+  burstSfx: {fileID: 8300000, guid: e22a6d5f894934efb88b6d9f9e0095ee, type: 3}
+  burstSfxVolume: 0.9
+  burstSfxMinPitch: 0.96
+  burstSfxMaxPitch: 1.04
+  burstSfxMinimumInterval: 0.08
+  fallbackWithoutSoundManager: 1
   debugLogging: 0
 --- !u!114 &4712373470166852899
 MonoBehaviour:
@@ -2533,42 +2600,48 @@ MonoBehaviour:
   - Mode: 1
     Delay: 0.58
     ProjectileCount: 5
-    SpreadAngle: 70
-    Speed: 6
+    SpreadAngle: 55
+    Speed: 6.5
     Lifetime: 2
     Damage: 7
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
-    AngleOffsetDegrees: 0
+    AngleOffsetDegrees: -10
     SpawnDistance: 0.45
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
   - Mode: 1
-    Delay: 0.72
-    ProjectileCount: 6
-    SpreadAngle: 95
-    Speed: 9
+    Delay: 0.66
+    ProjectileCount: 7
+    SpreadAngle: 115
+    Speed: 7.6
     Lifetime: 2
     Damage: 7
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
-    AngleOffsetDegrees: 0
-    SpawnDistance: 0.45
+    AngleOffsetDegrees: 10
+    SpawnDistance: 0.5
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
   - Mode: 0
-    Delay: 0.78
-    ProjectileCount: 8
+    Delay: 0.74
+    ProjectileCount: 10
     SpreadAngle: 0
-    Speed: 9
+    Speed: 8.8
     Lifetime: 2
     Damage: 9
     TargetInvincibilityDuration: 0.5
     HitRadius: 0.35
-    AngleOffsetDegrees: 0
-    SpawnDistance: 0.45
+    AngleOffsetDegrees: 18
+    SpawnDistance: 0.55
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
+  burstSfx: {fileID: 8300000, guid: 3bd1b135c71344b8d9231852e865a8e0, type: 3}
+  burstSfxVolume: 0.95
+  burstSfxMinPitch: 0.96
+  burstSfxMaxPitch: 1.04
+  burstSfxMinimumInterval: 0
+  fallbackWithoutSoundManager: 1
   debugLogging: 0
 --- !u!114 &7267509399618034313
 MonoBehaviour:
@@ -2811,6 +2884,12 @@ MonoBehaviour:
     SpawnDistance: 0.45
     HomingTurnSpeedDegrees: 60
     HomingDuration: 6
+  burstSfx: {fileID: 8300000, guid: aeb67eefa66f34ffeae4fd8422461e84, type: 3}
+  burstSfxVolume: 0.8
+  burstSfxMinPitch: 0.98
+  burstSfxMaxPitch: 1.08
+  burstSfxMinimumInterval: 0
+  fallbackWithoutSoundManager: 1
   debugLogging: 0
 --- !u!114 &667315172841548298
 MonoBehaviour:
@@ -2889,6 +2968,12 @@ MonoBehaviour:
     SpawnDistance: 0.45
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
+  burstSfx: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
+  burstSfxVolume: 0.75
+  burstSfxMinPitch: 0.94
+  burstSfxMaxPitch: 1.08
+  burstSfxMinimumInterval: 0.08
+  fallbackWithoutSoundManager: 1
   debugLogging: 0
 --- !u!114 &2471915257626254391
 MonoBehaviour:
@@ -3045,6 +3130,12 @@ MonoBehaviour:
     SpawnDistance: 0.45
     HomingTurnSpeedDegrees: 0
     HomingDuration: 0
+  burstSfx: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
+  burstSfxVolume: 0.65
+  burstSfxMinPitch: 0.94
+  burstSfxMaxPitch: 1.08
+  burstSfxMinimumInterval: 0.12
+  fallbackWithoutSoundManager: 1
   debugLogging: 0
 --- !u!114 &7119911944354305753
 MonoBehaviour:

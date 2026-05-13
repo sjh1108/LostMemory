@@ -45,10 +45,17 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField, Min(0)] private int attackAnimationLayer;
         [SerializeField] private BerthaBossPhase minimumPhase = BerthaBossPhase.Phase1;
         [SerializeField] private BurstInstruction[] burstSequence = System.Array.Empty<BurstInstruction>();
+        [SerializeField] private AudioClip burstSfx;
+        [SerializeField, Range(0f, 1f)] private float burstSfxVolume = 1f;
+        [SerializeField, Range(0.1f, 3f)] private float burstSfxMinPitch = 1f;
+        [SerializeField, Range(0.1f, 3f)] private float burstSfxMaxPitch = 1f;
+        [SerializeField, Min(0f)] private float burstSfxMinimumInterval;
+        [SerializeField] private bool fallbackWithoutSoundManager = true;
         [SerializeField] private bool debugLogging;
 
         private Coroutine _burstRoutine;
         private Vector2 _lockedDirection = Vector2.right;
+        private float _lastBurstSfxTime = float.NegativeInfinity;
 
         public string DriverKey => driverKey;
         public string AttackStateName => attackStateName;
@@ -62,12 +69,14 @@ namespace LostMemory.Enemies.Boss.Bertha
         {
             RefreshReferences();
             NormalizeBurstSequence();
+            NormalizeBurstSfxSettings();
         }
 
         private void Awake()
         {
             RefreshReferences();
             NormalizeBurstSequence();
+            NormalizeBurstSfxSettings();
         }
 
         private void OnEnable()
@@ -108,6 +117,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                 LockDirection();
                 PlayAttackAnimation();
                 StopBurstRoutine();
+                _lastBurstSfxTime = float.NegativeInfinity;
                 _burstRoutine = StartCoroutine(RunBurstSequence());
                 return;
             }
@@ -152,6 +162,24 @@ namespace LostMemory.Enemies.Boss.Bertha
             debugLogging = configuredDebugLogging;
             RefreshReferences();
             NormalizeBurstSequence();
+            NormalizeBurstSfxSettings();
+        }
+
+        public void ConfigureBurstSfx(
+            AudioClip configuredBurstSfx,
+            float configuredBurstSfxVolume,
+            float configuredBurstSfxMinPitch,
+            float configuredBurstSfxMaxPitch,
+            float configuredBurstSfxMinimumInterval,
+            bool configuredFallbackWithoutSoundManager)
+        {
+            burstSfx = configuredBurstSfx;
+            burstSfxVolume = configuredBurstSfxVolume;
+            burstSfxMinPitch = configuredBurstSfxMinPitch;
+            burstSfxMaxPitch = configuredBurstSfxMaxPitch;
+            burstSfxMinimumInterval = configuredBurstSfxMinimumInterval;
+            fallbackWithoutSoundManager = configuredFallbackWithoutSoundManager;
+            NormalizeBurstSfxSettings();
         }
 
         public void StopAndDisable()
@@ -235,6 +263,7 @@ namespace LostMemory.Enemies.Boss.Bertha
                     break;
             }
 
+            PlayBurstSfx(originalPosition);
             Log("Emitted burst from " + originalPosition + ".");
         }
 
@@ -256,6 +285,50 @@ namespace LostMemory.Enemies.Boss.Bertha
             }
 
             animator.Play(attackAnimationStateName, attackAnimationLayer, 0f);
+        }
+
+        private void PlayBurstSfx(Vector3 position)
+        {
+            if (burstSfx == null || !CanPlayBurstSfx())
+            {
+                return;
+            }
+
+            _lastBurstSfxTime = Time.time;
+            float pitch = ResolveBurstSfxPitch();
+
+            if (MMSoundManager.HasInstance && MMSoundManager.Current != null)
+            {
+                MMSoundManagerPlayOptions options = MMSoundManagerPlayOptions.Default;
+                options.MmSoundManagerTrack = MMSoundManager.MMSoundManagerTracks.Sfx;
+                options.Location = position;
+                options.Volume = burstSfxVolume;
+                options.Pitch = pitch;
+                options.Loop = false;
+
+                MMSoundManagerSoundPlayEvent.Trigger(burstSfx, options);
+                return;
+            }
+
+            if (fallbackWithoutSoundManager)
+            {
+                AudioSource.PlayClipAtPoint(burstSfx, position, burstSfxVolume);
+            }
+        }
+
+        private bool CanPlayBurstSfx()
+        {
+            return burstSfxMinimumInterval <= 0f
+                || Time.time - _lastBurstSfxTime >= burstSfxMinimumInterval;
+        }
+
+        private float ResolveBurstSfxPitch()
+        {
+            float minPitch = Mathf.Clamp(burstSfxMinPitch, 0.1f, 3f);
+            float maxPitch = Mathf.Clamp(burstSfxMaxPitch, minPitch, 3f);
+            return Mathf.Approximately(minPitch, maxPitch)
+                ? minPitch
+                : Random.Range(minPitch, maxPitch);
         }
 
         private void NormalizeBurstSequence()
@@ -282,6 +355,14 @@ namespace LostMemory.Enemies.Boss.Bertha
                 burst.HomingDuration = Mathf.Max(0f, burst.HomingDuration);
                 burstSequence[i] = burst;
             }
+        }
+
+        private void NormalizeBurstSfxSettings()
+        {
+            burstSfxVolume = Mathf.Clamp01(burstSfxVolume);
+            burstSfxMinPitch = Mathf.Clamp(burstSfxMinPitch, 0.1f, 3f);
+            burstSfxMaxPitch = Mathf.Clamp(burstSfxMaxPitch, burstSfxMinPitch, 3f);
+            burstSfxMinimumInterval = Mathf.Max(0f, burstSfxMinimumInterval);
         }
 
         private void LockDirection()

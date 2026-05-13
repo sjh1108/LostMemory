@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -19,6 +20,7 @@ namespace LostMemory.Stage
         [SerializeField] private bool debugLogging;
 
         private Coroutine _introRoutine;
+        private Coroutine _entryLandingSfxRoutine;
         private Character[] _cachedPlayers = System.Array.Empty<Character>();
         private BossRoomTransitionCompletedContext _currentContext;
         private bool _isIntroRunning;
@@ -114,6 +116,8 @@ namespace LostMemory.Stage
                     SetIntroVisibility(isVisible: true);
                 }
 
+                PlayEntryLandingSfx(data);
+
                 if (data.PlayEntryAnimation)
                 {
                     PlayEntryAnimation();
@@ -167,6 +171,59 @@ namespace LostMemory.Stage
             }
         }
 
+        private void PlayEntryLandingSfx(BossIntroSequenceData data)
+        {
+            AudioClip clip = data.EntryLandingSfx;
+            if (clip == null)
+            {
+                return;
+            }
+
+            if (_entryLandingSfxRoutine != null)
+            {
+                StopCoroutine(_entryLandingSfxRoutine);
+                _entryLandingSfxRoutine = null;
+            }
+
+            float delay = data.EntryLandingSfxDelay;
+            if (delay > 0f)
+            {
+                _entryLandingSfxRoutine = StartCoroutine(PlayEntryLandingSfxAfterDelay(clip, data.EntryLandingSfxVolume, delay));
+                return;
+            }
+
+            PlayEntryLandingSfx(clip, data.EntryLandingSfxVolume);
+        }
+
+        private IEnumerator PlayEntryLandingSfxAfterDelay(AudioClip clip, float volume, float delay)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            _entryLandingSfxRoutine = null;
+            PlayEntryLandingSfx(clip, volume);
+        }
+
+        private void PlayEntryLandingSfx(AudioClip clip, float volume)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            if (MMSoundManager.HasInstance && MMSoundManager.Current != null)
+            {
+                MMSoundManagerPlayOptions options = MMSoundManagerPlayOptions.Default;
+                options.MmSoundManagerTrack = MMSoundManager.MMSoundManagerTracks.Sfx;
+                options.Location = transform.position;
+                options.Volume = volume;
+                options.Loop = false;
+
+                MMSoundManagerSoundPlayEvent.Trigger(clip, options);
+                return;
+            }
+
+            AudioSource.PlayClipAtPoint(clip, transform.position, volume);
+        }
+
         private void PlayDialogue(
             BossIntroSequenceData data,
             BossRoomTransitionCompletedContext context,
@@ -203,6 +260,12 @@ namespace LostMemory.Stage
 
         private void StopActiveIntro(bool unfreezePlayers)
         {
+            if (_entryLandingSfxRoutine != null)
+            {
+                StopCoroutine(_entryLandingSfxRoutine);
+                _entryLandingSfxRoutine = null;
+            }
+
             if (_introRoutine != null)
             {
                 StopCoroutine(_introRoutine);

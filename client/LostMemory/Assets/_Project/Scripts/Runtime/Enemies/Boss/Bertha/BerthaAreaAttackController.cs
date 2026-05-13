@@ -30,6 +30,12 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private float damage = 8f;
         [SerializeField] private float targetInvincibilityDuration = 0.5f;
         [SerializeField] private float horizontalFacingThreshold = 0.05f;
+        [SerializeField] private bool enableImpactDamage = true;
+        [SerializeField] private AudioClip impactSfx;
+        [SerializeField, Range(0f, 1f)] private float impactSfxVolume = 1f;
+        [SerializeField, Range(0.1f, 3f)] private float impactSfxMinPitch = 1f;
+        [SerializeField, Range(0.1f, 3f)] private float impactSfxMaxPitch = 1f;
+        [SerializeField] private bool fallbackWithoutSoundManager = true;
         [SerializeField] private string debugName = "BerthaAreaAttack";
         [SerializeField] private bool debugLogging;
 
@@ -53,6 +59,9 @@ namespace LostMemory.Enemies.Boss.Bertha
         private void OnValidate()
         {
             maximumHits = Mathf.Max(1, maximumHits);
+            impactSfxVolume = Mathf.Clamp01(impactSfxVolume);
+            impactSfxMinPitch = Mathf.Clamp(impactSfxMinPitch, 0.1f, 3f);
+            impactSfxMaxPitch = Mathf.Clamp(impactSfxMaxPitch, impactSfxMinPitch, 3f);
             RefreshReferences();
             EnsureBuffer();
         }
@@ -131,10 +140,17 @@ namespace LostMemory.Enemies.Boss.Bertha
                 telegraphView?.Hide();
                 ApplyLockedFacing();
                 PlayAttackAnimation();
-                QueueAttackDamage();
                 _attackStateElapsed = 0f;
                 _hasExecutedImpact = false;
 
+                if (!enableImpactDamage)
+                {
+                    _hasPendingAttackDamage = false;
+                    _hasExecutedImpact = true;
+                    return;
+                }
+
+                QueueAttackDamage();
                 if (impactTime <= 0f && impactTime >= 0f)
                 {
                     ExecuteImpactNow();
@@ -260,6 +276,16 @@ namespace LostMemory.Enemies.Boss.Bertha
         public void SetImpactTime(float configuredImpactTime)
         {
             impactTime = configuredImpactTime;
+        }
+
+        public void SetImpactDamageEnabled(bool enabled)
+        {
+            enableImpactDamage = enabled;
+            if (!enableImpactDamage)
+            {
+                _hasPendingAttackDamage = false;
+                _hasExecutedImpact = true;
+            }
         }
 
         private Animator ResolveAnimator()
@@ -395,7 +421,45 @@ namespace LostMemory.Enemies.Boss.Bertha
                 return;
             }
 
+            PlayImpactSfx();
             ExecuteAttack();
+        }
+
+        private void PlayImpactSfx()
+        {
+            if (impactSfx == null)
+            {
+                return;
+            }
+
+            float pitch = ResolveImpactSfxPitch();
+
+            if (MMSoundManager.HasInstance && MMSoundManager.Current != null)
+            {
+                MMSoundManagerPlayOptions options = MMSoundManagerPlayOptions.Default;
+                options.MmSoundManagerTrack = MMSoundManager.MMSoundManagerTracks.Sfx;
+                options.Location = transform.position;
+                options.Volume = impactSfxVolume;
+                options.Pitch = pitch;
+                options.Loop = false;
+
+                MMSoundManagerSoundPlayEvent.Trigger(impactSfx, options);
+                return;
+            }
+
+            if (fallbackWithoutSoundManager)
+            {
+                AudioSource.PlayClipAtPoint(impactSfx, transform.position, impactSfxVolume);
+            }
+        }
+
+        private float ResolveImpactSfxPitch()
+        {
+            float minPitch = Mathf.Clamp(impactSfxMinPitch, 0.1f, 3f);
+            float maxPitch = Mathf.Clamp(impactSfxMaxPitch, minPitch, 3f);
+            return Mathf.Approximately(minPitch, maxPitch)
+                ? minPitch
+                : Random.Range(minPitch, maxPitch);
         }
 
         private AttackTelegraphRequest2D BuildTelegraphRequest()
