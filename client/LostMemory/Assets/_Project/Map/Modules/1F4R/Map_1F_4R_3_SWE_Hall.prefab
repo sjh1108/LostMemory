@@ -2477,6 +2477,51 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!1 &1073574785272368926
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4380458689808054904}
+  - component: {fileID: 91397726751165366}
+  m_Layer: 0
+  m_Name: Spawn_chobomb2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4380458689808054904
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1073574785272368926}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1, y: -1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 903657871181128434}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &91397726751165366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1073574785272368926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36da419669b3061498affd83c0cdda15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterSpawnPoint
+  groupTag: chobomb
 --- !u!1 &1136519942555356645
 GameObject:
   m_ObjectHideFlags: 0
@@ -8480,6 +8525,51 @@ TilemapCollider2D:
   m_MaximumTileChangeCount: 1000
   m_ExtrusionFactor: 0
   m_UseDelaunayMesh: 0
+--- !u!1 &1590796381490882268
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5379323874821903369}
+  - component: {fileID: 4122493595158368425}
+  m_Layer: 0
+  m_Name: Spawn_skeletonarcher3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5379323874821903369
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1590796381490882268}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -6, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 903657871181128434}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4122493595158368425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1590796381490882268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36da419669b3061498affd83c0cdda15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterSpawnPoint
+  groupTag: skeletonarcher
 --- !u!1 &1632959779845394264
 GameObject:
   m_ObjectHideFlags: 0
@@ -8547,9 +8637,13 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1459288687115979538}
+  - {fileID: 7536368142430454406}
   - {fileID: 5874686570002737348}
   - {fileID: 6282163135541968489}
+  - {fileID: 7003796704285680257}
+  - {fileID: 5379323874821903369}
   - {fileID: 7734877653690490350}
+  - {fileID: 4380458689808054904}
   m_Father: {fileID: 7567602114999337482}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2766231696066853685
@@ -10088,7 +10182,7 @@ GameObject:
   - component: {fileID: 1459288687115979538}
   - component: {fileID: 2594599671565261260}
   m_Layer: 0
-  m_Name: Spawn_NearDoor_0
+  m_Name: Spawn_orcrider1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10103,7 +10197,7 @@ Transform:
   m_GameObject: {fileID: 5570224838829374119}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7, y: 1, z: 0}
+  m_LocalPosition: {x: -7, y: -7, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10121,7 +10215,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36da419669b3061498affd83c0cdda15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterSpawnPoint
-  groupTag: near_door
+  groupTag: orcrider
 --- !u!1 &6033661111722660142
 GameObject:
   m_ObjectHideFlags: 0
@@ -10518,7 +10612,7 @@ GameObject:
   - component: {fileID: 5874686570002737348}
   - component: {fileID: 3420571013899019023}
   m_Layer: 0
-  m_Name: Spawn_NearDoor_0 (1)
+  m_Name: Spawn_stonegolem1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10533,7 +10627,7 @@ Transform:
   m_GameObject: {fileID: 6106277012760373191}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4, y: -4, z: 0}
+  m_LocalPosition: {x: 4, y: -5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10551,7 +10645,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36da419669b3061498affd83c0cdda15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterSpawnPoint
-  groupTag: near_door
+  groupTag: stonegolem
 --- !u!1 &6201496627967216832
 GameObject:
   m_ObjectHideFlags: 0
@@ -10563,7 +10657,7 @@ GameObject:
   - component: {fileID: 7734877653690490350}
   - component: {fileID: 2909222370131965533}
   m_Layer: 0
-  m_Name: Spawn_Far_1
+  m_Name: Spawn_chobomb1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10578,7 +10672,7 @@ Transform:
   m_GameObject: {fileID: 6201496627967216832}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3, y: -2, z: 0}
+  m_LocalPosition: {x: 18, y: -3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10596,7 +10690,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36da419669b3061498affd83c0cdda15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterSpawnPoint
-  groupTag: far
+  groupTag: chobomb
+--- !u!1 &6222423482298081838
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7536368142430454406}
+  - component: {fileID: 8040333875806216833}
+  m_Layer: 0
+  m_Name: Spawn_orcrider2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7536368142430454406
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6222423482298081838}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 18, y: -5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 903657871181128434}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8040333875806216833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6222423482298081838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36da419669b3061498affd83c0cdda15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterSpawnPoint
+  groupTag: orcrider
 --- !u!1 &6251319517262206253
 GameObject:
   m_ObjectHideFlags: 0
@@ -10688,13 +10827,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5f1b47db33bcc5409105e8ded726822, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
-  roomData: {fileID: 11400000, guid: 36147e9079431fc4a88b4bd8c2fa8efa, type: 2}
+  roomData: {fileID: 11400000, guid: 2ea03a7938c5f17478e20ec1f17ea4f9, type: 2}
   enemyCatalog: {fileID: 11400000, guid: 266ecebe2bc0f8543abc8950f36f4971, type: 2}
   encounterAnchor: {fileID: 6226433339382925121}
   encounterSpawner: {fileID: 2858573164609050546}
   entryAnchors:
   - {fileID: 1844252135554814179}
-  - {fileID: 0}
   exitWalls:
   - {fileID: 6458718689760484826}
   - {fileID: 8638413723329143538}
@@ -10715,10 +10853,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterAnchor
   cachedSpawnPoints:
-  - {fileID: 2594599671565261260}
-  - {fileID: 3420571013899019023}
-  - {fileID: 6521147205546602596}
   - {fileID: 2909222370131965533}
+  - {fileID: 91397726751165366}
+  - {fileID: 2594599671565261260}
+  - {fileID: 8040333875806216833}
+  - {fileID: 6521147205546602596}
+  - {fileID: 422329672301520214}
+  - {fileID: 4122493595158368425}
+  - {fileID: 3420571013899019023}
 --- !u!114 &2858573164609050546
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10731,6 +10873,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b46f293a0f158ce49a5d805e46c54d34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemyEncounterSpawner
+--- !u!1 &6664938983467821742
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7003796704285680257}
+  - component: {fileID: 422329672301520214}
+  m_Layer: 0
+  m_Name: Spawn_skeletonarcher2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7003796704285680257
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6664938983467821742}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -12, y: -2, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 903657871181128434}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &422329672301520214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6664938983467821742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36da419669b3061498affd83c0cdda15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterSpawnPoint
+  groupTag: skeletonarcher
 --- !u!1 &7885580216718816192
 GameObject:
   m_ObjectHideFlags: 0
@@ -11514,7 +11701,7 @@ GameObject:
   - component: {fileID: 6282163135541968489}
   - component: {fileID: 6521147205546602596}
   m_Layer: 0
-  m_Name: Spawn_Far_0
+  m_Name: Spawn_skeletonarcher1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11529,7 +11716,7 @@ Transform:
   m_GameObject: {fileID: 8309308289899588917}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4, y: 4, z: 0}
+  m_LocalPosition: {x: 1, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11547,7 +11734,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36da419669b3061498affd83c0cdda15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomEncounterSpawnPoint
-  groupTag: far
+  groupTag: skeletonarcher
 --- !u!1 &8463794945049952553
 GameObject:
   m_ObjectHideFlags: 0
