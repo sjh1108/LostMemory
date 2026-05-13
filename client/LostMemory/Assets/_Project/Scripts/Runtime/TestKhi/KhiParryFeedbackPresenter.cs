@@ -1,3 +1,4 @@
+using LostMemory.VFX;
 using UnityEngine;
 
 namespace LostMemory.TestKhi
@@ -38,8 +39,12 @@ namespace LostMemory.TestKhi
         [SerializeField] private Color successRingColor = new Color(0.8f, 0.95f, 1f, 1f);
 
         [Header("Success - Spark VFX (optional)")]
-        [SerializeField] private GameObject successSparkPrefab;
-        [SerializeField, Min(0f)] private float sparkLifetime = 0.4f;
+        [SerializeField, Tooltip("패링 성공 시 player 에 attach 되어 spawn 될 prefab. ParticleSystem/SpriteRenderer 포함. 빈 칸이면 spawn 안 함.")]
+        private GameObject successSparkPrefab;
+        [SerializeField, Min(0f), Tooltip("자동 destroy 시간 (초). 0 이면 prefab 자체가 처리 / VFXSpawner 미destroy.")]
+        private float sparkLifetime = 0.4f;
+        [SerializeField, Tooltip("attach 시 local offset. 0,0,0 이면 player 정중앙.")]
+        private Vector3 sparkLocalOffset = Vector3.zero;
 
         [Header("Success - SFX (optional)")]
         [SerializeField] private AudioClip successSfx;
@@ -49,7 +54,6 @@ namespace LostMemory.TestKhi
         private float _flashTotalDuration;
         private Color _flashColor = Color.white;
         private float _successPulseStartedAt = -1f;
-        private AudioSource _audioSource;
 
         private void Awake()
         {
@@ -63,7 +67,7 @@ namespace LostMemory.TestKhi
             {
                 SetSpriteAlpha(flashSprite, 0f);
             }
-            EnsureAudioSource();
+            // SFX 는 AudioSource.PlayClipAtPoint 로 처리 — 별도 AudioSource 불필요.
         }
 
         private void OnEnable()
@@ -239,37 +243,21 @@ namespace LostMemory.TestKhi
                 return;
             }
 
-            GameObject spark = Instantiate(successSparkPrefab, transform.position, Quaternion.identity);
-            if (sparkLifetime > 0f)
-            {
-                Destroy(spark, sparkLifetime);
-            }
+            // 프로젝트 표준 VFX 진입점. 풀링 도입 시에도 호출측 변경 X.
+            // SpawnAttached: player 의 transform 자식으로 부착 — 이동 따라감.
+            VFXSpawner.SpawnAttached(successSparkPrefab, transform, sparkLocalOffset, sparkLifetime);
         }
 
         private void PlaySuccessSfx()
         {
-            if (successSfx == null || _audioSource == null)
+            if (successSfx == null)
             {
                 return;
             }
 
-            _audioSource.PlayOneShot(successSfx, sfxVolume);
-        }
-
-        private void EnsureAudioSource()
-        {
-            if (_audioSource != null)
-            {
-                return;
-            }
-
-            _audioSource = GetComponent<AudioSource>();
-            if (_audioSource == null)
-            {
-                _audioSource = gameObject.AddComponent<AudioSource>();
-                _audioSource.playOnAwake = false;
-                _audioSource.spatialBlend = 0f;
-            }
+            // PlayClipAtPoint: AudioSource 의존성 제거 + 짧은 effect 라 매번 spawn OK.
+            // 일관성: RelicEffectRegistry 등 다른 SFX 트리거와 동일 패턴.
+            AudioSource.PlayClipAtPoint(successSfx, transform.position, sfxVolume);
         }
 
         private void EnsureRing()

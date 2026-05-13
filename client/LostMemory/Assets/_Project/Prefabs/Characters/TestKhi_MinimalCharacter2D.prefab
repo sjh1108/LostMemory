@@ -53,7 +53,6 @@ GameObject:
   - component: {fileID: 114547587046617724}
   - component: {fileID: 114042670615466288}
   - component: {fileID: 114450207927170996}
-  - component: {fileID: 114871673569860628}
   - component: {fileID: 114654745524214770}
   - component: {fileID: 114704504716019314}
   - component: {fileID: 114910001000000001}
@@ -85,6 +84,8 @@ GameObject:
   - component: {fileID: 2913988551999795102}
   - component: {fileID: 249564988669907132}
   - component: {fileID: 6772676563777854037}
+  - component: {fileID: 8256579939838082894}
+  - component: {fileID: 8786085345237100187}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -362,6 +363,9 @@ MonoBehaviour:
   allowDashDuringAttackRecovery: 0
   logBlockedDashToConsole: 0
   statContainer: {fileID: 1496170365699431617}
+  dashInvulnerabilityEnabled: 1
+  dashInvulnerabilityDuration: 0.3
+  health: {fileID: 0}
 --- !u!114 &114583920634094340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -534,52 +538,6 @@ MonoBehaviour:
     CanInterruptRefill: 1
     CooldownState: 0
     CurrentDurationLeft: 0
---- !u!114 &114871673569860628
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1790328835693532}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01754710d9f92ec4d9a21b81f5682667, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Model: {fileID: 0}
-  CurrentHealth: 100
-  Invulnerable: 0
-  InitialHealth: 100
-  MaximumHealth: 100
-  ResetHealthOnEnable: 1
-  OnHealFeedback: {fileID: 0}
-  ImmuneToDamage: 0
-  DamageMMFeedbacks: {fileID: 0}
-  FeedbackIsProportionalToDamage: 0
-  PreventTakeSelfDamage: 0
-  ImmuneToKnockback: 0
-  ImmuneToKnockbackIfZeroDamage: 0
-  KnockbackForceMultiplier: 1
-  DestroyOnDeath: 1
-  DelayBeforeDestruction: 0
-  PointsWhenDestroyed: 0
-  RespawnAtInitialLocation: 0
-  DisableControllerOnDeath: 1
-  DisableModelOnDeath: 1
-  DisableCollisionsOnDeath: 1
-  DisableChildCollisionsOnDeath: 0
-  ChangeLayerOnDeath: 0
-  ChangeLayersRecursivelyOnDeath: 0
-  LayerOnDeath:
-    _layerIndex: 0
-  DeathMMFeedbacks: {fileID: 0}
-  ResetColorOnRevive: 1
-  ColorMaterialPropertyName: _Color
-  UseMaterialPropertyBlocks: 0
-  MasterHealth: {fileID: 0}
-  TargetDamageResistanceProcessor: {fileID: 0}
-  TargetAnimator: {fileID: 431677536353520410}
-  DisableAnimatorLogs: 1
 --- !u!114 &114654745524214770
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -772,7 +730,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e52cef2938a24543b96be633f87f3d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiHitStunController
-  health: {fileID: 114871673569860628}
+  health: {fileID: 0}
   handleWeapon: {fileID: 114654745524214770}
   dashController: {fileID: 114646620809325970}
   meleeCombo: {fileID: 114910001000000004}
@@ -797,7 +755,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33c724ba75b7ffe42af7580044857e52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiDownController
-  health: {fileID: 114871673569860628}
+  health: {fileID: 8256579939838082894}
   character: {fileID: 114307563035583202}
   handleWeapon: {fileID: 114654745524214770}
   dashController: {fileID: 114646620809325970}
@@ -852,9 +810,12 @@ MonoBehaviour:
   handleWeapon: {fileID: 114654745524214770}
   dashController: {fileID: 114646620809325970}
   meleeCombo: {fileID: 114910001000000004}
-  health: {fileID: 114871673569860628}
+  health: {fileID: 8256579939838082894}
   parryAction: {fileID: 0}
+  hitStun: {fileID: 0}
   parryWindow: 0.16
+  parryHitbox: {fileID: 61063304230422582}
+  parryHitboxScale: 2
   parryFailureRecovery: 0.45
   parryCooldown: 0.45
   successfulParryInvulnerability: 0.12
@@ -891,9 +852,10 @@ MonoBehaviour:
   successRingExpansion: 2
   successRingDuration: 0.25
   successRingColor: {r: 0.8, g: 0.95, b: 1, a: 1}
-  successSparkPrefab: {fileID: 482039274662796259, guid: 52530438c6c075144b9f3bb2545570a6,
+  successSparkPrefab: {fileID: 5254158234669054749, guid: 2434da0315783bb45b43a490dbf5fefb,
     type: 3}
   sparkLifetime: 0.4
+  sparkLocalOffset: {x: 0, y: 0, z: 0}
   successSfx: {fileID: 8300000, guid: eabf35d0f912b674fb1bbeac1556a05d, type: 3}
   sfxVolume: 1
 --- !u!114 &7906725925004899532
@@ -947,7 +909,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 500534607ee54c4498d4237cefae61f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiAttackVisualPresenter
-  animator: {fileID: 0}
+  animator: {fileID: 431677536353520410}
   showTemporarySlash: 0
   temporarySlashSortingOrder: 1001
   firstSlashColor: {r: 1, g: 1, b: 1, a: 0.78}
@@ -974,8 +936,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba1ec726bc4b6bb4791fb9bb2ef7d424, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiSlashAnimator
-  comboController: {fileID: 0}
-  weaponData: {fileID: 0}
+  comboController: {fileID: 114910001000000004}
+  weaponData: {fileID: 11400000, guid: be21afd1099c64146b384f8bee29eb68, type: 2}
   slashRig: {fileID: 1334160090806314886}
   slashSlots:
   - {fileID: 7445542604703793321}
@@ -1030,7 +992,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.RelicEffectApplier
   inventory: {fileID: 1736420558605640635}
   container: {fileID: 1496170365699431617}
-  playerHealth: {fileID: 114871673569860628}
+  playerHealth: {fileID: 8256579939838082894}
   combatController: {fileID: 114910001000000004}
   parryController: {fileID: 8099593820185299679}
   dashController: {fileID: 114646620809325970}
@@ -1072,7 +1034,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21400c8789c263d40aecc0310a362c7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealthStatApplier
-  health: {fileID: 114871673569860628}
+  health: {fileID: 8256579939838082894}
   container: {fileID: 1496170365699431617}
 --- !u!114 &1736420558605640635
 MonoBehaviour:
@@ -1089,7 +1051,7 @@ MonoBehaviour:
   _baseMaxSlots: 25
   _maxCols: 5
   _maxRows: 5
-  _consumableInventory: {fileID: 0}
+  _consumableInventory: {fileID: 2913988551999795102}
   _debugRelicsToAdd:
   - {fileID: 11400000, guid: 4651ad8d210e68940a60fb9b17f23717, type: 2}
   - {fileID: 11400000, guid: d957bd6ed08f415458052a9ba7d2bc59, type: 2}
@@ -1123,7 +1085,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6643ceaf7a0382f44881910471033808, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealing
-  health: {fileID: 114871673569860628}
+  health: {fileID: 0}
   container: {fileID: 1496170365699431617}
   logHeals: 0
   _debugConsumableToUse: {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709,
@@ -1321,7 +1283,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e45fef5026c0aa4bb0d05bd6c98bde7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerDamageReceiver
-  health: {fileID: 114871673569860628}
+  health: {fileID: 0}
   container: {fileID: 1496170365699431617}
   _logDamageMod: 1
 --- !u!114 &2913988551999795102
@@ -1366,7 +1328,97 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0bd3316ed58a2c4f9306075e55b3258, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Player.PlayerHealthSnapshotter
-  health: {fileID: 114871673569860628}
+  health: {fileID: 0}
+--- !u!114 &8256579939838082894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5708aaee4062f8a488fe6d50da5c15ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiParryHealth
+  Model: {fileID: 0}
+  CurrentHealth: 0
+  Invulnerable: 0
+  InitialHealth: 100
+  MaximumHealth: 100
+  ResetHealthOnEnable: 1
+  OnHealFeedback: {fileID: 0}
+  ImmuneToDamage: 0
+  DamageMMFeedbacks: {fileID: 0}
+  FeedbackIsProportionalToDamage: 0
+  PreventTakeSelfDamage: 0
+  ImmuneToKnockback: 0
+  ImmuneToKnockbackIfZeroDamage: 0
+  KnockbackForceMultiplier: 1
+  DestroyOnDeath: 1
+  DelayBeforeDestruction: 0
+  PointsWhenDestroyed: 0
+  RespawnAtInitialLocation: 0
+  DisableControllerOnDeath: 1
+  DisableModelOnDeath: 1
+  DisableCollisionsOnDeath: 1
+  DisableChildCollisionsOnDeath: 0
+  ChangeLayerOnDeath: 0
+  ChangeLayersRecursivelyOnDeath: 0
+  LayerOnDeath:
+    _layerIndex: 0
+  DeathMMFeedbacks: {fileID: 0}
+  ResetColorOnRevive: 1
+  ColorMaterialPropertyName: _Color
+  UseMaterialPropertyBlocks: 0
+  MasterHealth: {fileID: 0}
+  TargetDamageResistanceProcessor: {fileID: 0}
+  TargetAnimator: {fileID: 431677536353520410}
+  DisableAnimatorLogs: 1
+  parryController: {fileID: 8099593820185299679}
+  playerShield: {fileID: 1105879407601961676}
+  logIntercepts: 1
+--- !u!114 &8786085345237100187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c7ff021a59f5a94b867e55fe8bb90e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiSfxBinder
+  meleeCombo: {fileID: 0}
+  parry: {fileID: 0}
+  dash: {fileID: 0}
+  hitStun: {fileID: 0}
+  down: {fileID: 0}
+  audioSource: {fileID: 0}
+  attackSwingClips:
+  - {fileID: 8300000, guid: c4fe2906b4101d946a6f4e3bcb52bff5, type: 3}
+  - {fileID: 8300000, guid: 73b62a73edfa18342812e7c891904e97, type: 3}
+  - {fileID: 8300000, guid: c362bfad4e2260d49bb067e318f77369, type: 3}
+  attackSwingVolume: 0.9
+  hitImpactClips:
+  - {fileID: 8300000, guid: e33af03991afbb342a74061c8286b9ce, type: 3}
+  hitImpactVolume: 0.85
+  parryStartClip: {fileID: 8300000, guid: 665dcf18550f16f4eab039e2302f0d5f, type: 3}
+  parrySuccessClip: {fileID: 0}
+  parryFailClip: {fileID: 8300000, guid: b34e4aabd474c45c2945fc9c6eec8381, type: 3}
+  parryVolume: 0.7
+  dashStartClip: {fileID: 8300000, guid: d4f963e1fb34c6441b5188289f973106, type: 3}
+  dashVolume: 0.8
+  hurtClips:
+  - {fileID: 8300000, guid: 6f10d771e7aa4234c90db4da16c32b0d, type: 3}
+  hurtVolume: 0.85
+  downEnterClip: {fileID: 8300000, guid: 6f10d771e7aa4234c90db4da16c32b0d, type: 3}
+  reviveStartClip: {fileID: 8300000, guid: 32f2f6ba932705d4dbd1b1fc7348a49e, type: 3}
+  reviveCompleteClip: {fileID: 8300000, guid: 665dcf18550f16f4eab039e2302f0d5f, type: 3}
+  defeatClip: {fileID: 8300000, guid: 6872e40aedb5c1246986a4cfe88a2f67, type: 3}
+  downVolume: 0.9
+  logSfx: 1
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
@@ -1996,7 +2048,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Tarot.TarotSystem
   meleeController: {fileID: 114910001000000004}
-  playerHealth: {fileID: 114871673569860628}
+  playerHealth: {fileID: 0}
   rewardPanelView: {fileID: 0}
   _logTarot: 1
 --- !u!1 &6753678586816588783

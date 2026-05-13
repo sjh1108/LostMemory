@@ -18,6 +18,16 @@ namespace LostMemory.TestKhi
         [Tooltip("CL-108: DashCooldown multiplier 조회용 (질풍 장화). 같은 GameObject 의 컴포넌트.")]
         [SerializeField] private PlayerStatModifierContainer statContainer;
 
+        [Header("Invulnerability (i-frames)")]
+        [SerializeField, Tooltip("대시 시작 시 일정 시간 무적 처리. KhiHitStunController / KhiParryController 의 무적 패턴과 동일하게 TDE Health.DamageDisabled/Enabled 코루틴 사용.")]
+        private bool dashInvulnerabilityEnabled = true;
+
+        [SerializeField, Min(0f), Tooltip("무적 지속 시간 (초). dashInvulnerabilityEnabled=true 일 때만 적용. 0 이면 무적 미적용.")]
+        private float dashInvulnerabilityDuration = 0.3f;
+
+        [SerializeField, Tooltip("대시 시 무적을 적용할 TDE Health 컴포넌트. Player 의 Health 드래그. 비어있으면 Awake/Initialization 에서 GetComponent 로 자동 탐색.")]
+        private Health health;
+
         // CL-108: Initialization 시점의 base cooldown 캐시. multiplier 는 매 DashStart 마다 적용.
         private float _baseCooldownDuration;
         private bool _wasDashingLastFrame;
@@ -29,12 +39,16 @@ namespace LostMemory.TestKhi
         /// <summary>CL-108: 대시 종료 직후 발화 (LateUpdate IsDashing 변화 감지). 추적자의 망토 등이 구독.</summary>
         public event Action OnDashEnded;
 
+        /// <summary>대시 시작 직후 발화. SFX/VFX 등 외부 피드백이 구독.</summary>
+        public event Action DashStarted;
+
         protected override void Initialization()
         {
             base.Initialization();
             aim ??= GetComponent<KhiPlayerAim>();
             meleeCombo ??= GetComponent<KhiMeleeComboController>();
             if (statContainer == null) statContainer = GetComponent<PlayerStatModifierContainer>();
+            if (health == null) health = GetComponent<Health>();
             DashMode = DashModes.Script;
             _baseCooldownDuration = Cooldown != null ? Cooldown.ConsumptionDuration : 0f;
         }
@@ -79,6 +93,15 @@ namespace LostMemory.TestKhi
             }
 
             base.DashStart();
+
+            // 대시 무적 (i-frames). 동일 API 패턴: KhiHitStunController / KhiParryController.HandleParrySuccess.
+            if (dashInvulnerabilityEnabled && health != null && dashInvulnerabilityDuration > 0f)
+            {
+                health.DamageDisabled();
+                StartCoroutine(health.DamageEnabled(dashInvulnerabilityDuration));
+            }
+
+            DashStarted?.Invoke();
         }
 
         // CL-108: 대시 종료 감지. TDE CharacterDash2D 의 DashStop() virtual 미확인이라
