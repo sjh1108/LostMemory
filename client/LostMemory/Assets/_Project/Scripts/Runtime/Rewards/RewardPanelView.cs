@@ -48,9 +48,25 @@ namespace LostMemory.Rewards
 
         /// <summary>
         /// CL-146: 보상 패널 열기. 행운 set tier 에 따라 5장 + 2픽 + 가중치 + forceLegendary.
+        /// (기존 호환 오버로드 — relicOnly=false, rarityBoostPercent=0)
         /// </summary>
         public void Show(PlayerRelicInventory inventory, int count, int picksAllowed,
                          int luckPoints, bool forceLegendary)
+            => Show(inventory, count, picksAllowed, luckPoints, forceLegendary, relicOnly: false, rarityBoostPercent: 0f);
+
+        /// <summary>
+        /// 기억 시스템 '시작 유물 +N' 용: relicOnly=true 면 소모품 제외하고 유물만 추첨.
+        /// (기존 호환 오버로드 — rarityBoostPercent=0)
+        /// </summary>
+        public void Show(PlayerRelicInventory inventory, int count, int picksAllowed,
+                         int luckPoints, bool forceLegendary, bool relicOnly)
+            => Show(inventory, count, picksAllowed, luckPoints, forceLegendary, relicOnly, rarityBoostPercent: 0f);
+
+        /// <summary>
+        /// 기억 시스템 RewardRarityBoost 보상 반영용: rarityBoostPercent &gt; 0 면 N 확률로 한 단계 상위 등급 카드로 교체.
+        /// </summary>
+        public void Show(PlayerRelicInventory inventory, int count, int picksAllowed,
+                         int luckPoints, bool forceLegendary, bool relicOnly, float rarityBoostPercent)
         {
             _inventory = inventory;
             _picksMade = 0;
@@ -59,7 +75,7 @@ namespace LostMemory.Rewards
             count = Mathf.Clamp(count, 1, _cards != null ? _cards.Length : 1);
 
             var rewards = _rewardPool.DrawCount(
-                count, inventory.GetOwnedNames(), luckPoints, forceLegendary);
+                count, inventory.GetOwnedNames(), luckPoints, forceLegendary, relicOnly, rarityBoostPercent);
 
             // CL-147: 타로 재추첨 적용 — 마지막 결과만 표시
             if (_pendingRerolls > 0)
@@ -69,7 +85,7 @@ namespace LostMemory.Rewards
                 for (int r = 0; r < reroll; r++)
                 {
                     rewards = _rewardPool.DrawCount(
-                        count, inventory.GetOwnedNames(), luckPoints, forceLegendary);
+                        count, inventory.GetOwnedNames(), luckPoints, forceLegendary, relicOnly, rarityBoostPercent);
                 }
                 Debug.Log($"[RewardPanel] {reroll}회 재추첨 적용 — 최종 결과만 표시");
             }

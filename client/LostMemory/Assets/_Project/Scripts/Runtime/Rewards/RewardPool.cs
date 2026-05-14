@@ -53,9 +53,13 @@ namespace LostMemory.Rewards
         /// CL-146: count 만큼 추첨. 행운 (luckPoints) 가중치 + forceLegendary 옵션.
         /// luckPoints &gt; 0 → 행운 태그 (RelicTag.Luck) 가진 RelicData 의 가중치 +luckPoints×2.
         /// forceLegendary=true → Legendary 등급만 후보.
+        /// relicOnly=true → 소모품 제외, 미보유 유물만 후보 (기억 시스템 '시작 유물 +N' 보상용).
+        /// rarityBoostPercent &gt; 0 → 추첨된 각 카드를 N 확률(0~1)로 한 단계 상위 등급으로 교체
+        ///   (기억 시스템 RewardRarityBoost 보상용). 소모품은 영향 없음.
         /// </summary>
         public List<RelicData> DrawCount(int count, IEnumerable<string> ownedRelicNames,
-                                         int luckPoints = 0, bool forceLegendary = false)
+                                         int luckPoints = 0, bool forceLegendary = false,
+                                         bool relicOnly = false, float rarityBoostPercent = 0f)
         {
             var owned = new HashSet<string>(ownedRelicNames);
 
@@ -74,8 +78,64 @@ namespace LostMemory.Rewards
                     return new List<RelicData>();
                 }
             }
+            else if (relicOnly)
+            {
+                // 소모품 제외 — 미보유 유물만
+                available = available.Where(r => !r.IsConsumable).ToList();
+                if (available.Count == 0)
+                {
+                    Debug.LogWarning("[RewardPool] relicOnly=true 인데 후보 0 — 모든 유물 보유 또는 풀에 유물 없음.");
+                    return new List<RelicData>();
+                }
+            }
 
-            return PickWeighted(available, count, luckPoints);
+            var picks = PickWeighted(available, count, luckPoints);
+
+            // 기억 시스템 RewardRarityBoost: 추첨 결과에 등급 상향 보정.
+            if (rarityBoostPercent > 0f)
+            {
+                ApplyRarityBoost(picks, available, rarityBoostPercent);
+            }
+
+            return picks;
+        }
+
+        /// <summary>
+        /// 추첨 결과 리스트의 각 카드를 N 확률로 한 단계 상위 등급의 동등 후보로 교체.
+        /// Common → Rare → Unique → Legendary 순. Legendary 는 그대로.
+        /// 상위 등급에 대체 후보가 없으면 원본 유지.
+        /// </summary>
+        private static void ApplyRarityBoost(List<RelicData> picks, List<RelicData> available, float boostPercent)
+        {
+            for (int i = 0; i < picks.Count; i++)
+            {
+                RelicData current = picks[i];
+                if (current == null || current.IsConsumable) continue;
+
+                if (Random.value >= boostPercent) continue;
+
+                RelicRarity next = GetNextRarity(current.Rarity);
+                if (next == current.Rarity) continue; // Legendary — 더 상위 없음
+
+                // 상위 등급 후보 (중복 카드 방지: 이미 picks 안에 있는 건 제외)
+                var higherPool = available
+                    .Where(r => !r.IsConsumable && r.Rarity == next && !picks.Contains(r))
+                    .ToList();
+                if (higherPool.Count == 0) continue;
+
+                picks[i] = higherPool[Random.Range(0, higherPool.Count)];
+            }
+        }
+
+        private static RelicRarity GetNextRarity(RelicRarity rarity)
+        {
+            return rarity switch
+            {
+                RelicRarity.Common    => RelicRarity.Rare,
+                RelicRarity.Rare      => RelicRarity.Unique,
+                RelicRarity.Unique    => RelicRarity.Legendary,
+                _                     => rarity, // Legendary 또는 미지정
+            };
         }
 
         /// <summary>

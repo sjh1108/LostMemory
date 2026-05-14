@@ -1,4 +1,5 @@
 using LostMemory.Data;
+using LostMemory.Memory;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,7 +30,8 @@ namespace LostMemory.Talents
         private void Start()
         {
             var saved = TalentSaveService.Load();
-            _model = new TalentModel(_talentDatas, _debugTotalPoints, saved);
+            int effectiveTotal = _debugTotalPoints + MemoryMetaService.Load().BonusTalentPoints;
+            _model = new TalentModel(_talentDatas, effectiveTotal, saved);
 
             for (int i = 0; i < _rows.Length; i++)
             {
@@ -65,7 +67,8 @@ namespace LostMemory.Talents
         public void Open()
         {
             var saved = TalentSaveService.Load();
-            _model = new TalentModel(_talentDatas, _debugTotalPoints, saved);
+            int effectiveTotal = _debugTotalPoints + MemoryMetaService.Load().BonusTalentPoints;
+            _model = new TalentModel(_talentDatas, effectiveTotal, saved);
             Refresh();
             gameObject.SetActive(true);
         }

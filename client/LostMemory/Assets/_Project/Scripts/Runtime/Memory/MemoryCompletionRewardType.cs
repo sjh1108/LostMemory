@@ -76,5 +76,19 @@ namespace LostMemory.Memory
 
         /// <summary>보상 등급 상향 확률 추가. RewardMagnitude = 확률 증가량(%).</summary>
         RewardRarityBoost,
+
+        // ── 재능 시스템 보너스 ────────────────────────────────
+
+        /// <summary>
+        /// 런 시작 시 사용 가능한 재능 포인트 영구 +N. RewardMagnitude = 추가 포인트 수.
+        /// MemorySaveData.BonusTalentPoints 에 누적 → TalentStartupApplier 가 totalPoints 에 합산.
+        /// </summary>
+        TalentPointsBonus,
+
+        /// <summary>
+        /// 런 시작 시 랜덤 유물 N개를 추가로 보유한 채 시작. RewardMagnitude = 추가 유물 개수.
+        /// MemorySaveData.BonusStartingRelicCount 에 누적 → 런 시작 hook 가 인벤토리에 추가 (2단계).
+        /// </summary>
+        StartingRelicCount,
     }
 }

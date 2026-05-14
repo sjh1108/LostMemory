@@ -771,6 +771,7 @@ MonoBehaviour:
   reviveHealthAbsoluteMin: 1
   reviveInteractionHoldDuration: 0
   reviveInvulnerabilityAfter: 1.5
+  memoryReviveDelay: 1.5
   soloBehavior: 1
   debugReviveKey: 114
   logStateTransitions: 1
@@ -1328,7 +1329,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0bd3316ed58a2c4f9306075e55b3258, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Player.PlayerHealthSnapshotter
-  health: {fileID: 0}
+  health: {fileID: 8256579939838082894}
+  logRestore: 1
 --- !u!114 &8256579939838082894
 MonoBehaviour:
   m_ObjectHideFlags: 0

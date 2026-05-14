@@ -187,6 +187,14 @@ namespace LostMemory.Memory
                     save.BonusRewardRarityPercent += piece.RewardMagnitude;
                     break;
 
+                case MemoryPieceRewardType.TalentPointsBonus:
+                    save.BonusTalentPoints += Mathf.Max(1, Mathf.RoundToInt(piece.RewardMagnitude));
+                    break;
+
+                case MemoryPieceRewardType.StartingRelicCount:
+                    save.BonusStartingRelicCount += Mathf.Max(1, Mathf.RoundToInt(piece.RewardMagnitude));
+                    break;
+
                 // ── 특수 기능 해금 플래그 ──────────────────
                 // 실제 효과는 각 시스템(RunManager 등)이 런 시작 시 SaveData 를 읽어서 활성화.
 

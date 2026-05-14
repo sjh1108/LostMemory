@@ -548,6 +548,44 @@ namespace LostMemory.Stage
                 rewardController.SubscribeAllRoomControllers();
             }
             StateMachine.TryTransition(RunState.InRun);
+
+            // 기억 시스템 메타 보너스 적용 — 던전 진입 시점에 골드 보너스 / 시작 유물 추첨.
+            // (조각 해금 시 MemoryPieceUnlockService 가 누적 저장 → 매 런 시작 시 여기서 소비/적용)
+            MemorySaveData memorySave = MemoryMetaService.Load();
+
+            // StartingGold 보상 — BonusStartingGold 만큼 GoldWallet 에 추가.
+            // GoldWallet.Awake 에서 initialGold 로 이미 초기화됨 → 그 위에 더함.
+            // (탐욕 set 의 GainMultiplier 가 적용될 수 있음 — 의도된 일관성)
+            int bonusGold = memorySave.BonusStartingGold;
+            if (bonusGold > 0 && goldWallet != null)
+            {
+                goldWallet.Add(bonusGold);
+                Debug.Log($"[RunManager] StartingGold bonus 적용 — +{bonusGold}");
+            }
+
+            // StartingRelicCount 보상 — N번 연속 보상 패널.
+            int relicCount = memorySave.BonusStartingRelicCount;
+            if (relicCount > 0 && rewardController != null)
+            {
+                Debug.Log($"[RunManager] StartingRelicReward 트리거 — count={relicCount}");
+                rewardController.ShowStartingRelicReward(relicCount);
+            }
+
+            // ReviveOnce 보상 — HasRevive=true 면 런 1회 자동 부활 활성화.
+            // KhiDownController.EnterDown 에서 _memoryReviveAvailable 체크 → ForceRevive 자동 호출.
+            if (memorySave.HasRevive)
+            {
+                var downController = FindAnyObjectByType<TestKhi.KhiDownController>();
+                if (downController != null)
+                {
+                    downController.SetMemoryReviveAvailable(true);
+                    Debug.Log("[RunManager] ReviveOnce 활성화 — 런 1회 자동 부활 준비");
+                }
+                else
+                {
+                    Debug.LogWarning("[RunManager] ReviveOnce 활성화 실패 — KhiDownController 미발견");
+                }
+            }
         }
 
         private void SubscribeAllRoomControllers()
