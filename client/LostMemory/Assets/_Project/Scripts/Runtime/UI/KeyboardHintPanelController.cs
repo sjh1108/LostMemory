@@ -25,6 +25,13 @@ namespace LostMemory.UI
         [Header("상호작용 키")]
         [SerializeField] private Animator _fButton;
 
+        [Header("점프 키")]
+        [SerializeField] private Animator _spaceButton;
+
+        [Header("마우스")]
+        [SerializeField] private Animator _mouseLeftButton;
+        [SerializeField] private Animator _mouseRightButton;
+
         [Header("애니메이션 상태 이름")]
         [SerializeField] private string _stateName = "Button01a";
 
@@ -40,6 +47,9 @@ namespace LostMemory.UI
             if (Input.GetKeyDown(KeyCode.S)) Play(_sButton);
             if (Input.GetKeyDown(KeyCode.D)) Play(_dButton);
             if (Input.GetKeyDown(KeyCode.F)) Play(_fButton);
+            if (Input.GetKeyDown(KeyCode.Space)) Play(_spaceButton);
+            if (Input.GetMouseButtonDown(0)) Play(_mouseLeftButton);
+            if (Input.GetMouseButtonDown(1)) Play(_mouseRightButton);
         }
 
         private void Play(Animator animator)
