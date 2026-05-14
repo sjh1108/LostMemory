@@ -271,7 +271,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 51
+  m_SortingOrder: 50
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: e82df48d05eee4045b34868443faef49, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -1399,7 +1399,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0.19}
+  m_Offset: {x: -0.2, y: -0.19}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -1409,7 +1409,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.6, y: 0.5}
+  m_Size: {x: 1.2, y: 1.3}
   m_EdgeRadius: 0
 --- !u!114 &5794025413872023169
 MonoBehaviour:
@@ -1461,7 +1461,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
   Model: {fileID: 0}
-  CurrentHealth: 200
+  CurrentHealth: 500
   Invulnerable: 0
   InitialHealth: 500
   MaximumHealth: 500
@@ -1602,8 +1602,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.AttackTelegraph2DView
   previewObjectName: AttackTelegraphPreview
   previewParent: {fileID: 5232939591042715630}
-  sortingReference: {fileID: 0}
-  sortingOrderOffset: 1
+  sortingReference: {fileID: 5445363382652363815}
+  sortingOrderOffset: -10
   renderOutsideSortingGroup: 1
   sortingGroupReference: {fileID: 0}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
@@ -1892,6 +1892,7 @@ MonoBehaviour:
   damage: 8
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: aeb67eefa66f34ffeae4fd8422461e84, type: 3}
   impactSfxVolume: 0.85
   impactSfxMinPitch: 0.96
@@ -2050,6 +2051,7 @@ MonoBehaviour:
   damage: 10
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
   impactSfxVolume: 0.9
   impactSfxMinPitch: 0.96
@@ -2091,6 +2093,7 @@ MonoBehaviour:
   damage: 16
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: e22a6d5f894934efb88b6d9f9e0095ee, type: 3}
   impactSfxVolume: 1
   impactSfxMinPitch: 0.98
