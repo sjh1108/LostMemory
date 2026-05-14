@@ -58,6 +58,12 @@ namespace LostMemory.UI.Minimap
         [SerializeField, Range(0f, 1f), Tooltip("이 임계값보다 어두우면 MarkerOverlay 가 마커 hide.")]
         private float visibilityThreshold = 0.5f;
 
+        [Header("Unvisited Tint")]
+        [SerializeField, Range(0, 255),
+         Tooltip("안 가본 방의 fog alpha. 0=완전 노출, 255=완전 검정(기존 동작). " +
+                 "128 권장(회색). visibilityThreshold 보다 높으면 그 방의 마커는 자동 숨김.")]
+        private byte unvisitedRoomAlpha = 128;
+
         [Header("Filter")]
         [SerializeField, Tooltip("이 Kind 들의 agent 위치 주변을 reveal.")]
         private AgentKindMask revealKinds = AgentKindMask.PlayerLocal | AgentKindMask.PlayerRemote;
@@ -68,6 +74,7 @@ namespace LostMemory.UI.Minimap
 
         public Texture2D MaskTexture => _mask;
         public float VisibilityThreshold => visibilityThreshold;
+        public byte UnvisitedRoomAlpha => unvisitedRoomAlpha;
 
         private void OnEnable()
         {
@@ -110,10 +117,11 @@ namespace LostMemory.UI.Minimap
         }
 
         /// <summary>
-        /// 외부 호출: 직사각 world bounds 영역 전체를 영구 reveal.
-        /// 방 진입 시 MinimapRoomReveal 등이 호출. 영구 누적이라 같은 영역 재호출은 무비용.
+        /// 외부 호출: 직사각 world bounds 영역의 alpha 를 <paramref name="targetAlpha"/> 이하로 갱신.
+        /// 영구 누적 — 이미 더 밝은(낮은 alpha) 픽셀은 변화 없음. 방 진입 시 0 으로 완전 reveal,
+        /// 또는 unvisitedRoomAlpha(128 회색) 로 pre-fill 등에 사용.
         /// </summary>
-        public void RevealBounds(Bounds worldBounds)
+        public void RevealBounds(Bounds worldBounds, byte targetAlpha = 0)
         {
             EnsureMask();
             if (_maskBuffer == null || cameraRig == null) return;
@@ -135,7 +143,7 @@ namespace LostMemory.UI.Minimap
             int yMin = Mathf.Clamp((int)(vMin * maskResolution), 0, maskResolution - 1);
             int yMax = Mathf.Clamp((int)(vMax * maskResolution), 0, maskResolution - 1);
 
-            // 영역 전체 완전 reveal (alpha = 0). 영구 누적 — 이미 reveal 된 픽셀은 변화 없음.
+            // 영역 전체 alpha 를 targetAlpha 이하로 갱신. 이미 더 밝은 픽셀은 변화 없음(영구 누적).
             bool anyChanged = false;
             for (int y = yMin; y <= yMax; y++)
             {
@@ -143,9 +151,9 @@ namespace LostMemory.UI.Minimap
                 for (int x = xMin; x <= xMax; x++)
                 {
                     int idx = rowBase + x;
-                    if (_maskBuffer[idx].a > 0)
+                    if (_maskBuffer[idx].a > targetAlpha)
                     {
-                        _maskBuffer[idx].a = 0;
+                        _maskBuffer[idx].a = targetAlpha;
                         anyChanged = true;
                     }
                 }

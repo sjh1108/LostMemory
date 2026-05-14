@@ -8,7 +8,8 @@ namespace LostMemory.MagicalGirl
     /// <summary>
     /// CL-204: 2·4번 미소녀 AOE.
     ///
-    /// 2 (Ice / AOEFollow): spawn 직후 가장 가까운 적에 부착, duration 동안 매 tick OverlapCircle 데미지.
+    /// 2 (Ice / AOEAtTarget): spawn 시점 가장 가까운 적 위치로 1회 snap 후 정지, duration 동안 매 tick OverlapCircle 데미지.
+    ///                         반경 내 적 없으면 spawn 즉시 자기파괴 (장판 안 깔림). 적이 빠져나가면 회피 가능.
     /// 4 (Blackhole / AOEStationary): spawn 위치에 정지, duration 동안 tick 데미지 + 적을 코어로 끌어당김.
     ///
     /// MagicalGirlAI.Attack() 가 catalog 의 vfxPrefab 을 Instantiate → Init(kind, damage, radius, duration, tickInterval, pullSpeed, slowMag, slowDur) 호출.
@@ -26,9 +27,6 @@ namespace LostMemory.MagicalGirl
         private float _pullSpeed;
         private float _slowMagnitude;
         private float _slowDuration;
-
-        // 추적용
-        private Transform _followTarget;
 
         // 검색 임시 버퍼 (heap alloc 방지)
         private static readonly Collider2D[] _hitBuf = new Collider2D[24];
@@ -53,10 +51,16 @@ namespace LostMemory.MagicalGirl
             _slowMagnitude = Mathf.Clamp01(slowMagnitude);
             _slowDuration = Mathf.Max(0f, slowDuration);
 
-            if (_kind == MagicalGirlAttackCatalog.AttackKind.AOEFollow)
+            if (_kind == MagicalGirlAttackCatalog.AttackKind.AOEAtTarget)
             {
-                _followTarget = FindClosestEnemyTransform();
-                if (_followTarget != null) transform.position = _followTarget.position;
+                Transform initialTarget = FindClosestEnemyTransform();
+                if (initialTarget == null)
+                {
+                    // 반경 내 적 없으면 장판 안 깔림 — 발사 자체 취소
+                    Destroy(gameObject);
+                    return;
+                }
+                transform.position = initialTarget.position;
             }
         }
 
@@ -66,14 +70,6 @@ namespace LostMemory.MagicalGirl
             {
                 Destroy(gameObject);
                 return;
-            }
-
-            // AOEFollow: 매 프레임 적 위치 추적
-            if (_kind == MagicalGirlAttackCatalog.AttackKind.AOEFollow)
-            {
-                if (_followTarget == null || !_followTarget.gameObject.activeInHierarchy)
-                    _followTarget = FindClosestEnemyTransform();
-                if (_followTarget != null) transform.position = _followTarget.position;
             }
 
             if (Time.time < _nextTickAt) return;

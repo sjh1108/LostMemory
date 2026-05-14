@@ -456,7 +456,7 @@ GameObject:
   - component: {fileID: 1537914052336638469}
   m_Layer: 0
   m_Name: BerthaRoot3
-  m_TagString: Untagged
+  m_TagString: Boss
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -894,6 +894,10 @@ MonoBehaviour:
   entryStateLayer: 0
   introVisibilityTargets: []
   dialoguePlayerOwner: {fileID: 8384635405403100115}
+  bossHealth: {fileID: 0}
+  makeBossInvulnerableDuringIntro: 1
+  bossTargetable: {fileID: 0}
+  makeBossUntargetableDuringIntro: 1
   debugLogging: 0
 --- !u!114 &4813423077917023846
 MonoBehaviour:
