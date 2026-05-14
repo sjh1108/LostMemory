@@ -64,8 +64,14 @@ namespace LostMemory.Enemies
         private Color _enemyOriginalColor;
         private bool _enemyColorCached;
 
+        // 보스는 모든 상태이상(slow/freeze/burn) 면역. 부모 체인에 "Boss" 태그 GO 가 있으면 차단.
+        private const string BossTag = "Boss";
+        private bool _isBoss;
+
         private void Awake()
         {
+            _isBoss = IsBossInParents();
+
             _movement = GetComponentInParent<CharacterMovement>();
             if (_movement != null)
             {
@@ -76,6 +82,15 @@ namespace LostMemory.Enemies
 
             // CL-202: 적 깨끗한 시점의 sprite 색을 캐시 (Slow tint 후 복원용)
             TryCacheEnemySprite();
+        }
+
+        private bool IsBossInParents()
+        {
+            for (Transform t = transform; t != null; t = t.parent)
+            {
+                if (t.CompareTag(BossTag)) return true;
+            }
+            return false;
         }
 
         private void OnDestroy()
@@ -125,6 +140,8 @@ namespace LostMemory.Enemies
 
         public void ApplySlow(float magnitude, float duration)
         {
+            if (_isBoss) return;
+
             // 더 강한 슬로우 유지 (또는 기존 만료 시 갱신)
             if (magnitude > _slowMagnitude || Time.time >= _slowExpiresAt)
             {
@@ -137,6 +154,8 @@ namespace LostMemory.Enemies
 
         public void ApplyFreeze(float durationSeconds)
         {
+            if (_isBoss) return;
+
             // 갱신 정책: 항상 새 시간으로 (사용자 결정)
             _freezeExpiresAt = Time.time + durationSeconds;
             ApplyMovementMultiplier();
@@ -145,6 +164,7 @@ namespace LostMemory.Enemies
 
         public void ApplyBurn(float damagePerTick, float duration, GameObject instigator)
         {
+            if (_isBoss) return;
             if (damagePerTick <= 0f || duration <= 0f) return;
 
             // CL-143: 중첩 없음 정책 — 항상 갱신 (가장 최근 화상으로 교체)
@@ -303,30 +323,46 @@ namespace LostMemory.Enemies
         private void TryCacheEnemySprite()
         {
             if (_enemyColorCached) return;
+            if (_isBoss) return;  // 보스는 tint 안 씀 — 캐싱 자체 스킵
 
-            // 적 root + 자식의 모든 SpriteRenderer 중 main body 후보 선택.
-            // shadow / vfx / effect / status / iceblock 등 보조 sprite 는 이름으로 제외.
-            // 그 후 가장 큰 bounds 의 SpriteRenderer 가 본체일 확률 ↑.
-            SpriteRenderer[] candidates = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+            // 1순위: Animator 가 붙은 GameObject 의 SpriteRenderer.
+            // "애니메이션이 구동되는 sprite = 본체" 라는 의도가 명확히 드러나며,
+            // 휴리스틱(이름 블랙리스트 + bounds 비교) 보다 안정적.
+            // 프로젝트 컨벤션상 Animator + 본체 SpriteRenderer 가 같은 GO 에 붙음
+            // (e.g. OrcModel, BerthaSprite).
+            Animator animator = GetComponentInChildren<Animator>(includeInactive: true);
             SpriteRenderer best = null;
-            float bestArea = 0f;
-
-            foreach (SpriteRenderer sr in candidates)
+            if (animator != null)
             {
-                if (sr == null || sr.sprite == null) continue;
-                string n = sr.gameObject.name;
-                if (n.IndexOf("shadow", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
-                if (n.IndexOf("vfx", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
-                if (n.IndexOf("effect", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
-                if (n.IndexOf("status", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
-                if (n.IndexOf("iceblock", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                best = animator.GetComponent<SpriteRenderer>();
+                if (best == null)
+                    best = animator.GetComponentInChildren<SpriteRenderer>(includeInactive: true);
+            }
 
-                Bounds b = sr.bounds;
-                float area = b.size.x * b.size.y;
-                if (area > bestArea)
+            // 2순위 fallback: Animator 컨벤션을 따르지 않는 prefab 대비.
+            // 기존 로직 — 이름으로 보조 sprite 제외 후 bounds 가장 큰 것 선택.
+            if (best == null)
+            {
+                SpriteRenderer[] candidates = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+                float bestArea = 0f;
+
+                foreach (SpriteRenderer sr in candidates)
                 {
-                    bestArea = area;
-                    best = sr;
+                    if (sr == null || sr.sprite == null) continue;
+                    string n = sr.gameObject.name;
+                    if (n.IndexOf("shadow", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                    if (n.IndexOf("vfx", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                    if (n.IndexOf("effect", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                    if (n.IndexOf("status", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                    if (n.IndexOf("iceblock", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+
+                    Bounds b = sr.bounds;
+                    float area = b.size.x * b.size.y;
+                    if (area > bestArea)
+                    {
+                        bestArea = area;
+                        best = sr;
+                    }
                 }
             }
 
@@ -338,7 +374,7 @@ namespace LostMemory.Enemies
             }
             else
             {
-                Debug.LogWarning($"[EnemyStatusEffect] tint 적용할 SpriteRenderer 0개 (shadow/vfx/effect 제외 후) host={gameObject.name}");
+                Debug.LogWarning($"[EnemyStatusEffect] tint 적용할 SpriteRenderer 0개 (Animator 기반 + fallback 모두 실패) host={gameObject.name}");
             }
         }
 

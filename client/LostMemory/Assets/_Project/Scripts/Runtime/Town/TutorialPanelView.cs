@@ -77,5 +77,19 @@ namespace LostMemory.Town
             if (_nextButtonLabel != null)
                 _nextButtonLabel.text = isLast ? _completeLabel : _nextLabel;
         }
+
+        /// <summary>
+        /// 이벤트 기반 튜토리얼 (던전) 에서 사용. 다음/이전 버튼을 통째로 숨기고 이벤트로만 페이지를 넘긴다.
+        /// 마을 튜토리얼은 호출 안 함 → 기본 visible 상태 유지.
+        /// </summary>
+        public void SetNextButtonVisible(bool visible)
+        {
+            if (_nextButton != null) _nextButton.gameObject.SetActive(visible);
+        }
+
+        public void SetPrevButtonVisible(bool visible)
+        {
+            if (_prevButton != null) _prevButton.gameObject.SetActive(visible);
+        }
     }
 }

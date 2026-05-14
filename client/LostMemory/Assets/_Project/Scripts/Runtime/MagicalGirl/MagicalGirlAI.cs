@@ -13,7 +13,7 @@ namespace LostMemory.MagicalGirl
     /// SetVisual 이 catalog 에서 entry 조회하여 sprite + 공격 파라미터 결정.
     /// Update 에서 attackInterval 마다 가장 가까운 적(Character.AI) 검색 → catalog.kind 분기:
     ///   Projectile → 발사체 prefab Instantiate + Init
-    ///   AOEFollow / AOEStationary → AOE prefab Instantiate + Init
+    ///   AOEAtTarget / AOEStationary → AOE prefab Instantiate + Init
     /// catalog 미설정/entry 없음 시 fallback = CL-144 즉시 데미지 (placeholder).
     ///
     /// 무적: Health 컴포넌트 없음. 적 공격에 영향 X.
@@ -163,7 +163,7 @@ namespace LostMemory.MagicalGirl
                     case MagicalGirlAttackCatalog.AttackKind.Projectile:
                         SpawnProjectile(entry, damage, toTargetDir);
                         break;
-                    case MagicalGirlAttackCatalog.AttackKind.AOEFollow:
+                    case MagicalGirlAttackCatalog.AttackKind.AOEAtTarget:
                     case MagicalGirlAttackCatalog.AttackKind.AOEStationary:
                         SpawnAOE(entry, damage, toTargetDir);
                         break;
@@ -191,7 +191,7 @@ namespace LostMemory.MagicalGirl
         private void SpawnAOE(MagicalGirlAttackCatalog.Entry entry, float damage, Vector2 dir)
         {
             if (entry.vfxPrefab == null) return;
-            // AOEStationary: 미소녀 전방 일정 거리 spawn. AOEFollow: 미소녀 위치 spawn (Init 에서 적 추적).
+            // AOEStationary: 미소녀 전방 일정 거리 spawn. AOEAtTarget: 미소녀 위치 spawn 후 Init 에서 적 위치로 1회 snap.
             Vector3 spawnPos = transform.position;
             if (entry.kind == MagicalGirlAttackCatalog.AttackKind.AOEStationary)
             {

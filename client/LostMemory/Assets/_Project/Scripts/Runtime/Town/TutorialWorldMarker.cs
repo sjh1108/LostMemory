@@ -31,6 +31,7 @@ namespace LostMemory.Town
 
         private Transform _player;
         private Vector3 _targetWorld;
+        private Transform _targetTransform;
         private bool _hasTarget;
         private float _phase;
         private SpriteRenderer _spriteRenderer;
@@ -50,14 +51,48 @@ namespace LostMemory.Town
         public void SetTarget(Vector3 worldTarget)
         {
             _targetWorld = worldTarget;
+            _targetTransform = null;
             _hasTarget = true;
             _phase = 0f;
             if (_spriteRenderer != null) _spriteRenderer.enabled = true;
         }
 
+        /// <summary>
+        /// 던전용: 매 프레임 target.position 을 추적. 적/포탈/출구처럼 위치가 바뀌거나 즉시 알 수 없는 대상에 사용.
+        /// target == null 이면 ClearTarget 과 동일 동작.
+        /// </summary>
+        public void SetTargetTransform(Transform target)
+        {
+            _targetTransform = target;
+            _hasTarget = target != null;
+            _phase = 0f;
+            if (_spriteRenderer != null) _spriteRenderer.enabled = _hasTarget;
+        }
+
+        /// <summary>마커를 숨기고 추적 해제. None 모드용.</summary>
+        public void ClearTarget()
+        {
+            _targetTransform = null;
+            _hasTarget = false;
+            if (_spriteRenderer != null) _spriteRenderer.enabled = false;
+        }
+
         private void LateUpdate()
         {
             if (_player == null || !_hasTarget) return;
+
+            // 동적 Transform 추적 모드면 매 프레임 위치 갱신. target 이 사라지면 마커도 끔.
+            if (_targetTransform != null)
+            {
+                _targetWorld = _targetTransform.position;
+            }
+            else if (object.ReferenceEquals(_targetTransform, null) == false)
+            {
+                // Unity-null (Destroy 된 Transform) — _hasTarget 해제하고 숨김.
+                _hasTarget = false;
+                if (_spriteRenderer != null) _spriteRenderer.enabled = false;
+                return;
+            }
 
             Vector3 playerPos = _player.position;
             Vector3 toTarget = _targetWorld - playerPos;

@@ -17,7 +17,7 @@ namespace LostMemory.MagicalGirl
         public enum AttackKind
         {
             Projectile,         // 1·3·5 — 직선 발사체, OnTriggerEnter 데미지 1회
-            AOEFollow,          // 2 — 가장 가까운 적에 부착, 지속 tick 데미지
+            AOEAtTarget,        // 2 — spawn 시점 가장 가까운 적 위치에 1회 snap 후 정지, 지속 tick 데미지 (적이 빠져나가면 회피 가능)
             AOEStationary,      // 4 — 미소녀 전방 정지 spawn, 지속 tick 데미지 + 끌어당김
         }
 

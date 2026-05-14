@@ -38,6 +38,25 @@ namespace LostMemory.UI.Minimap
             }
         }
 
+        /// <summary>
+        /// scene load (또는 동적 스폰) 시 1회 — 자신의 bounds 를 회색(unvisitedRoomAlpha) 으로 pre-fill.
+        /// MinimapFog.OnEnable() → ResetMask() 가 Start 보다 먼저 실행되므로 안전 (Awake/OnEnable → Start).
+        /// 이미 trigger 로 reveal 된 방은 _revealed=true 라 스킵. RevealBounds 의 min-alpha-write 가
+        /// 이미 더 밝아진 픽셀을 덮어쓰지 않으므로 race-free.
+        /// </summary>
+        private void Start()
+        {
+            if (_revealed) return;
+
+            MinimapFog targetFog = ResolveFog();
+            if (targetFog == null || boundsSource == null) return;
+
+            byte gray = targetFog.UnvisitedRoomAlpha;
+            if (gray >= 255) return;  // 255 = 비활성 (기존 2단계 동작으로 fallback)
+
+            targetFog.RevealBounds(boundsSource.bounds, gray);
+        }
+
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (_revealed) return;
