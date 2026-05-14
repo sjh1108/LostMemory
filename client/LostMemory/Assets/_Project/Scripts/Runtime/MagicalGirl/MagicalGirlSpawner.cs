@@ -199,6 +199,12 @@ namespace LostMemory.MagicalGirl
 
         public float FusionCooldownEndsAt => _ultimateCooldownEndsAt;
 
+        /// <summary>HUD presenter 폴링용. 5인 합체 + 비활성 + 쿨다운 종료 모두 충족 시 true.</summary>
+        public bool IsUltimateReady => _setBonusActive && !_ultimateActive && Time.time >= _ultimateCooldownEndsAt;
+
+        /// <summary>HUD presenter 폴링용. 5인 합체 상태 자체 (쿨다운/발동 무관).</summary>
+        public bool IsSetBonusActive => _setBonusActive;
+
         private const int MaxGirls = 5;
 
         private void OnEnable()

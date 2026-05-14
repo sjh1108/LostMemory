@@ -76,6 +76,12 @@ namespace LostMemory.Relics
         public BuildSetData GetSetForTag(RelicTag tag) =>
             _setByTag.TryGetValue(tag, out BuildSetData set) ? set : null;
 
+        /// <summary>
+        /// Inspector 에서 등록된 BuildSetData 배열 (등록 순서 유지). null/중복은 호출 측에서 거르기.
+        /// SetEffectPanelView 가 안정 정렬의 3차 키로 사용.
+        /// </summary>
+        public IReadOnlyList<BuildSetData> RegisteredSetsInOrder => _setDatabase;
+
         private void Awake()
         {
             if (_setDatabase == null || _setDatabase.Length == 0)

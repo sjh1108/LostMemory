@@ -3274,6 +3274,8 @@ MonoBehaviour:
   panel: {fileID: 2140735524}
   playerRelicInventory: {fileID: 2006321053}
   goldWallet: {fileID: 211016932}
+  setEffectPanel: {fileID: 2144531527}
+  buildManager: {fileID: 1683277796}
   shopController: {fileID: 0}
   rewardController: {fileID: 211016931}
   toggleKey: 105
@@ -5680,6 +5682,7 @@ RectTransform:
   - {fileID: 1603998372}
   - {fileID: 2140735523}
   - {fileID: 1221861836}
+  - {fileID: 2144531526}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -6621,6 +6624,147 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31ca8cc7c90364d448150f8e3e03cdca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.InventoryPanelView
+--- !u!1001 &2144531525
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1992835323}
+    m_Modifications:
+    - target: {fileID: 1100000000000000010, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_Name
+      value: SetEffectPanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 360
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 520
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 780
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -46
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5500000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8, type: 3}
+--- !u!224 &2144531526 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1100000000000000011, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+    type: 3}
+  m_PrefabInstance: {fileID: 2144531525}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2144531527 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1100000000000000014, guid: 7c1d4e8a9f2b4f64a8c91234d5e6b7a8,
+    type: 3}
+  m_PrefabInstance: {fileID: 2144531525}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7e2f9d27b8efef4e9688b546527dc76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.SetEffectPanelView
 --- !u!1001 &2147368425
 PrefabInstance:
   m_ObjectHideFlags: 0
