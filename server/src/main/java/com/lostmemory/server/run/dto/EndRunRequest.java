@@ -1,5 +1,6 @@
 package com.lostmemory.server.run.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -13,8 +14,18 @@ import jakarta.validation.constraints.NotNull;
  *   chapterReached > 0 → clear, 0 → death. surrender 는 추후 신호 들어오면 분기 추가.
  */
 public record EndRunRequest(
+        @Schema(description = "플레이 타임 초 (Unity Time.time 누적)", example = "1234",
+                requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull @Min(0) Integer durationSeconds,
+
+        @Schema(description = "도달 챕터 = BossKillCount (0=사망, 1+=클리어. 1챕터당 1보스)",
+                example = "1",
+                requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull @Min(0) Integer chapterReached,
+
+        @Schema(description = "획득 파편 총량 — 모든 멤버에게 동일 양 적립",
+                example = "25",
+                requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull @Min(0) Integer memoryShardsEarned
 ) {
 }
