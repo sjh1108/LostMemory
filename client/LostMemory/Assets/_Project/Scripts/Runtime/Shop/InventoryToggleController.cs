@@ -18,6 +18,10 @@ namespace LostMemory.Shop
         [SerializeField] private PlayerRelicInventory playerRelicInventory;
         [Tooltip("골드 표시용. null 이어도 동작 (gold=0 으로 고정 표시).")]
         [SerializeField] private GoldWallet goldWallet;
+        [Tooltip("인벤토리 패널 옆에 띄울 세트효과 패널. null 이면 표시 생략 (단독 테스트 씬 호환).")]
+        [SerializeField] private SetEffectPanelView setEffectPanel;
+        [Tooltip("setEffectPanel 데이터 소스. setEffectPanel 이 할당돼 있으면 함께 채워야 함.")]
+        [SerializeField] private BuildManager buildManager;
         [Tooltip("CL-115 C: Shop 열림 중 I/ESC 입력을 무시하기 위한 우선 가드. null 이면 가드 없음 (단독 인벤토리 테스트 씬 호환).")]
         [SerializeField] private ShopController shopController;
         [Tooltip("CL-115: 보상 패널 떠있는 중 I/ESC 입력을 무시하기 위한 가드. RewardController.ShowReward 가 진입 시 본 패널을 강제 Close 도 함. null 이면 가드 없음.")]
@@ -37,9 +41,10 @@ namespace LostMemory.Shop
 
         private void Awake()
         {
-            if (panel != null && startHidden)
+            if (startHidden)
             {
-                panel.gameObject.SetActive(false);
+                if (panel != null)          panel.gameObject.SetActive(false);
+                if (setEffectPanel != null) setEffectPanel.gameObject.SetActive(false);
             }
         }
 
@@ -78,13 +83,27 @@ namespace LostMemory.Shop
             int gold = goldWallet != null ? goldWallet.Current : 0;
             panel.gameObject.SetActive(true);
             panel.Init(playerRelicInventory, gold);
+
+            if (setEffectPanel != null)
+            {
+                setEffectPanel.gameObject.SetActive(true);
+                if (buildManager != null)
+                {
+                    setEffectPanel.Init(buildManager);
+                }
+                else
+                {
+                    Debug.LogWarning("[InventoryToggleController] setEffectPanel 은 할당됐는데 buildManager 가 null — 세트효과 패널이 비어 보일 수 있음.", this);
+                }
+            }
+
             if (logToggle) Debug.Log($"[InventoryToggleController] Opened. gold={gold}");
         }
 
         public void Close()
         {
-            if (panel == null) return;
-            panel.gameObject.SetActive(false);
+            if (panel != null) panel.gameObject.SetActive(false);
+            if (setEffectPanel != null) setEffectPanel.gameObject.SetActive(false);
             if (logToggle) Debug.Log("[InventoryToggleController] Closed.");
         }
     }
