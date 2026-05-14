@@ -81,7 +81,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 318375492, guid: 2ba4af4ab334f43af8846f3d1cec2120, type: 3}
@@ -160,6 +160,9 @@ GameObject:
   - component: {fileID: 2233445566778899013}
   - component: {fileID: 3355731707548618052}
   - component: {fileID: 6781647779425106242}
+  - component: {fileID: 7909556904829983603}
+  - component: {fileID: 5674985872203422734}
+  - component: {fileID: 1450686822911358094}
   m_Layer: 13
   m_Name: SkeletonArcher_CL041
   m_TagString: Enemy
@@ -271,7 +274,7 @@ SortingGroup:
   m_GameObject: {fileID: 1561694053617324}
   m_Enabled: 1
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
@@ -526,7 +529,7 @@ MonoBehaviour:
   - StateName: Approach
     Actions:
       array:
-      - {fileID: 114113908976523258}
+      - {fileID: 1450686822911358094}
       - {fileID: 6726437670042269150}
     Transitions:
       array:
@@ -534,9 +537,9 @@ MonoBehaviour:
         TrueState: 
         FalseState: Reset
         LastDecisionEvaluation: 0
-      - Decision: {fileID: 3308386248995881181}
-        TrueState: Reset
-        FalseState: 
+      - Decision: {fileID: 7909556904829983603}
+        TrueState: 
+        FalseState: Reset
         LastDecisionEvaluation: 0
       - Decision: {fileID: 8095614620046919901}
         TrueState: Retreat
@@ -557,9 +560,9 @@ MonoBehaviour:
         TrueState: 
         FalseState: Reset
         LastDecisionEvaluation: 0
-      - Decision: {fileID: 3308386248995881181}
-        TrueState: Reset
-        FalseState: 
+      - Decision: {fileID: 7909556904829983603}
+        TrueState: 
+        FalseState: Reset
         LastDecisionEvaluation: 0
       - Decision: {fileID: 530997533276128623}
         TrueState: AimReady
@@ -612,9 +615,9 @@ MonoBehaviour:
         TrueState: 
         FalseState: Reset
         LastDecisionEvaluation: 0
-      - Decision: {fileID: 3308386248995881181}
-        TrueState: Reset
-        FalseState: 
+      - Decision: {fileID: 7909556904829983603}
+        TrueState: 
+        FalseState: Reset
         LastDecisionEvaluation: 0
       - Decision: {fileID: 8095614620046919901}
         TrueState: Retreat
@@ -672,7 +675,7 @@ MonoBehaviour:
   TargetLayer:
     serializedVersion: 2
     m_Bits: 1024
-  ObstacleDetection: 1
+  ObstacleDetection: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 256
@@ -1268,7 +1271,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eedf76f9244641409015a89f1699941a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.SkeletonArcherSfxRelay
   brain: {fileID: 114675271368606418}
   bowPullStateName: AimReady
@@ -1280,6 +1283,96 @@ MonoBehaviour:
   minPitch: 1
   maxPitch: 1
   fallbackWithoutSoundManager: 1
+--- !u!114 &7909556904829983603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2cd45bcc4a8e4d808c42a0214485eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIDecisionCurrentTargetIsValid
+  Label: Runtime Keep Current Target
+--- !u!114 &5674985872203422734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cc7d4427faed46eebde75f0b4a89def, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIActionCombatApproach2D
+  InitializationMode: 0
+  Label: Runtime Skeleton Archer Combat Approach
+  characterMovement: {fileID: 114809083901408364}
+  bodyCollider: {fileID: 61875899894898256}
+  preferredDistance: 5.35
+  distanceTolerance: 0.25
+  emergencyRetreatDistance: 3.15
+  approachWeight: 1
+  strafeWeight: 0.25
+  strafeWhileApproaching: 1
+  randomizeInitialStrafeDirection: 1
+  strafeSwitchInterval: 1.25
+  strafeSwitchChance: 0.35
+  targetPredictionTime: 0.15
+  useObstacleAvoidance: 1
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 256
+  useBodyColliderClearance: 1
+  obstacleClearancePadding: 0.05
+  obstacleProbeRadius: 0.18
+  obstacleProbeDistance: 0.6
+  obstacleSweepAngle: 140
+  obstacleSweepSteps: 9
+  wallFollowDuration: 0.65
+  wallFollowTargetBias: 0.25
+  useStuckRecovery: 1
+  stuckCheckInterval: 0.35
+  stuckMinimumProgress: 0.04
+  stuckRecoveryDuration: 0.45
+  stuckRecoveryStrafeBias: 0.7
+--- !u!114 &1450686822911358094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed32edf194a69482196d39bcbae18f9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIActionPathfindToCombatRange2D
+  InitializationMode: 0
+  Label: Runtime Skeleton Archer Pathfind To Combat Range
+  characterMovement: {fileID: 114809083901408364}
+  combatApproach: {fileID: 5674985872203422734}
+  bodyCollider: {fileID: 61875899894898256}
+  preferredDistance: 5.35
+  distanceTolerance: 0.25
+  combatApproachDistance: 5.95
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 256
+  cellSize: 0.35
+  waypointReachedDistance: 0.2
+  repathInterval: 0.35
+  targetRepathDistance: 0.45
+  maxVisitedNodes: 700
+  maxPathDistance: 12
+  goalSearchRings: 4
+  allowDiagonalMovement: 1
+  useBodyColliderClearance: 1
+  obstacleClearancePadding: 0.08
+  fallbackClearanceRadius: 0.25
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
@@ -6161,7 +6254,7 @@ ParticleSystemRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_RenderMode: 0

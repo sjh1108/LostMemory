@@ -81,7 +81,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7486841587508994263, guid: 47173e5e8a0af764eb94a7a78e60a9a3,
@@ -151,6 +151,9 @@ GameObject:
   - component: {fileID: 5088777435156499506}
   - component: {fileID: 1780141686214286046}
   - component: {fileID: 7735799053717021953}
+  - component: {fileID: 1584939113666801430}
+  - component: {fileID: 5135858870438520978}
+  - component: {fileID: 7365274999224186521}
   m_Layer: 13
   m_Name: Chobomb_CL212
   m_TagString: Enemy
@@ -261,7 +264,7 @@ SortingGroup:
   m_GameObject: {fileID: 1561694053617324}
   m_Enabled: 1
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
@@ -516,11 +519,11 @@ MonoBehaviour:
   - StateName: Moving
     Actions:
       array:
-      - {fileID: 114113908976523258}
+      - {fileID: 7365274999224186521}
       - {fileID: 8925453758035170687}
     Transitions:
       array:
-      - Decision: {fileID: 114975266224184248}
+      - Decision: {fileID: 1584939113666801430}
         TrueState: 
         FalseState: Detecting
         LastDecisionEvaluation: 0
@@ -577,7 +580,7 @@ MonoBehaviour:
   TargetLayer:
     serializedVersion: 2
     m_Bits: 1024
-  ObstacleDetection: 1
+  ObstacleDetection: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 256
@@ -1038,6 +1041,96 @@ MonoBehaviour:
   iconScale: 1
   rotateWithTransform: 0
   priority: 0
+--- !u!114 &1584939113666801430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2cd45bcc4a8e4d808c42a0214485eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIDecisionCurrentTargetIsValid
+  Label: Runtime Keep Current Target
+--- !u!114 &5135858870438520978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cc7d4427faed46eebde75f0b4a89def, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIActionCombatApproach2D
+  InitializationMode: 0
+  Label: Runtime Chobomb Combat Approach
+  characterMovement: {fileID: 114809083901408364}
+  bodyCollider: {fileID: 61875899894898256}
+  preferredDistance: 1
+  distanceTolerance: 0.12
+  emergencyRetreatDistance: 0.45
+  approachWeight: 1
+  strafeWeight: 0.2
+  strafeWhileApproaching: 1
+  randomizeInitialStrafeDirection: 1
+  strafeSwitchInterval: 1.25
+  strafeSwitchChance: 0.35
+  targetPredictionTime: 0.15
+  useObstacleAvoidance: 1
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 256
+  useBodyColliderClearance: 1
+  obstacleClearancePadding: 0.05
+  obstacleProbeRadius: 0.18
+  obstacleProbeDistance: 0.6
+  obstacleSweepAngle: 140
+  obstacleSweepSteps: 9
+  wallFollowDuration: 0.65
+  wallFollowTargetBias: 0.25
+  useStuckRecovery: 1
+  stuckCheckInterval: 0.35
+  stuckMinimumProgress: 0.04
+  stuckRecoveryDuration: 0.45
+  stuckRecoveryStrafeBias: 0.7
+--- !u!114 &7365274999224186521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed32edf194a69482196d39bcbae18f9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIActionPathfindToCombatRange2D
+  InitializationMode: 0
+  Label: Runtime Chobomb Pathfind To Combat Range
+  characterMovement: {fileID: 114809083901408364}
+  combatApproach: {fileID: 5135858870438520978}
+  bodyCollider: {fileID: 61875899894898256}
+  preferredDistance: 1
+  distanceTolerance: 0.12
+  combatApproachDistance: 1.47
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 256
+  cellSize: 0.35
+  waypointReachedDistance: 0.2
+  repathInterval: 0.35
+  targetRepathDistance: 0.45
+  maxVisitedNodes: 700
+  maxPathDistance: 12
+  goalSearchRings: 4
+  allowDiagonalMovement: 1
+  useBodyColliderClearance: 1
+  obstacleClearancePadding: 0.08
+  fallbackClearanceRadius: 0.25
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
@@ -5919,7 +6012,7 @@ ParticleSystemRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_RenderMode: 0

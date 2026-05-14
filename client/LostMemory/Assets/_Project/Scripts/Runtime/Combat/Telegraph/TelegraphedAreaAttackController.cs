@@ -31,6 +31,7 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField, Min(0f)] private float telegraphHideLeadTime = 0.03f;
         [SerializeField] private bool lockMovementDuringAttackSequence = true;
         [SerializeField] private bool lockMovementDuringRecover = true;
+        [SerializeField] private bool restoreMovementForbiddenStateOnUnlock;
         [SerializeField] private Color telegraphColor = new Color(1f, 0.34f, 0.08f, 0.32f);
         [SerializeField] private AttackTelegraphShape2D attackShape = AttackTelegraphShape2D.Box;
         [SerializeField] private Vector2 attackOffset = Vector2.zero;
@@ -256,7 +257,7 @@ namespace LostMemory.Combat.Telegraph
 
             if (IsMovementLockStateName(exitingState) && !IsMovementLockStateName(enteringState))
             {
-                UpdateMovementLock();
+                ReleaseMovementLock();
             }
         }
 
@@ -465,11 +466,14 @@ namespace LostMemory.Combat.Telegraph
             if (!_movementLockedByAttack || movementAbility == null)
             {
                 _movementLockedByAttack = false;
+                _movementForbiddenBeforeLock = false;
                 return;
             }
 
-            movementAbility.MovementForbidden = _movementForbiddenBeforeLock;
+            movementAbility.MovementForbidden = restoreMovementForbiddenStateOnUnlock
+                && _movementForbiddenBeforeLock;
             _movementLockedByAttack = false;
+            _movementForbiddenBeforeLock = false;
         }
 
         private bool IsInMovementLockState()

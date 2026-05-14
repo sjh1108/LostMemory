@@ -82,7 +82,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 1813561159, guid: 8c446454e11454b8f81f515f9e8eb579, type: 3}
@@ -127,7 +127,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 69d2138ffb3b482da4de0cac3274c7b8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.AnimationEventSfxRelay
   attackSwingSfx: {fileID: 8300000, guid: d46323e22e74e46baa241cbf48c85671, type: 3}
   attackSwingVolume: 1
@@ -165,6 +165,9 @@ GameObject:
   - component: {fileID: 5375288975264428202}
   - component: {fileID: 8925453758035170687}
   - component: {fileID: 1735286849410362152}
+  - component: {fileID: 1377430451730621174}
+  - component: {fileID: 8826967814196212949}
+  - component: {fileID: 5762179205581399663}
   m_Layer: 13
   m_Name: Orc_CL037
   m_TagString: Enemy
@@ -275,7 +278,7 @@ SortingGroup:
   m_GameObject: {fileID: 1561694053617324}
   m_Enabled: 1
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
@@ -530,11 +533,11 @@ MonoBehaviour:
   - StateName: Moving
     Actions:
       array:
-      - {fileID: 114113908976523258}
+      - {fileID: 5762179205581399663}
       - {fileID: 8925453758035170687}
     Transitions:
       array:
-      - Decision: {fileID: 114975266224184248}
+      - Decision: {fileID: 1377430451730621174}
         TrueState: 
         FalseState: Detecting
         LastDecisionEvaluation: 0
@@ -591,7 +594,7 @@ MonoBehaviour:
   TargetLayer:
     serializedVersion: 2
     m_Bits: 1024
-  ObstacleDetection: 1
+  ObstacleDetection: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 256
@@ -979,6 +982,96 @@ MonoBehaviour:
   iconScale: 1
   rotateWithTransform: 0
   priority: 0
+--- !u!114 &1377430451730621174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2cd45bcc4a8e4d808c42a0214485eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIDecisionCurrentTargetIsValid
+  Label: Runtime Keep Current Target
+--- !u!114 &8826967814196212949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cc7d4427faed46eebde75f0b4a89def, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIActionCombatApproach2D
+  InitializationMode: 0
+  Label: Runtime Orc Combat Approach
+  characterMovement: {fileID: 114809083901408364}
+  bodyCollider: {fileID: 61875899894898256}
+  preferredDistance: 1
+  distanceTolerance: 0.1
+  emergencyRetreatDistance: 0.55
+  approachWeight: 1
+  strafeWeight: 0.45
+  strafeWhileApproaching: 1
+  randomizeInitialStrafeDirection: 1
+  strafeSwitchInterval: 1.25
+  strafeSwitchChance: 0.35
+  targetPredictionTime: 0.15
+  useObstacleAvoidance: 1
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 256
+  useBodyColliderClearance: 1
+  obstacleClearancePadding: 0.05
+  obstacleProbeRadius: 0.18
+  obstacleProbeDistance: 0.6
+  obstacleSweepAngle: 140
+  obstacleSweepSteps: 9
+  wallFollowDuration: 0.65
+  wallFollowTargetBias: 0.25
+  useStuckRecovery: 1
+  stuckCheckInterval: 0.35
+  stuckMinimumProgress: 0.04
+  stuckRecoveryDuration: 0.45
+  stuckRecoveryStrafeBias: 0.7
+--- !u!114 &5762179205581399663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed32edf194a69482196d39bcbae18f9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.AI.AIActionPathfindToCombatRange2D
+  InitializationMode: 0
+  Label: Runtime Orc Pathfind To Combat Range
+  characterMovement: {fileID: 114809083901408364}
+  combatApproach: {fileID: 8826967814196212949}
+  bodyCollider: {fileID: 61875899894898256}
+  preferredDistance: 1
+  distanceTolerance: 0.1
+  combatApproachDistance: 1.45
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 256
+  cellSize: 0.35
+  waypointReachedDistance: 0.2
+  repathInterval: 0.35
+  targetRepathDistance: 0.45
+  maxVisitedNodes: 700
+  maxPathDistance: 12
+  goalSearchRings: 4
+  allowDiagonalMovement: 1
+  useBodyColliderClearance: 1
+  obstacleClearancePadding: 0.08
+  fallbackClearanceRadius: 0.25
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
@@ -5860,7 +5953,7 @@ ParticleSystemRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_RenderMode: 0
