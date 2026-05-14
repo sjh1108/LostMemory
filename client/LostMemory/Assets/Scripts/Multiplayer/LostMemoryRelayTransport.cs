@@ -58,6 +58,9 @@ namespace LostMemory.Multiplayer
         [Tooltip("디버그 로그 출력 여부")]
         [SerializeField] private bool verboseLog = true;
 
+        [Tooltip("Editor 진입 시 relayHost 를 localhost 로 자동 강제. 끄면 Inspector 값 사용 (prod EC2 직접 디버깅 등).")]
+        [SerializeField] private bool editorAutoOverride = true;
+
         // ================================================================
         // 런타임 상태
         // ================================================================
@@ -132,9 +135,14 @@ namespace LostMemory.Multiplayer
         /// <summary>
         /// Editor 진입 시 dev relay (localhost) 강제. prefab 의 Inspector 값은 prod 유지하되
         /// Editor 에서만 자동 우회 — 빌드본은 Inspector 값 그대로 사용.
+        ///
+        /// `editorAutoOverride` 체크박스 끄면 우회 skip — Editor 에서 prod EC2 향해 직접 디버깅
+        /// (prod relay 패킷 캡쳐, prod 백엔드 연동 테스트 등) 가능.
         /// </summary>
         private void Awake()
         {
+            if (!editorAutoOverride) return;
+
             const string editorRelayHost = "localhost";
             if (relayHost != editorRelayHost)
             {

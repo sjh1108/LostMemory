@@ -64,10 +64,15 @@ namespace LostMemory.Networking.Session
 
             string joinCode = GenerateJoinCode(6);
 
+            // outer catch 에서도 접근 가능하도록 try 블록 밖에 선언 —
+            // CreateSessionAsync 직후 ~ ActiveSessionId 설정 직전 사이에 예외 발생 시
+            // 백엔드 sessions row 가 잔존하지 않도록 rollback 호출에 필요.
+            SessionApiClient.SessionResponseData data = null;
+
             try
             {
                 NetLog.Info("Host", $"Creating session via backend (max={maxPlayers}, code={joinCode})...");
-                var data = await SessionApiClient.CreateSessionAsync(maxPlayers, joinCode);
+                data = await SessionApiClient.CreateSessionAsync(maxPlayers, joinCode);
                 if (data == null)
                 {
                     var kind = SessionErrorKind.RelayAllocateFailed;
@@ -110,6 +115,17 @@ namespace LostMemory.Networking.Session
             catch (Exception ex)
             {
                 NetLog.Error("Host", $"CreateAsync 실패: {ex.Message}");
+
+                // 백엔드 sessions row 잔존 방지 — CreateSessionAsync 성공해서 row 가 생긴 상태에서
+                // transport setup / StartHost / 핸들러 wiring 중 예외 (NetworkManager null 화,
+                // OnClientStopped += handler throw, RaiseJoined subscriber 예외 등) 가 터지면
+                // ActiveSessionId 가 안 잡힌 채로 row 만 살아남아 다음 시도가
+                // USER_ALREADY_IN_SESSION 가드에 막힘. !IsInSession 가드로 정상 join 후 흐름과 구분.
+                if (data != null && data.sessionId > 0 && !RelaySession.IsInSession)
+                {
+                    await TryRollbackSessionAsync(data.sessionId);
+                }
+
                 SessionErrorKind kind = SessionErrorPolicy.Classify(ex);
                 if (kind == SessionErrorKind.Unknown) kind = SessionErrorKind.RelayAllocateFailed;
                 RelaySession.RaiseFailed(kind, ex.Message);
