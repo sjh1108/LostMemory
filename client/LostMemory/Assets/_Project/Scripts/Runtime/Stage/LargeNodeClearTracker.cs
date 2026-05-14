@@ -23,6 +23,7 @@ namespace LostMemory.Stage
         [SerializeField] private bool includeInactiveControllers = true;
         [SerializeField] private bool autoDiscoverOnEnable = true;
         [SerializeField] private bool unlockIfNoRequiredRooms;
+        [SerializeField] private bool allowExitDuringActiveCombat = true;
         [SerializeField] private bool debugLogging;
 
         private readonly Dictionary<RoomEntryRuntimeController, Action<RoomClearedPayload>> roomClearedHandlers =
@@ -183,8 +184,16 @@ namespace LostMemory.Stage
 
             if (activeCombatControllers.Add(controller))
             {
-                LockExits();
-                Log($"Combat started '{payload.RoomId}'. Exit trigger(s) locked. active={activeCombatControllers.Count}");
+                if (allowExitDuringActiveCombat)
+                {
+                    UnlockExits();
+                    Log($"Combat started '{payload.RoomId}'. Exit trigger(s) kept unlocked. active={activeCombatControllers.Count}");
+                }
+                else
+                {
+                    LockExits();
+                    Log($"Combat started '{payload.RoomId}'. Exit trigger(s) locked. active={activeCombatControllers.Count}");
+                }
             }
         }
 
@@ -200,7 +209,7 @@ namespace LostMemory.Stage
                 activeCombatControllers.Remove(controller);
                 Log($"Combat ended '{payload.RoomId}'. active={activeCombatControllers.Count}");
 
-                if (activeCombatControllers.Count == 0)
+                if (allowExitDuringActiveCombat || activeCombatControllers.Count == 0)
                 {
                     UnlockExits();
                 }

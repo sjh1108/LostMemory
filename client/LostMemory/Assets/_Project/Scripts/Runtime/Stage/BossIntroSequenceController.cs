@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using LostMemory.Combat;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -17,6 +18,10 @@ namespace LostMemory.Stage
         [SerializeField, Min(0)] private int entryStateLayer;
         [SerializeField] private GameObject[] introVisibilityTargets = System.Array.Empty<GameObject>();
         [SerializeField] private GameObject dialoguePlayerOwner;
+        [SerializeField] private Health bossHealth;
+        [SerializeField] private bool makeBossInvulnerableDuringIntro = true;
+        [SerializeField] private CombatTargetable bossTargetable;
+        [SerializeField] private bool makeBossUntargetableDuringIntro = true;
         [SerializeField] private bool debugLogging;
 
         private Coroutine _introRoutine;
@@ -24,6 +29,10 @@ namespace LostMemory.Stage
         private Character[] _cachedPlayers = System.Array.Empty<Character>();
         private BossRoomTransitionCompletedContext _currentContext;
         private bool _isIntroRunning;
+        private bool _introInvulnerabilityApplied;
+        private bool _bossWasInvulnerable;
+        private bool _introTargetabilityApplied;
+        private bool _bossWasTargetable;
 
         public event Action<BossRoomTransitionCompletedContext> IntroStarted;
         public event Action<BossRoomTransitionCompletedContext> IntroCompleted;
@@ -35,6 +44,8 @@ namespace LostMemory.Stage
         private void Reset()
         {
             bossAnimator = ResolveBossAnimator();
+            bossHealth = ResolveBossHealth();
+            bossTargetable = ResolveBossTargetable(createIfMissing: false);
             AutoAssignVisibilityTargets();
             dialoguePlayerOwner = gameObject;
         }
@@ -42,6 +53,8 @@ namespace LostMemory.Stage
         private void OnEnable()
         {
             bossAnimator ??= ResolveBossAnimator();
+            bossHealth ??= ResolveBossHealth();
+            bossTargetable ??= ResolveBossTargetable(createIfMissing: false);
             AutoAssignVisibilityTargets();
 
             if (!_isIntroRunning && sequenceData != null && sequenceData.HideBossBeforeEntry)
@@ -73,6 +86,8 @@ namespace LostMemory.Stage
         private IEnumerator RunIntroSequence(BossRoomTransitionCompletedContext context)
         {
             _isIntroRunning = true;
+            ApplyIntroInvulnerability();
+            ApplyIntroTargetability();
             IntroStarted?.Invoke(context);
             Log("Boss intro sequence started.");
 
@@ -252,6 +267,8 @@ namespace LostMemory.Stage
                 UnfreezeCachedPlayers();
             }
 
+            RestoreIntroInvulnerability();
+            RestoreIntroTargetability();
             _introRoutine = null;
             _isIntroRunning = false;
             IntroCompleted?.Invoke(context);
@@ -274,6 +291,8 @@ namespace LostMemory.Stage
 
             if (!_isIntroRunning)
             {
+                RestoreIntroInvulnerability();
+                RestoreIntroTargetability();
                 return;
             }
 
@@ -283,8 +302,78 @@ namespace LostMemory.Stage
             }
 
             SetIntroVisibility(isVisible: true);
+            RestoreIntroInvulnerability();
+            RestoreIntroTargetability();
             _isIntroRunning = false;
             Log("Boss intro sequence stopped.");
+        }
+
+        private void ApplyIntroInvulnerability()
+        {
+            if (!makeBossInvulnerableDuringIntro || _introInvulnerabilityApplied)
+            {
+                return;
+            }
+
+            bossHealth ??= ResolveBossHealth();
+            if (bossHealth == null)
+            {
+                Log("Boss Health is missing. Intro invulnerability was not applied.");
+                return;
+            }
+
+            _bossWasInvulnerable = bossHealth.Invulnerable;
+            bossHealth.Invulnerable = true;
+            _introInvulnerabilityApplied = true;
+        }
+
+        private void RestoreIntroInvulnerability()
+        {
+            if (!_introInvulnerabilityApplied)
+            {
+                return;
+            }
+
+            if (bossHealth != null)
+            {
+                bossHealth.Invulnerable = _bossWasInvulnerable;
+            }
+
+            _introInvulnerabilityApplied = false;
+        }
+
+        private void ApplyIntroTargetability()
+        {
+            if (!makeBossUntargetableDuringIntro || _introTargetabilityApplied)
+            {
+                return;
+            }
+
+            bossTargetable ??= ResolveBossTargetable(createIfMissing: true);
+            if (bossTargetable == null)
+            {
+                Log("Boss CombatTargetable is missing. Intro targetability was not changed.");
+                return;
+            }
+
+            _bossWasTargetable = bossTargetable.IsTargetable;
+            bossTargetable.IsTargetable = false;
+            _introTargetabilityApplied = true;
+        }
+
+        private void RestoreIntroTargetability()
+        {
+            if (!_introTargetabilityApplied)
+            {
+                return;
+            }
+
+            if (bossTargetable != null)
+            {
+                bossTargetable.IsTargetable = _bossWasTargetable;
+            }
+
+            _introTargetabilityApplied = false;
         }
 
         private void AutoAssignVisibilityTargets()
@@ -330,6 +419,61 @@ namespace LostMemory.Stage
             }
 
             return GetComponentInChildren<Animator>(includeInactive: true);
+        }
+
+        private Health ResolveBossHealth()
+        {
+            Health health = GetComponent<Health>();
+            if (health != null)
+            {
+                return health;
+            }
+
+            if (bossAnimator != null)
+            {
+                health = bossAnimator.GetComponentInParent<Health>();
+                if (health != null)
+                {
+                    return health;
+                }
+            }
+
+            return GetComponentInChildren<Health>(includeInactive: true);
+        }
+
+        private CombatTargetable ResolveBossTargetable(bool createIfMissing)
+        {
+            CombatTargetable targetable = GetComponent<CombatTargetable>();
+            if (targetable != null)
+            {
+                return targetable;
+            }
+
+            if (bossHealth != null)
+            {
+                targetable = bossHealth.GetComponentInParent<CombatTargetable>();
+                if (targetable != null)
+                {
+                    return targetable;
+                }
+            }
+
+            if (bossAnimator != null)
+            {
+                targetable = bossAnimator.GetComponentInParent<CombatTargetable>();
+                if (targetable != null)
+                {
+                    return targetable;
+                }
+            }
+
+            targetable = GetComponentInChildren<CombatTargetable>(includeInactive: true);
+            if (targetable != null || !createIfMissing || !Application.isPlaying)
+            {
+                return targetable;
+            }
+
+            return gameObject.AddComponent<CombatTargetable>();
         }
 
         private void SetIntroVisibility(bool isVisible)
