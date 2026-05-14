@@ -27,17 +27,30 @@ MonoBehaviour:
   encounter:
     waves:
     - label: Wave 1
-      startDelay: 0
-      triggerNextWaveDeathRatio: 0.5
+      startDelay: 1
+      triggerNextWaveDeathRatio: 0.6
       enemies:
       - enemyId: enemy_orc
         count: 2
-        spawnGroupFilter: orc
+        spawnGroupFilter: orc1
       - enemyId: enemy_skeletonarcher
-        count: 1
-        spawnGroupFilter: skeletonarcher
+        count: 2
+        spawnGroupFilter: skeletonarcher1
       - enemyId: enemy_chobomb
         count: 1
-        spawnGroupFilter: chobomb
+        spawnGroupFilter: chobomb1
+    - label: Wave 2
+      startDelay: 300
+      triggerNextWaveDeathRatio: 0.5
+      enemies:
+      - enemyId: enemy_orc
+        count: 1
+        spawnGroupFilter: orc2
+      - enemyId: enemy_skeletonarcher
+        count: 1
+        spawnGroupFilter: skeletonarcher2
+      - enemyId: enemy_chobomb
+        count: 1
+        spawnGroupFilter: chobomb2
   clearCondition: 0
   exits: []
