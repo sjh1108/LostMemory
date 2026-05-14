@@ -20,8 +20,16 @@ namespace LostMemory.Networking.Session
     /// </summary>
     public static class SessionApiClient
     {
-        /// <summary>백엔드 베이스 URL. dev: localhost, prod: k14c201.p.ssafy.io</summary>
+        /// <summary>
+        /// 백엔드 베이스 URL.
+        /// Editor (Play 모드 포함) → dev (localhost:8080), Build → prod (k14c201.p.ssafy.io).
+        /// 런타임에 강제로 다른 URL 쓰려면 외부에서 직접 대입 가능 (정적 필드).
+        /// </summary>
+#if UNITY_EDITOR
         public static string BaseUrl = "http://localhost:8080/api";
+#else
+        public static string BaseUrl = "https://k14c201.p.ssafy.io/api";
+#endif
 
         private static readonly HttpClient http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
 

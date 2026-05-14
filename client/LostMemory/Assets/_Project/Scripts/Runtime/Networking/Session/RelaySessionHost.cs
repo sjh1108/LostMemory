@@ -64,10 +64,15 @@ namespace LostMemory.Networking.Session
 
             string joinCode = GenerateJoinCode(6);
 
+            // outer catch 에서도 접근 가능하도록 try 블록 밖에 선언 —
+            // CreateSessionAsync 직후 ~ ActiveSessionId 설정 직전 사이에 예외 발생 시
+            // 백엔드 sessions row 가 잔존하지 않도록 rollback 호출에 필요.
+            SessionApiClient.SessionResponseData data = null;
+
             try
             {
                 NetLog.Info("Host", $"Creating session via backend (max={maxPlayers}, code={joinCode})...");
-                var data = await SessionApiClient.CreateSessionAsync(maxPlayers, joinCode);
+                data = await SessionApiClient.CreateSessionAsync(maxPlayers, joinCode);
                 if (data == null)
                 {
                     var kind = SessionErrorKind.RelayAllocateFailed;
@@ -81,6 +86,8 @@ namespace LostMemory.Networking.Session
                 var transport = NetworkManager.Singleton.GetComponent<LostMemoryRelayTransport>();
                 if (transport == null)
                 {
+                    // 백엔드 sessions row rollback — UDP transport 자체가 없으니 호스트 시작 불가
+                    await TryRollbackSessionAsync(data.sessionId);
                     return CreateResult.Fail(SessionErrorKind.TransportStartFailed,
                         "LostMemoryRelayTransport 컴포넌트가 NetworkManager 에 부착돼있지 않음");
                 }
@@ -90,6 +97,9 @@ namespace LostMemory.Networking.Session
                 bool started = NetworkManager.Singleton.StartHost();
                 if (!started)
                 {
+                    // 백엔드 sessions row rollback — StartHost 실패 시 row 가 잔존하면 다음 시도가
+                    // USER_ALREADY_IN_SESSION 가드에 차단됨. 호스트 본인이 DELETE 호출.
+                    await TryRollbackSessionAsync(data.sessionId);
                     return CreateResult.Fail(SessionErrorKind.TransportStartFailed, "NetworkManager.StartHost() 실패");
                 }
                 NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
@@ -105,6 +115,17 @@ namespace LostMemory.Networking.Session
             catch (Exception ex)
             {
                 NetLog.Error("Host", $"CreateAsync 실패: {ex.Message}");
+
+                // 백엔드 sessions row 잔존 방지 — CreateSessionAsync 성공해서 row 가 생긴 상태에서
+                // transport setup / StartHost / 핸들러 wiring 중 예외 (NetworkManager null 화,
+                // OnClientStopped += handler throw, RaiseJoined subscriber 예외 등) 가 터지면
+                // ActiveSessionId 가 안 잡힌 채로 row 만 살아남아 다음 시도가
+                // USER_ALREADY_IN_SESSION 가드에 막힘. !IsInSession 가드로 정상 join 후 흐름과 구분.
+                if (data != null && data.sessionId > 0 && !RelaySession.IsInSession)
+                {
+                    await TryRollbackSessionAsync(data.sessionId);
+                }
+
                 SessionErrorKind kind = SessionErrorPolicy.Classify(ex);
                 if (kind == SessionErrorKind.Unknown) kind = SessionErrorKind.RelayAllocateFailed;
                 RelaySession.RaiseFailed(kind, ex.Message);
@@ -121,6 +142,24 @@ namespace LostMemory.Networking.Session
             if (!RelaySession.IsInSession) return;
             try { await RelaySession.LeaveAsync(); }
             catch (Exception ex) { NetLog.Warn("Host", $"Auto-leave threw: {ex.Message}"); }
+        }
+
+        /// <summary>
+        /// createSession 으로 만든 백엔드 sessions row 를 명시 삭제 — StartHost 실패 등으로
+        /// 클라 측 ActiveSessionId 가 set 안 됐을 때 백엔드 row 잔존을 막아 다음 시도가
+        /// USER_ALREADY_IN_SESSION 가드에 차단되지 않게 한다.
+        /// </summary>
+        private static async Task TryRollbackSessionAsync(long sessionId)
+        {
+            try
+            {
+                await SessionApiClient.DeleteSessionAsync(sessionId);
+                NetLog.Info("Host", $"Rollback OK — session id={sessionId} deleted.");
+            }
+            catch (Exception ex)
+            {
+                NetLog.Warn("Host", $"Rollback 실패 (session id={sessionId}): {ex.Message}");
+            }
         }
 
         /// <summary>O/0/1/I 같이 헷갈리는 글자 제외한 6자리 영숫자 코드.</summary>
