@@ -51,6 +51,11 @@ namespace LostMemory.Combat
         public IReadOnlyList<GameObject> SpawnedEnemies => spawnedEnemies;
         public int WaveCount => activeSpec != null ? activeSpec.Waves.Count : 0;
 
+        private void Awake()
+        {
+            EnemyCollisionPolicy.Apply();
+        }
+
         private void OnDisable()
         {
             ClearHitAnimationRecoverySubscriptions();
