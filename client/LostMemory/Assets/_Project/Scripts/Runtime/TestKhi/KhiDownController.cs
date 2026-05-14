@@ -54,6 +54,10 @@ namespace LostMemory.TestKhi
         [SerializeField, Min(0f)] private float reviveInteractionHoldDuration = 0f;
         [SerializeField, Min(0f)] private float reviveInvulnerabilityAfter = 1.5f;
 
+        [Header("Memory Revive")]
+        [SerializeField, Min(0f), Tooltip("기억 시스템 ReviveOnce 보상 — Down 진입 후 자동 부활까지의 대기 시간(초). 다운 애니메이션을 잠깐 보여준 뒤 부활 애니메이션으로 자연스럽게 전환.")]
+        private float memoryReviveDelay = 1.5f;
+
         [Header("Solo Behavior")]
         [SerializeField] private KhiDownSoloBehavior soloBehavior = KhiDownSoloBehavior.DownWithDebugRevive;
 
@@ -76,6 +80,9 @@ namespace LostMemory.TestKhi
         private bool _cachedDashPermitted;
         private bool _cachedMeleeExternalBlock;
         private bool _cachedMovementForbidden;
+
+        // 기억 시스템 ReviveOnce 보상 — 런마다 1회 자동 부활 가능. RunManager 가 던전 빌드 시 활성화.
+        private bool _memoryReviveAvailable;
 
         public event Action<float> DownEntered;
         public event Action<float> DownTimerTicked;
@@ -284,6 +291,45 @@ namespace LostMemory.TestKhi
             LogTransition($"EnterDown duration={downDuration:F2}");
             DownEntered?.Invoke(downDuration);
             DownTimerTicked?.Invoke(downDuration);
+
+            // 기억 시스템 ReviveOnce 보상 — Down 애니메이션을 잠깐 보여준 후 자동 부활.
+            // 즉시 ForceRevive 호출 시 Down 트리거 + Revive 트리거가 같은 프레임에 충돌해
+            // 애니메이터가 Down 에 멈추는 문제 회피. memoryReviveDelay 만큼 대기 후 부활.
+            if (_memoryReviveAvailable)
+            {
+                _memoryReviveAvailable = false;
+                LogTransition($"Memory ReviveOnce 예약 — {memoryReviveDelay:F2}초 후 자동 부활");
+                StartCoroutine(MemoryReviveAfterDelayCoroutine());
+            }
+        }
+
+        private IEnumerator MemoryReviveAfterDelayCoroutine()
+        {
+            // WaitForSeconds 사용 (Time.timeScale 영향) — 게임 일시정지 시 부활 대기도 함께 일시정지.
+            // downDuration 보다 짧아야 타임아웃 패배보다 먼저 발화. (default downDuration=10s, delay=1.5s)
+            yield return new WaitForSeconds(memoryReviveDelay);
+
+            // 대기 중 다른 경로로 상태가 바뀌었을 수 있음 (동료 부활 / 타임아웃 패배 등) — 다운 중일 때만 부활.
+            if (_state == KhiDownState.Down)
+            {
+                LogTransition("Memory ReviveOnce 발동 — ForceRevive");
+                ForceRevive();
+            }
+            else
+            {
+                LogTransition($"Memory ReviveOnce 취소 — state 가 이미 {_state}");
+            }
+        }
+
+        /// <summary>
+        /// 기억 시스템 ReviveOnce 보상 — 런 시작 시 RunManager 가 HasRevive 플래그에 따라 호출.
+        /// true 면 다음 다운 시 자동 부활. 1회 소비되면 false 로 리셋.
+        /// </summary>
+        public void SetMemoryReviveAvailable(bool available)
+        {
+            _memoryReviveAvailable = available;
+            if (logStateTransitions)
+                Debug.Log($"[KhiDownController] MemoryReviveAvailable = {available}", this);
         }
 
         public bool TryBeginRevive(GameObject reviver)
@@ -364,6 +410,53 @@ namespace LostMemory.TestKhi
 
             LogTransition($"CompleteRevive hp={reviveHp:F1}");
             ReviveCompleted?.Invoke(reviver);
+
+            // Fallback: Animator 상태머신에 'Revive 트리거 → Down 빠져나가는 transition' 이 누락된 경우
+            // 부활 후에도 캐릭터가 Down 애니메이션에 시각적으로 멈춰있는 버그 방지.
+            // 옵션 A (Animator 에 transition 추가) 가 작동하면 이 코루틴은 stuck 감지를 못 해 no-op.
+            if (animator != null)
+            {
+                StartCoroutine(EnsureNotStuckInDownAnimationCoroutine());
+            }
+        }
+
+        private IEnumerator EnsureNotStuckInDownAnimationCoroutine()
+        {
+            // transition 평가 시간 확보 후 fallback 발동.
+            yield return new WaitForSeconds(0.3f);
+
+            if (animator == null) yield break;
+            // 부활 후 다시 다운되었거나 패배했으면 fallback 미실행.
+            if (_state != KhiDownState.Normal) yield break;
+
+            // 무조건 강제 리셋 — Animator transition 누락 여부와 state 이름 차이에 영향받지 않음.
+            // 옵션 A (Animator 에 Revive transition 추가) 가 있으면 이미 정상 state 이고,
+            // 여기서 Rebind 해도 default state(보통 Idle) 로 자연스럽게 복귀 — 결과 동일하여 안전.
+            Debug.Log("[KhiDownController] Memory revive 후 Animator 강제 리셋 (transition 누락 fallback).", this);
+
+            // 1) Down 트리거 잔재 제거 (Animator 가 Down 진입 트리거를 다시 평가하지 않도록).
+            animator.ResetTrigger(downAnimatorTriggerName);
+
+            // 2) Hero_Animator 의 Idle/Walking Bool 분기 패턴 강제 설정.
+            //    (parameter 가 없으면 SetBool 호출은 무해히 무시됨)
+            if (HasAnimatorParameter("Idle"))      animator.SetBool("Idle", true);
+            if (HasAnimatorParameter("Walking"))   animator.SetBool("Walking", false);
+
+            // 3) Animator state 머신을 default state(보통 Idle)로 강제 복귀.
+            //    parameter 값도 default 로 리셋되지만 이동 입력이 매 프레임 다시 set 하므로 영향 없음.
+            animator.Rebind();
+            animator.Update(0f);
+        }
+
+        private bool HasAnimatorParameter(string name)
+        {
+            if (animator == null) return false;
+            var parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].name == name) return true;
+            }
+            return false;
         }
 
         public void ForceDefeat()

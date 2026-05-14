@@ -109,19 +109,19 @@ namespace LostMemory.Talents
             // 이전 런 modifier 전부 초기화 (런 재시작 안전)
             _container.RemoveBySource(this);
 
-            ApplyTalentStats();
-
             MemorySaveData save = MemoryMetaService.Load();
+            ApplyTalentStats(save);
             ApplyMemoryBoosts(save);
             ApplyMemoryRelicSlots(save);
         }
 
         // ── 재능 스탯 ────────────────────────────────────────
 
-        private void ApplyTalentStats()
+        private void ApplyTalentStats(MemorySaveData memorySave)
         {
             var saved = TalentSaveService.Load();
-            var model = new TalentModel(_talentDatas, _totalPoints, saved);
+            int effectiveTotal = _totalPoints + memorySave.BonusTalentPoints;
+            var model = new TalentModel(_talentDatas, effectiveTotal, saved);
             RunStartStats stats = TalentCalculator.Calculate(model);
 
             if (stats.CriticalRate != 0f)

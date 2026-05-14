@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Memory;
 using LostMemory.Relics;
 using LostMemory.Rewards;
 using LostMemory.Shop;
@@ -49,6 +50,11 @@ namespace LostMemory.Stage
             = new Dictionary<RoomEntryRuntimeController, System.Action<RoomClearedPayload>>();
         private RoomEntryRuntimeController _pendingController;
         private bool _isShowingReward;
+
+        // 기억 시스템 '시작 유물 +N' 용 체이닝 카운터.
+        // 던전 진입 시 RunManager 가 ShowStartingRelicReward(N) 호출 → N번 연속 보상 패널.
+        // > 0 이면 HandleRewardSelected 분기에서 OpenExits 대신 다음 패널 재호출.
+        private int _startingRelicRemaining;
 
         /// <summary>CL-115: 보상 패널 표시 중 여부. InventoryToggleController 가 I 키 가드에 사용.</summary>
         public bool IsShowing => _isShowingReward;
@@ -194,17 +200,80 @@ namespace LostMemory.Stage
             SetCombatInputsBlocked(true);
 
             // CL-146: 행운 set tier 조회 — 1스택+ 가중치 / 3스택 슬롯 (SetEffectApplicator 처리, 여기선 무관) /
-            // 5스택 (T2, idx=2) 다중픽 / 7스택 (T3, idx=3) forceLegendary.
-            // BuildSet_행운 tier 인덱스: T0(1스택)=LuckPoints, T1(3)=LuckSlotExpand, T2(5)=다중픽, T3(7)=LuckLegendaryGuarantee
+            // 5스택 (T2, idx=2) 선택지 +1 / 7스택 (T3, idx=3) forceLegendary.
+            // BuildSet_행운 tier 인덱스: T0(1스택)=LuckPoints, T1(3)=LuckSlotExpand, T2(5)=보상 선택지 +1, T3(7)=LuckLegendaryGuarantee
+            // TODO(추후 복귀): 원래 의도는 T2 = 5택 2픽 다중 픽 모드. 임시로 4택 1픽으로 변경 — _cards 배열 5장 미만 환경 대응.
             int luckCount = buildManager != null ? buildManager.GetTagCount(RelicTag.Luck) : 0;
             int luckTier = buildManager != null ? buildManager.GetActiveTier(RelicTag.Luck) : -1;
             bool forceLegendary = luckTier >= 3;     // T3+ = 7스택+
-            bool picksDouble    = luckTier >= 2;     // T2+ = 5스택+
-            int picksAllowed    = picksDouble ? 2 : 1;
-            int count           = picksDouble ? 5 : 3;
+            bool luckSlotExpand = luckTier >= 2;     // T2+ = 5스택+ → 선택지 +1
+            int picksAllowed    = 1;                 // (임시) 항상 1픽. 추후 다중 픽 복귀 시 luckSlotExpand ? 2 : 1.
+            int count           = luckSlotExpand ? 4 : 3;
 
-            rewardPanelView.Show(playerRelicInventory, count, picksAllowed, luckCount, forceLegendary);
-            if (logRewardFlow) Debug.Log($"[RewardController] Reward panel shown. timeScale=0, aim locked. luck={luckCount} tier={luckTier} count={count} picks={picksAllowed} forceLegendary={forceLegendary}");
+            // 기억 시스템 RewardRarityBoost — 보상 등급 상향 확률 반영 (1-4, 3-2 조각).
+            float rarityBoost = MemoryMetaService.Load().BonusRewardRarityPercent;
+
+            rewardPanelView.Show(playerRelicInventory, count, picksAllowed, luckCount, forceLegendary, relicOnly: false, rarityBoostPercent: rarityBoost);
+            if (logRewardFlow) Debug.Log($"[RewardController] Reward panel shown. timeScale=0, aim locked. luck={luckCount} tier={luckTier} count={count} picks={picksAllowed} forceLegendary={forceLegendary} rarityBoost={rarityBoost:F2}");
+        }
+
+        /// <summary>
+        /// 기억 시스템 '시작 유물 +N' 보상. 던전 진입 시 RunManager 가 호출.
+        /// totalCount 번 만큼 보상 패널을 연속으로 띄움 (매번 3택 1픽, 유물만).
+        /// 매 픽 후 HandleRewardSelected 가 카운터를 감소시키고 다음 패널 호출.
+        /// _pendingController == null 흐름이라 마지막 픽 후 OpenExits 호출되지 않음 (정상).
+        /// </summary>
+        public void ShowStartingRelicReward(int totalCount)
+        {
+            if (totalCount <= 0) return;
+
+            _startingRelicRemaining = totalCount;
+            if (logRewardFlow)
+                Debug.Log($"[RewardController] StartingRelicReward begin — totalCount={totalCount}");
+
+            ShowNextStartingRelicPanel();
+        }
+
+        private void ShowNextStartingRelicPanel()
+        {
+            ResolveRewardPanelView();
+            ResolvePlayerRelicInventory();
+
+            if (rewardPanelView == null || playerRelicInventory == null)
+            {
+                Debug.LogError("[RewardController] StartingRelicReward — rewardPanelView/playerRelicInventory null. wiring 확인.", this);
+                _startingRelicRemaining = 0;
+                return;
+            }
+
+            // 첫 패널이면 가드/timeScale 세팅. 이미 켜져있으면 idempotent.
+            if (!_isShowingReward)
+            {
+                _isShowingReward = true;
+
+                if (inventoryToggle != null && inventoryToggle.IsOpen)
+                {
+                    if (logRewardFlow) Debug.Log("[RewardController] Force-closing InventoryToggle for starting-relic reward focus.");
+                    inventoryToggle.Close();
+                }
+
+                _savedTimeScale = Time.timeScale;
+                Time.timeScale = 0f;
+                if (playerAim != null) playerAim.enabled = false;
+                SetCombatInputsBlocked(true);
+            }
+
+            // 시작 유물 보상은 행운 무관 — 매 런 동일하게 3택 1픽, 유물만.
+            rewardPanelView.Show(
+                playerRelicInventory,
+                count: 3,
+                picksAllowed: 1,
+                luckPoints: 0,
+                forceLegendary: false,
+                relicOnly: true);
+
+            if (logRewardFlow)
+                Debug.Log($"[RewardController] StartingRelicReward panel shown. remaining={_startingRelicRemaining}");
         }
 
         private void HandleRewardSelected(RelicData selected)
@@ -215,6 +284,23 @@ namespace LostMemory.Stage
             {
                 if (logRewardFlow) Debug.Log($"[RewardController] Reward picked: {selected?.DisplayName} — 다중 픽 진행 중, 패널 유지.");
                 return;
+            }
+
+            // 기억 시스템 '시작 유물 +N' 체이닝 — 남은 횟수가 있으면 다음 패널 재호출, 복원 보류.
+            if (_startingRelicRemaining > 0)
+            {
+                _startingRelicRemaining--;
+                if (logRewardFlow)
+                    Debug.Log($"[RewardController] StartingRelic picked: {selected?.DisplayName}. remaining={_startingRelicRemaining}");
+
+                if (_startingRelicRemaining > 0)
+                {
+                    // 다음 패널 — _isShowingReward / timeScale 유지한 채 재호출.
+                    ShowNextStartingRelicPanel();
+                    return;
+                }
+                // 마지막 픽 — 가드/timeScale 복원으로 fall-through.
+                if (logRewardFlow) Debug.Log("[RewardController] StartingRelicReward chain complete.");
             }
 
             if (logRewardFlow) Debug.Log($"[RewardController] Reward selected: {selected?.DisplayName}. Restoring timeScale + aim.");
@@ -233,7 +319,7 @@ namespace LostMemory.Stage
             }
             else
             {
-                Debug.LogWarning("[RewardController] _pendingController is null; cannot open exits. (정상: 외부 ShowReward 호출 흐름)");
+                if (logRewardFlow) Debug.Log("[RewardController] _pendingController is null; OpenExits skip. (정상: 외부 ShowReward / StartingRelic 흐름)");
             }
             // _pendingController == null 이면 RoomCleared 경유 안 한 외부 트리거 (정상).
         }

@@ -46,6 +46,12 @@ namespace LostMemory.Memory
         /// <summary>보상 등급 상향 확률 추가(%). RewardRarityBoost 보상 합산.</summary>
         public float BonusRewardRarityPercent;
 
+        /// <summary>런 시작 시 추가 사용 가능한 재능 포인트. TalentPointsBonus 보상 합산.</summary>
+        public int BonusTalentPoints;
+
+        /// <summary>런 시작 시 추가 지급할 랜덤 유물 개수. StartingRelicCount 보상 합산.</summary>
+        public int BonusStartingRelicCount;
+
         // ── 특수 기능 해금 플래그 ─────────────────────────────────
 
         /// <summary>부활 1회 기능 해금 여부. ReviveOnce 보상으로 true 가 된다.</summary>

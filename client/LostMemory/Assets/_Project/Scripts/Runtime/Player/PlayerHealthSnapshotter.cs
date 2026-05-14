@@ -1,3 +1,4 @@
+using System.Collections;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -7,16 +8,18 @@ namespace LostMemory.Player
     /// 씬 전환 시 TDE Health 컴포넌트의 CurrentHealth / MaximumHealth 를 PlayerRunState 스냅샷
     /// 으로 보관·복구한다. Player 프리팹에 부착 (Health 와 같은 GameObject 권장).
     ///
-    /// 복구 시점: Start 단계. RelicEffectRegistry.OnEnable 의 effect replay 가 끝난 후 적용해야
-    /// PlayerHealthStatApplier 의 modifier 재계산이 우리 값을 덮어쓰지 않는다.
-    /// (Applier 는 OnEnable 에서 _baseMaxHealth 를 캐싱 — 복원 전 SO 기본값으로 캡처되므로
-    /// 이후 modifier 변화 시 ratio 유지 정책으로 CurrentHealth 가 자연스럽게 비율 유지된다.)
+    /// 복구 시점: Start 다음 프레임. Unity 의 Start 호출 순서는 보장되지 않으므로
+    /// TDE Health.Start() (CurrentHealth = MaximumHealth 강제) 가 우리 SetHealth 호출 뒤에
+    /// 실행되어 max 로 덮어쓰는 버그를 방지하기 위해 한 프레임 늦춰 적용한다.
+    /// (RelicEffectRegistry.OnEnable 의 effect replay / TalentStartupApplier modifier 변화도
+    /// 같은 프레임 안에 끝나므로 ratio 유지 정책이 올바르게 작동.)
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Lost Memory/Player/Player Health Snapshotter")]
     public sealed class PlayerHealthSnapshotter : MonoBehaviour
     {
         [SerializeField] private Health health;
+        [SerializeField] private bool logRestore = true;
 
         private void Reset()
         {
@@ -34,12 +37,22 @@ namespace LostMemory.Player
 
         private void Start()
         {
-            if (health == null) return;
+            StartCoroutine(RestoreSnapshotNextFrame());
+        }
+
+        private IEnumerator RestoreSnapshotNextFrame()
+        {
+            // 다음 프레임까지 대기 — TDE Health.Start 의 CurrentHealth=MaximumHealth 초기화 이후
+            // 적용되도록 보장. 첫 yield return null 만으로 모든 컴포넌트 Start 완료가 보장됨.
+            yield return null;
+
+            if (health == null) yield break;
+
             PlayerRunState runState = PlayerRunState.Instance;
-            if (runState == null || !runState.HasSnapshot) return;
+            if (runState == null || !runState.HasSnapshot) yield break;
 
             PlayerSnapshot snap = runState.Snapshot;
-            if (!snap.HasHealth) return;
+            if (!snap.HasHealth) yield break;
 
             // MaximumHealth 를 먼저 맞춰야 SetHealth 의 clamp 와 modifier 재계산의 ratio 가 정확.
             if (snap.MaximumHealth > 0f)
@@ -48,6 +61,9 @@ namespace LostMemory.Player
             }
             float clamped = Mathf.Clamp(snap.CurrentHealth, 0f, health.MaximumHealth);
             health.SetHealth(clamped);
+
+            if (logRestore)
+                Debug.Log($"[PlayerHealthSnapshotter] Restored {clamped:F1}/{health.MaximumHealth:F1} (from snapshot {snap.CurrentHealth:F1}/{snap.MaximumHealth:F1})", this);
         }
     }
 }

@@ -65,6 +65,10 @@ namespace LostMemory.MagicalGirl
         [Tooltip("Burst 중 주기적 흔들림 간격 (초). 1초 = 매 초마다 한 번씩.")]
         [SerializeField, Min(0.1f)] private float periodicShakeInterval = 1f;
 
+        [Header("Visual Toggle")]
+        [Tooltip("T 키 레이저 분홍 LineRenderer 빔 시각 효과 표시 여부. false 면 데미지/카메라 흔들림/Trail VFX 는 그대로지만 분홍 빔이 안 보임. (임시 비활성화용)")]
+        [SerializeField] private bool _showLaserLine = false;
+
         [Header("Debug")]
         [SerializeField] private bool _logFusion = true;
 
@@ -236,7 +240,8 @@ namespace LostMemory.MagicalGirl
         {
             float endsAt = Time.time + burstDuration;
             var damageBuf = new HashSet<Health>();   // 동일 틱 내 동일 적 중복 데미지 방지
-            GameObject lineGO = CreateLaserLine();
+            // _showLaserLine=false 면 LineRenderer 생성 자체를 스킵. UpdateLaserLine/OnDestroy 는 null-safe.
+            GameObject lineGO = _showLaserLine ? CreateLaserLine() : null;
             _activeLaserLineGO = lineGO;
             int totalHits = 0;
 

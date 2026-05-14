@@ -158,6 +158,8 @@ namespace LostMemory.Memory.UI
                 MemoryPieceRewardType.ReviveOnce        => "부활 1회 해금",
                 MemoryPieceRewardType.RoomSkip          => "방 건너뛰기 해금",
                 MemoryPieceRewardType.RunStartRelic     => "시작 유물 1개 해금",
+                MemoryPieceRewardType.TalentPointsBonus => $"재능 포인트 +{(int)piece.RewardMagnitude}",
+                MemoryPieceRewardType.StartingRelicCount => $"시작 유물 +{(int)piece.RewardMagnitude}",
                 _                                       => string.Empty,
             };
         }
