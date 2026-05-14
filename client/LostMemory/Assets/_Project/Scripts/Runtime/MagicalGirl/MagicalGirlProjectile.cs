@@ -1,3 +1,4 @@
+using LostMemory.Combat;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -52,6 +53,7 @@ namespace LostMemory.MagicalGirl
             if (_hasHit) return;
             Health h = other.GetComponentInParent<Health>();
             if (h == null || h.CurrentHealth <= 0f) return;
+            if (!CombatTargetable.CanBeTargeted(h)) return;
             // CL-143 패턴: Character.AI 만 — 발사체끼리 충돌 / 플레이어 자체 / 트리거 zone 제외
             Character ch = h.GetComponentInParent<Character>();
             if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) return;

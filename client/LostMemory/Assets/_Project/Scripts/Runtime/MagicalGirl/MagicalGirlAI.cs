@@ -132,6 +132,7 @@ namespace LostMemory.MagicalGirl
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
                 if (h == null || h.CurrentHealth <= 0f) continue;
+                if (!CombatTargetable.CanBeTargeted(h)) continue;
                 Character ch = h.GetComponentInParent<Character>();
                 if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
 
@@ -149,6 +150,8 @@ namespace LostMemory.MagicalGirl
 
         private void Attack(Health target, Vector2 toTargetDir)
         {
+            if (!CombatTargetable.CanBeTargeted(target)) return;
+
             float damage = ComputeDamage();
             if (damage <= 0f) return;
 

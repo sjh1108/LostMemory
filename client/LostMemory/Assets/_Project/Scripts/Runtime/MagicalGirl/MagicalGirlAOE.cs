@@ -1,3 +1,4 @@
+using LostMemory.Combat;
 using LostMemory.Enemies;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -90,6 +91,7 @@ namespace LostMemory.MagicalGirl
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
                 if (h == null || h.CurrentHealth <= 0f) continue;
+                if (!CombatTargetable.CanBeTargeted(h)) continue;
                 Character ch = h.GetComponentInParent<Character>();
                 if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
 
@@ -133,6 +135,7 @@ namespace LostMemory.MagicalGirl
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
                 if (h == null || h.CurrentHealth <= 0f) continue;
+                if (!CombatTargetable.CanBeTargeted(h)) continue;
                 Character ch = h.GetComponentInParent<Character>();
                 if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
                 float dSq = ((Vector2)(h.transform.position - transform.position)).sqrMagnitude;
