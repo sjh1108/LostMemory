@@ -79,6 +79,7 @@ namespace LostMemory.MagicalGirl
         private PlayerStatModifierContainer _stat;
         private KhiMeleeComboController _combat;
         private KhiPlayerAim _aim;
+        private KhiDownController _ownerDownController;
         private MagicalGirlSpawner _spawner;        // CL-145 Phase 2: cooldown 공유 source
 
         // CL-204 후속: 궁극 VFX prefab — Spawner 가 Init 시 전달
@@ -107,10 +108,22 @@ namespace LostMemory.MagicalGirl
 
         public void Init(PlayerStatModifierContainer stat, KhiMeleeComboController combat, KhiPlayerAim aim, MagicalGirlSpawner spawner, FusionVfxBundle vfx)
         {
+            Init(stat, combat, aim, spawner, vfx, null);
+        }
+
+        public void Init(
+            PlayerStatModifierContainer stat,
+            KhiMeleeComboController combat,
+            KhiPlayerAim aim,
+            MagicalGirlSpawner spawner,
+            FusionVfxBundle vfx,
+            KhiDownController ownerDownController)
+        {
             _stat = stat;
             _combat = combat;
             _aim = aim;
             _spawner = spawner;
+            _ownerDownController = ownerDownController;
             _laserMuzzlePrefab = vfx.laserMuzzle;
             _laserTrailPrefab = vfx.laserTrail;
             _aoeExplosionPrefab = vfx.aoeExplosion;
@@ -139,6 +152,7 @@ namespace LostMemory.MagicalGirl
         /// <summary>CL-204: T 키 발동. 5초 레이저 burst + 매 1초 펄스 흔들림.</summary>
         public void TriggerLaserBurst()
         {
+            if (IsOwnerActionBlocked()) return;
             if (_burstActive) return;
             _burstActive = true;
             if (_logFusion) Debug.Log($"[Fusion] LASER BURST START (duration={burstDuration}s, cooldown={cooldown}s after)");
@@ -154,6 +168,7 @@ namespace LostMemory.MagicalGirl
         /// <summary>CL-204 후속: Y 키 발동. Charge 빌드업 → AOE 폭발 패턴.</summary>
         public void TriggerAOEPulse()
         {
+            if (IsOwnerActionBlocked()) return;
             if (_burstActive) return;
             _burstActive = true;
             if (_logFusion) Debug.Log($"[Fusion] AOE CHARGE START (cooldown={cooldown}s after)");
@@ -168,6 +183,12 @@ namespace LostMemory.MagicalGirl
         // CL-204 후속: AOE 빌드업 코루틴. charge VFX 가 startScale → endScale 로 커지면서 chargeDuration 동안 대기 → 펑.
         private IEnumerator ChargeAndFireAOECoroutine()
         {
+            if (IsOwnerActionBlocked())
+            {
+                _burstActive = false;
+                yield break;
+            }
+
             float duration = _spawner != null ? _spawner.AoeChargeDuration : 0.5f;
             float startScale = _spawner != null ? _spawner.AoeChargeStartScale : 0.3f;
             float endScale = _spawner != null ? _spawner.AoeChargeEndScale : 2.0f;
@@ -194,6 +215,13 @@ namespace LostMemory.MagicalGirl
             float t = 0f;
             while (t < duration)
             {
+                if (IsOwnerActionBlocked())
+                {
+                    if (chargeGO != null) Destroy(chargeGO);
+                    _burstActive = false;
+                    yield break;
+                }
+
                 t += Time.deltaTime;
                 float k = Mathf.Clamp01(t / duration);
                 if (chargeGO != null)
@@ -206,6 +234,12 @@ namespace LostMemory.MagicalGirl
 
             // 펑 — charge VFX destroy + 데미지 + 메인 폭발/링/카메라 흔들림
             if (chargeGO != null) Destroy(chargeGO);
+
+            if (IsOwnerActionBlocked())
+            {
+                _burstActive = false;
+                yield break;
+            }
 
             FireGlobalAOE();
             TriggerCameraShake(burstShakeDuration, burstShakeIntensity);
@@ -261,7 +295,7 @@ namespace LostMemory.MagicalGirl
                 _activeTrailGO = trailGO;
             }
 
-            while (Time.time < endsAt && this != null)
+            while (Time.time < endsAt && this != null && !IsOwnerActionBlocked())
             {
                 damageBuf.Clear();
                 Vector2 origin = _combat != null ? (Vector2)_combat.transform.position : (Vector2)transform.position;
@@ -327,6 +361,8 @@ namespace LostMemory.MagicalGirl
 
         private void FireGlobalAOE()
         {
+            if (IsOwnerActionBlocked()) return;
+
             Camera cam = Camera.main;
             if (cam == null)
             {
@@ -407,6 +443,11 @@ namespace LostMemory.MagicalGirl
             if (dir.sqrMagnitude < 0.0001f)
                 dir = _combat != null ? (Vector2)_combat.transform.right : Vector2.right;
             return dir.normalized;
+        }
+
+        private bool IsOwnerActionBlocked()
+        {
+            return KhiPlayerActionGate.IsBlocked(_ownerDownController);
         }
 
         // ── 레이저 시각화 (CL-142 ChainBolt 패턴) ─────────

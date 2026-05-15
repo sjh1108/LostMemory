@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LostMemory.TestKhi;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -271,6 +272,11 @@ namespace LostMemory.Stage
             }
 
             if (character.CharacterType != Character.CharacterTypes.Player)
+            {
+                return false;
+            }
+
+            if (KhiPlayerActionGate.IsBlocked(character))
             {
                 return false;
             }

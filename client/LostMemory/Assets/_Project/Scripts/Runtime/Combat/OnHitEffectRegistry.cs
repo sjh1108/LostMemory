@@ -34,6 +34,7 @@ namespace LostMemory.Combat
 
         [Tooltip("같은 GameObject 의 PlayerStatModifierContainer. 체인 데미지 = BaseDamage × AttackPower 합산.")]
         [SerializeField] private PlayerStatModifierContainer statContainer;
+        [SerializeField] private KhiDownController downController;
 
         [Header("Chain (CL-142 사용자 결정: 3마리)")]
         [Tooltip("체인 검색 반경 (유닛). 첫 hit 위치 기준.")]
@@ -124,6 +125,7 @@ namespace LostMemory.Combat
                 Debug.LogError($"[OnHitEffectRegistry] combat null. Inspector wiring 필요. host={gameObject.name}", this);
                 return;
             }
+            KhiPlayerActionGate.TryResolveDownController(this, out downController);
             combat.TargetHit += HandleHit;
         }
 
@@ -154,6 +156,7 @@ namespace LostMemory.Combat
         private void HandleHit(KhiAttackRequest req, AttackStepData step, Health victim)
         {
             if (!_authority.IsAuthority) return;
+            if (KhiPlayerActionGate.IsBlocked(downController)) return;
             if (victim == null) return;
 
             foreach (OnHitEntry e in _entries)

@@ -1,4 +1,5 @@
 using LostMemory.Relics;
+using LostMemory.TestKhi;
 using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -16,6 +17,7 @@ namespace LostMemory.Combat
     {
         [SerializeField] private Health health;
         [SerializeField] private PlayerStatModifierContainer container;
+        [SerializeField] private KhiDownController downController;
         [SerializeField] private bool logHeals = false;
 
         [Header("Debug (CL-108 검증용 — 옵션 C 의 사용 트리거)")]
@@ -31,6 +33,9 @@ namespace LostMemory.Combat
         {
             if (health == null) health = GetComponent<Health>();
             if (container == null) container = GetComponent<PlayerStatModifierContainer>();
+            downController ??= GetComponent<KhiDownController>()
+                ?? GetComponentInParent<KhiDownController>()
+                ?? GetComponentInChildren<KhiDownController>();
         }
 
         /// <summary>
@@ -62,6 +67,7 @@ namespace LostMemory.Combat
         /// </summary>
         public bool TryUseConsumable(RelicData consumable)
         {
+            if (KhiPlayerActionGate.IsBlocked(downController)) return false;
             if (consumable == null || !consumable.IsConsumable) return false;
             if (consumable.EffectType != RelicEffectType.HealConsumablePercent) return false;
             if (health == null) health = GetComponent<Health>();

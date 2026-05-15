@@ -1,3 +1,5 @@
+using LostMemory.TestKhi;
+using MoreMountains.TopDownEngine;
 using UnityEngine;
 
 namespace LostMemory.Talents
@@ -30,6 +32,7 @@ namespace LostMemory.Talents
         [SerializeField] private bool _logInteraction = true;
 
         private bool _playerInRange;
+        private Character _playerInRangeCharacter;
 
         private void Awake()
         {
@@ -39,6 +42,7 @@ namespace LostMemory.Talents
         private void Update()
         {
             if (_requirePlayerInRange && !_playerInRange) return;
+            if (KhiPlayerActionGate.IsBlocked(_playerInRangeCharacter)) return;
             if (!Input.GetKeyDown(_interactKey)) return;
 
             if (_talentPanel == null)
@@ -59,6 +63,7 @@ namespace LostMemory.Talents
             if (!_requirePlayerInRange) return;
             if (!IsPlayer(other)) return;
             _playerInRange = true;
+            _playerInRangeCharacter = other.GetComponentInParent<Character>();
             if (_promptObject != null) _promptObject.SetActive(true);
             if (_logInteraction) Debug.Log("[TalentNpcInteractable] 플레이어 범위 진입.", this);
         }
@@ -68,6 +73,10 @@ namespace LostMemory.Talents
             if (!_requirePlayerInRange) return;
             if (!IsPlayer(other)) return;
             _playerInRange = false;
+            if (_playerInRangeCharacter == other.GetComponentInParent<Character>())
+            {
+                _playerInRangeCharacter = null;
+            }
             if (_promptObject != null) _promptObject.SetActive(false);
             if (_logInteraction) Debug.Log("[TalentNpcInteractable] 플레이어 범위 이탈.", this);
         }

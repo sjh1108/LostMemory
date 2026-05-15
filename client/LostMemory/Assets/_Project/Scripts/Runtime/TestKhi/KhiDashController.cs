@@ -55,6 +55,11 @@ namespace LostMemory.TestKhi
 
         protected override void HandleInput()
         {
+            if (KhiPlayerActionGate.IsBlocked(this))
+            {
+                return;
+            }
+
             if (!AbilityAuthorized
                 || !Cooldown.Ready()
                 || (_condition.CurrentState != CharacterStates.CharacterConditions.Normal))
@@ -82,6 +87,11 @@ namespace LostMemory.TestKhi
 
         public override void DashStart()
         {
+            if (KhiPlayerActionGate.IsBlocked(this))
+            {
+                return;
+            }
+
             DashMode = DashModes.Script;
             DashDirection = ResolveDashDirection();
 

@@ -42,6 +42,7 @@ namespace LostMemory.MagicalGirl
 
         [Tooltip("같은 GameObject 의 KhiPlayerAim. ultimate 레이저 마우스 조준 hook.")]
         [SerializeField] private KhiPlayerAim playerAim;
+        [SerializeField] private KhiDownController downController;
 
         [Tooltip("CL-204: visual → sprite/공격 패턴 매핑 카탈로그. 미설정 시 fallback (placeholder sprite + 즉시 데미지).")]
         [SerializeField] private MagicalGirlAttackCatalog attackCatalog;
@@ -209,6 +210,8 @@ namespace LostMemory.MagicalGirl
 
         private void OnEnable()
         {
+            ResolveDownController();
+
             string anchorWiring = anchor != null ? "OK" : "self";
             string statWiring = playerStat != null ? "OK" : "❌ NULL";
             string combatWiring = playerCombat != null ? "OK" : "❌ NULL";
@@ -264,12 +267,24 @@ namespace LostMemory.MagicalGirl
 
             // CL-204: ultimate 입력 처리 (5세트 + cooldown ready 시)
             if (Time.timeScale == 0f) return;
+            if (KhiPlayerActionGate.IsBlocked(ResolveDownController())) return;
             if (!_ultimateAvailable || _ultimateActive) return;
             // CL-204 후속: debugSkipCooldown 체크 시 쿨다운 우회 — VFX 반복 검증용.
             if (!debugSkipCooldown && Time.time < _ultimateCooldownEndsAt) return;
             if (Keyboard.current == null) return;
             if (Keyboard.current.tKey.wasPressedThisFrame) StartCoroutine(UltimateLaserCoroutine());
             else if (Keyboard.current.yKey.wasPressedThisFrame) StartCoroutine(UltimateAOECoroutine());
+        }
+
+        private KhiDownController ResolveDownController()
+        {
+            if (downController != null)
+            {
+                return downController;
+            }
+
+            KhiPlayerActionGate.TryResolveDownController(this, out downController);
+            return downController;
         }
 
         // ── public API (SetEffectApplicator 호출) ───────────
@@ -324,7 +339,7 @@ namespace LostMemory.MagicalGirl
             Transform anchorT = anchor != null ? anchor : transform;
             go.transform.position = anchorT.position;  // 첫 프레임 즉시 점프 회피용 초기 위치
             var ai = go.AddComponent<MagicalGirlAI>();
-            ai.Init(playerStat, playerCombat, attackCatalog);
+            ai.Init(playerStat, playerCombat, attackCatalog, ResolveDownController());
             ai.SetVisual(visual);
             ai.SetSetBonusActive(_setBonusActive);
             ai.SetEnhanced(_enhancedVisuals.Contains(visual));
@@ -622,7 +637,7 @@ namespace LostMemory.MagicalGirl
             _fusionSpriteRenderer = fusionSR;
 
             var fusion = _fusionInstance.AddComponent<MagicalGirlFusion>();
-            fusion.Init(playerStat, playerCombat, playerAim, this, fusionVfx);
+            fusion.Init(playerStat, playerCombat, playerAim, this, fusionVfx, ResolveDownController());
 
             // CL-204 B10.1 / CL-204 후속: Follower 부착 — formation 중앙 + 강림 시작 높이 만큼 위로 elevated
             // 매 frame SyncFollowTuningToAll 가 (GetFormationCenter + _fusionExtraOffset) 으로 baseOffset 갱신

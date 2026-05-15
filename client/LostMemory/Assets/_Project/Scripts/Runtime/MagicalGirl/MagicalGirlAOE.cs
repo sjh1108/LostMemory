@@ -1,5 +1,6 @@
 using LostMemory.Combat;
 using LostMemory.Enemies;
+using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -27,6 +28,7 @@ namespace LostMemory.MagicalGirl
         private float _pullSpeed;
         private float _slowMagnitude;
         private float _slowDuration;
+        private KhiDownController _ownerDownController;
 
         // 검색 임시 버퍼 (heap alloc 방지)
         private static readonly Collider2D[] _hitBuf = new Collider2D[24];
@@ -41,6 +43,20 @@ namespace LostMemory.MagicalGirl
             float slowMagnitude,
             float slowDuration)
         {
+            Init(kind, damagePerTick, radius, duration, tickInterval, pullSpeed, slowMagnitude, slowDuration, null);
+        }
+
+        public void Init(
+            MagicalGirlAttackCatalog.AttackKind kind,
+            float damagePerTick,
+            float radius,
+            float duration,
+            float tickInterval,
+            float pullSpeed,
+            float slowMagnitude,
+            float slowDuration,
+            KhiDownController ownerDownController)
+        {
             _kind = kind;
             _damagePerTick = damagePerTick;
             _radius = radius;
@@ -50,6 +66,7 @@ namespace LostMemory.MagicalGirl
             _pullSpeed = pullSpeed;
             _slowMagnitude = Mathf.Clamp01(slowMagnitude);
             _slowDuration = Mathf.Max(0f, slowDuration);
+            _ownerDownController = ownerDownController;
 
             if (_kind == MagicalGirlAttackCatalog.AttackKind.AOEAtTarget)
             {
@@ -66,6 +83,12 @@ namespace LostMemory.MagicalGirl
 
         private void Update()
         {
+            if (IsOwnerActionBlocked())
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             if (Time.time >= _expiresAt)
             {
                 Destroy(gameObject);
@@ -79,6 +102,7 @@ namespace LostMemory.MagicalGirl
 
         private void DoTick()
         {
+            if (IsOwnerActionBlocked()) return;
             if (_damagePerTick <= 0f && _pullSpeed <= 0f && _slowMagnitude <= 0f) return;
             int hits = Physics2D.OverlapCircleNonAlloc(transform.position, _radius, _hitBuf);
             for (int i = 0; i < hits; i++)
@@ -142,6 +166,11 @@ namespace LostMemory.MagicalGirl
                 }
             }
             return closest;
+        }
+
+        private bool IsOwnerActionBlocked()
+        {
+            return KhiPlayerActionGate.IsBlocked(_ownerDownController);
         }
     }
 }

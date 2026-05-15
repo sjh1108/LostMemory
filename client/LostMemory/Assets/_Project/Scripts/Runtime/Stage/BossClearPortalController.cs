@@ -1,5 +1,6 @@
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
+using LostMemory.TestKhi;
 using UnityEngine;
 
 namespace LostMemory.Stage
@@ -240,7 +241,7 @@ namespace LostMemory.Stage
                 return false;
             }
 
-            return true;
+            return !KhiPlayerActionGate.IsBlocked(character);
         }
 
         private bool IsInteractPressedThisFrame(Character character)

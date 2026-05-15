@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LostMemory.Stage;
+using LostMemory.TestKhi;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
 using Unity.Netcode;
@@ -158,6 +159,11 @@ namespace LostMemory.SceneFlow
             }
 
             if (character.CharacterType != Character.CharacterTypes.Player)
+            {
+                return false;
+            }
+
+            if (KhiPlayerActionGate.IsBlocked(character))
             {
                 return false;
             }

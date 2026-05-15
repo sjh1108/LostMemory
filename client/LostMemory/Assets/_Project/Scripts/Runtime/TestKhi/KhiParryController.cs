@@ -32,6 +32,7 @@ namespace LostMemory.TestKhi
         [SerializeField] private InputActionReference parryAction;
         [Tooltip("RestorePermits 시 ExternalBlock cache 가 race condition 으로 꼬이지 않도록 HitStun 상태를 확인하는 용도.")]
         [SerializeField] private KhiHitStunController hitStun;
+        [SerializeField] private KhiDownController downController;
 
         [Header("Parry Range")]
         [SerializeField, Min(0f), Tooltip("패링 입력 유효 시간 (초). 짧을수록 어려움. (시간 범위)")]
@@ -95,6 +96,9 @@ namespace LostMemory.TestKhi
             meleeCombo ??= GetComponent<KhiMeleeComboController>();
             health ??= GetComponent<Health>();
             hitStun ??= GetComponent<KhiHitStunController>();
+            downController ??= GetComponent<KhiDownController>()
+                ?? GetComponentInParent<KhiDownController>()
+                ?? GetComponentInChildren<KhiDownController>();
             CacheHitboxBaseIfNeeded();
             // Idle 상태로 시작 — base size 유지 (scale 미적용).
             ResetHitboxToBase();
@@ -228,7 +232,7 @@ namespace LostMemory.TestKhi
 
         private void HandleParryInput()
         {
-            if (ExternalBlock)
+            if (ExternalBlock || KhiPlayerActionGate.IsBlocked(downController))
             {
                 return;
             }

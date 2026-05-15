@@ -74,6 +74,7 @@ namespace LostMemory.TestKhi
         private Vector3 _cameraVelocity;
         private bool _cameraSnappedToTarget;
         private KhiPlayerCamera _overrideCamera;
+        private KhiDownController _linkedDownController;
 
         public void Configure(InputActionAsset actions, string mapName)
         {
@@ -137,6 +138,12 @@ namespace LostMemory.TestKhi
                 return;
             }
 
+            if (IsPlayerActionBlocked())
+            {
+                _primaryMovement = Vector2.zero;
+                return;
+            }
+
             BindActions();
             EnsureActionsEnabled();
             _primaryMovement = ReadMovement(out MovementInputSource source);
@@ -162,6 +169,12 @@ namespace LostMemory.TestKhi
 
         protected override void GetInputButtons()
         {
+            if (IsPlayerActionBlocked())
+            {
+                ReleaseBlockedButtons();
+                return;
+            }
+
             BindActions();
             EnsureActionsEnabled();
             ProcessAttackButton();
@@ -209,6 +222,7 @@ namespace LostMemory.TestKhi
         {
             Character[] characters = FindObjectsByType<Character>(FindObjectsSortMode.None);
             bool foundMatchingCharacter = false;
+            _linkedDownController = null;
 
             foreach (Character character in characters)
             {
@@ -219,11 +233,38 @@ namespace LostMemory.TestKhi
 
                 character.SetInputManager(this);
                 _followTarget = character.transform;
+                KhiPlayerActionGate.TryResolveDownController(character, out _linkedDownController);
                 EnsureCharacterButtonActivation(character);
                 foundMatchingCharacter = true;
             }
 
             _charactersLinked = foundMatchingCharacter;
+        }
+
+        private bool IsPlayerActionBlocked()
+        {
+            return KhiPlayerActionGate.IsBlocked(_linkedDownController);
+        }
+
+        private void ReleaseBlockedButtons()
+        {
+            if (ShootButton != null &&
+                ShootButton.State.CurrentState != MoreMountains.Tools.MMInput.ButtonStates.Off)
+            {
+                ShootButtonUp();
+            }
+
+            if (DashButton != null &&
+                DashButton.State.CurrentState != MoreMountains.Tools.MMInput.ButtonStates.Off)
+            {
+                DashButtonUp();
+            }
+
+            if (InteractButton != null &&
+                InteractButton.State.CurrentState != MoreMountains.Tools.MMInput.ButtonStates.Off)
+            {
+                InteractButtonUp();
+            }
         }
 
         private static void EnsureCharacterButtonActivation(Character character)

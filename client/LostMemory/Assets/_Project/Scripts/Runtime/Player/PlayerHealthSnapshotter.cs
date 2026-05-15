@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -18,17 +19,28 @@ namespace LostMemory.Player
     [AddComponentMenu("Lost Memory/Player/Player Health Snapshotter")]
     public sealed class PlayerHealthSnapshotter : MonoBehaviour
     {
+        public static event Action<Health> SnapshotRestoreCompleted;
+
         [SerializeField] private Health health;
         [SerializeField] private bool logRestore = true;
+
+        public bool RestorePending { get; private set; }
 
         private void Reset()
         {
             health = GetComponent<Health>();
         }
 
+        private void Awake()
+        {
+            ResolveHealth();
+            RestorePending = TryGetHealthSnapshot(out _);
+        }
+
         /// <summary>현재 HP 를 스냅샷 구조체에 기록한다. StageRouteManager 가 씬 전환 직전 호출.</summary>
         public void CaptureInto(ref PlayerSnapshot snapshot)
         {
+            ResolveHealth();
             if (health == null) return;
             snapshot.HasHealth = true;
             snapshot.CurrentHealth = health.CurrentHealth;
@@ -46,13 +58,18 @@ namespace LostMemory.Player
             // 적용되도록 보장. 첫 yield return null 만으로 모든 컴포넌트 Start 완료가 보장됨.
             yield return null;
 
-            if (health == null) yield break;
+            ResolveHealth();
+            if (health == null)
+            {
+                CompleteRestore();
+                yield break;
+            }
 
-            PlayerRunState runState = PlayerRunState.Instance;
-            if (runState == null || !runState.HasSnapshot) yield break;
-
-            PlayerSnapshot snap = runState.Snapshot;
-            if (!snap.HasHealth) yield break;
+            if (!TryGetHealthSnapshot(out PlayerSnapshot snap))
+            {
+                CompleteRestore();
+                yield break;
+            }
 
             // MaximumHealth 를 먼저 맞춰야 SetHealth 의 clamp 와 modifier 재계산의 ratio 가 정확.
             if (snap.MaximumHealth > 0f)
@@ -64,6 +81,69 @@ namespace LostMemory.Player
 
             if (logRestore)
                 Debug.Log($"[PlayerHealthSnapshotter] Restored {clamped:F1}/{health.MaximumHealth:F1} (from snapshot {snap.CurrentHealth:F1}/{snap.MaximumHealth:F1})", this);
+
+            CompleteRestore();
+        }
+
+        public static bool TryGetPendingSnapshot(Health targetHealth, out PlayerSnapshot snapshot)
+        {
+            snapshot = default;
+            PlayerHealthSnapshotter snapshotter = ResolveSnapshotter(targetHealth);
+            if (snapshotter == null || !snapshotter.RestorePending)
+            {
+                return false;
+            }
+
+            return TryGetHealthSnapshot(out snapshot);
+        }
+
+        private static bool TryGetHealthSnapshot(out PlayerSnapshot snapshot)
+        {
+            snapshot = default;
+            PlayerRunState runState = PlayerRunState.Instance;
+            if (runState == null || !runState.HasSnapshot)
+            {
+                return false;
+            }
+
+            snapshot = runState.Snapshot;
+            return snapshot.HasHealth;
+        }
+
+        private static PlayerHealthSnapshotter ResolveSnapshotter(Health targetHealth)
+        {
+            if (targetHealth == null)
+            {
+                return null;
+            }
+
+            PlayerHealthSnapshotter snapshotter = targetHealth.GetComponent<PlayerHealthSnapshotter>();
+            if (snapshotter != null)
+            {
+                return snapshotter;
+            }
+
+            snapshotter = targetHealth.GetComponentInParent<PlayerHealthSnapshotter>();
+            if (snapshotter != null)
+            {
+                return snapshotter;
+            }
+
+            return targetHealth.GetComponentInChildren<PlayerHealthSnapshotter>(true);
+        }
+
+        private void ResolveHealth()
+        {
+            if (health == null)
+            {
+                health = GetComponent<Health>();
+            }
+        }
+
+        private void CompleteRestore()
+        {
+            RestorePending = false;
+            SnapshotRestoreCompleted?.Invoke(health);
         }
     }
 }

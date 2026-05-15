@@ -16,6 +16,7 @@ namespace LostMemory.TestKhi
         [SerializeField] private SpriteRenderer weaponSprite;
         [SerializeField] private KhiPlayerAim playerAim;
         [SerializeField] private KhiMeleeComboController comboController;
+        [SerializeField] private KhiDownController downController;
 
         [Header("Sprite Source")]
         [SerializeField] private Sprite externalSprite;
@@ -64,6 +65,11 @@ namespace LostMemory.TestKhi
             if (comboController == null)
             {
                 comboController = GetComponentInParent<KhiMeleeComboController>();
+            }
+
+            if (downController == null)
+            {
+                KhiPlayerActionGate.TryResolveDownController(this, out downController);
             }
 
             if (weaponSprite == null)
@@ -173,6 +179,11 @@ namespace LostMemory.TestKhi
         private void Update()
         {
             if (weaponSprite == null || playerAim == null)
+            {
+                return;
+            }
+
+            if (KhiPlayerActionGate.IsBlocked(downController))
             {
                 return;
             }

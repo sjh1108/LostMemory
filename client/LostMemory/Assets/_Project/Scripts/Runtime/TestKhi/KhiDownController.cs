@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using LostMemory.Combat;
+using LostMemory.Networking.Common;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -70,6 +71,7 @@ namespace LostMemory.TestKhi
         [Header("Animation")]
         [SerializeField] private string downAnimatorTriggerName = "Down";
         [SerializeField] private string reviveAnimatorTriggerName = "Revive";
+        [SerializeField, Min(0f)] private float defeatObjectDisableDelay = 5f;
 
         private KhiDownState _state = KhiDownState.Normal;
         private float _downEnterTime;
@@ -79,6 +81,7 @@ namespace LostMemory.TestKhi
         private bool _cachedHandleWeaponPermitted;
         private bool _cachedDashPermitted;
         private bool _cachedMeleeExternalBlock;
+        private bool _cachedParryExternalBlock;
         private bool _cachedMovementForbidden;
 
         // 기억 시스템 ReviveOnce 보상 — 런마다 1회 자동 부활 가능. RunManager 가 던전 빌드 시 활성화.
@@ -251,6 +254,11 @@ namespace LostMemory.TestKhi
 
         private bool ResolveAllyContext()
         {
+            if (!HostAuthority.IsNetworkSessionActive)
+            {
+                return false;
+            }
+
             switch (soloBehavior)
             {
                 case KhiDownSoloBehavior.ImmediateDefeat:
@@ -466,28 +474,33 @@ namespace LostMemory.TestKhi
                 return;
             }
 
-            ExecuteDefeat(null);
+            ExecuteDefeat(true);
         }
 
         private void EnterDefeatedByTimeout()
         {
             LogTransition("Down timer expired -> Defeated");
             DefeatedByTimeout?.Invoke();
-            ExecuteDefeat(DefeatedByTimeout);
+            ExecuteDefeat(true);
         }
 
         private void EnterDefeatedSolo()
         {
             LogTransition("Solo lethal -> Defeated");
             DefeatedSolo?.Invoke();
-            ExecuteDefeat(DefeatedSolo);
+            ExecuteDefeat(false);
         }
 
-        private void ExecuteDefeat(Action fallbackEvent)
+        private void ExecuteDefeat(bool killHealthImmediately)
         {
             _state = KhiDownState.Defeated;
 
-            RestorePermits();
+            parryController?.ForceIdle();
+            hitStun?.ForceExit();
+
+            CachePermitsIfNeeded();
+            ApplyBlockingPermits();
+            meleeCombo?.AbortCurrentAttack();
 
             // 솔로 즉사 경로(EnterDown 우회)에서도 Dead 애니메이션이 재생되도록 Down 트리거 발동.
             TrySetAnimatorTrigger(downAnimatorTriggerName);
@@ -495,17 +508,42 @@ namespace LostMemory.TestKhi
             if (health != null)
             {
                 health.Invulnerable = false;
+                PrepareHealthForVisibleDefeat();
+
                 if (health.CurrentHealth > 0f)
                 {
                     health.CurrentHealth = 0f;
                 }
-                health.Kill();
+
+                if (killHealthImmediately)
+                {
+                    health.Kill();
+                }
             }
 
             // health.Kill() 내부에서 Character.Reset() 이 Animator 파라미터를 초기화하면서
             // Dead state 가 다른 state(Front_Idle 등)로 밀려나는 케이스가 관찰됨.
             // Animator.Play 로 Dead state 를 강제 고정 — outgoing transition 이 없으므로 그대로 유지됨.
-            ForcePlayDeadState();
+            if (killHealthImmediately)
+            {
+                ForcePlayDeadState();
+            }
+        }
+
+        private void PrepareHealthForVisibleDefeat()
+        {
+            if (health == null)
+            {
+                return;
+            }
+
+            health.DisableModelOnDeath = false;
+            if (defeatObjectDisableDelay > 0f)
+            {
+                health.DelayBeforeDestruction = Mathf.Max(
+                    health.DelayBeforeDestruction,
+                    defeatObjectDisableDelay);
+            }
         }
 
         private void ForcePlayDeadState()
@@ -552,6 +590,7 @@ namespace LostMemory.TestKhi
             _cachedHandleWeaponPermitted = handleWeapon != null ? handleWeapon.AbilityPermitted : true;
             _cachedDashPermitted = dashController != null ? dashController.AbilityPermitted : true;
             _cachedMeleeExternalBlock = meleeCombo != null && meleeCombo.ExternalBlock;
+            _cachedParryExternalBlock = parryController != null && parryController.ExternalBlock;
             _cachedMovementForbidden = characterMovement != null && characterMovement.MovementForbidden;
             _hasCachedPermits = true;
         }
@@ -571,6 +610,11 @@ namespace LostMemory.TestKhi
             if (meleeCombo != null)
             {
                 meleeCombo.ExternalBlock = true;
+            }
+
+            if (parryController != null)
+            {
+                parryController.ExternalBlock = true;
             }
 
             if (characterMovement != null)
@@ -599,6 +643,11 @@ namespace LostMemory.TestKhi
             if (meleeCombo != null)
             {
                 meleeCombo.ExternalBlock = _cachedMeleeExternalBlock;
+            }
+
+            if (parryController != null)
+            {
+                parryController.ExternalBlock = _cachedParryExternalBlock;
             }
 
             if (characterMovement != null)
@@ -636,6 +685,52 @@ namespace LostMemory.TestKhi
             }
 
             Debug.Log($"[KhiDown] {label} t={Time.time:F3}");
+        }
+    }
+
+    public static class KhiPlayerActionGate
+    {
+        public static bool IsBlocked(KhiDownController downController)
+        {
+            return downController != null && (downController.IsDown || downController.IsDefeated);
+        }
+
+        public static bool IsBlocked(Character character)
+        {
+            return character != null
+                && TryResolveDownController(character, out KhiDownController downController)
+                && IsBlocked(downController);
+        }
+
+        public static bool IsBlocked(Component source)
+        {
+            return source != null
+                && TryResolveDownController(source, out KhiDownController downController)
+                && IsBlocked(downController);
+        }
+
+        public static bool TryResolveDownController(Component source, out KhiDownController downController)
+        {
+            downController = null;
+            if (source == null)
+            {
+                return false;
+            }
+
+            downController = source.GetComponent<KhiDownController>();
+            if (downController != null)
+            {
+                return true;
+            }
+
+            downController = source.GetComponentInParent<KhiDownController>();
+            if (downController != null)
+            {
+                return true;
+            }
+
+            downController = source.GetComponentInChildren<KhiDownController>();
+            return downController != null;
         }
     }
 }
