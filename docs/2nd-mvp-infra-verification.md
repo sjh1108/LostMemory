@@ -24,14 +24,14 @@
 | CI/CD | develop push → 자동 트리거 | ✅ | 빌드 #18/19/20 모두 `Started by remote host 54.180.247.19` |
 | CI/CD | Jenkinsfile → deploy.sh deploy → healthy | ✅ | 빌드 #20 `[deploy] app healthy` (INFRA-18 첫 production 사용) |
 | CI/CD | Mattermost 빌드 결과 알림 | ✅ | 사용자 채널 직접 확인 (이번 세션 머지 4회 모두 도착) |
-| CI/CD | rollback dry-run | ⏸ | 운영 영향 5-10초라 한가한 시간대 별도 1회 검증 권장 |
+| CI/CD | rollback dry-run | ✅ | 2026-05-15 1회 검증 완료 — 실측 다운타임 ~10.5s, 런북 [docs/runbook-rollback.md](runbook-rollback.md) (S14P31C201-129) |
 | 운영 | 6 컨테이너 모두 healthy | ✅ | server-app/postgres/nginx/redis/jenkins/gitlab-runner 모두 Up |
 | 운영 | Docker logging rotation | ⚠️ | 5/6 적용. gitlab-runner 1건 보류 (다음 자연 재배포 시 자동 적용) |
 | 운영 | logrotate `/etc/logrotate.d/lostmemory` | ✅ | dry-run 정상. 대상 파일 미존재는 cron 첫 실행 전이라 정상 |
 | 운영 | 디스크 사용량 < 30% | ✅ | 309G 중 20G 사용 (7%) |
 | 주의 | EC2 working tree develop sync | ⚠️ | `./scripts/deploy.sh` 미존재 — develop pull 누락. 운영자 SSH 작업 전 sync 필요 |
 
-**결론**: SSL / CI/CD / 운영 자산 영역에서 시연 가능 수준 도달. 단 두 가지 추가 작업 (SSL Labs 등급 캡처 / EC2 working tree develop sync) 은 시연 직전 D-1 에 마무리.
+**결론**: SSL / CI/CD / 운영 자산 영역에서 시연 가능 수준 도달. 단 두 가지 추가 작업 (SSL Labs 등급 캡처 / EC2 working tree develop sync) 은 시연 직전 D-1 에 마무리. rollback dry-run (⏸) 은 S14P31C201-129 에서 후속 검증 완료 (2026-05-15) — 런북 [docs/runbook-rollback.md](runbook-rollback.md).
 
 ---
 
@@ -167,15 +167,31 @@ server-app   20        519MB     16 hours ago
 
 ### 2.5 rollback dry-run
 
-⏸ **별도 시점 1회 검증 권장**:
-```bash
-./scripts/deploy.sh history       # 직전 빌드 번호 확인
-./scripts/deploy.sh rollback 19   # ~10초 안에 직전 빌드로 복귀
-./scripts/deploy.sh status        # image 가 server-app:19 인지 확인
-docker tag server-app:20 server-app:latest && docker compose --env-file .env up -d --force-recreate app
-```
+✅ **2026-05-15 1회 검증 완료 (S14P31C201-129)**.
 
-운영 영향 5~10초 다운타임이라 시연 직전이 아닌 한가한 시간대 권장. 검증 후 결과를 같은 마크다운에 추가 또는 별도 D-1 검증 문서.
+**핵심 측정값** (`:35` → `:34` rollback):
+
+| 항목 | 값 |
+|---|---|
+| 명령 총 소요 (T1→T2) | 17.274 s |
+| 사용자 체감 다운타임 (외부 502 연속 구간) | **~10.49 s** |
+| healthy 폴링 횟수 | 5/30 (~15 s) |
+| 외부 502 갯수 (0.5s polling) | 17 개 |
+| relay 부팅 시간 | 3.787 s (UDP 7777 listener 정상) |
+| image swap 검증 | ✅ (`82d7c2191bce` → `7059a89b52cc`) |
+
+→ 예측 다운타임 "5-10초" 와 거의 일치 (polling 간격 0.5s 라 +1초 정도 over-measure).
+
+**발견된 함정 / 본 런북에 반영된 보강 사항** (상세는 [docs/runbook-rollback.md](runbook-rollback.md) 부록 A.1):
+
+1. `<N-1>` placeholder 직접 paste 가 bash syntax error 유발 → `PREV_N=NN` 변수 패턴으로 정정
+2. Windows PowerShell `curl` 은 `Invoke-WebRequest` alias 라 `-sf` 안 먹힘 → `curl.exe` 명시
+3. EC2 host 의 `localhost:8080` 직접 호출 불가 (publish 안 됨) → `docker exec server-app-1 curl ...` 로
+4. **🔥 `./scripts/deploy.sh deploy <N>` 으로 forward 복구 불가능** (silent inconsistency 유발 — 모든 history tag 가 같은 image 가리키게 됨, 원래 image untagged 손실). forward 정상 경로 = Jenkins 트리거 / develop merge / EC2 재빌드 — 본 런북 §3.5 4 갈래로 재설계.
+
+> 운영 장애 시 운영자가 잘못 따라했으면 silent inconsistency 로 "복귀했다" 착각 + 실제 image 안 바뀐 채 진행할 위험 있던 함정. 본 리허설의 가장 큰 수확.
+
+전체 운영 런북: [docs/runbook-rollback.md](runbook-rollback.md). 차후 리허설마다 부록 A 누적.
 
 ---
 
