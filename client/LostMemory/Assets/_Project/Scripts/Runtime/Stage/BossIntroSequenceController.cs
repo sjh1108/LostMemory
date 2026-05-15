@@ -22,6 +22,7 @@ namespace LostMemory.Stage
         [SerializeField] private bool makeBossInvulnerableDuringIntro = true;
         [SerializeField] private CombatTargetable bossTargetable;
         [SerializeField] private bool makeBossUntargetableDuringIntro = true;
+        [SerializeField] private bool protectBossBeforeIntroStarts = true;
         [SerializeField] private bool debugLogging;
 
         private Coroutine _introRoutine;
@@ -29,6 +30,7 @@ namespace LostMemory.Stage
         private Character[] _cachedPlayers = System.Array.Empty<Character>();
         private BossRoomTransitionCompletedContext _currentContext;
         private bool _isIntroRunning;
+        private bool _introCompleted;
         private bool _introInvulnerabilityApplied;
         private bool _bossWasInvulnerable;
         private bool _introTargetabilityApplied;
@@ -56,11 +58,17 @@ namespace LostMemory.Stage
             bossHealth ??= ResolveBossHealth();
             bossTargetable ??= ResolveBossTargetable(createIfMissing: false);
             AutoAssignVisibilityTargets();
+            ApplyPreIntroProtection();
 
             if (!_isIntroRunning && sequenceData != null && sequenceData.HideBossBeforeEntry)
             {
                 SetIntroVisibility(isVisible: false);
             }
+        }
+
+        private void Start()
+        {
+            ApplyPreIntroProtection();
         }
 
         private void OnDisable()
@@ -80,6 +88,7 @@ namespace LostMemory.Stage
             AutoAssignVisibilityTargets();
             _currentContext = context;
             _cachedPlayers = CopyPlayers(context.Players);
+            _introCompleted = false;
             _introRoutine = StartCoroutine(RunIntroSequence(context));
         }
 
@@ -271,6 +280,7 @@ namespace LostMemory.Stage
             RestoreIntroTargetability();
             _introRoutine = null;
             _isIntroRunning = false;
+            _introCompleted = true;
             IntroCompleted?.Invoke(context);
             Log("Boss intro sequence completed.");
         }
@@ -308,9 +318,21 @@ namespace LostMemory.Stage
             Log("Boss intro sequence stopped.");
         }
 
+        private void ApplyPreIntroProtection()
+        {
+            if (!Application.isPlaying || !protectBossBeforeIntroStarts || _introCompleted)
+            {
+                return;
+            }
+
+            // BossSceneAutoStarter may delay BeginIntro; protect spawned bosses before passive attacks tick.
+            ApplyIntroInvulnerability();
+            ApplyIntroTargetability();
+        }
+
         private void ApplyIntroInvulnerability()
         {
-            if (!makeBossInvulnerableDuringIntro || _introInvulnerabilityApplied)
+            if (!makeBossInvulnerableDuringIntro)
             {
                 return;
             }
@@ -319,6 +341,12 @@ namespace LostMemory.Stage
             if (bossHealth == null)
             {
                 Log("Boss Health is missing. Intro invulnerability was not applied.");
+                return;
+            }
+
+            if (_introInvulnerabilityApplied)
+            {
+                bossHealth.Invulnerable = true;
                 return;
             }
 
@@ -344,7 +372,7 @@ namespace LostMemory.Stage
 
         private void ApplyIntroTargetability()
         {
-            if (!makeBossUntargetableDuringIntro || _introTargetabilityApplied)
+            if (!makeBossUntargetableDuringIntro)
             {
                 return;
             }
@@ -353,6 +381,12 @@ namespace LostMemory.Stage
             if (bossTargetable == null)
             {
                 Log("Boss CombatTargetable is missing. Intro targetability was not changed.");
+                return;
+            }
+
+            if (_introTargetabilityApplied)
+            {
+                bossTargetable.IsTargetable = false;
                 return;
             }
 
