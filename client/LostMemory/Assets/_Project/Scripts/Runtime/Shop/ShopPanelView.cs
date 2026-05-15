@@ -23,8 +23,19 @@ namespace LostMemory.Shop
         [SerializeField] private TextMeshProUGUI  _detailRarityText;  // "[유니크] 맹공" 형식
         [SerializeField] private TextMeshProUGUI  _detailDescText;    // EffectDescription
 
+        [Header("닫기")]
+        [SerializeField] private Button _closeButton;
+
         /// <summary>구매 성공 이벤트 — 인자: 구매된 아이템 데이터</summary>
         public event Action<ShopItemData> OnItemPurchased;
+
+        /// <summary>X 버튼 클릭 이벤트 — ShopController 가 구독해 Close() 를 호출한다.</summary>
+        public event Action OnCloseRequested;
+
+        private void Start()
+        {
+            _closeButton?.onClick.AddListener(() => OnCloseRequested?.Invoke());
+        }
 
         /// <summary>컴포넌트 추가 / Reset 시 자식 참조를 자동으로 찾는다.</summary>
         private void Reset()

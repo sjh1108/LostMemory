@@ -56,6 +56,7 @@ namespace LostMemory.Shop
             if (panel != null)
             {
                 panel.OnItemPurchased += HandleItemPurchased;
+                panel.OnCloseRequested += Close;
             }
         }
 
@@ -64,6 +65,7 @@ namespace LostMemory.Shop
             if (panel != null)
             {
                 panel.OnItemPurchased -= HandleItemPurchased;
+                panel.OnCloseRequested -= Close;
             }
             // panic restore — 패널 떠있는 채 disable 시 조작 봉쇄 잠금 방지.
             if (IsOpen)
@@ -118,10 +120,9 @@ namespace LostMemory.Shop
                 inventoryPanel.gameObject.SetActive(true);
                 inventoryPanel.Init(playerRelicInventory, goldWallet.Current);
             }
-            // 단축키바 동시 표시 — 소모품(포션) 구매 즉시 슬롯에 추가됨을 확인 가능.
+            // 단축키바 — 영구 HUD이므로 SetActive 조작 없이 데이터만 연결.
             if (shortcutBar != null && playerConsumableInventory != null)
             {
-                shortcutBar.gameObject.SetActive(true);
                 shortcutBar.Init(playerConsumableInventory);
             }
             SuppressPlayerControls();
@@ -142,11 +143,6 @@ namespace LostMemory.Shop
             if (inventoryPanel != null)
             {
                 inventoryPanel.gameObject.SetActive(false);
-            }
-            // 단축키바도 같이 닫음.
-            if (shortcutBar != null)
-            {
-                shortcutBar.gameObject.SetActive(false);
             }
             RestorePlayerControls();
 

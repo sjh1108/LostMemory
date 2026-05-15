@@ -1,6 +1,8 @@
+using System;
 using LostMemory.Relics;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace LostMemory.Shop
 {
@@ -16,6 +18,17 @@ namespace LostMemory.Shop
 
         [Header("소지 골드")]
         [SerializeField] private TextMeshProUGUI _goldText;
+
+        [Header("닫기")]
+        [SerializeField] private Button _closeButton;
+
+        /// <summary>X 버튼 클릭 이벤트 — InventoryToggleController 가 구독해 Close() 를 호출한다.</summary>
+        public event Action OnCloseRequested;
+
+        private void Start()
+        {
+            _closeButton?.onClick.AddListener(() => OnCloseRequested?.Invoke());
+        }
 
         private void Reset()
         {
