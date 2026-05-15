@@ -141,7 +141,7 @@ Job 설정:
 - `post { failure {} }` 에서 `docker compose logs --tail=200 app` 자동 출력
 - 로그에서 원인 확인 후:
   - 코드 수정 → 재배포
-  - 혹은 이전 이미지로 수동 롤백: `docker tag server-app:<이전_BUILD_NUMBER> server-app:latest && docker compose up -d app`
+  - 혹은 이전 이미지로 롤백 — 사전조건 / 단계별 명령 / 검증 절차는 별도 운영 런북 [docs/runbook-rollback.md](runbook-rollback.md) 참조 (`./scripts/deploy.sh rollback <N-1>`)
 
 ## 트러블슈팅
 
