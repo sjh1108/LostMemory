@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using LostMemory.Combat;
 using LostMemory.Combat.Telegraph;
 using LostMemory.Enemies;
+using LostMemory.Rendering;
 using LostMemory.Stage;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
@@ -1467,6 +1469,15 @@ namespace LostMemory.Enemies.Boss.Bertha
             health.DisableControllerOnDeath = true;
             health.DisableModelOnDeath = false;
             health.DisableCollisionsOnDeath = true;
+            if (Application.isPlaying)
+            {
+                EnemyDeathAnimationLock.EnsureOn(gameObject, health, animator);
+                TopDownYSortOrder.EnsureOn(
+                    visualRoot != null ? visualRoot.gameObject : gameObject,
+                    transform,
+                    animator != null ? animator.GetComponent<SpriteRenderer>() : null);
+                EnemyCollisionPolicy.EnsurePlayerBodyCollisionIgnore(gameObject);
+            }
 
             Character character = GetOrAdd<Character>(gameObject);
             character.CharacterAnimator = animator;
