@@ -24,7 +24,7 @@ namespace LostMemory.SceneFlow
         [SerializeField] private string editorScenePath = string.Empty;
         [SerializeField] private LoadSceneMode loadSceneMode = LoadSceneMode.Single;
         [SerializeField] private bool requireInteractInput = true;
-        [SerializeField] private KeyCode fallbackInteractKey = KeyCode.E;
+        [SerializeField] private KeyCode fallbackInteractKey = KeyCode.F;
         [SerializeField] private string acceptedPlayerId = "Player1";
         [SerializeField] private GameObject visualRoot;
         [SerializeField] private bool debugLogging;

@@ -15,7 +15,7 @@ namespace LostMemory.Stage
         [SerializeField] private StageRouteManager routeManager;
         [SerializeField] private bool unlockedOnStart;
         [SerializeField] private bool requireInteractInput = true;
-        [SerializeField] private KeyCode fallbackInteractKey = KeyCode.E;
+        [SerializeField] private KeyCode fallbackInteractKey = KeyCode.F;
         [SerializeField] private string acceptedPlayerId = "Player1";
         [SerializeField] private bool useDistanceFallback = true;
         [SerializeField, Min(0.1f)] private float activationRadius = 1.5f;

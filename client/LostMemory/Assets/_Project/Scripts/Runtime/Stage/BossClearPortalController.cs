@@ -14,7 +14,7 @@ namespace LostMemory.Stage
         [SerializeField] private GameObject portalVisualRoot;
         [SerializeField] private Collider2D portalTrigger;
         [SerializeField, Min(0.1f)] private float activationRadius = 1.5f;
-        [SerializeField] private KeyCode fallbackInteractKey = KeyCode.E;
+        [SerializeField] private KeyCode fallbackInteractKey = KeyCode.F;
         [SerializeField] private bool hideOnStart = true;
         [SerializeField] private bool debugLogging;
 

@@ -554,9 +554,9 @@ namespace LostMemory.TestKhi
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null)
             {
-                state.IsPressed |= keyboard.eKey.isPressed;
-                state.WasPressedThisFrame |= keyboard.eKey.wasPressedThisFrame;
-                state.WasReleasedThisFrame |= keyboard.eKey.wasReleasedThisFrame;
+                state.IsPressed |= keyboard.fKey.isPressed;
+                state.WasPressedThisFrame |= keyboard.fKey.wasPressedThisFrame;
+                state.WasReleasedThisFrame |= keyboard.fKey.wasReleasedThisFrame;
             }
 
             Gamepad gamepad = Gamepad.current;
