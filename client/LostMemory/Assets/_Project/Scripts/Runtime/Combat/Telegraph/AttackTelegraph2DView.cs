@@ -30,6 +30,9 @@ namespace LostMemory.Combat.Telegraph
         [FormerlySerializedAs("sortingOrder")]
         [SerializeField] private int sortingOrderOffset = -5;
         [SerializeField] private bool renderOutsideSortingGroup = true;
+        [SerializeField] private bool useFixedTelegraphSorting = true;
+        [SerializeField] private string telegraphSortingLayerName = "Foreground";
+        [SerializeField] private int telegraphSortingOrder = 50;
         [SerializeField] private SortingGroup sortingGroupReference;
         [SerializeField] private Color defaultColor = new Color(1f, 0.33f, 0.08f, 0.32f);
         [SerializeField] private float pulseSpeed = 8f;
@@ -217,6 +220,12 @@ namespace LostMemory.Combat.Telegraph
                 return;
             }
 
+            if (useFixedTelegraphSorting)
+            {
+                ApplyFixedTelegraphSorting();
+                return;
+            }
+
             sortingGroupReference ??= FindSortingGroupReference();
             if (renderOutsideSortingGroup && sortingGroupReference != null)
             {
@@ -234,6 +243,45 @@ namespace LostMemory.Combat.Telegraph
 
             _previewRenderer.sortingLayerID = sortingReference.sortingLayerID;
             _previewRenderer.sortingOrder = sortingReference.sortingOrder + sortingOrderOffset;
+        }
+
+        private void ApplyFixedTelegraphSorting()
+        {
+            bool layerApplied = false;
+            if (!string.IsNullOrWhiteSpace(telegraphSortingLayerName))
+            {
+                if (TryGetSortingLayerId(telegraphSortingLayerName, out int telegraphLayerId))
+                {
+                    _previewRenderer.sortingLayerID = telegraphLayerId;
+                    layerApplied = true;
+                }
+            }
+
+            if (!layerApplied)
+            {
+                sortingReference ??= FindSortingReference();
+                if (sortingReference != null)
+                {
+                    _previewRenderer.sortingLayerID = sortingReference.sortingLayerID;
+                }
+            }
+
+            _previewRenderer.sortingOrder = telegraphSortingOrder;
+        }
+
+        private static bool TryGetSortingLayerId(string layerName, out int layerId)
+        {
+            foreach (SortingLayer sortingLayer in SortingLayer.layers)
+            {
+                if (sortingLayer.name == layerName)
+                {
+                    layerId = sortingLayer.id;
+                    return true;
+                }
+            }
+
+            layerId = 0;
+            return false;
         }
 
         private SortingGroup FindSortingGroupReference()

@@ -1,6 +1,7 @@
 using System.Collections;
 using LostMemory.Combat;
 using LostMemory.TestKhi;
+using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -201,6 +202,7 @@ namespace LostMemory.MagicalGirl
             if (entry.vfxPrefab == null) return;
             Vector3 spawnPos = transform.position;
             GameObject go = Instantiate(entry.vfxPrefab, spawnPos, Quaternion.identity);
+            VFXSpawner.ApplyGameplayEffectSorting(go);
             var proj = go.GetComponent<MagicalGirlProjectile>();
             if (proj == null) proj = go.AddComponent<MagicalGirlProjectile>();
             proj.Init(dir, damage, entry.projectileSpeed, entry.projectileLifetime, entry.hitVfxPrefab, _ownerDownController);
@@ -217,6 +219,7 @@ namespace LostMemory.MagicalGirl
                 spawnPos += (Vector3)(forward * Mathf.Max(2f, entry.aoeRadius * 1.5f));
             }
             GameObject go = Instantiate(entry.vfxPrefab, spawnPos, Quaternion.identity);
+            VFXSpawner.ApplyGameplayEffectSorting(go);
             var aoe = go.GetComponent<MagicalGirlAOE>();
             if (aoe == null) aoe = go.AddComponent<MagicalGirlAOE>();
             // tick 데미지 = entry.damageRatio 기반이지만, catalog 에서 이미 1회 전달된 damage 를 tick 당 데미지로 사용.

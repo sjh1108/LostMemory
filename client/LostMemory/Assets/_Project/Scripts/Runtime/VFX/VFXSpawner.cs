@@ -9,6 +9,9 @@ namespace LostMemory.VFX
     /// </summary>
     public static class VFXSpawner
     {
+        private const string GameplayEffectSortingLayerName = "Foreground";
+        private const int GameplayEffectSortingOrder = 60;
+
         public static GameObject Spawn(
             GameObject prefab,
             Vector3 position,
@@ -34,6 +37,78 @@ namespace LostMemory.VFX
                 Object.Destroy(instance, autoDestroySeconds);
 
             return instance;
+        }
+
+        public static void ApplyGameplayEffectSorting(GameObject vfxInstance)
+        {
+            ApplyFixedSorting(vfxInstance, GameplayEffectSortingLayerName, GameplayEffectSortingOrder);
+        }
+
+        public static void ApplyFixedSorting(
+            GameObject vfxInstance,
+            string sortingLayerName,
+            int baseSortingOrder)
+        {
+            if (vfxInstance == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = vfxInstance.GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                return;
+            }
+
+            int layerId = 0;
+            bool hasSortingLayer = TryGetSortingLayerId(sortingLayerName, out layerId);
+            int minSortingOrder = int.MaxValue;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] == null)
+                {
+                    continue;
+                }
+
+                minSortingOrder = Mathf.Min(minSortingOrder, renderers[i].sortingOrder);
+            }
+
+            if (minSortingOrder == int.MaxValue)
+            {
+                minSortingOrder = 0;
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (hasSortingLayer)
+                {
+                    renderer.sortingLayerID = layerId;
+                }
+
+                renderer.sortingOrder = baseSortingOrder + (renderer.sortingOrder - minSortingOrder);
+            }
+        }
+
+        private static bool TryGetSortingLayerId(string layerName, out int layerId)
+        {
+            foreach (SortingLayer sortingLayer in SortingLayer.layers)
+            {
+                if (sortingLayer.name == layerName)
+                {
+                    layerId = sortingLayer.id;
+                    return true;
+                }
+            }
+
+            layerId = 0;
+            return false;
         }
 
         public static GameObject SpawnAttached(

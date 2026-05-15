@@ -1609,6 +1609,9 @@ MonoBehaviour:
   sortingReference: {fileID: 5445363382652363815}
   sortingOrderOffset: -10
   renderOutsideSortingGroup: 1
+  useFixedTelegraphSorting: 1
+  telegraphSortingLayerName: Foreground
+  telegraphSortingOrder: 50
   sortingGroupReference: {fileID: 0}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
@@ -1992,6 +1995,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBrainAnimationController
   brain: {fileID: 4201815108539706757}
+  health: {fileID: 6054050822062713159}
   animator: {fileID: 1779776357898543542}
   introSequenceController: {fileID: 8749221807566480916}
   movingStateName: Moving

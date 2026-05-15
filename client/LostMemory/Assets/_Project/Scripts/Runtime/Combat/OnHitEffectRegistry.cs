@@ -373,6 +373,7 @@ namespace LostMemory.Combat
 
             GameObject go = VFXSpawner.Spawn(_chainHitVFXPrefab, spawnPos, Quaternion.identity, 0.3f);
             if (go == null) return;
+            VFXSpawner.ApplyGameplayEffectSorting(go);
 
             JaggedLightningLine jagged = go.GetComponentInChildren<JaggedLightningLine>();
             if (jagged != null)
@@ -401,6 +402,7 @@ namespace LostMemory.Combat
 
             GameObject go = VFXSpawner.Spawn(_chainHitVFXPrefab, from, Quaternion.identity, 0.3f);
             if (go == null) return;
+            VFXSpawner.ApplyGameplayEffectSorting(go);
 
             JaggedLightningLine jagged = go.GetComponentInChildren<JaggedLightningLine>();
             if (jagged != null)
@@ -431,6 +433,7 @@ namespace LostMemory.Combat
                 Quaternion.Euler(0f, 0f, angle),
                 _windVFXLifetime);
             if (go == null) return;
+            VFXSpawner.ApplyGameplayEffectSorting(go);
 
             LineRenderer lr = go.GetComponentInChildren<LineRenderer>();
             if (lr != null)

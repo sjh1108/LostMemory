@@ -1,5 +1,6 @@
 using LostMemory.Combat;
 using LostMemory.TestKhi;
+using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -47,7 +48,8 @@ namespace LostMemory.MagicalGirl
         private void SpawnHitVfx()
         {
             if (_hitVfxPrefab == null) return;
-            Instantiate(_hitVfxPrefab, transform.position, Quaternion.identity);
+            GameObject hitVfx = Instantiate(_hitVfxPrefab, transform.position, Quaternion.identity);
+            VFXSpawner.ApplyGameplayEffectSorting(hitVfx);
         }
 
         private void Update()
