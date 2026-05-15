@@ -1,3 +1,4 @@
+using LostMemory.Rendering;
 using UnityEngine;
 
 namespace LostMemory.TestKhi
@@ -49,6 +50,7 @@ namespace LostMemory.TestKhi
         {
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _animator = GetComponent<Animator>();
+            TopDownYSortOrder.EnsureOn(gameObject, configuredSortingReference: _spriteRenderer);
 
             if (aim == null)
             {
