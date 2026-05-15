@@ -1135,6 +1135,7 @@ MonoBehaviour:
   _baseMaxSlots: 25
   _maxCols: 5
   _maxRows: 5
+  _consumableInventory: {fileID: 0}
   _debugRelicsToAdd: []
 --- !u!4 &243853594
 Transform:
@@ -2163,6 +2164,26 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5976970664841978390, guid: 4055b0e24e5731b48b423d2342ac12b3,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5976970664841978390, guid: 4055b0e24e5731b48b423d2342ac12b3,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5976970664841978390, guid: 4055b0e24e5731b48b423d2342ac12b3,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5976970664841978390, guid: 4055b0e24e5731b48b423d2342ac12b3,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7014247875997761964, guid: 4055b0e24e5731b48b423d2342ac12b3,
         type: 3}
       propertyPath: m_Pivot.x
@@ -2677,12 +2698,12 @@ PrefabInstance:
     - target: {fileID: 937947499786722986, guid: 40164af5439b8554c93e5e20ccf84d16,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 789
+      value: 563
       objectReference: {fileID: 0}
     - target: {fileID: 937947499786722986, guid: 40164af5439b8554c93e5e20ccf84d16,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 34.623047
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 937947499786722986, guid: 40164af5439b8554c93e5e20ccf84d16,
         type: 3}
@@ -3303,6 +3324,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: ShopPanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 7254437511217063735, guid: 40164af5439b8554c93e5e20ccf84d16,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7541354599686187671, guid: 40164af5439b8554c93e5e20ccf84d16,
         type: 3}

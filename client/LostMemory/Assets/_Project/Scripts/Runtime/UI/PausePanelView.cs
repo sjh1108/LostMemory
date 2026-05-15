@@ -45,6 +45,7 @@ namespace LostMemory.UI
         public void Show()
         {
             gameObject.SetActive(true);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
             // 패널 열릴 때 환경설정은 항상 닫힌 상태로 시작
             if (_settingsPanel != null)
                 _settingsPanel.SetActive(false);

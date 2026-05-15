@@ -36,7 +36,7 @@ namespace LostMemory.Talents
             for (int i = 0; i < _rows.Length; i++)
             {
                 var row = _rows[i];
-                row.Init(_talentDatas[i].DisplayName);
+                row.Init(_talentDatas[i].DisplayName, _talentDatas[i].MaxLevel);
 
                 var type = row.TalentType;
                 row.PlusButton.onClick.AddListener(() => { _model.TryAdd(type); Refresh(); });

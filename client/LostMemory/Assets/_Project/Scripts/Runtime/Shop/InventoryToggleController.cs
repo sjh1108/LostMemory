@@ -41,11 +41,18 @@ namespace LostMemory.Shop
 
         private void Awake()
         {
+            if (panel != null) panel.OnCloseRequested += Close;
+
             if (startHidden)
             {
                 if (panel != null)          panel.gameObject.SetActive(false);
                 if (setEffectPanel != null) setEffectPanel.gameObject.SetActive(false);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (panel != null) panel.OnCloseRequested -= Close;
         }
 
         private void Update()
