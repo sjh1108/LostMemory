@@ -74,12 +74,20 @@ namespace LostMemory.Stage
     public readonly struct RoomClearedPayload
     {
         public RoomClearedPayload(string roomId, RoomData data)
+            : this(roomId, data, 0)
+        {
+        }
+
+        public RoomClearedPayload(string roomId, RoomData data, int spawnedEnemyCount)
         {
             RoomId = roomId;
             Data = data;
+            SpawnedEnemyCount = spawnedEnemyCount < 0 ? 0 : spawnedEnemyCount;
         }
 
         public string RoomId { get; }
         public RoomData Data { get; }
+        public int SpawnedEnemyCount { get; }
+        public bool HasSpawnedEnemies => SpawnedEnemyCount > 0;
     }
 }

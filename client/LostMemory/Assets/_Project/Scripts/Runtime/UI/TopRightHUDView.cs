@@ -208,7 +208,7 @@ namespace LostMemory.UI
                 return;
             }
 
-            runManager.ReturnToTown();
+            runManager.AbandonRunAndReturnToTown();
         }
 
         private bool TryReturnToTownThroughRunManager()
@@ -224,7 +224,7 @@ namespace LostMemory.UI
                 return false;
             }
 
-            runManager.ReturnToTown();
+            runManager.AbandonRunAndReturnToTown();
             return true;
         }
     }

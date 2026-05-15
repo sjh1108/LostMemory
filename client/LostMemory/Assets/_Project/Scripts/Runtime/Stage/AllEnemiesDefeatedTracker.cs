@@ -165,7 +165,7 @@ namespace LostMemory.Stage
             if (totalSpawned == 0 || totalSpawned == totalDeaths)
             {
                 clearedFired = true;
-                OnRoomCleared?.Invoke(new RoomClearedPayload(data?.RoomId ?? string.Empty, data));
+                OnRoomCleared?.Invoke(new RoomClearedPayload(data?.RoomId ?? string.Empty, data, totalSpawned));
             }
         }
     }

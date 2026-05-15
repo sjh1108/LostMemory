@@ -59,6 +59,12 @@ namespace LostMemory.Stage
 
             // Resulting → None (메인 메뉴 복귀 / 다시하기)
             (RunState.Resulting, RunState.None),
+
+            // ESC 메뉴/씬 이탈처럼 결과 정산 없이 런을 포기하는 귀환.
+            (RunState.Initializing, RunState.None),
+            (RunState.InRun, RunState.None),
+            (RunState.RunCleared, RunState.None),
+            (RunState.RunFailed, RunState.None),
         };
 
         /// <summary>

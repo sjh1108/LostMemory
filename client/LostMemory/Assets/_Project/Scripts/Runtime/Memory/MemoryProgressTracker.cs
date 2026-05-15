@@ -17,6 +17,7 @@ namespace LostMemory.Memory
     /// RunManager 에서 호출하는 진입점:
     ///   - RecordRoomClear()    : 룸 클리어 시 카운트 기록
     ///   - SaveRunShards()      : CleanupRunResultingState() 끝에서 호출 → 영구 저장
+    ///   - DiscardRunShards()   : 런 포기 시 이번 런 카운터만 폐기
     ///   - ResetRunShards()     : StartRun() 시 이번 런 카운터 초기화
     ///
     /// GoldWallet 과 동일한 패턴. RunManager 와 같은 GameObject 에 부착 권장.
@@ -30,7 +31,7 @@ namespace LostMemory.Memory
         private int _shardPerSmallRoom = 1;
 
         [SerializeField, Min(0), Tooltip("큰 전투방 클리어 시 지급 파편 수.")]
-        private int _shardPerLargeRoom = 2;
+        private int _shardPerLargeRoom = 1;
 
         [SerializeField, Min(0), Tooltip("보스방 클리어 시 지급 파편 수.")]
         private int _shardPerBossRoom = 3;
@@ -180,6 +181,16 @@ namespace LostMemory.Memory
             if (_logChanges)
             {
                 Debug.Log($"[MemoryProgressTracker] SaveRunShards. earned={earned} bonus={bonus} -> AccumulatedShards={wallet.CurrentShards}", this);
+            }
+            ResetRunShards();
+        }
+
+        public void DiscardRunShards()
+        {
+            int discarded = ThisRunShards;
+            if (_logChanges)
+            {
+                Debug.Log($"[MemoryProgressTracker] DiscardRunShards. discarded={discarded}", this);
             }
             ResetRunShards();
         }

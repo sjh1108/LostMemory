@@ -535,6 +535,16 @@ namespace LostMemory.Stage
 
         public void ReturnToTown()
         {
+            ReturnToTown(saveRunRewards: true);
+        }
+
+        public void AbandonRunAndReturnToTown()
+        {
+            ReturnToTown(saveRunRewards: false);
+        }
+
+        private void ReturnToTown(bool saveRunRewards)
+        {
             if (townReturnInProgress)
             {
                 Debug.LogWarning("[RunManager] Town return is already in progress.", this);
@@ -570,9 +580,9 @@ namespace LostMemory.Stage
 
             townReturnInProgress = true;
             TownSpawnRouter.RequestTownReturn(townSceneName);
-            if (!TryCloseResulting())
+            if (!TryCloseResulting(saveRunRewards))
             {
-                CleanupRunResultingState();
+                CleanupRunResultingState(saveRunRewards);
             }
             Time.timeScale = 1f;
 
@@ -628,18 +638,23 @@ namespace LostMemory.Stage
 #endif
         }
 
-        private bool TryCloseResulting()
+        private bool TryCloseResulting(bool saveRunRewards = true)
         {
+            if (StateMachine.Current == RunState.None)
+            {
+                return true;
+            }
+
             if (!StateMachine.TryTransition(RunState.None))
             {
                 return false;
             }
 
-            CleanupRunResultingState();
+            CleanupRunResultingState(saveRunRewards);
             return true;
         }
 
-        private void CleanupRunResultingState()
+        private void CleanupRunResultingState(bool saveRunRewards = true)
         {
             ResolveEconomyRefs();
             bossClearPortalReady = false;
@@ -664,8 +679,18 @@ namespace LostMemory.Stage
             {
                 goldWallet.ResetToInitial();
             }
-            // 이번 런 파편 영구 저장.
-            memoryProgressTracker?.SaveRunShards();
+            // 결과창 경로는 파편을 저장하고, ESC 포기 경로는 이번 런 pending 파편을 버린다.
+            if (memoryProgressTracker != null)
+            {
+                if (saveRunRewards)
+                {
+                    memoryProgressTracker.SaveRunShards();
+                }
+                else
+                {
+                    memoryProgressTracker.DiscardRunShards();
+                }
+            }
             // 씬 전환 시 캐리오버용 Player 스냅샷도 함께 초기화 — 다음 런은 빈 인벤토리/풀HP.
             PlayerRunState.Instance?.Clear();
         }
@@ -768,13 +793,17 @@ namespace LostMemory.Stage
             }
             // CL-113: Combat 방 클리어 시 보상 골드 +50.
             // CL-115 B: 의도 로그 — GoldWallet 자동 로그가 *왜* 는 안 알려주므로.
-            if (payload.Data.RoomType == StageRoomType.Combat && goldWallet != null)
+            bool isRewardEligibleCombatRoom = payload.Data.RoomType == StageRoomType.Combat && payload.HasSpawnedEnemies;
+            if (isRewardEligibleCombatRoom && goldWallet != null)
             {
                 Debug.Log("[RunManager] Combat clear reward gold +50.");
                 goldWallet.Add(50);
             }
             // 룸 타입/크기에 따른 파편 정산 카운트 기록. 영구 지급은 런 결과 정리 시점에 수행한다.
-            memoryProgressTracker?.RecordRoomClear(payload.Data);
+            if (isRewardEligibleCombatRoom || payload.Data.RoomType == StageRoomType.Boss)
+            {
+                memoryProgressTracker?.RecordRoomClear(payload.Data);
+            }
             // develop: 보스방 외 클리어는 런 흐름에 영향 X (다음 방 자연 진입).
             if (payload.Data.RoomType != StageRoomType.Boss)
             {

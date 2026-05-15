@@ -136,6 +136,12 @@ namespace LostMemory.Stage
                 return;
             }
 
+            if (!payload.HasSpawnedEnemies)
+            {
+                if (logRewardFlow) Debug.Log($"[RewardController] Skip empty Combat room reward: {payload.RoomId}");
+                return;
+            }
+
             // 동시 다중 클리어 보호 (cl110_plan 결정 #6 / 위험 #5).
             if (_isShowingReward)
             {
