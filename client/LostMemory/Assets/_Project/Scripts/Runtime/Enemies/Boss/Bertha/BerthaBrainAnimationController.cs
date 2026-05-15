@@ -35,6 +35,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         };
 
         [SerializeField] private AIBrain brain;
+        [SerializeField] private Health health;
         [SerializeField] private Animator animator;
         [SerializeField] private BossIntroSequenceController introSequenceController;
         [SerializeField] private string movingStateName = "Moving";
@@ -45,7 +46,9 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private bool debugLogging;
 
         private bool _introPlaying;
+        private bool _deathLocked;
         private string _currentAnimationStateName;
+        private Health _subscribedHealth;
         private BossIntroSequenceController _boundIntroSequenceController;
 
         private void Reset()
@@ -65,6 +68,8 @@ namespace LostMemory.Enemies.Boss.Bertha
             RefreshReferences();
             EnsureIdleStatesConfigured();
             RebindIntroSequenceEvents();
+            SubscribeDeath();
+            _deathLocked = health != null && health.Initialized && health.CurrentHealth <= 0f;
             this.MMEventStartListening<AIStateEvent>();
             SyncAnimationToCurrentState();
         }
@@ -73,11 +78,12 @@ namespace LostMemory.Enemies.Boss.Bertha
         {
             this.MMEventStopListening<AIStateEvent>();
             RebindIntroSequenceEvents(null);
+            UnsubscribeDeath();
         }
 
         public void OnMMEvent(AIStateEvent stateEvent)
         {
-            if (stateEvent.Brain != brain || _introPlaying)
+            if (stateEvent.Brain != brain || _introPlaying || IsDeathLocked())
             {
                 return;
             }
@@ -103,6 +109,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         public void RefreshReferences()
         {
             brain ??= GetComponent<AIBrain>();
+            health ??= GetComponent<Health>();
             introSequenceController ??= GetComponent<BossIntroSequenceController>();
             if (animator == null)
             {
@@ -123,6 +130,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             RefreshReferences();
             EnsureIdleStatesConfigured();
             RebindIntroSequenceEvents();
+            SubscribeDeath();
             SyncAnimationToCurrentState();
         }
 
@@ -133,13 +141,18 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void OnIntroCompleted(BossRoomTransitionCompletedContext _)
         {
+            if (IsDeathLocked())
+            {
+                return;
+            }
+
             _introPlaying = false;
             SyncAnimationToCurrentState();
         }
 
         private void PlayAnimation(string stateName)
         {
-            if (animator == null || string.IsNullOrWhiteSpace(stateName))
+            if (IsDeathLocked() || animator == null || string.IsNullOrWhiteSpace(stateName))
             {
                 return;
             }
@@ -212,7 +225,7 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void SyncAnimationToCurrentState()
         {
-            if (_introPlaying || brain == null || brain.CurrentState == null)
+            if (IsDeathLocked() || _introPlaying || brain == null || brain.CurrentState == null)
             {
                 return;
             }
@@ -228,6 +241,46 @@ namespace LostMemory.Enemies.Boss.Bertha
             {
                 PlayAnimation(idleAnimationStateName);
             }
+        }
+
+        private void SubscribeDeath()
+        {
+            if (!isActiveAndEnabled || _subscribedHealth == health)
+            {
+                return;
+            }
+
+            UnsubscribeDeath();
+
+            if (health == null)
+            {
+                return;
+            }
+
+            _subscribedHealth = health;
+            _subscribedHealth.OnDeath += HandleDeath;
+        }
+
+        private void UnsubscribeDeath()
+        {
+            if (_subscribedHealth == null)
+            {
+                return;
+            }
+
+            _subscribedHealth.OnDeath -= HandleDeath;
+            _subscribedHealth = null;
+        }
+
+        private void HandleDeath()
+        {
+            _deathLocked = true;
+            _currentAnimationStateName = null;
+        }
+
+        private bool IsDeathLocked()
+        {
+            return _deathLocked || (health != null && health.Initialized && health.CurrentHealth <= 0f);
         }
 
         private void RebindIntroSequenceEvents()

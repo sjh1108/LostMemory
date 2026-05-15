@@ -219,25 +219,7 @@ namespace LostMemory.Combat
 
         private static void EnsureDeathAnimationLock(GameObject instance)
         {
-            if (instance == null)
-            {
-                return;
-            }
-
-            Health health = instance.GetComponent<Health>();
-            Animator animator = instance.GetComponentInChildren<Animator>(includeInactive: true);
-            if (health == null || animator == null)
-            {
-                return;
-            }
-
-            EnemyDeathAnimationLock animationLock = instance.GetComponent<EnemyDeathAnimationLock>();
-            if (animationLock == null)
-            {
-                animationLock = instance.AddComponent<EnemyDeathAnimationLock>();
-            }
-
-            animationLock.Configure(health, animator);
+            EnemyDeathAnimationLock.EnsureOn(instance);
         }
 
         private void RegisterHitAnimationRecovery(GameObject instance)

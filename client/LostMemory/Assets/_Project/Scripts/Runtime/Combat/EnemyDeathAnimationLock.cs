@@ -19,8 +19,40 @@ namespace LostMemory.Combat
         [SerializeField] private bool inferDeathStateFromControllerName = true;
         [SerializeField] private bool forceImmediateStatePlay = true;
         [SerializeField] private bool forceAnimatorUpdate = true;
+        [SerializeField] private bool keepDeathStateLocked = true;
 
         private Health subscribedHealth;
+        private bool deathStateLocked;
+
+        public static EnemyDeathAnimationLock EnsureOn(
+            GameObject host,
+            Health configuredHealth = null,
+            Animator configuredAnimator = null)
+        {
+            if (host == null)
+            {
+                return null;
+            }
+
+            Health resolvedHealth = configuredHealth != null
+                ? configuredHealth
+                : host.GetComponent<Health>();
+            Animator resolvedAnimator = ResolveAnimator(host, resolvedHealth, configuredAnimator);
+
+            if (resolvedHealth == null || resolvedAnimator == null)
+            {
+                return null;
+            }
+
+            EnemyDeathAnimationLock animationLock = host.GetComponent<EnemyDeathAnimationLock>();
+            if (animationLock == null)
+            {
+                animationLock = host.AddComponent<EnemyDeathAnimationLock>();
+            }
+
+            animationLock.Configure(resolvedHealth, resolvedAnimator);
+            return animationLock;
+        }
 
         private void Awake()
         {
@@ -35,12 +67,37 @@ namespace LostMemory.Combat
         private void OnEnable()
         {
             ResolveReferences();
+            if (health != null && health.CurrentHealth > 0f)
+            {
+                deathStateLocked = false;
+            }
+
             Subscribe();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+        }
+
+        private void LateUpdate()
+        {
+            if (!deathStateLocked
+                || !keepDeathStateLocked
+                || animator == null
+                || !animator.isActiveAndEnabled
+                || !TryGetDeathStateHash(out int deathStateHash)
+                || IsStatePlaying(deathStateHash))
+            {
+                return;
+            }
+
+            animator.Play(deathStateHash, 0, 0f);
+
+            if (forceAnimatorUpdate)
+            {
+                animator.Update(0f);
+            }
         }
 
         public void Configure(Health configuredHealth, Animator configuredAnimator)
@@ -90,20 +147,13 @@ namespace LostMemory.Combat
                 health = GetComponent<Health>();
             }
 
-            if (animator == null && health != null && health.TargetAnimator != null)
-            {
-                animator = health.TargetAnimator;
-            }
-
-            if (animator == null)
-            {
-                animator = GetComponentInChildren<Animator>(includeInactive: true);
-            }
+            animator = ResolveAnimator(gameObject, health, animator);
         }
 
         private void HandleDeath()
         {
             ResolveReferences();
+            deathStateLocked = true;
 
             if (animator == null || !animator.isActiveAndEnabled)
             {
@@ -200,6 +250,43 @@ namespace LostMemory.Combat
 
             stateHash = Animator.StringToHash(stateName);
             return animator.HasState(0, stateHash);
+        }
+
+        private bool IsStatePlaying(int stateHash)
+        {
+            AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
+            if (currentState.fullPathHash == stateHash || currentState.shortNameHash == stateHash)
+            {
+                return true;
+            }
+
+            if (!animator.IsInTransition(0))
+            {
+                return false;
+            }
+
+            AnimatorStateInfo nextState = animator.GetNextAnimatorStateInfo(0);
+            return nextState.fullPathHash == stateHash || nextState.shortNameHash == stateHash;
+        }
+
+        private static Animator ResolveAnimator(
+            GameObject host,
+            Health resolvedHealth,
+            Animator preferredAnimator)
+        {
+            if (preferredAnimator != null)
+            {
+                return preferredAnimator;
+            }
+
+            if (resolvedHealth != null && resolvedHealth.TargetAnimator != null)
+            {
+                return resolvedHealth.TargetAnimator;
+            }
+
+            return host != null
+                ? host.GetComponentInChildren<Animator>(includeInactive: true)
+                : null;
         }
 
         private bool HasParameter(string parameterName, AnimatorControllerParameterType parameterType)
