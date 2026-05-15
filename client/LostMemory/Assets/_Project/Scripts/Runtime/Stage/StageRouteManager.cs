@@ -28,6 +28,26 @@ namespace LostMemory.Stage
             [SerializeField] private string exitTriggerId = "default";
             [SerializeField] private LoadSceneMode loadSceneMode = LoadSceneMode.Single;
 
+            public RouteNode()
+            {
+            }
+
+            public RouteNode(
+                string nodeId,
+                string sceneName,
+                string editorScenePath,
+                string entrySpawnId,
+                string exitTriggerId,
+                LoadSceneMode loadSceneMode)
+            {
+                this.nodeId = nodeId;
+                this.sceneName = sceneName;
+                this.editorScenePath = editorScenePath;
+                this.entrySpawnId = entrySpawnId;
+                this.exitTriggerId = exitTriggerId;
+                this.loadSceneMode = loadSceneMode;
+            }
+
             public string NodeId => nodeId;
             public string SceneName => sceneName;
             public string EditorScenePath => editorScenePath;
@@ -55,6 +75,16 @@ namespace LostMemory.Stage
 
         public int CurrentNodeIndex => currentNodeIndex;
         public bool LoadInProgress => loadInProgress;
+
+        public void ConfigureRouteNodes(RouteNode[] nodes, int nodeIndex, string overrideEntrySpawnId, bool placePlayers)
+        {
+            routeNodes = nodes ?? Array.Empty<RouteNode>();
+            initialNodeIndex = routeNodes.Length > 0
+                ? Mathf.Clamp(nodeIndex, 0, routeNodes.Length - 1)
+                : 0;
+
+            InitializeRouteNode(initialNodeIndex, overrideEntrySpawnId, placePlayers);
+        }
 
         private void OnValidate()
         {
