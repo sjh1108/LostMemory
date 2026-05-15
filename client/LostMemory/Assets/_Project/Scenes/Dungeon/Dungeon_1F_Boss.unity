@@ -227,6 +227,7 @@ MonoBehaviour:
   buildManager: {fileID: 786682093}
   shopController: {fileID: 0}
   rewardController: {fileID: 927221817}
+  downController: {fileID: 0}
   toggleKey: 105
   startHidden: 1
   logToggle: 0
@@ -4883,6 +4884,7 @@ MonoBehaviour:
   memoryProgressTracker: {fileID: 927221819}
   autoStartOnAwake: 1
   resultingDelaySeconds: 2
+  failureResultingDelaySeconds: 5
   townSceneName: Town
   townScenePath: Assets/_Project/Scenes/Town/Town.unity
   restartDungeonSceneName: Dungeon_1F_1R
@@ -5347,6 +5349,11 @@ PrefabInstance:
       propertyPath: roomController
       value: 
       objectReference: {fileID: 483564393}
+    - target: {fileID: 4715416575836506484, guid: 0b929cfd4cfd14f4e8b95e801a332412,
+        type: 3}
+      propertyPath: fallbackInteractKey
+      value: 102
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5979,47 +5986,6 @@ MonoBehaviour:
   _hideMPUntilManaSourceExists: 1
   _fallbackPlayerId: Player1
   _resolveRetryInterval: 0.5
---- !u!21 &1718421777
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Sprites/Default
-  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _AlphaTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - PixelSnap: 0
-    - _EnableExternalAlpha: 0
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Flip: {r: 1, g: 1, b: 1, a: 1}
-    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &1718533678
 GameObject:
   m_ObjectHideFlags: 0
@@ -6559,6 +6525,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fb38731f3ad0f84b860270fb965a853, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossRoomLocalTransitionDriver
+--- !u!21 &1877282856
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Sprites/Default
+  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - PixelSnap: 0
+    - _EnableExternalAlpha: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Flip: {r: 1, g: 1, b: 1, a: 1}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1001 &1915984883
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7283,6 +7290,7 @@ MonoBehaviour:
   _view: {fileID: 1958804353}
   _inventory: {fileID: 0}
   _playerHealing: {fileID: 0}
+  _downController: {fileID: 0}
   _enableNumberHotkeys: 1
   _resolveRetryInterval: 0.5
 --- !u!1001 &2012047024
