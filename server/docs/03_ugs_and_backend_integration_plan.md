@@ -89,7 +89,7 @@
 
 | 항목 | 값 |
 |---|---|
-| dev Base URL | `http://localhost:8080` (개인 PC) 또는 `http://<백엔드 PC IP>:8080` (LAN 테스트) |
+| dev Base URL | `http://localhost:18080` (개인 PC) 또는 `http://<백엔드 PC IP>:18080` (LAN 테스트) |
 | prod Base URL | **현 단계 미정.** 배포 시점에 본 표를 갱신 |
 | 인증 헤더 | `Authorization: Bearer <accessToken>` |
 | Content-Type | `application/json; charset=UTF-8` |
@@ -156,9 +156,9 @@
 - 인증 연동 방식:       옵션 1 (분리) / 옵션 2 (Custom ID)
 
 [백엔드]
-- dev Base URL:         http://<dev PC IP>:8080
+- dev Base URL:         http://<dev PC IP>:18080
 - prod Base URL:        TBD
-- Swagger UI:           http://<dev PC IP>:8080/swagger-ui/index.html
+- Swagger UI:           http://<dev PC IP>:18080/swagger-ui/index.html
 - 응답 포맷:            ApiResponse<T> { success, data, error }
 
 [ErrorCode 표]

@@ -51,9 +51,9 @@ COPY --from=builder --chown=app:app /workspace/build/layers/spring-boot-loader/ 
 COPY --from=builder --chown=app:app /workspace/build/layers/snapshot-dependencies/ ./
 COPY --from=builder --chown=app:app /workspace/build/layers/application/           ./
 
-EXPOSE 8080
+EXPOSE 18080
 
 HEALTHCHECK --interval=15s --timeout=5s --retries=6 --start-period=40s \
-  CMD curl -fsS http://localhost:8080/api/actuator/health | grep -q '"status":"UP"' || exit 1
+  CMD curl -fsS http://localhost:18080/api/actuator/health | grep -q '"status":"UP"' || exit 1
 
 ENTRYPOINT ["sh","-c","exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

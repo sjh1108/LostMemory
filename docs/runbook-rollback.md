@@ -150,8 +150,8 @@ date +"%H:%M:%S.%3N"            # T0 시작 시각
 ./scripts/deploy.sh status
 ./scripts/deploy.sh history
 echo "현재 latest image ID: $(docker inspect server-app-1 --format '{{.Image}}')"
-# 컨테이너 안에서 actuator 직접 호출 — host 의 localhost:8080 은 publish 안 되어 있어 의미 X
-docker exec server-app-1 curl -sf http://localhost:8080/api/actuator/health
+# 컨테이너 안에서 actuator 직접 호출 — host 의 localhost:18080 은 publish 안 되어 있어 의미 X
+docker exec server-app-1 curl -sf http://localhost:18080/api/actuator/health
 ```
 
 → 출력 전체를 따로 저장 (Mattermost 메모 또는 터미널 스크롤 캡처). 롤백 후 비교에 씁니다. 외부 https smoke 는 본인 PC 에서 §2.5 와 동일하게 별도 진행.

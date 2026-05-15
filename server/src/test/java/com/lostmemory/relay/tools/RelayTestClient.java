@@ -18,7 +18,7 @@ import java.util.Map;
  * 자체 Relay PoC 검증용 테스트 클라이언트.
  *
  * 실행 전제:
- *   - ServerApplication 이 localhost:8080 에서 실행 중
+ *   - ServerApplication 이 localhost:18080 에서 실행 중
  *   - RelayApplication 이 localhost:7777 에서 실행 중
  *   - testuser / password123 계정 존재 (없으면 미리 signup)
  *   - testuser01 / password123 / 테스터01 계정 존재 (없으면 본 코드가 자동 signup)
@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class RelayTestClient {
 
-    private static final String BASE_URL = "http://localhost:8080/api";
+    private static final String BASE_URL = "http://localhost:18080/api";
     private static final String RELAY_HOST = "localhost";
     private static final int RELAY_PORT = 7777;
     private static final byte MAGIC_DATA = 0x01;

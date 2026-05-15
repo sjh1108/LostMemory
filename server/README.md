@@ -106,7 +106,7 @@ graph TB
         end
 
         subgraph net_back["backend network (internal)"]
-            app["Spring Boot app<br/>ServerApplication<br/>:8080"]
+            app["Spring Boot app<br/>ServerApplication<br/>:18080"]
             postgres["PostgreSQL :5432"]
             redis["Redis :6379"]
         end
@@ -266,7 +266,7 @@ flowchart LR
   - `requirepass` 설정, AOF 영속화
 
 - **INFRA-8** Nginx 리버스 프록시 초기 설정 (3 SP) — High
-  - `/api/*` → Spring Boot(`app:8080`) 프록시
+  - `/api/*` → Spring Boot(`app:18080`) 프록시
   - gzip, timeout, proxy 헤더
   - HTTPS는 W3에서
 
