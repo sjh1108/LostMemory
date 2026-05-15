@@ -1,4 +1,6 @@
 using LostMemory.Memory.UI;
+using LostMemory.TestKhi;
+using MoreMountains.TopDownEngine;
 using UnityEngine;
 
 namespace LostMemory.Memory
@@ -34,6 +36,7 @@ namespace LostMemory.Memory
         [SerializeField] private bool _logInteraction = true;
 
         private bool _playerInRange;
+        private Character _playerInRangeCharacter;
 
         private void Awake()
         {
@@ -43,6 +46,7 @@ namespace LostMemory.Memory
         private void Update()
         {
             if (!_playerInRange) return;
+            if (KhiPlayerActionGate.IsBlocked(_playerInRangeCharacter)) return;
             if (!Input.GetKeyDown(_interactKey)) return;
 
             if (_unlockPanel == null && _collectionPanel == null)
@@ -61,6 +65,7 @@ namespace LostMemory.Memory
         {
             if (!IsPlayer(other)) return;
             _playerInRange = true;
+            _playerInRangeCharacter = other.GetComponentInParent<Character>();
             if (_promptObject != null) _promptObject.SetActive(true);
             if (_logInteraction) Debug.Log("[MemoryNpcInteractable] 플레이어 범위 진입.", this);
         }
@@ -69,6 +74,10 @@ namespace LostMemory.Memory
         {
             if (!IsPlayer(other)) return;
             _playerInRange = false;
+            if (_playerInRangeCharacter == other.GetComponentInParent<Character>())
+            {
+                _playerInRangeCharacter = null;
+            }
             if (_promptObject != null) _promptObject.SetActive(false);
             if (_logInteraction) Debug.Log("[MemoryNpcInteractable] 플레이어 범위 이탈.", this);
         }

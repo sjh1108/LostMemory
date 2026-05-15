@@ -1,4 +1,5 @@
 using LostMemory.Combat;
+using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -18,13 +19,26 @@ namespace LostMemory.MagicalGirl
         private float _expiresAt;
         private bool _hasHit;
         private GameObject _hitVfxPrefab;
+        private KhiDownController _ownerDownController;
 
         public void Init(Vector2 direction, float damage, float speed, float lifetime, GameObject hitVfxPrefab = null)
+        {
+            Init(direction, damage, speed, lifetime, hitVfxPrefab, null);
+        }
+
+        public void Init(
+            Vector2 direction,
+            float damage,
+            float speed,
+            float lifetime,
+            GameObject hitVfxPrefab,
+            KhiDownController ownerDownController)
         {
             _velocity = direction.normalized * speed;
             _damage = damage;
             _expiresAt = Time.time + lifetime;
             _hitVfxPrefab = hitVfxPrefab;
+            _ownerDownController = ownerDownController;
             // 회전: 진행 방향으로 sprite 정렬 (오른쪽 = 0도 기준)
             float angleDeg = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, angleDeg);
@@ -39,6 +53,12 @@ namespace LostMemory.MagicalGirl
         private void Update()
         {
             if (_hasHit) return;
+            if (IsOwnerActionBlocked())
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             transform.position += (Vector3)(_velocity * Time.deltaTime);
             if (Time.time >= _expiresAt)
             {
@@ -51,6 +71,12 @@ namespace LostMemory.MagicalGirl
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (_hasHit) return;
+            if (IsOwnerActionBlocked())
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             Health h = other.GetComponentInParent<Health>();
             if (h == null || h.CurrentHealth <= 0f) return;
             if (!CombatTargetable.CanBeTargeted(h)) return;
@@ -62,6 +88,11 @@ namespace LostMemory.MagicalGirl
             h.Damage(_damage, gameObject, 0f, 0f, Vector3.zero);
             SpawnHitVfx();  // CL-204 B8: 적중 시 폭발 VFX
             Destroy(gameObject);
+        }
+
+        private bool IsOwnerActionBlocked()
+        {
+            return KhiPlayerActionGate.IsBlocked(_ownerDownController);
         }
     }
 }

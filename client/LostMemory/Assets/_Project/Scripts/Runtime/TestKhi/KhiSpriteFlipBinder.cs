@@ -22,6 +22,7 @@ namespace LostMemory.TestKhi
         [Header("References")]
         [Tooltip("비우면 Awake 에서 GetComponentInParent<KhiPlayerAim>() 로 자동 탐색")]
         [SerializeField] private KhiPlayerAim aim;
+        [SerializeField] private KhiDownController downController;
 
         [Header("Facing Detection")]
         [Tooltip("|aim.x| 가 이 값 이하이면 facing 갱신을 건너뛰고 직전 값을 유지 (마우스가 캐릭터 X 라인 근처일 때 떨림 방지)")]
@@ -54,6 +55,11 @@ namespace LostMemory.TestKhi
                 aim = GetComponentInParent<KhiPlayerAim>();
             }
 
+            if (downController == null)
+            {
+                KhiPlayerActionGate.TryResolveDownController(this, out downController);
+            }
+
             _backIdleHash = Animator.StringToHash(backIdleStateName);
             _backWalkHash = Animator.StringToHash(backWalkStateName);
             _isFacingRight = initialFacingRight;
@@ -66,6 +72,11 @@ namespace LostMemory.TestKhi
 
         private void LateUpdate()
         {
+            if (KhiPlayerActionGate.IsBlocked(downController))
+            {
+                return;
+            }
+
             UpdateFacing();
             ApplyFlip();
         }

@@ -56,6 +56,7 @@ namespace LostMemory.TestKhi
         [SerializeField] private bool logEvents = false;
 
         private bool _isInside;
+        private Character _insideCharacter;
 
         private void Awake()
         {
@@ -67,6 +68,7 @@ namespace LostMemory.TestKhi
         {
             // 컴포넌트 비활성 시 prompt 도 같이 숨김 (씬 전환 등에서 잔상 방지).
             _isInside = false;
+            _insideCharacter = null;
             SetVisualsActive(false);
         }
 
@@ -78,6 +80,7 @@ namespace LostMemory.TestKhi
             }
 
             _isInside = true;
+            _insideCharacter = ResolveCharacter(other);
             SetVisualsActive(true);
             Log($"Enter by {other.name}");
         }
@@ -90,6 +93,10 @@ namespace LostMemory.TestKhi
             }
 
             _isInside = false;
+            if (_insideCharacter == ResolveCharacter(other))
+            {
+                _insideCharacter = null;
+            }
             SetVisualsActive(false);
             Log($"Exit by {other.name}");
         }
@@ -97,6 +104,11 @@ namespace LostMemory.TestKhi
         private void Update()
         {
             if (!_isInside)
+            {
+                return;
+            }
+
+            if (KhiPlayerActionGate.IsBlocked(_insideCharacter))
             {
                 return;
             }
@@ -126,13 +138,20 @@ namespace LostMemory.TestKhi
 
             // 충돌한 collider 자체 또는 부모에서 Character 컴포넌트 탐색.
             // TestKhi 처럼 hitbox/sub-collider 가 자식인 경우도 커버.
-            Character character = other.GetComponent<Character>();
-            if (character == null)
-            {
-                character = other.GetComponentInParent<Character>();
-            }
+            Character character = ResolveCharacter(other);
 
             return character != null && character.CharacterType == Character.CharacterTypes.Player;
+        }
+
+        private static Character ResolveCharacter(Component source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            Character character = source.GetComponent<Character>();
+            return character != null ? character : source.GetComponentInParent<Character>();
         }
 
         private void SetVisualsActive(bool active)

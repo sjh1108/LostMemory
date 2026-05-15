@@ -1,3 +1,4 @@
+using LostMemory.Player;
 using LostMemory.Networking.Player;
 using LostMemory.TestKhi;
 using MoreMountains.Tools;
@@ -38,6 +39,7 @@ namespace LostMemory.UI
         {
             ResolveView();
             this.MMEventStartListening<HealthChangeEvent>();
+            PlayerHealthSnapshotter.SnapshotRestoreCompleted += HandleHealthSnapshotRestoreCompleted;
             LocalPlayerResolver.LocalPlayerReady += HandleLocalPlayerReady;
 
             if (_targetHealth == null && _autoResolveLocalPlayer)
@@ -55,6 +57,7 @@ namespace LostMemory.UI
         private void OnDisable()
         {
             LocalPlayerResolver.LocalPlayerReady -= HandleLocalPlayerReady;
+            PlayerHealthSnapshotter.SnapshotRestoreCompleted -= HandleHealthSnapshotRestoreCompleted;
             this.MMEventStopListening<HealthChangeEvent>();
             UnsubscribeHealthCallbacks();
         }
@@ -196,9 +199,34 @@ namespace LostMemory.UI
                 return;
             }
 
+            if (PlayerHealthSnapshotter.TryGetPendingSnapshot(_targetHealth, out PlayerSnapshot snapshot))
+            {
+                float snapshotMax = snapshot.MaximumHealth > 0f ? snapshot.MaximumHealth : _targetHealth.MaximumHealth;
+                int snapshotCurrent = Mathf.RoundToInt(Mathf.Clamp(snapshot.CurrentHealth, 0f, snapshotMax));
+                _healthBarView.UpdateHP(snapshotCurrent, Mathf.RoundToInt(snapshotMax));
+                return;
+            }
+
             int current = Mathf.RoundToInt(_targetHealth.CurrentHealth);
             int max = Mathf.RoundToInt(_targetHealth.MaximumHealth);
             _healthBarView.UpdateHP(current, max);
+        }
+
+        private void HandleHealthSnapshotRestoreCompleted(Health restoredHealth)
+        {
+            if (_targetHealth == null || restoredHealth == null)
+            {
+                return;
+            }
+
+            Health effectiveHealth = restoredHealth.MasterHealth != null
+                ? restoredHealth.MasterHealth
+                : restoredHealth;
+
+            if (_targetHealth == effectiveHealth)
+            {
+                RefreshHP();
+            }
         }
 
         private Health ResolveFallbackCharacterHealth()

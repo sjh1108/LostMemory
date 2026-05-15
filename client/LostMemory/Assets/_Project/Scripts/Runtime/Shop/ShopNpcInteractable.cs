@@ -1,5 +1,7 @@
 using LostMemory.Relics;
 using LostMemory.Rewards;
+using LostMemory.TestKhi;
+using MoreMountains.TopDownEngine;
 using UnityEngine;
 
 namespace LostMemory.Shop
@@ -49,6 +51,7 @@ namespace LostMemory.Shop
         [SerializeField] private bool logInteraction = true;
 
         private bool _playerInRange;
+        private Character _playerInRangeCharacter;
 
         // Phase A 확장: 동적 ShopData 캐시. 인스턴스마다 1회만 Generate, 이후 재사용.
         // 컴포넌트 lifetime = 1F_SHOP 프리팹 인스턴스 lifetime = 1 run 의 1번 visit
@@ -64,6 +67,7 @@ namespace LostMemory.Shop
         private void Update()
         {
             if (!_playerInRange) return;
+            if (KhiPlayerActionGate.IsBlocked(_playerInRangeCharacter)) return;
             if (Input.GetKeyDown(interactKey))
             {
                 if (shopController == null)
@@ -127,6 +131,7 @@ namespace LostMemory.Shop
         {
             if (!IsPlayer(other)) return;
             _playerInRange = true;
+            _playerInRangeCharacter = other.GetComponentInParent<Character>();
             if (promptObject != null) promptObject.SetActive(true);
             if (logInteraction) Debug.Log($"[ShopNpcInteractable] Player in range.", this);
         }
@@ -135,6 +140,10 @@ namespace LostMemory.Shop
         {
             if (!IsPlayer(other)) return;
             _playerInRange = false;
+            if (_playerInRangeCharacter == other.GetComponentInParent<Character>())
+            {
+                _playerInRangeCharacter = null;
+            }
             if (promptObject != null) promptObject.SetActive(false);
             if (logInteraction) Debug.Log($"[ShopNpcInteractable] Player out of range.", this);
         }

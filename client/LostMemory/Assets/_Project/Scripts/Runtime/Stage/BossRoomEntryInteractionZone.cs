@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LostMemory.TestKhi;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -150,12 +151,14 @@ namespace LostMemory.Stage
                 return false;
             }
 
-            return true;
+            return !KhiPlayerActionGate.IsBlocked(character);
         }
 
         private bool IsCharacterStillValid(Character character)
         {
-            return character != null && character.gameObject.activeInHierarchy;
+            return character != null
+                && character.gameObject.activeInHierarchy
+                && !KhiPlayerActionGate.IsBlocked(character);
         }
 
         private static bool IsInteractPressedThisFrame(Character character)

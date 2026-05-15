@@ -1,4 +1,5 @@
 using System.Collections;
+using LostMemory.TestKhi;
 using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -199,7 +200,7 @@ namespace LostMemory.Enemies
             // Burn 도트 처리 (CL-143)
             if (_burnExpiresAt > 0f)
             {
-                if (Time.time >= _burnExpiresAt)
+                if (IsBurnInstigatorBlocked() || Time.time >= _burnExpiresAt)
                 {
                     _burnExpiresAt = 0f;
                     _burnDamagePerTick = 0f;
@@ -216,6 +217,12 @@ namespace LostMemory.Enemies
             }
 
             if (visualChanged) RefreshActiveVisual();
+        }
+
+        private bool IsBurnInstigatorBlocked()
+        {
+            return _burnInstigator != null
+                && KhiPlayerActionGate.IsBlocked(_burnInstigator.transform);
         }
 
         /// <summary>

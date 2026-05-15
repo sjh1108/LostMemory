@@ -167,7 +167,7 @@ SortingGroup:
   m_GameObject: {fileID: 1790328835693532}
   m_Enabled: 1
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
@@ -355,6 +355,9 @@ MonoBehaviour:
   allowDashDuringAttackRecovery: 0
   logBlockedDashToConsole: 0
   statContainer: {fileID: 1496170365699431617}
+  dashInvulnerabilityEnabled: 1
+  dashInvulnerabilityDuration: 0.3
+  health: {fileID: 0}
 --- !u!114 &114583920634094340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -661,6 +664,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerAim
   targetCamera: {fileID: 0}
   fallbackDirection: {x: 1, y: 0}
+  downController: {fileID: 0}
 --- !u!114 &114910001000000002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -679,6 +683,7 @@ MonoBehaviour:
   maximumHitsPerSample: 32
   targetInvincibilityDuration: 0
   targetFlickerDuration: 0
+  statContainer: {fileID: 0}
   drawDebugGizmos: 1
   debugGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showRuntimePreview: 1
@@ -727,6 +732,7 @@ MonoBehaviour:
   hitbox: {fileID: 114910001000000002}
   visualPresenter: {fileID: 114910001000000003}
   dash: {fileID: 114646620809325970}
+  downController: {fileID: 0}
   weaponData: {fileID: 11400000, guid: be21afd1099c64146b384f8bee29eb68, type: 2}
   allowInputDuringRecovery: 1
   allowAttackDuringDash: 0
@@ -775,7 +781,6 @@ MonoBehaviour:
   hitStunDuration: 0.12
   postHitInvulnerability: 0.15
   interruptMeleeComboOnHit: 1
-  setAnimatorTrigger: 1
   hitAnimatorTriggerName: Hit
   logStateTransitions: 0
 --- !u!114 &8056956279644409734
@@ -806,12 +811,13 @@ MonoBehaviour:
   reviveHealthAbsoluteMin: 1
   reviveInteractionHoldDuration: 0
   reviveInvulnerabilityAfter: 1.5
+  memoryReviveDelay: 1.5
   soloBehavior: 1
   debugReviveKey: 114
   logStateTransitions: 0
-  setAnimatorTriggers: 0
   downAnimatorTriggerName: Down
   reviveAnimatorTriggerName: Revive
+  defeatObjectDisableDelay: 5
 --- !u!114 &1205325766915542333
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -848,7 +854,11 @@ MonoBehaviour:
   meleeCombo: {fileID: 114910001000000004}
   health: {fileID: 114871673569860628}
   parryAction: {fileID: 0}
+  hitStun: {fileID: 0}
+  downController: {fileID: 0}
   parryWindow: 0.16
+  parryHitbox: {fileID: 0}
+  parryHitboxScale: 1.3
   parryFailureRecovery: 0.45
   parryCooldown: 0.45
   successfulParryInvulnerability: 0.12
@@ -888,6 +898,7 @@ MonoBehaviour:
   successSparkPrefab: {fileID: 482039274662796259, guid: 52530438c6c075144b9f3bb2545570a6,
     type: 3}
   sparkLifetime: 0.4
+  sparkLocalOffset: {x: 0, y: 0, z: 0}
   successSfx: {fileID: 8300000, guid: eabf35d0f912b674fb1bbeac1556a05d, type: 3}
   sfxVolume: 1
 --- !u!114 &7906725925004899532
@@ -1029,6 +1040,15 @@ MonoBehaviour:
   parryController: {fileID: 8099593820185299679}
   dashController: {fileID: 114646620809325970}
   playerShield: {fileID: 1105879407601961676}
+  _shieldVFXPrefab: {fileID: 0}
+  _buffAuraVFXPrefab: {fileID: 0}
+  _attackSpeedAuraColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  _moveSpeedAuraColor: {r: 0.3, g: 0.6, b: 1, a: 1}
+  _shieldGrantedSfx: {fileID: 0}
+  _killBuffSfx: {fileID: 0}
+  _dashBuffSfx: {fileID: 0}
+  _sfxVolume: 0.6
+  _vfxFadeOutSeconds: 0.25
 --- !u!114 &4842836589957752715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1069,6 +1089,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
+  _baseMaxSlots: 25
+  _maxCols: 5
+  _maxRows: 5
+  _consumableInventory: {fileID: 0}
   _debugRelicsToAdd:
   - {fileID: 11400000, guid: 8e31f126b13b2184dac90cdb89760ccc, type: 2}
   - {fileID: 11400000, guid: cc3c34d065f1025459a49cfa67b4e3d9, type: 2}
@@ -1109,9 +1133,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealing
   health: {fileID: 114871673569860628}
   container: {fileID: 1496170365699431617}
+  downController: {fileID: 0}
   logHeals: 1
   _debugConsumableToUse: {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709,
     type: 2}
+  _healVFXPrefab: {fileID: 0}
+  _healSfx: {fileID: 0}
+  _sfxVolume: 0.6
 --- !u!114 &769846797786231295
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1124,7 +1152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3156955631
+  GlobalObjectIdHash: 108718000
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -1186,6 +1214,7 @@ MonoBehaviour:
   character: {fileID: 0}
   stateAggregator: {fileID: 0}
   convertNonOwnerToAi: 1
+  disableInputComponentsOnNonOwner: 1
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
@@ -1264,7 +1293,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 47421343
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: eeb68d44a260e964584c4310ad5add3a, type: 3}
@@ -1275,7 +1304,7 @@ SpriteRenderer:
   m_Size: {x: 1.28, y: 1.28}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
 --- !u!1 &1516448916103123182
 GameObject:
@@ -1693,6 +1722,7 @@ MonoBehaviour:
   weaponSprite: {fileID: 5310696344823772951}
   playerAim: {fileID: 0}
   comboController: {fileID: 0}
+  downController: {fileID: 0}
   externalSprite: {fileID: 0}
   useProceduralIfNoExternal: 1
   swordWidthPx: 48

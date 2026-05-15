@@ -58,6 +58,9 @@ namespace LostMemory.Stage
         [SerializeField, Tooltip("RunCleared/RunFailed 도달 후 Resulting 까지의 지연 시간(초)")]
         private float resultingDelaySeconds = 2f;
 
+        [SerializeField, Tooltip("RunFailed 도달 후 Resulting 까지의 지연 시간(초). 사망 애니메이션 확인용.")]
+        private float failureResultingDelaySeconds = 5f;
+
         [SerializeField, Tooltip("결과창의 마을로 버튼을 눌렀을 때 로드할 씬 이름.")]
         private string townSceneName = "Town";
 
@@ -96,7 +99,11 @@ namespace LostMemory.Stage
         private int memoryFragments;
         private bool bossClearPortalReady;
         private bool townReturnInProgress;
+        private bool restartSceneLoadPending;
         private Coroutine refreshSceneSubscriptionsRoutine;
+        private DungeonRunBootstrap subscribedDungeonRunBootstrap;
+        private KhiPlayerStateAggregator subscribedPlayerStateAggregator;
+        private KhiDownController subscribedPlayerDownController;
         private RunResultPanelView subscribedRunResultPanelView;
 
         private void Awake()
@@ -118,42 +125,20 @@ namespace LostMemory.Stage
         private void OnEnable()
         {
             ResolveEconomyRefs();
-
-            if (dungeonRunBootstrap != null)
-            {
-                dungeonRunBootstrap.DungeonBuilt += HandleDungeonBuilt;
-            }
-            if (playerStateAggregator != null)
-            {
-                playerStateAggregator.StateChanged += HandlePlayerStateChanged;
-            }
-            if (playerDownController != null)
-            {
-                playerDownController.DefeatedByTimeout += HandlePlayerDefeatedDirect;
-                playerDownController.DefeatedSolo += HandlePlayerDefeatedDirect;
-            }
+            ResolveSceneRefs();
             // CL-113: RunResult 버튼 wiring. develop 의 단순 += CloseResulting 대신 우리 핸들러 채택 —
             // HandleRestartRequested 가 SceneManager.LoadScene 으로 씬 재로드까지 수행 (superset).
             BindRunResultPanelView(runResultPanelView);
 
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            QueueSceneRefresh();
         }
 
         private void OnDisable()
         {
-            if (dungeonRunBootstrap != null)
-            {
-                dungeonRunBootstrap.DungeonBuilt -= HandleDungeonBuilt;
-            }
-            if (playerStateAggregator != null)
-            {
-                playerStateAggregator.StateChanged -= HandlePlayerStateChanged;
-            }
-            if (playerDownController != null)
-            {
-                playerDownController.DefeatedByTimeout -= HandlePlayerDefeatedDirect;
-                playerDownController.DefeatedSolo -= HandlePlayerDefeatedDirect;
-            }
+            UnbindDungeonRunBootstrap();
+            UnbindPlayerStateAggregator();
+            UnbindPlayerDownController();
             UnbindRunResultPanelView();
 
             SceneManager.sceneLoaded -= HandleSceneLoaded;
@@ -185,6 +170,11 @@ namespace LostMemory.Stage
                 return;
             }
 
+            QueueSceneRefresh();
+        }
+
+        private void QueueSceneRefresh()
+        {
             if (refreshSceneSubscriptionsRoutine != null)
             {
                 StopCoroutine(refreshSceneSubscriptionsRoutine);
@@ -197,6 +187,8 @@ namespace LostMemory.Stage
         {
             yield return null;
             refreshSceneSubscriptionsRoutine = null;
+
+            ResolveSceneRefs();
 
             bool adoptedRouteRun = TryBeginLoadedRouteRun();
             if (StateMachine.Current != RunState.Initializing &&
@@ -219,9 +211,134 @@ namespace LostMemory.Stage
             }
         }
 
+        private void ResolveSceneRefs()
+        {
+            BindDungeonRunBootstrap(ResolveActiveSceneComponent(dungeonRunBootstrap, FindObjectsInactive.Include));
+            BindPlayerStateAggregator(ResolveActiveSceneComponent(playerStateAggregator, FindObjectsInactive.Exclude));
+            BindPlayerDownController(ResolveActiveSceneComponent(playerDownController, FindObjectsInactive.Exclude));
+
+            if (playerRelicInventory == null)
+            {
+                playerRelicInventory = ResolveActiveSceneComponent<PlayerRelicInventory>(null, FindObjectsInactive.Include);
+            }
+
+            ResolveRunResultPanelView();
+        }
+
+        private static T ResolveActiveSceneComponent<T>(T current, FindObjectsInactive inactive) where T : Component
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (current != null && current.gameObject.scene == activeScene)
+            {
+                return current;
+            }
+
+            T[] components = FindObjectsByType<T>(inactive, FindObjectsSortMode.None);
+            for (int i = 0; i < components.Length; i++)
+            {
+                T component = components[i];
+                if (component != null && component.gameObject.scene == activeScene)
+                {
+                    return component;
+                }
+            }
+
+            return null;
+        }
+
+        private void BindDungeonRunBootstrap(DungeonRunBootstrap bootstrap)
+        {
+            if (subscribedDungeonRunBootstrap == bootstrap)
+            {
+                return;
+            }
+
+            UnbindDungeonRunBootstrap();
+            dungeonRunBootstrap = bootstrap;
+
+            if (bootstrap == null)
+            {
+                return;
+            }
+
+            subscribedDungeonRunBootstrap = bootstrap;
+            subscribedDungeonRunBootstrap.DungeonBuilt += HandleDungeonBuilt;
+        }
+
+        private void UnbindDungeonRunBootstrap()
+        {
+            if (subscribedDungeonRunBootstrap != null)
+            {
+                subscribedDungeonRunBootstrap.DungeonBuilt -= HandleDungeonBuilt;
+            }
+
+            subscribedDungeonRunBootstrap = null;
+        }
+
+        private void BindPlayerStateAggregator(KhiPlayerStateAggregator aggregator)
+        {
+            if (subscribedPlayerStateAggregator == aggregator)
+            {
+                return;
+            }
+
+            UnbindPlayerStateAggregator();
+            playerStateAggregator = aggregator;
+
+            if (aggregator == null)
+            {
+                return;
+            }
+
+            subscribedPlayerStateAggregator = aggregator;
+            subscribedPlayerStateAggregator.StateChanged += HandlePlayerStateChanged;
+        }
+
+        private void UnbindPlayerStateAggregator()
+        {
+            if (subscribedPlayerStateAggregator != null)
+            {
+                subscribedPlayerStateAggregator.StateChanged -= HandlePlayerStateChanged;
+            }
+
+            subscribedPlayerStateAggregator = null;
+        }
+
+        private void BindPlayerDownController(KhiDownController downController)
+        {
+            if (subscribedPlayerDownController == downController)
+            {
+                return;
+            }
+
+            UnbindPlayerDownController();
+            playerDownController = downController;
+
+            if (downController == null)
+            {
+                return;
+            }
+
+            subscribedPlayerDownController = downController;
+            subscribedPlayerDownController.DefeatedByTimeout += HandlePlayerDefeatedDirect;
+            subscribedPlayerDownController.DefeatedSolo += HandlePlayerDefeatedDirect;
+        }
+
+        private void UnbindPlayerDownController()
+        {
+            if (subscribedPlayerDownController != null)
+            {
+                subscribedPlayerDownController.DefeatedByTimeout -= HandlePlayerDefeatedDirect;
+                subscribedPlayerDownController.DefeatedSolo -= HandlePlayerDefeatedDirect;
+            }
+
+            subscribedPlayerDownController = null;
+        }
+
         private RunResultPanelView ResolveRunResultPanelView()
         {
-            if (runResultPanelView != null)
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (runResultPanelView != null && runResultPanelView.gameObject.scene == activeScene)
             {
                 BindRunResultPanelView(runResultPanelView);
                 return runResultPanelView;
@@ -231,7 +348,6 @@ namespace LostMemory.Stage
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
 
-            Scene activeScene = SceneManager.GetActiveScene();
             for (int i = 0; i < views.Length; i++)
             {
                 RunResultPanelView view = views[i];
@@ -294,10 +410,22 @@ namespace LostMemory.Stage
                 return false;
             }
 
-            if (!IsAuthority || StageRouteManager.Instance == null)
+            if (!IsAuthority)
             {
                 return false;
             }
+
+            StageRouteManager routeManager = StageRouteManager.Instance;
+            if (routeManager == null && !HasActiveDungeonRunRefs())
+            {
+                return false;
+            }
+
+            if (restartSceneLoadPending && routeManager != null)
+            {
+                routeManager.InitializeRouteNode(0, string.Empty, false);
+            }
+            restartSceneLoadPending = false;
 
             CurrentStageIndex = 0;
             bossClearPortalReady = false;
@@ -310,10 +438,17 @@ namespace LostMemory.Stage
 
             if (logStageProgression)
             {
-                Debug.Log("[RunManager] Adopted loaded route scene as active run.", this);
+                Debug.Log("[RunManager] Adopted loaded dungeon scene as active run.", this);
             }
 
             return true;
+        }
+
+        private bool HasActiveDungeonRunRefs()
+        {
+            return dungeonRunBootstrap != null
+                && playerDownController != null
+                && ResolveRunResultPanelView() != null;
         }
 
         private void Start()
@@ -679,7 +814,7 @@ namespace LostMemory.Stage
                 return false;
             }
 
-            StartCoroutine(DelayedTransitionToResulting());
+            StartCoroutine(DelayedTransitionToResulting(resultingDelaySeconds));
             return true;
         }
 
@@ -691,14 +826,14 @@ namespace LostMemory.Stage
             {
                 return;
             }
-            if (StateMachine.Current != RunState.InRun)
+            if (!EnsureRunActiveForDefeat())
             {
                 return;
             }
             if (StateMachine.TryTransition(RunState.RunFailed))
             {
                 bossClearPortalReady = false;
-                StartCoroutine(DelayedTransitionToResulting());
+                StartCoroutine(DelayedTransitionToResulting(failureResultingDelaySeconds));
             }
         }
 
@@ -709,20 +844,47 @@ namespace LostMemory.Stage
         private void HandlePlayerDefeatedDirect()
         {
             // TODO(CL-014): 부활 deadline 도입 시 즉시가 아닌 deadline 만료 후로 변경.
-            if (StateMachine.Current != RunState.InRun)
+            if (!EnsureRunActiveForDefeat())
             {
                 return;
             }
             if (StateMachine.TryTransition(RunState.RunFailed))
             {
                 bossClearPortalReady = false;
-                StartCoroutine(DelayedTransitionToResulting());
+                StartCoroutine(DelayedTransitionToResulting(failureResultingDelaySeconds));
             }
         }
 
-        private IEnumerator DelayedTransitionToResulting()
+        private bool EnsureRunActiveForDefeat()
         {
-            yield return new WaitForSeconds(resultingDelaySeconds);
+            if (StateMachine.Current == RunState.InRun)
+            {
+                return true;
+            }
+
+            if (StateMachine.Current == RunState.None)
+            {
+                ResolveSceneRefs();
+                TryBeginLoadedRouteRun();
+            }
+
+            if (StateMachine.Current == RunState.Initializing)
+            {
+                SubscribeAllRoomControllers();
+                if (rewardController != null)
+                {
+                    rewardController.SubscribeAllRoomControllers();
+                }
+                ResolveRunResultPanelView();
+                StateMachine.TryTransition(RunState.InRun);
+            }
+
+            return StateMachine.Current == RunState.InRun;
+        }
+
+        private IEnumerator DelayedTransitionToResulting(float delaySeconds)
+        {
+            yield return new WaitForSeconds(Mathf.Max(0f, delaySeconds));
             if (!StateMachine.TryTransition(RunState.Resulting))
             {
                 yield break;
@@ -830,6 +992,7 @@ namespace LostMemory.Stage
             {
                 CleanupRunResultingState();
             }
+            restartSceneLoadPending = true;
             Time.timeScale = 1f;
 
             if (networkSessionActive)

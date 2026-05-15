@@ -41,6 +41,7 @@ namespace LostMemory.MagicalGirl
         private float _nextAttackAt;
         private PlayerStatModifierContainer _playerStat;
         private KhiMeleeComboController _playerCombat;
+        private KhiDownController _ownerDownController;
         private MagicalGirlAttackCatalog _catalog;
         private MagicalGirlVisual _visual = MagicalGirlVisual.Default;
         private bool _setBonusActive;
@@ -66,9 +67,19 @@ namespace LostMemory.MagicalGirl
 
         public void Init(PlayerStatModifierContainer stat, KhiMeleeComboController combat, MagicalGirlAttackCatalog catalog)
         {
+            Init(stat, combat, catalog, null);
+        }
+
+        public void Init(
+            PlayerStatModifierContainer stat,
+            KhiMeleeComboController combat,
+            MagicalGirlAttackCatalog catalog,
+            KhiDownController ownerDownController)
+        {
             _playerStat = stat;
             _playerCombat = combat;
             _catalog = catalog;
+            _ownerDownController = ownerDownController;
         }
 
         public MagicalGirlVisual Visual => _visual;
@@ -108,6 +119,12 @@ namespace LostMemory.MagicalGirl
 
         private void Update()
         {
+            if (IsOwnerActionBlocked())
+            {
+                _nextAttackAt = Mathf.Max(_nextAttackAt, Time.time + ResolveAttackInterval());
+                return;
+            }
+
             if (Time.time < _nextAttackAt) return;
             (Health target, Vector2 toTargetDir) = FindClosestEnemy();
             if (target == null) return;
@@ -150,6 +167,7 @@ namespace LostMemory.MagicalGirl
 
         private void Attack(Health target, Vector2 toTargetDir)
         {
+            if (IsOwnerActionBlocked()) return;
             if (!CombatTargetable.CanBeTargeted(target)) return;
 
             float damage = ComputeDamage();
@@ -185,7 +203,7 @@ namespace LostMemory.MagicalGirl
             GameObject go = Instantiate(entry.vfxPrefab, spawnPos, Quaternion.identity);
             var proj = go.GetComponent<MagicalGirlProjectile>();
             if (proj == null) proj = go.AddComponent<MagicalGirlProjectile>();
-            proj.Init(dir, damage, entry.projectileSpeed, entry.projectileLifetime, entry.hitVfxPrefab);
+            proj.Init(dir, damage, entry.projectileSpeed, entry.projectileLifetime, entry.hitVfxPrefab, _ownerDownController);
         }
 
         private void SpawnAOE(MagicalGirlAttackCatalog.Entry entry, float damage, Vector2 dir)
@@ -211,7 +229,13 @@ namespace LostMemory.MagicalGirl
                 entry.aoeTickInterval,
                 entry.pullSpeed,
                 entry.slowMagnitude,
-                entry.slowDuration);
+                entry.slowDuration,
+                _ownerDownController);
+        }
+
+        private bool IsOwnerActionBlocked()
+        {
+            return KhiPlayerActionGate.IsBlocked(_ownerDownController);
         }
 
         private float ComputeDamage()

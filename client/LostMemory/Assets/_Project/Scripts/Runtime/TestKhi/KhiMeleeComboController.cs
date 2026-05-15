@@ -16,6 +16,7 @@ namespace LostMemory.TestKhi
         [SerializeField] private KhiMeleeHitbox hitbox;
         [SerializeField] private KhiAttackVisualPresenter visualPresenter;
         [SerializeField] private KhiDashController dash;
+        [SerializeField] private KhiDownController downController;
         [Tooltip("무기 데이터 SO. 필수. baseDamage / 콤보 윈도우 / 콤보 step 데이터를 모두 담음.")]
         [SerializeField] private WeaponData weaponData;
         [SerializeField] private bool allowInputDuringRecovery = true;
@@ -85,6 +86,9 @@ namespace LostMemory.TestKhi
             hitbox ??= GetComponent<KhiMeleeHitbox>();
             visualPresenter ??= GetComponent<KhiAttackVisualPresenter>();
             dash ??= GetComponent<KhiDashController>();
+            downController ??= GetComponent<KhiDownController>()
+                ?? GetComponentInParent<KhiDownController>()
+                ?? GetComponentInChildren<KhiDownController>();
             _tdeHandleWeapon = GetComponent<CharacterHandleWeapon>();
 
             if (weaponData == null)
@@ -114,6 +118,13 @@ namespace LostMemory.TestKhi
 
         private void Update()
         {
+            if (IsDownStateBlockingAttack())
+            {
+                AbortCurrentAttack();
+                ClearBufferedAttack();
+                return;
+            }
+
             if (!ExternalBlock && WasAttackPressedThisFrame())
             {
                 RequestAttack();
@@ -127,7 +138,7 @@ namespace LostMemory.TestKhi
 
         public void RequestAttack()
         {
-            if (ExternalBlock)
+            if (ExternalBlock || IsDownStateBlockingAttack())
             {
                 return;
             }
@@ -158,6 +169,12 @@ namespace LostMemory.TestKhi
             _externalAbortRequested = false;
             ClearBufferedAttack();
             _alreadyHitThisSwing.Clear();
+
+            if (IsDownStateBlockingAttack())
+            {
+                FinalizeAbortedAttack();
+                yield break;
+            }
 
             AttackStepData step = GetStep(comboStep);
             _currentComboStep = step.comboStep;
@@ -197,7 +214,7 @@ namespace LostMemory.TestKhi
                 yield return new WaitForSeconds(startupDur);
             }
 
-            if (_externalAbortRequested)
+            if (_externalAbortRequested || IsDownStateBlockingAttack())
             {
                 FinalizeAbortedAttack();
                 yield break;
@@ -209,7 +226,7 @@ namespace LostMemory.TestKhi
             request.Origin = transform.position;
             AttackActiveStarted?.Invoke(request, step);
 
-            while (Time.time < activeEndsAt && !_externalAbortRequested)
+            while (Time.time < activeEndsAt && !_externalAbortRequested && !IsDownStateBlockingAttack())
             {
                 KhiAttackRequest sampleRequest = request;
                 sampleRequest.Origin = transform.position;
@@ -253,7 +270,7 @@ namespace LostMemory.TestKhi
             AttackActiveEnded?.Invoke(request, step);
             hitbox?.HideRuntimePreview();
 
-            if (_externalAbortRequested)
+            if (_externalAbortRequested || IsDownStateBlockingAttack())
             {
                 FinalizeAbortedAttack();
                 yield break;
@@ -270,12 +287,12 @@ namespace LostMemory.TestKhi
 
             _isInAttackRecovery = true;
             float recoveryEndsAt = Time.time + recoveryDur;
-            while (Time.time < recoveryEndsAt && !_externalAbortRequested)
+            while (Time.time < recoveryEndsAt && !_externalAbortRequested && !IsDownStateBlockingAttack())
             {
                 yield return null;
             }
 
-            if (_externalAbortRequested)
+            if (_externalAbortRequested || IsDownStateBlockingAttack())
             {
                 FinalizeAbortedAttack();
                 yield break;
@@ -318,6 +335,11 @@ namespace LostMemory.TestKhi
             }
 
             return true;
+        }
+
+        private bool IsDownStateBlockingAttack()
+        {
+            return downController != null && (downController.IsDown || downController.IsDefeated);
         }
 
         private void TryBufferAttack()

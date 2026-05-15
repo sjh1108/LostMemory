@@ -17,6 +17,7 @@ namespace LostMemory.Shop
         [SerializeField] private ShortcutBarView _view;
         [SerializeField] private PlayerConsumableInventory _inventory;
         [SerializeField] private PlayerHealing _playerHealing;
+        [SerializeField] private KhiDownController _downController;
         [SerializeField] private bool _enableNumberHotkeys = true;
         [SerializeField, Min(0.1f)] private float _resolveRetryInterval = 0.5f;
 
@@ -67,7 +68,11 @@ namespace LostMemory.Shop
                 BindView();
             }
 
-            if (!_enableNumberHotkeys || _inventory == null || _playerHealing == null || Time.timeScale <= 0f)
+            if (!_enableNumberHotkeys
+                || _inventory == null
+                || _playerHealing == null
+                || Time.timeScale <= 0f
+                || IsPlayerActionBlocked())
             {
                 return;
             }
@@ -125,6 +130,7 @@ namespace LostMemory.Shop
             }
 
             _playerHealing = ResolveComponent<PlayerHealing>(localPlayer);
+            _downController = ResolveComponent<KhiDownController>(localPlayer);
             BindView();
         }
 
@@ -138,6 +144,11 @@ namespace LostMemory.Shop
             if (_playerHealing == null)
             {
                 _playerHealing = FindFirstObjectByType<PlayerHealing>();
+            }
+
+            if (_downController == null)
+            {
+                _downController = FindFirstObjectByType<KhiDownController>();
             }
         }
 
@@ -185,6 +196,11 @@ namespace LostMemory.Shop
 
         private void TryUseSlot(int slotIndex)
         {
+            if (IsPlayerActionBlocked())
+            {
+                return;
+            }
+
             RelicData consumable = _inventory.Get(slotIndex);
             if (consumable == null)
             {
@@ -198,6 +214,11 @@ namespace LostMemory.Shop
             }
 
             _inventory.Remove(slotIndex);
+        }
+
+        private bool IsPlayerActionBlocked()
+        {
+            return KhiPlayerActionGate.IsBlocked(_downController);
         }
 
         private static T ResolveComponent<T>(Component owner) where T : Component
