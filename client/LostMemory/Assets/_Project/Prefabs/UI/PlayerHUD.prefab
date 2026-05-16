@@ -522,6 +522,7 @@ GameObject:
   - component: {fileID: 1407601811709256712}
   - component: {fileID: 702674165207726363}
   - component: {fileID: 4667546128298358298}
+  - component: {fileID: 1142666666666666001}
   m_Layer: 5
   m_Name: PlayerHUD
   m_TagString: Untagged
@@ -614,6 +615,23 @@ MonoBehaviour:
   _targetHealth: {fileID: 0}
   _autoResolveLocalPlayer: 1
   _hideMPUntilManaSourceExists: 1
+  _fallbackPlayerId: Player1
+  _resolveRetryInterval: 0.5
+--- !u!114 &1142666666666666001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1871165605471662045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3906e38619ae2a945b7b1b6decf44ccb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _healthBarView: {fileID: 702674165207726363}
+  _targetMana: {fileID: 0}
+  _autoResolveLocalPlayer: 1
   _fallbackPlayerId: Player1
   _resolveRetryInterval: 0.5
 --- !u!1 &1953354814384471013

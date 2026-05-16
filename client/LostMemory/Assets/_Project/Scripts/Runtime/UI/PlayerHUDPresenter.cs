@@ -18,7 +18,6 @@ namespace LostMemory.UI
         [SerializeField] private HealthBarView _healthBarView;
         [SerializeField] private Health _targetHealth;
         [SerializeField] private bool _autoResolveLocalPlayer = true;
-        [SerializeField] private bool _hideMPUntilManaSourceExists = true;
         [SerializeField] private string _fallbackPlayerId = "Player1";
         [SerializeField, Min(0.1f)] private float _resolveRetryInterval = 0.5f;
 
@@ -179,11 +178,6 @@ namespace LostMemory.UI
         private void RefreshAll()
         {
             RefreshHP();
-
-            if (_healthBarView != null && _hideMPUntilManaSourceExists)
-            {
-                _healthBarView.SetMPVisible(false);
-            }
         }
 
         private void RefreshHP()
