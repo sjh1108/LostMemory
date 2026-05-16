@@ -22,15 +22,20 @@ namespace LostMemory.Multiplayer
     ///   5. NGO 가 Initialize → Start* → Send/PollEvent 순으로 호출
     ///
     /// 프로토콜 (NGO 측 wire 포맷):
-    ///   [MAGIC_DATA=0x01][senderUserId : 8 bytes big-endian][NGO payload bytes]
+    ///   [MAGIC_DATA=0x01][senderUserId : 8 bytes BE][targetUserId : 8 bytes BE][NGO payload bytes]
+    ///
+    ///   targetUserId 는 NGO 가 Send(clientId, ...) 호출 시 의도한 unicast 대상.
+    ///   Relay 가 라우팅 안 하고 broadcast 만 하더라도 받는 측이 본인 대상 아니면 drop 하므로
+    ///   N×N 중복 spawn (같은 NetworkObjectId 두 번 받는 NGO 에러) 회피.
     ///
     /// Relay 핸드셰이크 (텍스트 JSON):
     ///   클라 → Relay : {"type":"HELLO","token":"&lt;sessionToken&gt;"}
     ///   Relay → 클라 : {"type":"ACK","ok":true,"sessionId":N,"role":"HOST|GUEST"}
     ///
     /// 한계 / 후속 개선 포인트 (클라 담당에게 전달용):
-    ///   - 모든 데이터 패킷이 같은 세션의 모든 peer 에게 broadcast (Relay 가 unicast 라우팅 안 함).
-    ///     클라 단에서 senderUserId 로 필터링하지만 대역폭은 N×N. NGO 의 unicast 의도와 약간 어긋남.
+    ///   - 클라 측 targetUserId drop 으로 NGO 중복 spawn 에러는 해결됐지만 Relay 단에서는
+    ///     여전히 broadcast — 대역폭 N×N 그대로. Relay 서버가 wire 의 targetUserId 헤더 읽어
+    ///     unicast forward 하도록 보완 예정 (서버 측 라우팅).
     ///   - Disconnect 감지는 timeout 기반이 아니라 명시적 Shutdown 시에만. 다른 peer 가 조용히 떠나면 미감지.
     ///   - clientId 매핑은 서버(호스트)·클라 양쪽 모두 senderUserId 그대로 사용.
     ///     단 ServerClientId 는 NGO 관례상 0 으로 매핑 (게스트 입장에서 호스트는 항상 0).
@@ -174,16 +179,36 @@ namespace LostMemory.Multiplayer
         {
             if (!_running) return;
 
-            if (verboseLog && payload.Count + 9 > 1400)
+            // NGO clientId → 실제 targetUserId 변환
+            //   호스트: clientId 는 게스트의 senderUserId 그대로 (HandleDataPacket 매핑 참고)
+            //   게스트: clientId == NGO_SERVER_CLIENT_ID(0) → _hostUserId, 그 외 (peer 게스트) clientId 그대로
+            ulong targetUserId;
+            if (_isHost)
             {
-                Debug.LogWarning($"[Relay] 큰 메시지 송신: payload={payload.Count}B, total={payload.Count + 9}B (UDP MTU 위험)");
+                targetUserId = clientId;
+            }
+            else
+            {
+                targetUserId = (clientId == NGO_SERVER_CLIENT_ID) ? _hostUserId : clientId;
             }
 
-            // wire frame: [MAGIC_DATA][senderUserId 8B BE][payload]
-            byte[] wire = new byte[1 + 8 + payload.Count];
+            if (targetUserId == 0)
+            {
+                if (verboseLog) Debug.LogWarning($"[Relay] Send 대상 미해소 (clientId={clientId}, isHost={_isHost}, hostUserId={_hostUserId}). 패킷 drop.");
+                return;
+            }
+
+            if (verboseLog && payload.Count + 17 > 1400)
+            {
+                Debug.LogWarning($"[Relay] 큰 메시지 송신: payload={payload.Count}B, total={payload.Count + 17}B (UDP MTU 위험)");
+            }
+
+            // wire frame: [MAGIC_DATA][senderUserId 8B BE][targetUserId 8B BE][payload]
+            byte[] wire = new byte[1 + 8 + 8 + payload.Count];
             wire[0] = MAGIC_DATA;
             WriteUInt64BE(wire, 1, _myUserId);
-            Buffer.BlockCopy(payload.Array!, payload.Offset, wire, 9, payload.Count);
+            WriteUInt64BE(wire, 9, targetUserId);
+            Buffer.BlockCopy(payload.Array!, payload.Offset, wire, 17, payload.Count);
 
             try
             {
@@ -194,7 +219,7 @@ namespace LostMemory.Multiplayer
                 Debug.LogWarning($"[Relay] Send 실패 (clientId={clientId}): {e.Message}");
             }
 
-            // clientId 별 unicast 가 아니라 broadcast 라 NetworkDelivery 도 무시 (UDP raw)
+            // NetworkDelivery 무시 (UDP raw). reliability 는 상위 NGO layer 가 보장.
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
@@ -438,14 +463,19 @@ namespace LostMemory.Multiplayer
 
         private void HandleDataPacket(byte[] data)
         {
-            if (data.Length < 1 + 8) return; // MAGIC + senderUserId 최소
+            if (data.Length < 1 + 8 + 8) return; // MAGIC + sender + target 최소
 
             ulong senderUserId = ReadUInt64BE(data, 1);
-            int payloadOffset = 1 + 8;
+            ulong targetUserId = ReadUInt64BE(data, 9);
+            int payloadOffset = 1 + 8 + 8;
             int payloadLength = data.Length - payloadOffset;
 
-            // 본인 송신이 Relay 에 의해 echo 되는 경우는 없지만 (Relay 가 본인 제외 forward 함) 안전 가드
+            // 본인 송신이 Relay 에 의해 echo 되는 경우 안전 가드
             if (senderUserId == _myUserId) return;
+
+            // 본인 대상 아니면 drop — N×N broadcast 환경에서 다른 peer 대상 메시지가
+            // 본 클라까지 도달하는 케이스 차단. NGO 의 같은 NetworkObjectId 중복 spawn 에러 회피.
+            if (targetUserId != _myUserId) return;
 
             // sender → NGO clientId 매핑
             ulong ngoClientId = MapSenderToClientId(senderUserId);
