@@ -40,17 +40,13 @@ BACKUP_DIR="${BACKUP_DIR:-/home/ubuntu/lostmemory/backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 
 # ---------------------------------------------------------------------
-# .env source — set -a 동안 정의된 변수는 자동 export
-# dash 의 `.` 은 변수 자동 export 안 하므로 set -a 로 강제
+# 호스트에서 .env 를 직접 source 하지 않는 이유:
+#   1) dash 의 `.` (source) 는 path 에 slash 없으면 PATH 를 검색해서 fail
+#   2) 호스트에 POSTGRES_PASSWORD 가 흘러 ps/env 노출 위험
+# 컨테이너의 postgres image entrypoint 가 POSTGRES_USER/DB/PASSWORD 를 이미
+# 컨테이너 process env 에 export 한 상태이므로, 컨테이너 안 sh 에서 그대로 사용.
+# compose 의 --env-file 은 .env 의 값을 컨테이너 env 로 주입하는 경로.
 # ---------------------------------------------------------------------
-set -a
-# shellcheck disable=SC1090
-. "$ENV_FILE"
-set +a
-
-: "${POSTGRES_USER:?[db-backup][ERROR] POSTGRES_USER 가 $ENV_FILE 에 없음}"
-: "${POSTGRES_DB:?[db-backup][ERROR] POSTGRES_DB 가 $ENV_FILE 에 없음}"
-: "${POSTGRES_PASSWORD:?[db-backup][ERROR] POSTGRES_PASSWORD 가 $ENV_FILE 에 없음}"
 
 mkdir -p "$BACKUP_DIR"
 
@@ -59,27 +55,28 @@ OUT_FILE="$BACKUP_DIR/lostmemory_${TIMESTAMP}.sql.gz"
 TMP_SQL="${OUT_FILE%.gz}"
 
 echo "[db-backup] $(date -Iseconds) 백업 시작"
-echo "[db-backup] target: $POSTGRES_DB (user: $POSTGRES_USER)"
-echo "[db-backup] output: $OUT_FILE"
-echo "[db-backup] before: $(df -h "$BACKUP_DIR" | awk 'NR==2 {print $3" used / "$2" total / "$5" full"}')"
+echo "[db-backup] env_file: $ENV_FILE"
+echo "[db-backup] output:   $OUT_FILE"
+echo "[db-backup] before:   $(df -h "$BACKUP_DIR" | awk 'NR==2 {print $3" used / "$2" total / "$5" full"}')"
 
 # 실패 시 임시 파일 정리
-trap 'rm -f "$TMP_SQL" "$OUT_FILE.partial"' EXIT
+trap 'rm -f "$TMP_SQL"' EXIT
 
 # ---------------------------------------------------------------------
-# pg_dump 실행
+# pg_dump 실행 — 컨테이너 안 sh -c 안에서 $POSTGRES_* 사용
 #   -T                       TTY 비할당 (cron 환경 호환)
-#   -e PGPASSWORD            컨테이너 안 pg_dump 인증
 #   --clean --if-exists      복원 시 기존 객체 DROP 후 재생성 (idempotent)
 #   --no-owner --no-privileges  복원 환경 user/role 차이로 인한 실패 차단
 # ---------------------------------------------------------------------
 set +e
-docker compose --env-file "$ENV_FILE" exec -T \
-  -e PGPASSWORD="$POSTGRES_PASSWORD" \
-  postgres \
-  pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-    --clean --if-exists --no-owner --no-privileges \
-  > "$TMP_SQL"
+docker compose --env-file "$ENV_FILE" exec -T postgres sh -c '
+  : "${POSTGRES_USER:?POSTGRES_USER 컨테이너 env 에 없음}"
+  : "${POSTGRES_DB:?POSTGRES_DB 컨테이너 env 에 없음}"
+  : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 컨테이너 env 에 없음}"
+  PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
+    -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+    --clean --if-exists --no-owner --no-privileges
+' > "$TMP_SQL"
 DUMP_RC=$?
 set -e
 
