@@ -95,6 +95,14 @@ namespace LostMemory.TestKhi
         {
             base.Update();
 
+            // 기존 _followTarget 이 destroyed (Unity pseudo-null) 됐으면 재link 트리거.
+            // 세션 leave→rejoin 또는 씬 전환 시 NGO 가 spawn 한 캐릭터가 한 번 destroy 된 후
+            // 새로 spawn 되는 사이클에서 카메라 follow 가 풀리는 문제 대응.
+            if (_charactersLinked && _followTarget == null)
+            {
+                _charactersLinked = false;
+            }
+
             if (!_charactersLinked)
             {
                 LinkPlayerCharacters();

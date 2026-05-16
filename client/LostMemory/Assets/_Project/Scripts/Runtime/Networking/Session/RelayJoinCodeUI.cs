@@ -34,7 +34,7 @@ namespace LostMemory.Networking.Session
         [SerializeField] private Button leaveButton;
 
         [Header("Config")]
-        [SerializeField, Min(2)] private int maxPlayers = 2;
+        [SerializeField, Min(2)] private int maxPlayers = 4;
 
         [Header("Multi-Instance Override")]
         [Tooltip("MPPM 가상 인스턴스에서 다른 계정으로 로그인하려면 채울 것. 메인은 비워둠.")]
@@ -67,12 +67,39 @@ namespace LostMemory.Networking.Session
                 return;
             }
 
-            // 가상 플레이어 — 폴더 경로 해시로 1/2/3 분기
+            // 1차: MPPM Tag 기반 분기 (collision-free)
+            // MPPM 패널에서 각 Virtual Player 에 "guest1" / "guest2" / "guest3" 태그 부여 시 자동 매핑.
+#if UNITY_EDITOR
+            try
+            {
+                var tags = Unity.Multiplayer.PlayMode.CurrentPlayer.ReadOnlyTags();
+                foreach (var tag in tags)
+                {
+                    if (tag != null && tag.StartsWith("guest"))
+                    {
+                        string idxStr = tag.Substring("guest".Length);
+                        if (int.TryParse(idxStr, out int parsedIdx) && parsedIdx >= 1)
+                        {
+                            RelaySession.AutoLoginId = $"testuser0{parsedIdx}";
+                            RelaySession.AutoLoginNickname = $"테스터0{parsedIdx}";
+                            NetLog.Info("UI", $"[MPPM] Detected VIRTUAL player tag={tag}. Login as testuser0{parsedIdx}");
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (System.Exception e)
+            {
+                NetLog.Warn("UI", $"[MPPM] Tag 조회 실패, hash fallback 으로: {e.Message}");
+            }
+#endif
+
+            // 2차 fallback: 폴더 경로 해시 — Tag 미부여 시. collision 가능
             int hash = System.Math.Abs(dataPath.GetHashCode());
             int idx = (hash % 3) + 1;  // 1, 2, 3
             RelaySession.AutoLoginId = $"testuser0{idx}";
             RelaySession.AutoLoginNickname = $"테스터0{idx}";
-            NetLog.Info("UI", $"[MPPM] Detected VIRTUAL player. Login as testuser0{idx}");
+            NetLog.Info("UI", $"[MPPM] Detected VIRTUAL player (no tag). Fallback hash idx={idx}. Login as testuser0{idx}");
         }
         private void Update()
         {
