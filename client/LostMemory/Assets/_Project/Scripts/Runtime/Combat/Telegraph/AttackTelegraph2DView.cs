@@ -109,6 +109,22 @@ namespace LostMemory.Combat.Telegraph
             HideImmediate();
         }
 
+        public bool TryGetRenderSorting(out int sortingLayerId, out int sortingOrder)
+        {
+            EnsurePreviewRenderer();
+            if (_previewRenderer == null)
+            {
+                sortingLayerId = 0;
+                sortingOrder = 0;
+                return false;
+            }
+
+            ApplySorting();
+            sortingLayerId = _previewRenderer.sortingLayerID;
+            sortingOrder = _previewRenderer.sortingOrder;
+            return true;
+        }
+
         private void Update()
         {
             if (!_visible || _previewRenderer == null)

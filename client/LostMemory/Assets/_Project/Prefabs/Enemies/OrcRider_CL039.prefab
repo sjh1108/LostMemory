@@ -998,7 +998,7 @@ MonoBehaviour:
   DashSpace: 0
   DashDirection: {x: 0, y: 0, z: 1}
   DashDistance: 4.5
-  DashDuration: 0.32
+  DashDuration: 0.42
   DashCurve:
     serializedVersion: 2
     m_Curve:
@@ -1026,7 +1026,7 @@ MonoBehaviour:
   Cooldown:
     Unlimited: 0
     ConsumptionDuration: 1.2
-    PauseOnEmptyDuration: 1
+    PauseOnEmptyDuration: 1.6
     RefillDuration: 1
     CanInterruptRefill: 1
     CooldownState: 0
@@ -1063,8 +1063,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Label: TelegraphDuration
-  AfterTimeMin: 0.5
-  AfterTimeMax: 0.5
+  AfterTimeMin: 0.75
+  AfterTimeMax: 0.75
 --- !u!114 &114900000000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1078,8 +1078,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Label: ChargeDuration
-  AfterTimeMin: 0.32
-  AfterTimeMax: 0.32
+  AfterTimeMin: 0.42
+  AfterTimeMax: 0.42
 --- !u!114 &114900000000000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12023,7 +12023,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 2.2, y: 3}
+  m_Size: {x: 2, y: 2.4}
   m_EdgeRadius: 0
 --- !u!114 &7719002209275833114
 MonoBehaviour:

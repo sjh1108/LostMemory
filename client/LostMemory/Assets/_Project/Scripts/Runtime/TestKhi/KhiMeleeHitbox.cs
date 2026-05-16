@@ -8,7 +8,10 @@ namespace LostMemory.TestKhi
 {
     public class KhiMeleeHitbox : MonoBehaviour
     {
+        private const string ProjectileLayerName = "Projectile";
+
         [SerializeField] private LayerMask targetLayers = ~0;
+        [SerializeField] private bool ignoreProjectileTargets = true;
         [SerializeField] private int maximumHitsPerSample = 32;
         [SerializeField] private float targetInvincibilityDuration = 0f;
         [SerializeField] private float targetFlickerDuration = 0f;
@@ -29,9 +32,11 @@ namespace LostMemory.TestKhi
         private float _debugAngleDeg;
         private SpriteRenderer _runtimePreviewRenderer;
         private Sprite _runtimePreviewSprite;
+        private int _projectileLayer = -1;
 
         private void Awake()
         {
+            _projectileLayer = LayerMask.NameToLayer(ProjectileLayerName);
             EnsureOverlapBuffer();
             EnsureRuntimePreview();
             if (statContainer == null)
@@ -64,6 +69,11 @@ namespace LostMemory.TestKhi
             {
                 Collider2D hitCollider = _overlapResults[i];
                 if (hitCollider == null)
+                {
+                    continue;
+                }
+
+                if (ignoreProjectileTargets && IsProjectileTarget(hitCollider))
                 {
                     continue;
                 }
@@ -186,6 +196,16 @@ namespace LostMemory.TestKhi
             }
 
             return health.gameObject == attacker || health.transform.IsChildOf(attacker.transform);
+        }
+
+        private bool IsProjectileTarget(Collider2D hitCollider)
+        {
+            if (_projectileLayer >= 0 && hitCollider.gameObject.layer == _projectileLayer)
+            {
+                return true;
+            }
+
+            return hitCollider.GetComponentInParent<Projectile>() != null;
         }
 
         private void OnDrawGizmosSelected()
