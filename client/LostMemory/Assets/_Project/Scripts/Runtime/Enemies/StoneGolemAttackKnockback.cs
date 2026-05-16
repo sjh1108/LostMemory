@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -38,28 +39,16 @@ namespace LostMemory.Enemies
                 return;
             }
 
-            TopDownController controller = ResolveTargetController(damageEvent.AffectedHealth);
-            if (controller == null)
-            {
-                return;
-            }
-
-            Vector3 direction = ResolveKnockbackDirection(damageEvent.AffectedHealth);
-            Vector3 knockback = direction * knockbackForce;
-            knockback *= damageEvent.AffectedHealth.KnockbackForceMultiplier;
-            knockback = damageEvent.AffectedHealth.ComputeKnockbackForce(knockback, damageEvent.TypedDamages);
-
-            if (knockback.sqrMagnitude <= 0.0001f)
-            {
-                return;
-            }
-
-            controller.Impact(knockback.normalized, knockback.magnitude);
+            ApplyKnockbackTo(
+                damageEvent.AffectedHealth,
+                ResolveKnockbackDirection(damageEvent.AffectedHealth),
+                knockbackForce,
+                damageEvent.TypedDamages);
 
             if (debugLogging)
             {
                 Debug.Log(
-                    $"[StoneGolemAttackKnockback] Applied knockback to {damageEvent.AffectedHealth.name}, force={knockback.magnitude:0.##}.",
+                    $"[StoneGolemAttackKnockback] Applied attack knockback to {damageEvent.AffectedHealth.name}, force={knockbackForce:0.##}.",
                     this);
             }
         }
@@ -71,7 +60,7 @@ namespace LostMemory.Enemies
                 return false;
             }
 
-            return instigator == gameObject || instigator.transform.IsChildOf(transform);
+            return instigator == gameObject;
         }
 
         private bool IsOwnedHealth(Health health)
@@ -88,6 +77,41 @@ namespace LostMemory.Enemies
             }
 
             return health.CanGetKnockback(damageEvent.TypedDamages);
+        }
+
+        private static void ApplyKnockbackTo(
+            Health health,
+            Vector3 direction,
+            float force,
+            List<TypedDamage> typedDamages)
+        {
+            if (health == null || force <= 0f || !health.CanGetKnockback(typedDamages))
+            {
+                return;
+            }
+
+            TopDownController controller = ResolveTargetController(health);
+            if (controller == null)
+            {
+                return;
+            }
+
+            direction.z = 0f;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                direction = Vector3.right;
+            }
+
+            Vector3 knockback = direction.normalized * force;
+            knockback *= health.KnockbackForceMultiplier;
+            knockback = health.ComputeKnockbackForce(knockback, typedDamages);
+
+            if (knockback.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            controller.Impact(knockback.normalized, knockback.magnitude);
         }
 
         private static TopDownController ResolveTargetController(Health health)
