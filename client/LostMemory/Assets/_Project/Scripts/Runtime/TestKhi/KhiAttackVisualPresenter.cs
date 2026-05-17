@@ -1,6 +1,5 @@
 using System.Collections;
 using LostMemory.Data;
-using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace LostMemory.TestKhi
@@ -8,7 +7,6 @@ namespace LostMemory.TestKhi
     public class KhiAttackVisualPresenter : MonoBehaviour
     {
         [SerializeField] private Animator animator;
-        [SerializeField] private NetworkAnimator networkAnimator;
         [SerializeField] private bool showTemporarySlash = true;
         [SerializeField] private int temporarySlashSortingOrder = 1001;
         [SerializeField] private Color firstSlashColor = new Color(1f, 1f, 1f, 0.78f);
@@ -36,7 +34,6 @@ namespace LostMemory.TestKhi
         private void Awake()
         {
             animator ??= GetComponentInChildren<Animator>();
-            networkAnimator ??= GetComponentInChildren<NetworkAnimator>();
             _comboController = GetComponent<KhiMeleeComboController>();
             EnsureTrailRenderer();
         }
@@ -105,16 +102,10 @@ namespace LostMemory.TestKhi
             animator.ResetTrigger("Attack_2");
             animator.ResetTrigger("Attack_3");
 
-            // NetworkAnimator 가 있으면 SetTrigger 를 거쳐 다른 클라에 자동 sync.
-            // 없으면 (싱글 또는 prefab 미부착) 일반 Animator 로 fallback.
-            if (networkAnimator != null)
-            {
-                networkAnimator.SetTrigger(step.animatorTrigger);
-            }
-            else
-            {
-                animator.SetTrigger(step.animatorTrigger);
-            }
+            // Animator trigger sync 는 NetworkAnimator 를 거치지 않음. 대신 AttackBroadcast 의
+            // ClientRpc 가 non-owner 측 HandleAttackStarted 를 직접 호출하므로 양쪽 클라가 각자
+            // 본 메서드를 실행 → animator.SetTrigger 도 양쪽에서 호출 → Animator state 자동 일치.
+            animator.SetTrigger(step.animatorTrigger);
         }
 
         private void ShowTemporarySlash(KhiAttackRequest request, AttackStepData step)
