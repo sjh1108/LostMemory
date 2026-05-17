@@ -9,6 +9,7 @@ namespace LostMemory.TestKhi
         Sword = 0,
         Bow = 1,
         Staff = 2,
+        Flamethrower = 3,
     }
 
     /// <summary>
@@ -46,6 +47,14 @@ namespace LostMemory.TestKhi
         [SerializeField] private KhiStaffPresenter staffPresenter;
         [Tooltip("스태프 모드 활성 시 SetActive(true). 스태프 시각이 들어있는 GameObject (예: 자식 'StaffVisual').")]
         [SerializeField] private GameObject staffObject;
+
+        [Header("Flamethrower Mode")]
+        [SerializeField] private KhiFlamethrowerController flamethrowerController;
+        [SerializeField] private KhiFlamethrowerPresenter flamethrowerPresenter;
+        [Tooltip("화염방사기 콘 데미지·화상 적용 컴포넌트. 모드 활성/비활성에 따라 enabled 토글.")]
+        [SerializeField] private KhiFlameZone flamethrowerZone;
+        [Tooltip("화염방사기 모드 활성 시 SetActive(true). 무기 시각 + 분사 ParticleSystem 이 들어있는 GameObject.")]
+        [SerializeField] private GameObject flamethrowerObject;
 
         [Header("Input")]
         [Tooltip("키보드 모드 전환 키 (백업). 기본 Q.")]
@@ -124,6 +133,7 @@ namespace LostMemory.TestKhi
             bool swordActive = mode == WeaponMode.Sword;
             bool bowActive = mode == WeaponMode.Bow;
             bool staffActive = mode == WeaponMode.Staff;
+            bool flamethrowerActive = mode == WeaponMode.Flamethrower;
 
             SetEnabled(swordCombo, swordActive);
             SetEnabled(swordHitbox, swordActive);
@@ -140,6 +150,11 @@ namespace LostMemory.TestKhi
             SetEnabled(staffController, staffActive);
             SetEnabled(staffPresenter, staffActive);
             SetActive(staffObject, staffActive);
+
+            SetEnabled(flamethrowerController, flamethrowerActive);
+            SetEnabled(flamethrowerPresenter, flamethrowerActive);
+            SetEnabled(flamethrowerZone, flamethrowerActive);
+            SetActive(flamethrowerObject, flamethrowerActive);
 
             if (logModeChanges)
             {
