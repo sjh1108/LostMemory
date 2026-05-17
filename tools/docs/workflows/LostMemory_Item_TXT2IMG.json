@@ -1,8 +1,8 @@
 {
   "id": "7c1f8a9d-1234-4567-89ab-lostmemoryitem",
   "revision": 0,
-  "last_node_id": 13,
-  "last_link_id": 11,
+  "last_node_id": 31,
+  "last_link_id": 16,
   "nodes": [
     {
       "id": 12,
@@ -16,7 +16,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "## LostMemory 아이템 생성 워크플로 (txt2img)\n\n1. 노드 4(긍정 프롬프트)에서 < ... > 부분만 바꿔주세요.\n   예) a single red health potion, ...\n2. Queue Prompt (또는 Ctrl+Enter)\n3. 결과 파일은 tools/ComfyUI/output/LostMemory_Item_xxxxx.png\n4. 이 PC에서 cmd 실행해 게임 톤으로 양자화:\n   pixelize-game-item32.cmd <위 파일경로>\n   또는 48x48 특수 아이템이면 pixelize-game-item48.cmd\n\n튜닝 팁:\n- 디테일 더 → KSampler steps 8 → 12\n- 더 픽셀스럽게 → LoRA strength 0.8 → 0.9\n- 시드만 바꾸면 같은 프롬프트로 다른 결과"
+        "## LostMemory 아이템 생성 워크플로 (txt2img + 자동 양자화)\n\n1. 노드 4 (긍정 프롬프트)의 < ... > 부분을 만들고 싶은 아이템으로 교체\n2. Queue Prompt (Ctrl+Enter)\n\n결과는 두 가지 동시에 저장됨:\n  - LostMemory_Item_*.png         원본 512x512\n  - LostMemory_Item_pixel_*.png   게임 32색 + 48x48 RGBA (양자화)\n\n양자화 사이즈 조정: 노드 30 (LostMemoryPixelize)의 preset 변경\n  - game-item32  일반 인벤토리 아이콘\n  - game-item48  특수 아이템 (기본)\n  - game-item64  스킬 아이콘 정도 (더 정밀)\n  - game-item16  UI 미니 아이콘"
       ],
       "color": "#322",
       "bgcolor": "#533"
@@ -33,9 +33,7 @@
         {"localized_name": "UNet 모델 파일명", "name": "unet_name", "type": "COMBO", "widget": {"name": "unet_name"}, "link": null},
         {"localized_name": "가중치 데이터 유형", "name": "weight_dtype", "type": "COMBO", "widget": {"name": "weight_dtype"}, "link": null}
       ],
-      "outputs": [
-        {"localized_name": "모델", "name": "MODEL", "type": "MODEL", "links": [1]}
-      ],
+      "outputs": [{"localized_name": "모델", "name": "MODEL", "type": "MODEL", "links": [1]}],
       "properties": {"Node name for S&R": "UNETLoader"},
       "widgets_values": ["z_image_turbo_bf16.safetensors", "default"]
     },
@@ -178,14 +176,14 @@
         {"localized_name": "잠재 데이터", "name": "samples", "type": "LATENT", "link": 4},
         {"localized_name": "vae", "name": "vae", "type": "VAE", "link": 6}
       ],
-      "outputs": [{"localized_name": "이미지", "name": "IMAGE", "type": "IMAGE", "links": [5]}],
+      "outputs": [{"localized_name": "이미지", "name": "IMAGE", "type": "IMAGE", "links": [5, 12]}],
       "properties": {"Node name for S&R": "VAEDecode"},
       "widgets_values": []
     },
     {
       "id": 8,
       "type": "SaveImage",
-      "pos": [1811, -119],
+      "pos": [1755, -119],
       "size": [270, 315],
       "flags": {},
       "order": 10,
@@ -197,6 +195,46 @@
       "outputs": [],
       "properties": {},
       "widgets_values": ["LostMemory_Item"]
+    },
+    {
+      "id": 30,
+      "type": "LostMemoryPixelize",
+      "pos": [1755, 250],
+      "size": [320, 230],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {"name": "image", "type": "IMAGE", "link": 12},
+        {"name": "preset", "type": "COMBO", "widget": {"name": "preset"}, "link": null},
+        {"name": "size_override", "type": "INT", "widget": {"name": "size_override"}, "link": null},
+        {"name": "palette_override", "type": "COMBO", "widget": {"name": "palette_override"}, "link": null},
+        {"name": "adaptive_colors", "type": "INT", "widget": {"name": "adaptive_colors"}, "link": null},
+        {"name": "transparent_bg", "type": "COMBO", "widget": {"name": "transparent_bg"}, "link": null},
+        {"name": "bg_threshold", "type": "INT", "widget": {"name": "bg_threshold"}, "link": null}
+      ],
+      "outputs": [
+        {"name": "image", "type": "IMAGE", "links": [15]},
+        {"name": "mask", "type": "MASK", "links": null}
+      ],
+      "properties": {"Node name for S&R": "LostMemoryPixelize"},
+      "widgets_values": ["game-item48", 0, "preset", 32, "preset", 30]
+    },
+    {
+      "id": 31,
+      "type": "SaveImage",
+      "pos": [2120, 250],
+      "size": [270, 315],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {"localized_name": "이미지", "name": "images", "type": "IMAGE", "link": 15},
+        {"localized_name": "파일명 접두사", "name": "filename_prefix", "type": "STRING", "widget": {"name": "filename_prefix"}, "link": null}
+      ],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["LostMemory_Item_pixel"]
     }
   ],
   "links": [
@@ -210,10 +248,12 @@
     [8, 3, 1, 4, 0, "CLIP"],
     [9, 4, 0, 6, 1, "CONDITIONING"],
     [10, 3, 1, 11, 0, "CLIP"],
-    [11, 11, 0, 6, 2, "CONDITIONING"]
+    [11, 11, 0, 6, 2, "CONDITIONING"],
+    [12, 7, 0, 30, 0, "IMAGE"],
+    [15, 30, 0, 31, 0, "IMAGE"]
   ],
   "groups": [],
   "config": {},
-  "extra": {"ds": {"scale": 0.51, "offset": [400, 500]}},
+  "extra": {"ds": {"scale": 0.5, "offset": [200, 500]}},
   "version": 0.4
 }

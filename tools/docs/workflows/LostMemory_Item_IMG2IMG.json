@@ -1,8 +1,8 @@
 {
   "id": "8d2f9b1e-2345-5678-90bc-lostmemoryitem2",
   "revision": 0,
-  "last_node_id": 22,
-  "last_link_id": 14,
+  "last_node_id": 31,
+  "last_link_id": 17,
   "nodes": [
     {
       "id": 1,
@@ -147,7 +147,7 @@
     {
       "id": 11,
       "type": "CLIPTextEncode",
-      "pos": [455, 610],
+      "pos": [448, 658],
       "size": [400, 240],
       "flags": {},
       "order": 8,
@@ -196,14 +196,14 @@
         {"localized_name": "잠재 데이터", "name": "samples", "type": "LATENT", "link": 4},
         {"localized_name": "vae", "name": "vae", "type": "VAE", "link": 6}
       ],
-      "outputs": [{"localized_name": "이미지", "name": "IMAGE", "type": "IMAGE", "links": [5]}],
+      "outputs": [{"localized_name": "이미지", "name": "IMAGE", "type": "IMAGE", "links": [5, 16]}],
       "properties": {"Node name for S&R": "VAEDecode"},
       "widgets_values": []
     },
     {
       "id": 8,
       "type": "SaveImage",
-      "pos": [1811, -119],
+      "pos": [1755, -119],
       "size": [270, 315],
       "flags": {},
       "order": 12,
@@ -228,10 +228,50 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "## LostMemory 아이템 img2img — 게임 자산 참고해서 새로 생성\n\n사용법:\n1. tools/ComfyUI/input/ 폴더에 레퍼런스 PNG 복사 (예: ref_potion_512.png)\n   ※ 가능하면 미리 512x512로 nearest 업스케일\n2. 노드 20 (LoadImage)에서 그 파일 선택\n3. 노드 4 (positive prompt)에서 만들고 싶은 아이템 설명\n4. 노드 6 (KSampler) denoise:\n   - 0.3~0.5: 원본 거의 그대로, 색 일부만 변경\n   - 0.5~0.7: 구도 유지하면서 내용 변경 (권장)\n   - 0.8~0.95: 거의 새로 생성, 레퍼런스는 약하게만 참고\n5. Queue Prompt → tools/ComfyUI/output/LostMemory_Img2Img_xxxxx.png\n6. pixelize-game-item32.cmd <파일> 로 게임 톤 양자화"
+        "## LostMemory 아이템 img2img (자동 양자화 포함)\n\n사용법:\n1. 노드 20 (LoadImage) Upload 또는 input/ 폴더의 파일 선택\n2. 노드 4 (positive prompt)에서 만들고 싶은 아이템 설명\n3. 노드 6 (KSampler) denoise:\n   - 0.3~0.5: 원본 거의 그대로, 색 일부만 변경\n   - 0.5~0.7: 구도 유지하면서 내용 변경 (권장)\n   - 0.8~0.95: 거의 새로 생성, 레퍼런스는 약하게만 참고\n4. Queue Prompt\n\n결과 두 가지 동시 저장:\n  - LostMemory_Img2Img_*.png       원본 512x512\n  - LostMemory_Img2Img_pixel_*.png 게임 32색 + 48x48 RGBA"
       ],
       "color": "#223",
       "bgcolor": "#335"
+    },
+    {
+      "id": 30,
+      "type": "LostMemoryPixelize",
+      "pos": [1755, 250],
+      "size": [320, 230],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {"name": "image", "type": "IMAGE", "link": 16},
+        {"name": "preset", "type": "COMBO", "widget": {"name": "preset"}, "link": null},
+        {"name": "size_override", "type": "INT", "widget": {"name": "size_override"}, "link": null},
+        {"name": "palette_override", "type": "COMBO", "widget": {"name": "palette_override"}, "link": null},
+        {"name": "adaptive_colors", "type": "INT", "widget": {"name": "adaptive_colors"}, "link": null},
+        {"name": "transparent_bg", "type": "COMBO", "widget": {"name": "transparent_bg"}, "link": null},
+        {"name": "bg_threshold", "type": "INT", "widget": {"name": "bg_threshold"}, "link": null}
+      ],
+      "outputs": [
+        {"name": "image", "type": "IMAGE", "links": [17]},
+        {"name": "mask", "type": "MASK", "links": null}
+      ],
+      "properties": {"Node name for S&R": "LostMemoryPixelize"},
+      "widgets_values": ["game-item48", 0, "preset", 32, "preset", 30]
+    },
+    {
+      "id": 31,
+      "type": "SaveImage",
+      "pos": [2120, 250],
+      "size": [270, 315],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {"localized_name": "이미지", "name": "images", "type": "IMAGE", "link": 17},
+        {"localized_name": "파일명 접두사", "name": "filename_prefix", "type": "STRING", "widget": {"name": "filename_prefix"}, "link": null}
+      ],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["LostMemory_Img2Img_pixel"]
     }
   ],
   "links": [
@@ -248,7 +288,9 @@
     [11, 11, 0, 6, 2, "CONDITIONING"],
     [12, 9, 0, 21, 1, "VAE"],
     [13, 22, 0, 21, 0, "IMAGE"],
-    [14, 20, 0, 22, 0, "IMAGE"]
+    [14, 20, 0, 22, 0, "IMAGE"],
+    [16, 7, 0, 30, 0, "IMAGE"],
+    [17, 30, 0, 31, 0, "IMAGE"]
   ],
   "groups": [],
   "config": {},
