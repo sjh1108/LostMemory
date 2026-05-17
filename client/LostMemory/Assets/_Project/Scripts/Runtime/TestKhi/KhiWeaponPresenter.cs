@@ -108,7 +108,7 @@ namespace LostMemory.TestKhi
             }
         }
 
-        private void HandleAttackActiveStarted(KhiAttackRequest request, AttackStepData step)
+        public void HandleAttackActiveStarted(KhiAttackRequest request, AttackStepData step)
         {
             if (hideWeaponDuringActive && weaponSprite != null)
             {
@@ -134,7 +134,7 @@ namespace LostMemory.TestKhi
             _swingCoroutine = StartCoroutine(SwingArc(arc, direction, duration));
         }
 
-        private void HandleAttackActiveEnded(KhiAttackRequest request, AttackStepData step)
+        public void HandleAttackActiveEnded(KhiAttackRequest request, AttackStepData step)
         {
             // HLD-style: active 종료 시 검 다시 표시 + swing offset 즉시 reset (snap 복귀)
             if (hideWeaponDuringActive && weaponSprite != null)

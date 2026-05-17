@@ -133,7 +133,7 @@ namespace LostMemory.TestKhi
             }
         }
 
-        private void HandleAttackActiveStarted(KhiAttackRequest request, AttackStepData step)
+        public void HandleAttackActiveStarted(KhiAttackRequest request, AttackStepData step)
         {
             int slotIndex = Mathf.Clamp(step.comboStep - 1, 0, 2);
 
