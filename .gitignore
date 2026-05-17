@@ -60,6 +60,13 @@ node_modules/
 /tools/ComfyUI/output/
 /tools/ComfyUI/temp/
 /tools/ComfyUI/**/__pycache__/
+# Pip wheel cache (~2GB torch + cu130 wheel)
+/tools/ComfyUI/.wheels/
+# pixelize.py 후처리 결과 폴더 (시나리오별로 자동 생성)
+/tools/ComfyUI/output_*/
+# 런타임 로그
+/tools/ComfyUI/run/*.log
+/tools/ComfyUI/run/comfyui-*.log
 /tools/docs/games/
 # Generated artifact images under docs are kept out of Git.
 /tools/docs/1차-mvp/산출물/**/outputs/*.png
