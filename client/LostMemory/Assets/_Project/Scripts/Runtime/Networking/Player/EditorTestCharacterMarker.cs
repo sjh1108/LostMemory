@@ -6,12 +6,12 @@ namespace LostMemory.Networking.Player
     /// <summary>
     /// scene-placed 캐릭터에 부착 — NGO 활성 / 비활성 따라 자동 분기.
     ///
-    /// - **NGO 활성 (정상 멀티 흐름 Lobby→Dungeon)**: NetworkManager 가 PlayerPrefab 으로 spawn 하므로
-    ///   scene 의 본 캐릭터 제거 → 분신 (캐릭터 복제) 버그 회피
-    /// - **NGO 비활성 (Editor 단일 씬 직접 Play)**: scene 캐릭터 그대로 보존 → 일상 개발/회귀 테스트 가능
+    /// - **NGO 활성 시점에 진입** (멀티 흐름 Lobby→Dungeon): Awake 에서 즉시 Destroy → 분신 회피
+    /// - **NGO 비활성 진입** (솔로 또는 Editor 단일 씬): scene 캐릭터 보존
+    /// - **NGO 가 나중에 시작되는 케이스** (예: Town_solo 솔로 → [생성] → NGO StartHost):
+    ///   `OnServerStarted` / `OnClientStarted` 이벤트 구독해서 동적 Destroy. 솔로→멀티 전환 시 분신 발생 차단
     ///
-    /// 사용: 던전 8개 씬 (`Dungeon.unity`, `Dungeon_1F_1R.unity` ~ `Dungeon_1F_Boss.unity`, `Dungeon_1F_Shop.unity`)
-    /// 의 scene-placed `TestKhi_MinimalCharacter2D` 캐릭터 GameObject 에 본 컴포넌트만 부착하면 끝.
+    /// 사용: 던전 8개 씬 + Town_solo 등 scene-placed Player 가 있는 씬의 캐릭터 GameObject 에 부착.
     ///
     /// 클라 회신 (`multi_session_design_reply.md` §6.5) 의 "Editor 단일 씬 테스트 워크플로우 보존" 정책 구현.
     /// </summary>
@@ -22,24 +22,53 @@ namespace LostMemory.Networking.Player
         [SerializeField, Tooltip("디버그 로그 출력 여부")]
         private bool verboseLog = true;
 
+        private NetworkManager _subscribedManager;
+
         private void Awake()
         {
-            // NetworkManager 가 listening (host/client 중) = 정상 멀티 흐름
-            // → NGO 가 PlayerPrefab spawn 할 거니까 scene 의 본 캐릭터 destroy
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            NetworkManager nm = NetworkManager.Singleton;
+
+            if (nm != null && nm.IsListening)
             {
                 if (verboseLog)
                 {
-                    Debug.Log($"[EditorTestCharacterMarker] NGO 활성 — scene-placed 캐릭터 자동 Destroy: {gameObject.name}", this);
+                    Debug.Log($"[EditorTestCharacterMarker] NGO 활성 — scene-placed 캐릭터 즉시 Destroy: {gameObject.name}", this);
                 }
                 Destroy(gameObject);
                 return;
             }
 
-            // NGO 비활성 = Editor 단일 씬 직접 Play. scene 캐릭터 그대로 보존
+            // NGO 비활성 = 솔로 또는 Editor 단일 씬. scene 캐릭터 보존.
+            // 단, 향후 NGO 가 시작되면 (예: 솔로→멀티 전환) 동적 Destroy.
+            if (nm != null)
+            {
+                nm.OnServerStarted += HandleNetworkStarted;
+                nm.OnClientStarted += HandleNetworkStarted;
+                _subscribedManager = nm;
+            }
+
             if (verboseLog)
             {
-                Debug.Log($"[EditorTestCharacterMarker] NGO 비활성 — scene-placed 캐릭터 보존: {gameObject.name}", this);
+                Debug.Log($"[EditorTestCharacterMarker] NGO 비활성 — scene-placed 캐릭터 보존 (NGO 시작 이벤트 대기): {gameObject.name}", this);
+            }
+        }
+
+        private void HandleNetworkStarted()
+        {
+            if (verboseLog)
+            {
+                Debug.Log($"[EditorTestCharacterMarker] NGO 시작 감지 — scene-placed 캐릭터 동적 Destroy: {gameObject.name}", this);
+            }
+            Destroy(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            if (_subscribedManager != null)
+            {
+                _subscribedManager.OnServerStarted -= HandleNetworkStarted;
+                _subscribedManager.OnClientStarted -= HandleNetworkStarted;
+                _subscribedManager = null;
             }
         }
     }

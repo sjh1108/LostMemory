@@ -41,6 +41,7 @@ namespace LostMemory.Networking.Session
 
         public static string AccessToken { get; private set; }
         public static long MyUserId { get; private set; }
+        public static string MyNickname { get; private set; }
 
         public static bool IsLoggedIn => !string.IsNullOrEmpty(AccessToken) && MyUserId != 0;
 
@@ -78,6 +79,7 @@ namespace LostMemory.Networking.Session
                 return false;
             }
             MyUserId = resp.data.userId;
+            MyNickname = resp.data.nickname;
             return true;
         }
 

@@ -36,6 +36,9 @@ namespace LostMemory.Networking.Session
         [Header("Config")]
         [SerializeField, Min(2)] private int maxPlayers = 4;
 
+        [Tooltip("호스트 세션 생성 성공 후 자동 이동할 멀티 로비 씬 이름. 비우면 자동 이동 안 함.")]
+        [SerializeField] private string multiLobbySceneName = "Test_MultiLobby";
+
         [Header("Multi-Instance Override")]
         [Tooltip("MPPM 가상 인스턴스에서 다른 계정으로 로그인하려면 채울 것. 메인은 비워둠.")]
         [SerializeField] private string overrideLoginId;
@@ -144,12 +147,35 @@ namespace LostMemory.Networking.Session
             {
                 if (joinCodeDisplay != null) joinCodeDisplay.text = result.JoinCode;
                 SetStatus($"호스트 활성. 코드: {result.JoinCode}");
+                LoadMultiLobbyScene();
             }
             else
             {
                 SetStatus(SessionErrorPolicy.ToUserMessage(result.ErrorKind, result.ErrorDetail));
             }
             RefreshButtonState();
+        }
+
+        /// <summary>
+        /// 호스트 세션 생성 성공 후 멀티 로비 씬으로 이동. NGO SceneManager 가 게스트도 자동 sync.
+        /// 게스트는 본 메서드 호출 안 함 (NGO scene sync 가 호스트의 현재 씬을 자동 따라옴).
+        /// </summary>
+        private void LoadMultiLobbyScene()
+        {
+            if (string.IsNullOrWhiteSpace(multiLobbySceneName))
+            {
+                return;
+            }
+
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer)
+            {
+                NetLog.Info("UI", $"멀티 로비 씬 이동 skip (NetworkManager 비활성 또는 비서버).", this);
+                return;
+            }
+
+            NetLog.Info("UI", $"멀티 로비 씬 이동: {multiLobbySceneName}", this);
+            nm.SceneManager.LoadScene(multiLobbySceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
         }
 
         private async void OnJoinClicked()
