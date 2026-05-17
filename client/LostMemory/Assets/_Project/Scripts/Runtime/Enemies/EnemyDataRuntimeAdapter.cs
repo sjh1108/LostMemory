@@ -100,6 +100,7 @@ namespace LostMemory.Enemies
             ApplyMovement(data.MoveSpeed);
             ApplySlimeController(data);
             ApplyBatController(data);
+            ApplyAssassinController(data);
             if (data.TryGetAttackDamage(EnemyAttackType.Charge, out float chargeDamage))
             {
                 ApplyNamedDamageSource(ChargeDamageAreaName, chargeDamage);
@@ -131,6 +132,17 @@ namespace LostMemory.Enemies
             }
 
             bat.ApplyRuntimeData(data);
+        }
+
+        private void ApplyAssassinController(EnemyData data)
+        {
+            AssassinEnemyController assassin = GetComponent<AssassinEnemyController>();
+            if (assassin == null)
+            {
+                return;
+            }
+
+            assassin.ApplyRuntimeData(data);
         }
 
         protected virtual IEnumerator ApplyDeferred(EnemyData data)
