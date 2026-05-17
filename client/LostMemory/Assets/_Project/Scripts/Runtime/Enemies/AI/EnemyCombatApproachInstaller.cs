@@ -16,6 +16,8 @@ namespace LostMemory.Enemies.AI
         private const string IdleStateName = "Idle";
         private const string MovingStateName = "Moving";
         private const string ApproachStateName = "Approach";
+        private const string ObstaclesLayerName = "Obstacles";
+        private const string DungeonWallLayerName = "DungeonWall";
 
         public static void ApplySpawnOverrides(string enemyId, GameObject enemyInstance)
         {
@@ -217,11 +219,12 @@ namespace LostMemory.Enemies.AI
 
             CharacterMovement movement = enemyInstance.GetComponentInParent<Character>()?.FindAbility<CharacterMovement>();
             AIDecisionDetectTargetRadius2D detector = enemyInstance.GetComponentInChildren<AIDecisionDetectTargetRadius2D>();
-            LayerMask obstacleMask = detector != null ? detector.ObstacleMask : default(LayerMask);
+            LayerMask obstacleMask = ResolveRuntimeObstacleMask(detector != null ? detector.ObstacleMask : default(LayerMask));
             bool useObstacleAvoidance = obstacleMask.value != 0;
 
             if (detector != null)
             {
+                detector.ObstacleMask = obstacleMask;
                 detector.ObstacleDetection = false;
             }
 
@@ -270,6 +273,25 @@ namespace LostMemory.Enemies.AI
 
             state.Actions[moveActionIndex] = pathfindToCombatRange;
             return true;
+        }
+
+        private static LayerMask ResolveRuntimeObstacleMask(LayerMask configuredMask)
+        {
+            int resolvedMask = configuredMask.value;
+            int obstaclesMask = LayerMask.GetMask(ObstaclesLayerName);
+            int dungeonWallMask = LayerMask.GetMask(DungeonWallLayerName);
+
+            if (resolvedMask == 0)
+            {
+                resolvedMask = obstaclesMask;
+            }
+
+            if ((resolvedMask & obstaclesMask) != 0 && dungeonWallMask != 0)
+            {
+                resolvedMask |= dungeonWallMask;
+            }
+
+            return new LayerMask { value = resolvedMask };
         }
 
         private static AIDecisionCurrentTargetIsValid EnsureKeepCurrentTargetDecision(GameObject enemyInstance)

@@ -21,7 +21,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private bool autoConfigureInEditMode = true;
         [SerializeField] private bool addMissingCoreCombatComponents = true;
         [SerializeField] private LayerMask targetLayerMask = 1 << 10;
-        [SerializeField] private LayerMask obstacleLayerMask = 1 << 8;
+        [SerializeField] private LayerMask obstacleLayerMask = (1 << 8) | (1 << 24);
         [SerializeField] private float detectionRadius = 15f;
         [SerializeField] private float minimumMoveDistance = 0.1f;
         [SerializeField] private bool enableAttackPattern = true;
@@ -394,7 +394,7 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private LayerMask ResolveObstacleLayerMask()
         {
-            int namedMask = LayerMask.GetMask("Obstacles");
+            int namedMask = LayerMask.GetMask("Obstacles", "DungeonWall");
             if (namedMask != 0)
             {
                 return namedMask;

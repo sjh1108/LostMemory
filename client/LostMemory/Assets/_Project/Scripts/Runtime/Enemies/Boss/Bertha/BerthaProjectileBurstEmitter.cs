@@ -13,7 +13,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private Transform projectileSpawnOrigin;
         [SerializeField] private SpriteRenderer sortingReference;
         [SerializeField] private LayerMask targetLayerMask = 1 << 10;
-        [SerializeField] private LayerMask obstacleLayerMask = 1 << 8;
+        [SerializeField] private LayerMask obstacleLayerMask = (1 << 8) | (1 << 24);
         [SerializeField] private Sprite[] projectileAnimationFrames = System.Array.Empty<Sprite>();
         [SerializeField, Min(0f)] private float projectileAnimationFrameRate = 12f;
         [SerializeField, Min(1)] private int projectileMaximumHits = 8;
