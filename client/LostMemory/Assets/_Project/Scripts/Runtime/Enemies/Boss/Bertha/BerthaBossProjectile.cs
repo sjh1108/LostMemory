@@ -11,7 +11,7 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private GameObject owner;
         [SerializeField] private SpriteRenderer spriteRenderer;
         [SerializeField] private LayerMask targetLayerMask = 1 << 10;
-        [SerializeField] private LayerMask obstacleLayerMask = 1 << 8;
+        [SerializeField] private LayerMask obstacleLayerMask = (1 << 8) | (1 << 24);
         [SerializeField, Min(0.01f)] private float speed = 6f;
         [SerializeField, Min(0.01f)] private float lifetime = 1.2f;
         [SerializeField, Min(0f)] private float damage = 8f;

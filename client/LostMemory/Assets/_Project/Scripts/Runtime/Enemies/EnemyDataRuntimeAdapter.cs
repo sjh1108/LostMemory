@@ -99,6 +99,7 @@ namespace LostMemory.Enemies
             ApplyHealth(data.MaxHealth);
             ApplyMovement(data.MoveSpeed);
             ApplySlimeController(data);
+            ApplyBatController(data);
             if (data.TryGetAttackDamage(EnemyAttackType.Charge, out float chargeDamage))
             {
                 ApplyNamedDamageSource(ChargeDamageAreaName, chargeDamage);
@@ -119,6 +120,17 @@ namespace LostMemory.Enemies
             }
 
             slime.ApplyRuntimeData(data);
+        }
+
+        private void ApplyBatController(EnemyData data)
+        {
+            BatEnemyController bat = GetComponent<BatEnemyController>();
+            if (bat == null)
+            {
+                return;
+            }
+
+            bat.ApplyRuntimeData(data);
         }
 
         protected virtual IEnumerator ApplyDeferred(EnemyData data)
