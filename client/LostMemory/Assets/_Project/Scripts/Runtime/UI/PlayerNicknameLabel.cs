@@ -59,9 +59,8 @@ namespace LostMemory.UI
 
             if (IsOwner)
             {
-                // owner — 본 클라의 AutoLoginNickname 을 NetworkVariable 에 write
-                string nick = RelaySession.AutoLoginNickname;
-                if (string.IsNullOrWhiteSpace(nick)) nick = fallback;
+                // owner — 본 클라 nickname (백엔드 응답 기준 MyNickname 우선, 없으면 AutoLoginNickname) 을 NetworkVariable 에 write
+                string nick = ResolveLocalNickname();
                 _syncedNickname.Value = new FixedString64Bytes(nick);
                 ApplyText(nick);
             }
@@ -83,11 +82,18 @@ namespace LostMemory.UI
             ApplyText(current.ToString());
         }
 
-        /// <summary>솔로 환경 (NGO 미스폰) fallback — 본 클라의 AutoLoginNickname 그대로 표시.</summary>
+        /// <summary>솔로 환경 (NGO 미스폰) fallback — 백엔드 응답 nickname (MyNickname) 우선, 없으면 AutoLoginNickname.</summary>
         public void RefreshLocal()
         {
-            string nick = RelaySession.AutoLoginNickname;
-            ApplyText(!string.IsNullOrWhiteSpace(nick) ? nick : fallback);
+            ApplyText(ResolveLocalNickname());
+        }
+
+        /// <summary>본 클라의 nickname — `SessionApiClient.MyNickname` (백엔드 응답 기준) 우선, 없으면 `RelaySession.AutoLoginNickname`, 그래도 없으면 fallback.</summary>
+        private string ResolveLocalNickname()
+        {
+            string nick = SessionApiClient.MyNickname;
+            if (string.IsNullOrWhiteSpace(nick)) nick = RelaySession.AutoLoginNickname;
+            return !string.IsNullOrWhiteSpace(nick) ? nick : fallback;
         }
 
         private void ApplyText(string text)
