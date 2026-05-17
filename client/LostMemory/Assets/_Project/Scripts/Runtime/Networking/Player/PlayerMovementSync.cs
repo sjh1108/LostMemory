@@ -103,7 +103,9 @@ namespace LostMemory.Networking.Player
             DisableIfPresent<KhiParryController>();
             DisableIfPresent<KhiDashController>();
             DisableIfPresent<KhiFinisherLunge>();
-            DisableInChildrenIfPresent<KhiWeaponPresenter>();
+            // KhiWeaponPresenter 는 비활성하지 않음 — Update 에서 KhiPlayerAim.GetAimDirection()
+            // (NetworkVariable sync 값) 받아 무기 회전 적용. non-owner 측에서도 무기 위치/방향이
+            // owner 의 마우스 방향을 따라가도록 한다 (Bug #22 의 일부).
         }
 
         private void DisableIfPresent<T>() where T : MonoBehaviour

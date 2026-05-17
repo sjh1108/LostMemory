@@ -56,6 +56,7 @@ GameObject:
   - component: {fileID: 114871673569860628}
   - component: {fileID: 114654745524214770}
   - component: {fileID: 114704504716019314}
+  - component: {fileID: 7840569536198065617}
   - component: {fileID: 114910001000000001}
   - component: {fileID: 114910001000000002}
   - component: {fileID: 114910001000000003}
@@ -85,8 +86,8 @@ GameObject:
   - component: {fileID: 2913988551999795102}
   - component: {fileID: 249564988669907132}
   - component: {fileID: 6772676563777854037}
-  - component: {fileID: 7840569536198065617}
   - component: {fileID: 913541847266967726}
+  - component: {fileID: 5914792103148599727}
   m_Layer: 10
   m_Name: Test_shm
   m_TagString: Player
@@ -659,6 +660,31 @@ MonoBehaviour:
   AutoEquipOnlyIfEquipmentInventoryIsEmpty: 0
   AutoEquipOnRespawn: 1
   CharacterHandleWeapon: {fileID: 0}
+--- !u!114 &7840569536198065617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2815455596
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &114910001000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -671,6 +697,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ac875443dcb4ae0b3958b7545375b92, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerAim
+  ShowTopMostFoldoutHeaderGroup: 1
   targetCamera: {fileID: 0}
   fallbackDirection: {x: 1, y: 0}
   downController: {fileID: 0}
@@ -711,6 +738,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiAttackVisualPresenter
   animator: {fileID: 0}
+  networkAnimator: {fileID: 0}
   showTemporarySlash: 1
   temporarySlashSortingOrder: 1001
   firstSlashColor: {r: 1, g: 1, b: 1, a: 0.78}
@@ -962,6 +990,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiAttackVisualPresenter
   animator: {fileID: 0}
+  networkAnimator: {fileID: 0}
   showTemporarySlash: 0
   temporarySlashSortingOrder: 1001
   firstSlashColor: {r: 1, g: 1, b: 1, a: 0.78}
@@ -1385,31 +1414,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Player.PlayerHealthSnapshotter
   health: {fileID: 114871673569860628}
   logRestore: 1
---- !u!114 &7840569536198065617
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1790328835693532}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2240942301
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!114 &913541847266967726
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1460,6 +1464,24 @@ MonoBehaviour:
   stateAggregator: {fileID: 0}
   convertNonOwnerToAi: 1
   disableInputComponentsOnNonOwner: 1
+--- !u!114 &5914792103148599727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abf67513e586c8a4c80d91776601f7c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.AttackBroadcast
+  ShowTopMostFoldoutHeaderGroup: 1
+  comboController: {fileID: 0}
+  attackVisualPresenter: {fileID: 0}
+  slashAnimator: {fileID: 0}
+  weaponPresenter: {fileID: 0}
+  weaponData: {fileID: 0}
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
@@ -1473,6 +1495,7 @@ GameObject:
   - component: {fileID: 431677536353520410}
   - component: {fileID: 7302294448563179921}
   - component: {fileID: 8109641592879168815}
+  - component: {fileID: 3758648607116453424}
   m_Layer: 10
   m_Name: MinimalCharacterModel
   m_TagString: Untagged
@@ -1614,6 +1637,58 @@ MonoBehaviour:
   speedParam: Speed
   speedDecayTime: 0.15
   logEveryFrame: 0
+--- !u!114 &3758648607116453424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1997364199477008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 0
+  m_Animator: {fileID: 431677536353520410}
+  TransitionStateInfoList: []
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Speed
+      NameHash: -823668238
+      Synchronize: 1
+      ParameterType: 1
+    - name: Walking
+      NameHash: 1744665739
+      Synchronize: 1
+      ParameterType: 4
+    - name: Idle
+      NameHash: 2081823275
+      Synchronize: 1
+      ParameterType: 4
+    - name: MovementY
+      NameHash: 1634287188
+      Synchronize: 1
+      ParameterType: 1
+    - name: Hit
+      NameHash: 1654612129
+      Synchronize: 1
+      ParameterType: 9
+    - name: Revive
+      NameHash: -323374038
+      Synchronize: 1
+      ParameterType: 9
+    - name: WalkSpeedMul
+      NameHash: 1407277902
+      Synchronize: 1
+      ParameterType: 1
+    - name: Down
+      NameHash: -1127399675
+      Synchronize: 1
+      ParameterType: 9
+  AnimatorParametersExpanded: 0
 --- !u!1 &1516448916103123182
 GameObject:
   m_ObjectHideFlags: 0
