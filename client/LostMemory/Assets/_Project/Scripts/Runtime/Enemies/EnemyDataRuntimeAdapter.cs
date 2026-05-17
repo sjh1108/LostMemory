@@ -99,6 +99,9 @@ namespace LostMemory.Enemies
             ApplyHealth(data.MaxHealth);
             ApplyMovement(data.MoveSpeed);
             ApplySlimeController(data);
+            ApplyBatController(data);
+            ApplyAssassinController(data);
+            ApplySkeleton1Controller(data);
             if (data.TryGetAttackDamage(EnemyAttackType.Charge, out float chargeDamage))
             {
                 ApplyNamedDamageSource(ChargeDamageAreaName, chargeDamage);
@@ -119,6 +122,39 @@ namespace LostMemory.Enemies
             }
 
             slime.ApplyRuntimeData(data);
+        }
+
+        private void ApplyBatController(EnemyData data)
+        {
+            BatEnemyController bat = GetComponent<BatEnemyController>();
+            if (bat == null)
+            {
+                return;
+            }
+
+            bat.ApplyRuntimeData(data);
+        }
+
+        private void ApplyAssassinController(EnemyData data)
+        {
+            AssassinEnemyController assassin = GetComponent<AssassinEnemyController>();
+            if (assassin == null)
+            {
+                return;
+            }
+
+            assassin.ApplyRuntimeData(data);
+        }
+
+        private void ApplySkeleton1Controller(EnemyData data)
+        {
+            Skeleton1EnemyController skeleton = GetComponent<Skeleton1EnemyController>();
+            if (skeleton == null)
+            {
+                return;
+            }
+
+            skeleton.ApplyRuntimeData(data);
         }
 
         protected virtual IEnumerator ApplyDeferred(EnemyData data)

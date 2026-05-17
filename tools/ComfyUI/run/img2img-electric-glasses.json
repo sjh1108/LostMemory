@@ -1,0 +1,36 @@
+{
+  "prompt": {
+    "1": {"inputs": {"weight_dtype": "default", "unet_name": "z_image_turbo_bf16.safetensors"}, "class_type": "UNETLoader"},
+    "3": {"inputs": {"clip": ["10", 0], "strength_clip": 0.85, "model": ["1", 0], "strength_model": 0.85, "lora_name": "pixel_art_style_z_image_turbo.safetensors"}, "class_type": "LoraLoader"},
+    "20": {"inputs": {"image": "ref_glasses_512.png"}, "class_type": "LoadImage"},
+    "22": {"inputs": {"image": ["20", 0], "upscale_method": "nearest-exact", "width": 512, "height": 512, "crop": "disabled"}, "class_type": "ImageScale"},
+    "21": {"inputs": {"pixels": ["22", 0], "vae": ["9", 0]}, "class_type": "VAEEncode"},
+    "4": {
+      "inputs": {
+        "text": "Pixel art game icon style. a single pair of mad scientist goggles, thick black frame with rivets, glowing cyan blue lens crystals, BRIGHT YELLOW ELECTRIC LIGHTNING BOLTS arcing around the frame, crackling electric sparks bursting out from the sides, jagged yellow lightning shapes, glowing electric aura, sizzling energy field, vibrant yellow electricity, isolated, centered, plain white background, clean black outline, simple flat shading, no gradient, no anti-aliasing, sharp pixel edges, game inventory icon, magical electric weapon\n",
+        "clip": ["3", 1]
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "11": {
+      "inputs": {
+        "text": "plain glasses, normal glasses, reading glasses, sunglasses, calm, peaceful, realistic, 3d render, photo, smooth shading, anti-aliased, blurry, gradient, detailed background, noisy background, text, watermark, low quality, cluster, deformed\n",
+        "clip": ["3", 1]
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "6": {
+      "inputs": {
+        "denoise": 0.45, "steps": 12, "cfg": 2.5,
+        "sampler_name": "euler", "seed": 31337, "scheduler": "simple",
+        "negative": ["11", 0], "latent_image": ["21", 0], "model": ["3", 0], "positive": ["4", 0]
+      },
+      "class_type": "KSampler"
+    },
+    "7": {"inputs": {"samples": ["6", 0], "vae": ["9", 0]}, "class_type": "VAEDecode"},
+    "8": {"inputs": {"images": ["7", 0], "filename_prefix": "ElectricGlasses_v1"}, "class_type": "SaveImage"},
+    "9": {"inputs": {"vae_name": "ae.safetensors"}, "class_type": "VAELoader"},
+    "10": {"inputs": {"type": "lumina2", "clip_name": "qwen_3_4b.safetensors", "device": "default"}, "class_type": "CLIPLoader"}
+  },
+  "client_id": "electric-glasses-test"
+}

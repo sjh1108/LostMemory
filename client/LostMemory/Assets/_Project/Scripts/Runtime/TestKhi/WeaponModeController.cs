@@ -8,6 +8,7 @@ namespace LostMemory.TestKhi
     {
         Sword = 0,
         Bow = 1,
+        Staff = 2,
     }
 
     /// <summary>
@@ -40,14 +41,25 @@ namespace LostMemory.TestKhi
         [Tooltip("활 모드 활성 시 SetActive(true). 활 시각이 들어있는 GameObject (예: 자식 'BowVisual').")]
         [SerializeField] private GameObject bowObject;
 
+        [Header("Staff Mode")]
+        [SerializeField] private KhiStaffController staffController;
+        [SerializeField] private KhiStaffPresenter staffPresenter;
+        [Tooltip("스태프 모드 활성 시 SetActive(true). 스태프 시각이 들어있는 GameObject (예: 자식 'StaffVisual').")]
+        [SerializeField] private GameObject staffObject;
+
         [Header("Input")]
-        [Tooltip("모드 전환 키. 기본 Q.")]
+        [Tooltip("키보드 모드 전환 키 (백업). 기본 Q.")]
         [SerializeField] private Key switchKey = Key.Q;
+        [Tooltip("마우스 휠 모드 전환 활성화. 휠 위/아래로 순환.")]
+        [SerializeField] private bool enableMouseWheelSwitch = true;
+        [Tooltip("마우스 휠 한 번에 여러 모드 전환되는 것 방지용 디바운스.")]
+        [SerializeField, Min(0.05f)] private float wheelSwitchCooldown = 0.15f;
 
         [Header("Debug")]
         [SerializeField] private bool logModeChanges = false;
 
         private WeaponMode _currentMode;
+        private float _lastWheelSwitchTime;
 
         public WeaponMode CurrentMode => _currentMode;
 
@@ -62,16 +74,42 @@ namespace LostMemory.TestKhi
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
-            if (keyboard == null) return;
-            if (keyboard[switchKey].wasPressedThisFrame)
+            if (keyboard != null && keyboard[switchKey].wasPressedThisFrame)
             {
-                ToggleMode();
+                CycleMode(+1);
+            }
+
+            if (enableMouseWheelSwitch)
+            {
+                Mouse mouse = Mouse.current;
+                if (mouse != null && Time.unscaledTime > _lastWheelSwitchTime + wheelSwitchCooldown)
+                {
+                    float scrollY = mouse.scroll.ReadValue().y;
+                    if (scrollY > 0.1f)
+                    {
+                        CycleMode(+1);
+                        _lastWheelSwitchTime = Time.unscaledTime;
+                    }
+                    else if (scrollY < -0.1f)
+                    {
+                        CycleMode(-1);
+                        _lastWheelSwitchTime = Time.unscaledTime;
+                    }
+                }
             }
         }
 
         public void ToggleMode()
         {
-            ApplyMode(_currentMode == WeaponMode.Sword ? WeaponMode.Bow : WeaponMode.Sword, fireEvent: true);
+            CycleMode(+1);
+        }
+
+        /// <summary>다음/이전 모드로 순환. direction: +1 다음, -1 이전.</summary>
+        public void CycleMode(int direction)
+        {
+            int count = System.Enum.GetValues(typeof(WeaponMode)).Length;
+            int next = ((int)_currentMode + direction + count) % count;
+            ApplyMode((WeaponMode)next, fireEvent: true);
         }
 
         public void SetMode(WeaponMode mode)
@@ -85,6 +123,7 @@ namespace LostMemory.TestKhi
             _currentMode = mode;
             bool swordActive = mode == WeaponMode.Sword;
             bool bowActive = mode == WeaponMode.Bow;
+            bool staffActive = mode == WeaponMode.Staff;
 
             SetEnabled(swordCombo, swordActive);
             SetEnabled(swordHitbox, swordActive);
@@ -97,6 +136,10 @@ namespace LostMemory.TestKhi
             SetEnabled(bowController, bowActive);
             SetEnabled(bowPresenter, bowActive);
             SetActive(bowObject, bowActive);
+
+            SetEnabled(staffController, staffActive);
+            SetEnabled(staffPresenter, staffActive);
+            SetActive(staffObject, staffActive);
 
             if (logModeChanges)
             {
