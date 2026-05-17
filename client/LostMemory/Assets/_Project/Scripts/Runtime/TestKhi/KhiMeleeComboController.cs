@@ -50,6 +50,12 @@ namespace LostMemory.TestKhi
         /// <summary>CL-107: 본 컨트롤러의 공격이 대상을 사망시켰을 때 발화. RelicEffectApplier 의 붉은송곳니 등이 구독.</summary>
         public event Action<KhiAttackRequest, AttackStepData, Health> EnemyKilledByPlayer;
 
+        /// <summary>
+        /// CL-230: weaponData SO 가 교체된 직후 발화. (previous, next) — 한쪽이 null 일 수 있음.
+        /// WeaponUpgradeService / UI / SFX / 도전과제 등이 구독.
+        /// </summary>
+        public event Action<WeaponData, WeaponData> WeaponDataChanged;
+
         public bool IsAttacking => _isAttacking;
         public bool IsInAttackRecovery => _isInAttackRecovery;
         public bool BlocksDash => _isAttacking;
@@ -78,6 +84,64 @@ namespace LostMemory.TestKhi
             {
                 _externalAbortRequested = true;
             }
+        }
+
+        /// <summary>
+        /// CL-230: 런타임에 무기 SO 를 교체한다. WeaponUpgradeService 가 호출.
+        ///
+        /// finishCurrentSwing=true (기본): 진행 중 swing 은 RunAttack 시작부에 캡처된 baseDamage/postRotationOffset
+        ///   로 끝까지 진행 (race 안전). 다음 swing 부터 새 SO 의 데이터 사용.
+        /// finishCurrentSwing=false: AbortCurrentAttack 호출 후 교체. 다음 frame 의 RunAttack 마지막에서
+        ///   FinalizeAbortedAttack 가 호출되어 _isAttacking 가 reset됨.
+        ///
+        /// 두 경우 모두 본 메서드 종료 시점에 콤보 진행도는 1타로 초기화된다 (새 무기는 1타부터 시작이 자연스러움).
+        ///
+        /// 시각 동기화:
+        /// - KhiAttackVisualPresenter / KhiMeleeHitbox: 매 swing comboController.WeaponData 를 읽음 → 자동 추종.
+        /// - KhiWeaponPresenter: WeaponData 미사용 → 무관.
+        /// - KhiSlashAnimator: 자체 [SerializeField] weaponData 필드 보유 → 본 메서드에서 같은 GameObject 의
+        ///   KhiSlashAnimator 를 찾아 명시적으로 SetWeaponData(next) 호출로 동기화.
+        /// </summary>
+        public void SetWeaponData(WeaponData next, bool finishCurrentSwing = true)
+        {
+            if (next == null)
+            {
+                Debug.LogWarning("[KhiMeleeComboController] SetWeaponData(null) 무시.", this);
+                return;
+            }
+            if (next == weaponData)
+            {
+                return;
+            }
+            if (next.Steps == null || next.Steps.Length == 0)
+            {
+                Debug.LogError($"[KhiMeleeComboController] SetWeaponData: 새 WeaponData '{next.name}' 의 Steps 가 비어있음. 교체 거부.", this);
+                return;
+            }
+
+            if (!finishCurrentSwing && _isAttacking)
+            {
+                AbortCurrentAttack();
+                // FinalizeAbortedAttack 은 다음 frame 의 RunAttack 코루틴 안에서 호출됨 → _isAttacking 가 잠시 true 유지.
+                // 본 메서드는 SO 교체만 끝내고 빠짐. 다음 swing 은 자동으로 새 SO 1타로 시작.
+            }
+
+            WeaponData previous = weaponData;
+            weaponData = next;
+
+            // 콤보 진행도 reset — 새 무기는 1타부터 시작이 직관적.
+            _nextComboStep = 1;
+            _comboExpiresAt = -1f;
+            ClearBufferedAttack();
+
+            // 같은 GameObject 의 KhiSlashAnimator 동기화 (자체 weaponData 필드 보유).
+            KhiSlashAnimator slashAnim = GetComponent<KhiSlashAnimator>();
+            if (slashAnim != null)
+            {
+                slashAnim.SetWeaponData(next);
+            }
+
+            WeaponDataChanged?.Invoke(previous, next);
         }
 
         private void Awake()
@@ -187,6 +251,11 @@ namespace LostMemory.TestKhi
             float activeDur = step.activeDuration / speedMul;
             float recoveryDur = step.recoveryDuration / speedMul;
 
+            // CL-230: swing 도중 SetWeaponData 로 SO 가 교체되어도 본 swing 의 데미지/오프셋이 frame 단위로 점프하지
+            // 않도록 swing 시작 시점 값을 로컬 캡처. 다음 swing 부터 새 SO 의 BaseDamage 반영.
+            float capturedBaseDamage = weaponData.BaseDamage;
+            Vector2 capturedPostRotationOffset = weaponData.GlobalHitboxPostRotationOffset;
+
             Vector2 aimDirection = aim != null ? aim.GetAimDirection() : Vector2.right;
             if (aimDirection.sqrMagnitude <= Mathf.Epsilon)
             {
@@ -234,7 +303,7 @@ namespace LostMemory.TestKhi
                 float attackMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.AttackPower) : 1f;
                 float finisherMul = (statContainer != null && step.comboStep == 3)
                     ? statContainer.GetTotalMultiplier(StatId.FinisherDamage) : 1f;
-                float finalDamage = weaponData.BaseDamage * step.damageMultiplier * attackMul * finisherMul;
+                float finalDamage = capturedBaseDamage * step.damageMultiplier * attackMul * finisherMul;
 
                 // 치명타 — 확률(StatId.Critical)과 피해 보너스(StatId.CriticalDamage) 분리.
                 // 기본 치명타 피해 50%; 보너스는 합연산.
@@ -249,7 +318,7 @@ namespace LostMemory.TestKhi
                     finalDamage *= 1f + Mathf.Max(0f, critDmgBonus);
                 }
                 int sampledHitCount = hitbox != null
-                    ? hitbox.Sample(sampleRequest, step, weaponData.GlobalHitboxPostRotationOffset, finalDamage, _alreadyHitThisSwing, _hitsThisSample)
+                    ? hitbox.Sample(sampleRequest, step, capturedPostRotationOffset, finalDamage, _alreadyHitThisSwing, _hitsThisSample)
                     : 0;
                 hitAnyTarget |= sampledHitCount > 0;
 
