@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using MoreMountains.Tools;
@@ -85,12 +86,20 @@ namespace LostMemory.Combat.Telegraph
 
         public string TelegraphStateName => telegraphStateName;
         public string AttackStateName => attackStateName;
+        public Vector2 CurrentAttackCenter => _lockedCenter;
+        public Vector2 CurrentAttackSize => attackSize;
+
+        // Keep monster-specific aiming and visual behavior in companion components.
+        // Examples: TrackingTelegraphedMeleeAttackController handles Moose-style retargeting,
+        // and TelegraphedAttackAreaEffectPlayer/AreaAttackEffectPlayer handle impact visuals.
         public bool CanCancelAttack =>
             _hasLockedAttack
             || _hasPendingAttackDamage
             || _hasPendingFollowUpAreaAttack
             || IsInState(telegraphStateName)
             || IsInState(attackStateName);
+
+        public event Action<TelegraphedAreaAttackController, Vector2, Vector2> PrimaryImpactExecuted;
 
         private static readonly int FacingDirection2DAnimatorParameter = Animator.StringToHash("FacingDirection2D");
         private static readonly int HorizontalDirectionAnimatorParameter = Animator.StringToHash("HorizontalDirection");
@@ -504,6 +513,48 @@ namespace LostMemory.Combat.Telegraph
             _hasLockedAttack = true;
         }
 
+        public void TrackLockedAttackToTarget(
+            bool trackTargetX,
+            bool trackTargetY,
+            bool trackAttackDirection)
+        {
+            if ((!trackTargetX && !trackTargetY && !trackAttackDirection)
+                || brain == null
+                || brain.Target == null)
+            {
+                return;
+            }
+
+            Vector2 origin = ResolveOriginPosition();
+            Vector2 targetPosition = brain.Target.transform.position;
+
+            if (trackAttackDirection)
+            {
+                _lockedDirection = ResolveAttackDirection(origin);
+                float angle = Mathf.Atan2(_lockedDirection.y, _lockedDirection.x) * Mathf.Rad2Deg;
+                Vector2 trackedCenter = origin + (Vector2)(Quaternion.Euler(0f, 0f, angle) * (Vector3)attackOffset);
+                if (!trackTargetX)
+                {
+                    _lockedCenter.x = trackedCenter.x;
+                }
+
+                if (!trackTargetY)
+                {
+                    _lockedCenter.y = trackedCenter.y;
+                }
+            }
+
+            if (trackTargetX)
+            {
+                _lockedCenter.x = targetPosition.x;
+            }
+
+            if (trackTargetY)
+            {
+                _lockedCenter.y = targetPosition.y + attackOffset.y;
+            }
+        }
+
         private void ApplyLockedFacing()
         {
             Vector2 direction = _lockedDirection.sqrMagnitude > 0.0001f ? _lockedDirection.normalized : Vector2.right;
@@ -588,6 +639,7 @@ namespace LostMemory.Combat.Telegraph
             }
 
             HideTelegraphForImpact();
+            PrimaryImpactExecuted?.Invoke(this, _lockedCenter, attackSize);
             _hasExecutedImpact = true;
             ExecuteQueuedAttackDamage();
             QueueFollowUpAreaAttack();
@@ -732,28 +784,58 @@ namespace LostMemory.Combat.Telegraph
                 return;
             }
 
-            GameObject effectObject = new GameObject("FollowUpAreaImpactEffect");
+            GameObject effectObject = CreateAreaEffectObject(
+                "FollowUpAreaImpactEffect",
+                firstSprite,
+                _followUpAreaCenter,
+                ResolveFollowUpAreaImpactSize());
+            if (effectObject == null)
+            {
+                return;
+            }
+
+            Transform effectTransform = effectObject.transform;
+            SpriteRenderer spriteRenderer = effectObject.GetComponent<SpriteRenderer>();
+            _activeFollowUpImpactEffects.Add(effectObject);
+            StartCoroutine(PlayAreaImpactSequence(
+                effectObject,
+                effectTransform,
+                spriteRenderer,
+                ResolveFollowUpAreaImpactSize()));
+        }
+
+        private GameObject CreateAreaEffectObject(
+            string objectName,
+            Sprite firstSprite,
+            Vector2 center,
+            Vector2 areaSize)
+        {
+            if (firstSprite == null)
+            {
+                return null;
+            }
+
+            GameObject effectObject = new GameObject(objectName);
             effectObject.layer = gameObject.layer;
 
             Transform effectTransform = effectObject.transform;
             effectTransform.SetParent(ResolveFollowUpAreaImpactParent(), false);
-            effectTransform.position = (Vector3)_followUpAreaCenter + followUpAreaImpactOffset;
+            effectTransform.position = (Vector3)center + followUpAreaImpactOffset;
 
             SpriteRenderer spriteRenderer = effectObject.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = firstSprite;
             spriteRenderer.color = followUpAreaImpactColor;
 
             ApplyFollowUpAreaImpactSorting(spriteRenderer);
-            effectTransform.localScale = ResolveFollowUpAreaImpactScale(firstSprite, effectTransform.parent);
-
-            _activeFollowUpImpactEffects.Add(effectObject);
-            StartCoroutine(PlayFollowUpAreaImpactSequence(effectObject, effectTransform, spriteRenderer));
+            effectTransform.localScale = ResolveAreaImpactScale(firstSprite, effectTransform.parent, areaSize);
+            return effectObject;
         }
 
-        private IEnumerator PlayFollowUpAreaImpactSequence(
+        private IEnumerator PlayAreaImpactSequence(
             GameObject effectObject,
             Transform effectTransform,
-            SpriteRenderer spriteRenderer)
+            SpriteRenderer spriteRenderer,
+            Vector2 areaSize)
         {
             float frameDuration = 1f / Mathf.Max(0.01f, followUpAreaImpactFrameRate);
 
@@ -771,7 +853,7 @@ namespace LostMemory.Combat.Telegraph
                 }
 
                 spriteRenderer.sprite = frame;
-                effectTransform.localScale = ResolveFollowUpAreaImpactScale(frame, effectTransform.parent);
+                effectTransform.localScale = ResolveAreaImpactScale(frame, effectTransform.parent, areaSize);
                 yield return new WaitForSeconds(frameDuration);
             }
 
@@ -823,6 +905,14 @@ namespace LostMemory.Combat.Telegraph
                 return;
             }
 
+            if (telegraphView != null
+                && telegraphView.TryGetRenderSorting(out int telegraphSortingLayerId, out int telegraphSortingOrder))
+            {
+                spriteRenderer.sortingLayerID = telegraphSortingLayerId;
+                spriteRenderer.sortingOrder = telegraphSortingOrder + Mathf.Max(1, followUpAreaImpactSortingOrderOffset);
+                return;
+            }
+
             SortingGroup sortingGroup = ResolveFollowUpAreaImpactSortingGroup();
             if (sortingGroup != null)
             {
@@ -863,16 +953,19 @@ namespace LostMemory.Combat.Telegraph
             return followUpAreaImpactSortingGroupReference;
         }
 
-        private Vector3 ResolveFollowUpAreaImpactScale(Sprite sprite, Transform effectParent)
+        private Vector2 ResolveFollowUpAreaImpactSize()
+        {
+            return followUpAreaImpactSize.sqrMagnitude > 0.0001f
+                ? followUpAreaImpactSize
+                : followUpAreaSize;
+        }
+
+        private Vector3 ResolveAreaImpactScale(Sprite sprite, Transform effectParent, Vector2 targetSize)
         {
             if (sprite == null)
             {
                 return Vector3.one;
             }
-
-            Vector2 targetSize = followUpAreaImpactSize.sqrMagnitude > 0.0001f
-                ? followUpAreaImpactSize
-                : followUpAreaSize;
 
             Vector2 spriteSize = sprite.bounds.size;
             float safeSpriteWidth = Mathf.Abs(spriteSize.x) > 0.0001f ? Mathf.Abs(spriteSize.x) : 1f;

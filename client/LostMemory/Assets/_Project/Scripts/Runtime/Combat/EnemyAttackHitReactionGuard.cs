@@ -27,7 +27,8 @@ namespace LostMemory.Combat
         [SerializeField] private CharacterMovement movementAbility;
         [SerializeField] private TopDownController controller;
         [SerializeField] private Rigidbody2D body2D;
-        [SerializeField] private string[] protectedBrainStateNames = { "Attack" };
+        [SerializeField] private string[] protectedBrainStateNames = { "AttackTelegraph", "Attack", "RangedAttack", "Recover" };
+        [SerializeField] private string[] uninterruptibleBrainStateNames = { "AttackTelegraph", "Attack", "RangedAttack", "Recover" };
         [SerializeField] private string damageTriggerName = DamageAnimatorParameterName;
         [SerializeField] private bool lockMovementDuringHitReaction;
         [SerializeField, Min(0f)] private float hitReactionMovementLockDuration = 0.6f;
@@ -169,6 +170,13 @@ namespace LostMemory.Combat
 
             RefreshSuperArmorState();
 
+            if (IsInUninterruptibleBrainState())
+            {
+                SuppressTargetAnimatorUntilNextFrame();
+                ClearDamageTrigger();
+                return;
+            }
+
             if (!IsSuperArmorActiveNow())
             {
                 CancelAttacksForHitReaction();
@@ -199,6 +207,11 @@ namespace LostMemory.Combat
 
             string enteringState = stateEvent.EnterState != null ? stateEvent.EnterState.StateName : string.Empty;
             string exitingState = stateEvent.ExitState != null ? stateEvent.ExitState.StateName : string.Empty;
+
+            if (IsUninterruptibleStateName(enteringState) && (health == null || health.CurrentHealth > 0f))
+            {
+                ClearDamageTrigger();
+            }
 
             if (IsProtectedStateName(enteringState) && (health == null || health.CurrentHealth > 0f))
             {
@@ -303,16 +316,34 @@ namespace LostMemory.Combat
             return IsProtectedStateName(stateName);
         }
 
+        private bool IsInUninterruptibleBrainState()
+        {
+            string stateName = brain != null && brain.CurrentState != null
+                ? brain.CurrentState.StateName
+                : string.Empty;
+            return IsUninterruptibleStateName(stateName);
+        }
+
         private bool IsProtectedStateName(string stateName)
         {
-            if (string.IsNullOrEmpty(stateName) || protectedBrainStateNames == null)
+            return ContainsStateName(stateName, protectedBrainStateNames);
+        }
+
+        private bool IsUninterruptibleStateName(string stateName)
+        {
+            return ContainsStateName(stateName, uninterruptibleBrainStateNames);
+        }
+
+        private static bool ContainsStateName(string stateName, string[] stateNames)
+        {
+            if (string.IsNullOrEmpty(stateName) || stateNames == null)
             {
                 return false;
             }
 
-            for (int i = 0; i < protectedBrainStateNames.Length; i++)
+            for (int i = 0; i < stateNames.Length; i++)
             {
-                if (string.Equals(stateName, protectedBrainStateNames[i], StringComparison.Ordinal))
+                if (string.Equals(stateName, stateNames[i], StringComparison.Ordinal))
                 {
                     return true;
                 }
@@ -333,6 +364,11 @@ namespace LostMemory.Combat
             SetSuperArmorVisualActive(isSuperArmorActive);
 
             if (isSuperArmorActive)
+            {
+                ClearDamageTrigger();
+            }
+
+            if (IsInUninterruptibleBrainState())
             {
                 ClearDamageTrigger();
             }
