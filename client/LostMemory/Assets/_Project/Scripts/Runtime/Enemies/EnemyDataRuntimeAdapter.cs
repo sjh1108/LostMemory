@@ -102,6 +102,7 @@ namespace LostMemory.Enemies
             ApplyBatController(data);
             ApplyAssassinController(data);
             ApplySkeleton1Controller(data);
+            ApplySkeletonEliteController(data);
             if (data.TryGetAttackDamage(EnemyAttackType.Charge, out float chargeDamage))
             {
                 ApplyNamedDamageSource(ChargeDamageAreaName, chargeDamage);
@@ -149,6 +150,17 @@ namespace LostMemory.Enemies
         private void ApplySkeleton1Controller(EnemyData data)
         {
             Skeleton1EnemyController skeleton = GetComponent<Skeleton1EnemyController>();
+            if (skeleton == null)
+            {
+                return;
+            }
+
+            skeleton.ApplyRuntimeData(data);
+        }
+
+        private void ApplySkeletonEliteController(EnemyData data)
+        {
+            SkeletonEliteEnemyController skeleton = GetComponent<SkeletonEliteEnemyController>();
             if (skeleton == null)
             {
                 return;

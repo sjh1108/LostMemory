@@ -18,6 +18,10 @@ namespace LostMemory.Combat.Telegraph
         public Vector2 Size;
         public Color Color;
         public float Duration;
+        public bool ShowTimingMarker;
+        public float TimingProgress;
+        public Color TimingMarkerColor;
+        public float TimingMarkerThickness;
     }
 
     [DisallowMultipleComponent]
@@ -38,6 +42,12 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private float pulseSpeed = 8f;
         [SerializeField] [Range(0f, 1f)] private float pulseAlphaStrength = 0.18f;
         [SerializeField] private Vector3 positionOffset = new Vector3(0f, 0.02f, 0f);
+        [FormerlySerializedAs("timingOutlineObjectName")]
+        [SerializeField] private string timingMarkerObjectName = "AttackTelegraphTimingMarker";
+        [FormerlySerializedAs("timingOutlineDefaultColor")]
+        [SerializeField] private Color timingMarkerDefaultColor = new Color(1f, 0.92f, 0.55f, 0.75f);
+        [FormerlySerializedAs("timingOutlineMinScale")]
+        [SerializeField] [Range(0.01f, 0.25f)] private float timingMarkerThickness = 0.055f;
 
         private const int TelegraphTextureSize = 64;
 
@@ -47,6 +57,9 @@ namespace LostMemory.Combat.Telegraph
         private GameObject _previewObject;
         private Transform _previewTransform;
         private SpriteRenderer _previewRenderer;
+        private GameObject _timingMarkerObject;
+        private Transform _timingMarkerTransform;
+        private SpriteRenderer _timingMarkerRenderer;
         private AttackTelegraphRequest2D _activeRequest;
         private bool _visible;
         private float _remainingDuration = -1f;
@@ -79,6 +92,9 @@ namespace LostMemory.Combat.Telegraph
 
             Destroy(_previewObject);
             _previewObject = null;
+            _timingMarkerObject = null;
+            _timingMarkerTransform = null;
+            _timingMarkerRenderer = null;
         }
 
         public void Show(AttackTelegraphRequest2D request)
@@ -168,6 +184,7 @@ namespace LostMemory.Combat.Telegraph
             _previewRenderer.drawMode = SpriteDrawMode.Simple;
 
             ApplySorting();
+            ApplyTimingMarker();
         }
 
         private void ApplyRequest()
@@ -188,6 +205,7 @@ namespace LostMemory.Combat.Telegraph
             _previewRenderer.enabled = true;
 
             ApplySorting();
+            ApplyTimingMarker();
         }
 
         private void ApplyPulse()
@@ -196,6 +214,82 @@ namespace LostMemory.Combat.Telegraph
             float pulse = (Mathf.Sin(Time.time * pulseSpeed) + 1f) * 0.5f;
             float alphaMultiplier = Mathf.Lerp(1f - pulseAlphaStrength, 1f, pulse);
             _previewRenderer.color = new Color(color.r, color.g, color.b, color.a * alphaMultiplier);
+        }
+
+        private void EnsureTimingMarkerRenderer()
+        {
+            if (_timingMarkerRenderer != null)
+            {
+                return;
+            }
+
+            if (_previewTransform == null)
+            {
+                return;
+            }
+
+            string objectName = string.IsNullOrWhiteSpace(timingMarkerObjectName)
+                ? "AttackTelegraphTimingMarker"
+                : timingMarkerObjectName;
+            _timingMarkerObject = new GameObject(objectName);
+            _timingMarkerObject.layer = gameObject.layer;
+
+            _timingMarkerTransform = _timingMarkerObject.transform;
+            _timingMarkerTransform.SetParent(_previewTransform, false);
+
+            _timingMarkerRenderer = _timingMarkerObject.AddComponent<SpriteRenderer>();
+            _timingMarkerRenderer.sprite = GetOrCreateBoxTelegraphSprite();
+            _timingMarkerRenderer.drawMode = SpriteDrawMode.Simple;
+
+            ApplyTimingMarkerSorting();
+        }
+
+        private void ApplyTimingMarker()
+        {
+            if (!_activeRequest.ShowTimingMarker)
+            {
+                HideTimingMarker();
+                return;
+            }
+
+            EnsureTimingMarkerRenderer();
+            if (_timingMarkerRenderer == null)
+            {
+                return;
+            }
+
+            Color color = _activeRequest.TimingMarkerColor.a > 0f
+                ? _activeRequest.TimingMarkerColor
+                : timingMarkerDefaultColor;
+            float progress = Mathf.Clamp01(_activeRequest.TimingProgress);
+            float thickness = _activeRequest.TimingMarkerThickness > 0f
+                ? _activeRequest.TimingMarkerThickness
+                : timingMarkerThickness;
+            thickness = Mathf.Clamp(thickness, 0.01f, 0.25f);
+            float localX = Mathf.Lerp(-0.5f + thickness * 0.5f, 0.5f - thickness * 0.5f, progress);
+
+            _timingMarkerRenderer.sprite = GetOrCreateBoxTelegraphSprite();
+            _timingMarkerRenderer.color = color;
+            _timingMarkerRenderer.enabled = true;
+            _timingMarkerTransform.localPosition = new Vector3(localX, 0f, 0f);
+            _timingMarkerTransform.localRotation = Quaternion.identity;
+            _timingMarkerTransform.localScale = new Vector3(thickness, 1f, 1f);
+            _timingMarkerObject.SetActive(true);
+
+            ApplyTimingMarkerSorting();
+        }
+
+        private void HideTimingMarker()
+        {
+            if (_timingMarkerRenderer != null)
+            {
+                _timingMarkerRenderer.enabled = false;
+            }
+
+            if (_timingMarkerObject != null)
+            {
+                _timingMarkerObject.SetActive(false);
+            }
         }
 
         private Vector3 ResolveLocalScale(Vector2 worldSize)
@@ -239,6 +333,7 @@ namespace LostMemory.Combat.Telegraph
             if (useFixedTelegraphSorting)
             {
                 ApplyFixedTelegraphSorting();
+                ApplyTimingMarkerSorting();
                 return;
             }
 
@@ -247,6 +342,7 @@ namespace LostMemory.Combat.Telegraph
             {
                 _previewRenderer.sortingLayerID = sortingGroupReference.sortingLayerID;
                 _previewRenderer.sortingOrder = sortingGroupReference.sortingOrder + sortingOrderOffset;
+                ApplyTimingMarkerSorting();
                 return;
             }
 
@@ -254,11 +350,24 @@ namespace LostMemory.Combat.Telegraph
             if (sortingReference == null)
             {
                 _previewRenderer.sortingOrder = sortingOrderOffset;
+                ApplyTimingMarkerSorting();
                 return;
             }
 
             _previewRenderer.sortingLayerID = sortingReference.sortingLayerID;
             _previewRenderer.sortingOrder = sortingReference.sortingOrder + sortingOrderOffset;
+            ApplyTimingMarkerSorting();
+        }
+
+        private void ApplyTimingMarkerSorting()
+        {
+            if (_previewRenderer == null || _timingMarkerRenderer == null)
+            {
+                return;
+            }
+
+            _timingMarkerRenderer.sortingLayerID = _previewRenderer.sortingLayerID;
+            _timingMarkerRenderer.sortingOrder = _previewRenderer.sortingOrder + 1;
         }
 
         private void ApplyFixedTelegraphSorting()
@@ -328,7 +437,7 @@ namespace LostMemory.Combat.Telegraph
             SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
             for (int i = 0; i < renderers.Length; i++)
             {
-                if (renderers[i] == null || renderers[i] == _previewRenderer)
+                if (renderers[i] == null || renderers[i] == _previewRenderer || renderers[i] == _timingMarkerRenderer)
                 {
                     continue;
                 }
@@ -348,6 +457,8 @@ namespace LostMemory.Combat.Telegraph
             {
                 _previewObject.SetActive(false);
             }
+
+            HideTimingMarker();
         }
 
         private static Sprite GetOrCreateTelegraphSprite(AttackTelegraphShape2D shape)
@@ -431,5 +542,6 @@ namespace LostMemory.Combat.Telegraph
             _circleTelegraphSprite.name = "AttackTelegraphCircleSprite";
             return _circleTelegraphSprite;
         }
+
     }
 }
