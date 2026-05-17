@@ -98,6 +98,7 @@ namespace LostMemory.Enemies
         {
             ApplyHealth(data.MaxHealth);
             ApplyMovement(data.MoveSpeed);
+            ApplySlimeController(data);
             if (data.TryGetAttackDamage(EnemyAttackType.Charge, out float chargeDamage))
             {
                 ApplyNamedDamageSource(ChargeDamageAreaName, chargeDamage);
@@ -107,6 +108,17 @@ namespace LostMemory.Enemies
             {
                 ApplyChobombSelfDestructDamage(slamDamage);
             }
+        }
+
+        private void ApplySlimeController(EnemyData data)
+        {
+            SlimeEnemyController slime = GetComponent<SlimeEnemyController>();
+            if (slime == null)
+            {
+                return;
+            }
+
+            slime.ApplyRuntimeData(data);
         }
 
         protected virtual IEnumerator ApplyDeferred(EnemyData data)
