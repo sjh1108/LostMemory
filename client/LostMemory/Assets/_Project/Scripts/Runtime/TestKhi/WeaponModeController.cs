@@ -7,9 +7,10 @@ namespace LostMemory.TestKhi
     public enum WeaponMode
     {
         Sword = 0,
-        Bow = 1,
-        Staff = 2,
-        Flamethrower = 3,
+        Dagger = 1,
+        Bow = 2,
+        Staff = 3,
+        Flamethrower = 4,
     }
 
     /// <summary>
@@ -55,6 +56,11 @@ namespace LostMemory.TestKhi
         [SerializeField] private KhiFlameZone flamethrowerZone;
         [Tooltip("화염방사기 모드 활성 시 SetActive(true). 무기 시각 + 분사 ParticleSystem 이 들어있는 GameObject.")]
         [SerializeField] private GameObject flamethrowerObject;
+
+        [Header("Dagger Mode (CL-230: 검 컴포넌트 공유, SO 만 교체)")]
+        [Tooltip("WeaponUpgradeService. Dagger 모드 진입 시 UpgradeToDagger(), 그 외 모드 진입 시 RevertToDefault() 자동 호출. " +
+                 "Sword_Dagger.asset 으로 SO 교체 + 보조 단검 (Weapon_Sub) 활성/비활성 처리.")]
+        [SerializeField] private LostMemory.Combat.WeaponUpgradeService weaponUpgradeService;
 
         [Header("Input")]
         [Tooltip("키보드 모드 전환 키 (백업). 기본 Q.")]
@@ -130,18 +136,20 @@ namespace LostMemory.TestKhi
         private void ApplyMode(WeaponMode mode, bool fireEvent)
         {
             _currentMode = mode;
-            bool swordActive = mode == WeaponMode.Sword;
+            // CL-230: Dagger 도 검 컴포넌트 공유 (Sword 모드 + Dagger 모드 둘 다 sword 컴포넌트 활성).
+            bool swordOrDaggerActive = mode == WeaponMode.Sword || mode == WeaponMode.Dagger;
             bool bowActive = mode == WeaponMode.Bow;
             bool staffActive = mode == WeaponMode.Staff;
             bool flamethrowerActive = mode == WeaponMode.Flamethrower;
 
-            SetEnabled(swordCombo, swordActive);
-            SetEnabled(swordHitbox, swordActive);
-            SetEnabled(swordAttackVisual, swordActive);
-            SetEnabled(swordSlashAnim, swordActive);
-            SetEnabled(swordPresenter, swordActive);
-            SetEnabled(swordParry, swordActive);
-            SetActive(swordObject, swordActive);
+            SetEnabled(swordCombo, swordOrDaggerActive);
+            SetEnabled(swordHitbox, swordOrDaggerActive);
+            SetEnabled(swordAttackVisual, swordOrDaggerActive);
+            SetEnabled(swordSlashAnim, swordOrDaggerActive);
+            SetEnabled(swordPresenter, swordOrDaggerActive);
+            // CL-230: 패링은 Sword 모드만. Dagger 모드는 우클릭이 텔레포트로 사용됨 (KhiDaggerTeleportController).
+            SetEnabled(swordParry, mode == WeaponMode.Sword);
+            SetActive(swordObject, swordOrDaggerActive);
 
             SetEnabled(bowController, bowActive);
             SetEnabled(bowPresenter, bowActive);
@@ -155,6 +163,20 @@ namespace LostMemory.TestKhi
             SetEnabled(flamethrowerPresenter, flamethrowerActive);
             SetEnabled(flamethrowerZone, flamethrowerActive);
             SetActive(flamethrowerObject, flamethrowerActive);
+
+            // CL-230: Dagger 모드 진입 시 SO 교체 + 보조 단검 활성. 그 외 모드는 기본 검 SO 복귀 + 보조 단검 비활성.
+            // 이 한 줄 분기로 "단검 → 활 전환 시 보조 단검 안 꺼지는 문제" 해결.
+            if (weaponUpgradeService != null)
+            {
+                if (mode == WeaponMode.Dagger)
+                {
+                    weaponUpgradeService.UpgradeToDagger();
+                }
+                else
+                {
+                    weaponUpgradeService.RevertToDefault();
+                }
+            }
 
             if (logModeChanges)
             {
