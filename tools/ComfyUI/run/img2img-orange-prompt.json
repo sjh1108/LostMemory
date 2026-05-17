@@ -1,0 +1,47 @@
+{
+  "prompt": {
+    "1": {"inputs": {"weight_dtype": "default", "unet_name": "z_image_turbo_bf16.safetensors"}, "class_type": "UNETLoader"},
+    "3": {
+      "inputs": {
+        "clip": ["10", 0], "strength_clip": 0.8,
+        "model": ["1", 0], "strength_model": 0.8,
+        "lora_name": "pixel_art_style_z_image_turbo.safetensors"
+      },
+      "class_type": "LoraLoader"
+    },
+    "4": {
+      "inputs": {
+        "text": "Pixel art game icon style. a single round orange citrus fruit, single small green leaf at the top, isolated, centered, plain white background, clean black outline, simple flat shading, vibrant orange color, game inventory icon\n",
+        "clip": ["3", 1]
+      },
+      "class_type": "CLIPTextEncode"
+    },
+
+    "20": {"inputs": {"image": "ref_peach_512.png"}, "class_type": "LoadImage"},
+    "21": {"inputs": {"pixels": ["20", 0], "vae": ["9", 0]}, "class_type": "VAEEncode"},
+
+    "6": {
+      "inputs": {
+        "denoise": 0.65, "steps": 8, "cfg": 1.8,
+        "sampler_name": "euler", "seed": 271828182, "scheduler": "simple",
+        "negative": ["11", 0],
+        "latent_image": ["21", 0],
+        "model": ["3", 0],
+        "positive": ["4", 0]
+      },
+      "class_type": "KSampler"
+    },
+    "7": {"inputs": {"samples": ["6", 0], "vae": ["9", 0]}, "class_type": "VAEDecode"},
+    "8": {"inputs": {"images": ["7", 0], "filename_prefix": "Img2Img_PeachToOrange"}, "class_type": "SaveImage"},
+    "9": {"inputs": {"vae_name": "ae.safetensors"}, "class_type": "VAELoader"},
+    "10": {"inputs": {"type": "lumina2", "clip_name": "qwen_3_4b.safetensors", "device": "default"}, "class_type": "CLIPLoader"},
+    "11": {
+      "inputs": {
+        "text": "realistic, 3d render, photo, smooth shading, anti-aliased, blurry, gradient, detailed background, noisy background, text, watermark, low quality, multiple objects, cluster\n",
+        "clip": ["3", 1]
+      },
+      "class_type": "CLIPTextEncode"
+    }
+  },
+  "client_id": "img2img-peach-to-orange"
+}
