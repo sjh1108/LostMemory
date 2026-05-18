@@ -182,6 +182,7 @@ namespace LostMemory.Combat.Telegraph
             _previewRenderer.sprite = GetOrCreateTelegraphSprite(AttackTelegraphShape2D.Box);
             _previewRenderer.sortingOrder = sortingOrderOffset;
             _previewRenderer.drawMode = SpriteDrawMode.Simple;
+            TelegraphSpriteRendererUtility.ApplyTelegraphMaterial(_previewRenderer);
 
             ApplySorting();
             ApplyTimingMarker();
@@ -240,6 +241,7 @@ namespace LostMemory.Combat.Telegraph
             _timingMarkerRenderer = _timingMarkerObject.AddComponent<SpriteRenderer>();
             _timingMarkerRenderer.sprite = GetOrCreateBoxTelegraphSprite();
             _timingMarkerRenderer.drawMode = SpriteDrawMode.Simple;
+            TelegraphSpriteRendererUtility.ApplyTelegraphMaterial(_timingMarkerRenderer);
 
             ApplyTimingMarkerSorting();
         }

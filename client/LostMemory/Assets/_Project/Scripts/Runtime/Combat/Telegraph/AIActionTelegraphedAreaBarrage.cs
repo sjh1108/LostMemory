@@ -377,6 +377,7 @@ namespace LostMemory.Combat.Telegraph
             renderer.sprite = sprite;
             renderer.drawMode = SpriteDrawMode.Simple;
             renderer.color = telegraphColor;
+            TelegraphSpriteRendererUtility.ApplyTelegraphMaterial(renderer);
             ApplyTelegraphSorting(renderer);
 
             _activeTelegraphs.Add(telegraphObject);
