@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 200000000000400001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.68, y: 0.08, z: 0}
+  m_LocalPosition: {x: 0.46, y: -0.03, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -76,7 +76,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.7, y: 0.58}
+  m_Size: {x: 0.45, y: 0.51}
   m_EdgeRadius: 0
 --- !u!1 &200000000000400002
 GameObject:
@@ -90,7 +90,7 @@ GameObject:
   - component: {fileID: 8652391595165629333}
   - component: {fileID: 8652391595165629332}
   m_Layer: 13
-  m_Name: SkeletonEliteModel
+  m_Name: SkeletonMageModel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -160,7 +160,7 @@ SpriteRenderer:
   m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -743760744, guid: a80ef5832a25e2a47a8b1c70b82fcafb, type: 3}
+  m_Sprite: {fileID: -823782870, guid: 4fcc519e127067e4a8ca8af6984c9c10, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -180,7 +180,7 @@ Animator:
   m_GameObject: {fileID: 200000000000400002}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 7c7093cfd1f141a49a67234a0e01d686, type: 2}
+  m_Controller: {fileID: 9100000, guid: 719f08c53cde4bd4bbd6190a59da234e, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -207,10 +207,9 @@ GameObject:
   - component: {fileID: 114767317845071677}
   - component: {fileID: 4705227277263379210}
   - component: {fileID: 6769159340760305775}
-  - component: {fileID: 114900000000400002}
   - component: {fileID: 114900000000400001}
   m_Layer: 13
-  m_Name: SkeletonElite
+  m_Name: SkeletonMage
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -294,17 +293,17 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.12, y: 0.47}
+  m_Offset: {x: 0.05, y: 0.42}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 2.2, y: 2.2}
-    newSize: {x: 2.2, y: 2.2}
+    oldSize: {x: 1.28, y: 1.28}
+    newSize: {x: 1.28, y: 1.28}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.83, y: 0.9}
+  m_Size: {x: 0.72, y: 0.86}
   m_EdgeRadius: 0
 --- !u!210 &8004672357299153886
 SortingGroup:
@@ -328,14 +327,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8652391595165629335}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9775fb29667c41779c2f93a103dcec08, type: 3}
+  m_Script: {fileID: 11500000, guid: 01754710d9f92ec4d9a21b81f5682667, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.SkeletonEliteShieldHealth
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
   Model: {fileID: 8652391595165629335}
-  CurrentHealth: 65
+  CurrentHealth: 38
   Invulnerable: 0
-  InitialHealth: 65
-  MaximumHealth: 65
+  InitialHealth: 38
+  MaximumHealth: 38
   ResetHealthOnEnable: 1
   OnHealFeedback: {fileID: 0}
   ImmuneToDamage: 0
@@ -346,7 +345,7 @@ MonoBehaviour:
   ImmuneToKnockbackIfZeroDamage: 0
   KnockbackForceMultiplier: 1
   DestroyOnDeath: 1
-  DelayBeforeDestruction: 0.8
+  DelayBeforeDestruction: 0.85
   PointsWhenDestroyed: 0
   RespawnAtInitialLocation: 0
   DisableControllerOnDeath: 1
@@ -549,7 +548,7 @@ MonoBehaviour:
   HideBarAtZeroDelay: 0
   TestMinHealth: 0
   TestMaxHealth: 100
-  TestCurrentHealth: 30
+  TestCurrentHealth: 38
   TestUpdateHealthButton: 0
 --- !u!114 &6769159340760305775
 MonoBehaviour:
@@ -569,34 +568,6 @@ MonoBehaviour:
   iconScale: 1
   rotateWithTransform: 0
   priority: 10
---- !u!114 &114900000000400002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8652391595165629335}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d6c7a273e1ea4f149fa4534d4480e5c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  previewObjectName: AttackTelegraphPreview
-  previewParent: {fileID: 8652391595165629330}
-  sortingReference: {fileID: 8652391595165629333}
-  sortingOrderOffset: -5
-  renderOutsideSortingGroup: 1
-  useFixedTelegraphSorting: 1
-  telegraphSortingLayerName: Foreground
-  telegraphSortingOrder: 50
-  sortingGroupReference: {fileID: 0}
-  defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
-  pulseSpeed: 8
-  pulseAlphaStrength: 0.18
-  positionOffset: {x: 0, y: 0.02, z: 0}
-  timingMarkerObjectName: AttackTelegraphTimingMarker
-  timingMarkerDefaultColor: {r: 1, g: 1, b: 1, a: 0.4862745}
-  timingMarkerThickness: 0.055
 --- !u!114 &114900000000400001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -606,102 +577,76 @@ MonoBehaviour:
   m_GameObject: {fileID: 8652391595165629335}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 871167da5ca44d2e80ba26b622ad074f, type: 3}
+  m_Script: {fileID: 11500000, guid: c1e904db95be4a50aef2961db99f8ad7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.SkeletonEliteEnemyController
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.SkeletonMageEnemyController
   animator: {fileID: 8652391595165629332}
   spriteRenderer: {fileID: 8652391595165629333}
   body: {fileID: 50872317139119919}
   bodyCollider: {fileID: 61875899894898257}
-  attackHitbox: {fileID: 202000000000400001}
-  heavyAttackTelegraphView: {fileID: 114900000000400002}
   health: {fileID: 114767317845071677}
-  healthBar: {fileID: 4705227277263379210}
-  idleStateName: SkeletonWithShield-idle
-  walkStateName: SkeletonWithShield-walk
-  lightAttackStateName: SkeletonWithShield-lightAttack
-  heavyAttackStateName: SkeletonWithShield-heavyAttack
-  hurtStateName: SkeletonWithShield-hurt
-  deathStateName: SkeletonWithShield-death
-  blockStateName: SkeletonWithShield-block
-  shieldBreakStateName: SkeletonWithShield-hurt2
-  flipSpriteOnPositiveX: 0
-  shieldlessAnimatorController: {fileID: 9100000, guid: 0daa1dbe25df4bec842bc756d7db9e48,
-    type: 2}
-  shieldlessIdleSprite: {fileID: 909837547, guid: 63d7083d2b32dd74eb8fdc0a913971c8,
+  projectilePrefab: {fileID: 910000000000510005, guid: 40bff1cd459d43a6a44fc557f6d1837a,
     type: 3}
-  shieldlessIdleStateName: skeleton-idle
-  shieldlessWalkStateName: skeleton-walk
-  shieldlessLightAttackStateName: SkeletonEliteNoShield-lightAttack
-  shieldlessHeavyAttackStateName: SkeletonEliteNoShield-heavyAttack
-  shieldlessHurtStateName: skeleton-hurt
-  shieldlessDeathStateName: skeleton-death
-  shieldHealth: 200
-  shieldDamageInterval: 0.12
-  shieldBlockDuration: 0.2
-  shieldBreakDuration: 0.8
-  hideHealthBarUntilShieldBreak: 1
-  showHealthBarOnShieldBreak: 1
-  maxHealth: 65
-  moveSpeed: 2.05
-  detectionRadius: 6.5
-  desiredAttackDistance: 1
-  ignorePlayerBodyCollision: 1
+  areaAttackPrefab: {fileID: 910000000000520004, guid: 20a965d8e24641efa665e7823928f8fb,
+    type: 3}
+  idleStateName: New Animation
+  walkStateName: MageSkeleton_walk
+  projectileWindupStateName: MageSkeleton_atk1_prep stage
+  projectileFireStateName: MageSkeleton_atk1_final stage
+  areaAttackStateName: MageSkeleton_atk2
+  hurtStateName: MageSkeleton_hurt
+  deathStateName: MageSkeleton_death
+  flipSpriteOnPositiveX: 0
+  maxHealth: 38
+  moveSpeed: 2.15
+  detectionRadius: 16
+  preferredRange: 4.25
+  minimumRange: 2.1
   wallBlockMask:
     serializedVersion: 2
     m_Bits: 16779520
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 1024
+  combatStrafeSpeedMultiplier: 0.6
+  combatStrafeTurnInterval: 1.25
   wanderSpeedMultiplier: 0.45
   wanderMoveDuration: 1.25
   wanderPauseDuration: 0.55
   wanderPauseChance: 0.35
   wanderTurnAttempts: 8
   wanderWallProbeDistance: 0.2
-  attackDuration: 0.9
-  attackWindup: 0.42
-  attackActiveDuration: 0.22
-  attackLungeStart: 0.28
-  attackLungeDuration: 0.22
-  attackLungeDistance: 0.5
-  attackHitboxSize: {x: 1.31, y: 0.78}
-  attackHitboxBaseOffset: {x: 0, y: 0.23}
-  attackHitboxDistance: 0.68
-  attackDamage: 9
-  attackRecoverDuration: 0.14
-  attackCooldown: 0.85
-  heavyAttackInterval: 3.2
-  heavyAttackDuration: 1.54
-  heavyAttackWindup: 0.6
-  heavyAttackActiveDuration: 0.94
-  heavyAttackLungeStart: 0.6
-  heavyAttackLungeDuration: 0.94
-  heavyAttackLungeDistance: 12
-  heavyAttackChargeRange: 5.4
-  heavyAttackChargeUsesTargetDistance: 0
-  heavyAttackChargeStopsAtWall: 1
-  heavyAttackChargeOvershootDistance: 1.2
-  heavyAttackWallStopPadding: 0.08
-  heavyAttackHitboxSize: {x: 1.2, y: 1.05}
-  heavyAttackHitboxBaseOffset: {x: 0, y: 0.08}
-  heavyAttackHitboxDistance: 0.9
-  heavyAttackDamage: 14
-  heavyAttackRecoverDuration: 0
-  heavyAttackCooldown: 1.2
-  showHeavyAttackTelegraph: 1
-  heavyAttackTelegraphColor: {r: 1, g: 0.34, b: 0.08, a: 0.3}
-  heavyAttackTelegraphLength: 12
-  heavyAttackTelegraphLengthPadding: 0
-  heavyAttackTelegraphWidthPadding: 0.12
-  heavyAttackTelegraphMarkerColor: {r: 1, g: 0.15566039, b: 0.16950141, a: 0.75}
-  heavyAttackTelegraphMarkerThickness: 0.055
-  attackKnockbackResistanceMultiplier: 0.35
-  suppressHurtAnimationDuringAttack: 1
-  attackInvincibilityDuration: 0.45
-  applyAttackKnockback: 1
-  attackKnockbackForce: 190
-  heavyAttackKnockbackForce: 280
-  attackOverlapBufferSize: 8
+  projectileAttackRange: 14
+  projectileAttackMinRange: 1.25
+  projectileAttackDuration: 0.82
+  projectileFireTime: 0.42
+  projectileRecoverDuration: 0.2
+  projectileAttackCooldown: 1.45
+  projectileDamage: 9
+  projectileSpeed: 6
+  projectileHitRadius: 0.28
+  projectileLifetime: 3
+  projectileVisualScale: 3
+  projectileSpawnOffset: {x: 0.15, y: 0.35}
+  projectileInvincibilityDuration: 0.35
+  applyProjectileKnockback: 1
+  projectileKnockbackForce: 130
+  projectileHomingEnabled: 1
+  projectileHomingTurnSpeed: 160
+  projectileHomingDuration: 1.4
+  projectileHomingScanRadius: 14
+  areaAttackRange: 5.75
+  areaAttackMinRange: 0.5
+  areaAttackDuration: 1.05
+  areaImpactTime: 0.62
+  areaRecoverDuration: 0.35
+  areaAttackCooldown: 4.2
+  areaDamage: 13
+  areaRadius: 1.15
+  areaLifetime: 1.1
+  areaVisualScale: 1.2
+  areaInvincibilityDuration: 0.45
+  applyAreaKnockback: 1
+  areaKnockbackForce: 180
   hurtVisualDuration: 0.16
-  deathDestroyDelay: 0.8
+  deathDestroyDelay: 0.85
