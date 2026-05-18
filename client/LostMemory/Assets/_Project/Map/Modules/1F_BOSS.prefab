@@ -30717,6 +30717,7 @@ GameObject:
   - component: {fileID: 1064848046441803028}
   - component: {fileID: 6226433339382925121}
   - component: {fileID: 2858573164609050546}
+  - component: {fileID: 642010001234567890}
   m_Layer: 0
   m_Name: 1F_BOSS
   m_TagString: Untagged
@@ -30806,6 +30807,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b46f293a0f158ce49a5d805e46c54d34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemyEncounterSpawner
+--- !u!114 &642010001234567890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6418301402336183476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac6158c92a641c745b8a9d513f9c7159, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.LargeNodeClearTracker
+  clearPolicy: 1
+  requiredRoomIds: []
+  exitTriggers:
+  - {fileID: 170782375005959013}
+  includeInactiveControllers: 1
+  autoDiscoverOnEnable: 1
+  unlockIfNoRequiredRooms: 0
+  allowExitDuringActiveCombat: 0
+  debugLogging: 0
 --- !u!1 &6504961722502586497
 GameObject:
   m_ObjectHideFlags: 0
@@ -45741,22 +45763,8 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4715416575836506484, guid: 0b929cfd4cfd14f4e8b95e801a332412,
-        type: 3}
-      propertyPath: roomController
-      value: 
-      objectReference: {fileID: 1064848046441803028}
-    - target: {fileID: 4715416575836506484, guid: 0b929cfd4cfd14f4e8b95e801a332412,
-        type: 3}
-      propertyPath: portalVisualRoot
-      value: 
-      objectReference: {fileID: 7717136797002712949}
-    - target: {fileID: 4715416575836506484, guid: 0b929cfd4cfd14f4e8b95e801a332412,
-        type: 3}
-      propertyPath: fallbackInteractKey
-      value: 102
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4715416575836506484, guid: 0b929cfd4cfd14f4e8b95e801a332412, type: 3}
     m_RemovedGameObjects:
     - {fileID: 6276990183410153164, guid: 0b929cfd4cfd14f4e8b95e801a332412, type: 3}
     m_AddedGameObjects:
@@ -45769,6 +45777,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 170782375005959012}
+    - targetCorrespondingSourceObject: {fileID: 1956502541083746315, guid: 0b929cfd4cfd14f4e8b95e801a332412,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 170782375005959013}
   m_SourcePrefab: {fileID: 100100000, guid: 0b929cfd4cfd14f4e8b95e801a332412, type: 3}
 --- !u!1 &841092205810639426 stripped
 GameObject:
@@ -45776,6 +45788,30 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1191989722571031113}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &170782375005959013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 841092205810639426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a23bd0a9071f7fb48958dbc9cea6ca0f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RouteNodeExitTrigger
+  triggerId: to_2f_1r
+  routeManager: {fileID: 0}
+  unlockedOnStart: 0
+  requireInteractInput: 1
+  fallbackInteractKey: 102
+  acceptedPlayerId: Player1
+  useDistanceFallback: 1
+  activationRadius: 1.5
+  visualRoot: {fileID: 7717136797002712949}
+  hideVisualWhenLocked: 1
+  triggerView: {fileID: 170782375005959012}
+  debugLogging: 0
 --- !u!114 &170782375005959012
 MonoBehaviour:
   m_ObjectHideFlags: 0
