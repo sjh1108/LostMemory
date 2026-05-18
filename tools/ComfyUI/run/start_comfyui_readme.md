@@ -18,6 +18,14 @@
 - `--port 8188`로 ComfyUI 포트를 고정한다.
 - `--disable-auto-launch`로 서버 실행 시 브라우저 자동 실행을 막는다.
 - stdout과 stderr를 `run/comfyui-stdout.log`, `run/comfyui-stderr.log`에 누적한다.
+- 이미 8188에서 ComfyUI(`main.py --port 8188`)가 떠 있으면 중복 실행하지 않는다.
+- python 프로세스를 호출한 셸과 분리해 띄운다(CI·비대화 셸에서 호출해도 종료되지 않도록).
+
+## 내부 구조
+
+- `start_comfyui.cmd`는 같은 폴더의 `start_comfyui.ps1`을 호출하는 얇은 래퍼다.
+- 실제 실행은 PowerShell `Start-Process`로 분리된 자식 `cmd.exe`에서 일어나며,
+  python은 그 자식의 손자가 되어 호출자 셸이 끝나도 살아남는다.
 
 ## 접속 주소
 
