@@ -10,6 +10,10 @@ namespace LostMemory.Intro.Phase0
     {
         [SerializeField] private TMP_Text label;
         [SerializeField] private AudioSource sfxSource;
+        [Tooltip("타이핑음 재생 후 자동으로 끊는 시간(초). 연속음 클립에서 첫 번째 소리만 뽑을 때 사용.")]
+        [SerializeField] private float sfxCutoffSeconds = 0.12f;
+
+        private Coroutine _stopSfxCoroutine;
 
         private void Reset()
         {
@@ -32,9 +36,22 @@ namespace LostMemory.Intro.Phase0
             }
 
             string newline = label.text.Length == 0 ? string.Empty : "\n";
-            int startVisible = label.text.Length + newline.Length;
+
+            // 추가 전에 현재 글자 수를 기록 — rich text 태그를 TMP가 알아서 제외하므로 태그 포함 text도 안전
+            int startVisible;
+            if (label.text.Length == 0)
+            {
+                startVisible = 0;
+            }
+            else
+            {
+                label.ForceMeshUpdate();
+                startVisible = label.textInfo.characterCount + 1; // +1 은 \n 한 글자
+            }
+
             label.text += newline + text;
-            int targetVisible = label.text.Length;
+            label.ForceMeshUpdate();
+            int targetVisible = label.textInfo.characterCount;
             label.maxVisibleCharacters = startVisible;
 
             float interval = 1f / Mathf.Max(1f, charsPerSecond);
@@ -69,9 +86,25 @@ namespace LostMemory.Intro.Phase0
         {
             if (sfxSource == null || data.TypeClip == null) return;
 
+            // 이전 자동-중지 예약이 있으면 취소
+            if (_stopSfxCoroutine != null)
+                StopCoroutine(_stopSfxCoroutine);
+
             float jitter = data.TypePitchJitter;
             sfxSource.pitch = jitter > 0f ? 1f + Random.Range(-jitter, jitter) : 1f;
-            sfxSource.PlayOneShot(data.TypeClip, data.TypeVolume);
+            sfxSource.clip = data.TypeClip;
+            sfxSource.volume = data.TypeVolume;
+            sfxSource.Play();
+
+            // sfxCutoffSeconds 후 자동으로 끊어 첫 번째 "두" 하나만 재생
+            _stopSfxCoroutine = StartCoroutine(StopSfxAfter(sfxCutoffSeconds));
+        }
+
+        private IEnumerator StopSfxAfter(float seconds)
+        {
+            yield return new WaitForSecondsRealtime(seconds);
+            sfxSource.Stop();
+            _stopSfxCoroutine = null;
         }
     }
 }
