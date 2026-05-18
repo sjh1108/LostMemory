@@ -173,7 +173,7 @@ MonoBehaviour:
   canvasGroup: {fileID: 249187829}
   image: {fileID: 249187830}
   frames:
-  - {fileID: 21300000, guid: 5b8e37e628a83b44d838804447ba2dfb, type: 3}
+  - {fileID: 21300000, guid: 9419e73e0456ba6419484b8ce197b1da, type: 3}
   fps: 1
   fadeInDelay: 100
   fadeInDuration: 1
@@ -229,6 +229,81 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 249187826}
+  m_CullTransparentMesh: 1
+--- !u!1 &368707414
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 368707415}
+  - component: {fileID: 368707417}
+  - component: {fileID: 368707416}
+  m_Layer: 0
+  m_Name: BackgroundPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &368707415
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 368707414}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1895166186}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 150}
+  m_SizeDelta: {x: 1920, y: 300}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &368707416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 368707414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.7137255}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &368707417
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 368707414}
   m_CullTransparentMesh: 1
 --- !u!1 &429114361
 GameObject:
@@ -985,14 +1060,14 @@ MonoBehaviour:
   canvasGroup: {fileID: 1309827116}
   image: {fileID: 1309827117}
   frames:
-  - {fileID: 21300000, guid: b122af3fc288a824aa6fb2852f50c6cb, type: 3}
-  - {fileID: 21300000, guid: c32cd947741c407438c7f5a437eb4876, type: 3}
-  - {fileID: 21300000, guid: 8ccb21416e0e8ea41930005bf99b34c3, type: 3}
-  - {fileID: 21300000, guid: 5f721806583927b47922e975e663229f, type: 3}
-  - {fileID: 21300000, guid: e5c6501d612dae54b8e0aa43c711e524, type: 3}
-  - {fileID: 21300000, guid: 4e6db83104333d14d9bd7c8bf053edb7, type: 3}
-  - {fileID: 21300000, guid: c6f80409ed5882e4ba92e02f0a9e2b73, type: 3}
-  - {fileID: 21300000, guid: 8a239a42f9e35454e9f89863130be952, type: 3}
+  - {fileID: 21300000, guid: cdcca455dab75bc4787bf4277c0b4a68, type: 3}
+  - {fileID: 21300000, guid: 9b715ce043ac5874a879f4902d990b6e, type: 3}
+  - {fileID: 21300000, guid: c5392e4412da75b4f8050ab6ca101a0e, type: 3}
+  - {fileID: 21300000, guid: 407179d8acc629e4aac5bb60f01f6ee8, type: 3}
+  - {fileID: 21300000, guid: d410b17f639f2e145b3b296664271252, type: 3}
+  - {fileID: 21300000, guid: fb1e622bbaf1f5345b1370c3156a45ab, type: 3}
+  - {fileID: 21300000, guid: 413f2946908c8144182d1966d6864d63, type: 3}
+  - {fileID: 21300000, guid: ba3d6e1539c948443a505020754812a9, type: 3}
   fps: 1
   fadeInDelay: 20
   fadeInDuration: 1
@@ -1103,7 +1178,14 @@ MonoBehaviour:
   canvasGroup: {fileID: 1693044998}
   image: {fileID: 1693044999}
   frames:
-  - {fileID: 21300000, guid: d0b663351b2d3554787f0824a52941f4, type: 3}
+  - {fileID: 21300000, guid: b36642ec485031b49b0696f3dcdfa363, type: 3}
+  - {fileID: 21300000, guid: c4a8694ada574bc438c9766b452e13c3, type: 3}
+  - {fileID: 21300000, guid: 2e7d23ed9be8d3a4ca9bbf808ff7eda5, type: 3}
+  - {fileID: 21300000, guid: 92fc0a472dac9d749819935ae8930854, type: 3}
+  - {fileID: 21300000, guid: f5939e70e4f6e4943a658a91089ecfd6, type: 3}
+  - {fileID: 21300000, guid: 8923246940e17e8459b18b8951639fc8, type: 3}
+  - {fileID: 21300000, guid: 051860dfb59b89d419cccc6308f06024, type: 3}
+  - {fileID: 21300000, guid: 3091be4729d434245b23e5d4ac4d72c4, type: 3}
   fps: 1
   fadeInDelay: 52
   fadeInDuration: 1
@@ -1142,10 +1224,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1895166186}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1400, y: 600}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 150}
+  m_SizeDelta: {x: 1920, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1796279728
 MonoBehaviour:
@@ -1169,8 +1251,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 24e7867240b94b4458d8a28b7e2e0a93, type: 2}
-  m_sharedMaterial: {fileID: 2084286004769984998, guid: 24e7867240b94b4458d8a28b7e2e0a93,
+  m_fontAsset: {fileID: 11400000, guid: c9faec49f7cb36249ba1b7d9d48dbf6d, type: 2}
+  m_sharedMaterial: {fileID: -1963734077680825402, guid: c9faec49f7cb36249ba1b7d9d48dbf6d,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -1201,7 +1283,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -1283,6 +1365,7 @@ RectTransform:
   - {fileID: 1309827119}
   - {fileID: 1693044996}
   - {fileID: 249187827}
+  - {fileID: 368707415}
   - {fileID: 1796279727}
   - {fileID: 1923559050}
   - {fileID: 429114362}
@@ -1484,7 +1567,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Intro.Phase0.Phase0TimedTitle
   label: {fileID: 1923559053}
   canvasGroup: {fileID: 1923559052}
-  titleText: "Chapter 1.  ?? \uBC88\uC9F8 \uAE30\uC5B5"
+  titleText: "Chapter 1. \uC783\uC5B4\uBC84\uB9B0 \uAE30\uC5B5"
   appearDelay: 16
   fadeInDuration: 0.8
   holdDuration: 1.6
@@ -1523,8 +1606,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 24e7867240b94b4458d8a28b7e2e0a93, type: 2}
-  m_sharedMaterial: {fileID: 2084286004769984998, guid: 24e7867240b94b4458d8a28b7e2e0a93,
+  m_fontAsset: {fileID: 11400000, guid: c9faec49f7cb36249ba1b7d9d48dbf6d, type: 2}
+  m_sharedMaterial: {fileID: -1963734077680825402, guid: c9faec49f7cb36249ba1b7d9d48dbf6d,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
