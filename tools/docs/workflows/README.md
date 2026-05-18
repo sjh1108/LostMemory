@@ -6,9 +6,9 @@
 
 | 파일 | 용도 | 입력 | 출력 |
 |---|---|---|---|
-| `LostMemory_Item_TXT2IMG.json` | 텍스트만으로 아이템 생성 | 프롬프트 | 512×512 PNG |
-| `LostMemory_Item_IMG2IMG.json` | 레퍼런스 이미지 기반 변형 | 이미지 + 프롬프트 | 512×512 PNG |
-| `LostMemory_BgRemove_Standalone.json` | 입력 이미지의 배경 자동 투명화 (rembg) | 이미지 1장 | RGBA PNG (alpha 배경) |
+| `LostMemory_Item_TXT2IMG.json` | 텍스트만으로 아이템 생성 + 픽셀 양자화 + **배경 투명화** 한 번에 | 프롬프트 | PNG 3장 (원본 / 픽셀 / RGBA) |
+| `LostMemory_Item_IMG2IMG.json` | 레퍼런스 이미지 변형 + 픽셀 양자화 + **배경 투명화** | 이미지 + 프롬프트 | PNG 3장 (원본 / 픽셀 / RGBA) |
+| `LostMemory_BgRemove_Standalone.json` | 기존 PNG 한 장을 배경 투명화 (단독) | 이미지 1장 | RGBA PNG |
 
 ## 사용법
 
@@ -119,9 +119,21 @@ deformed, side view, back view
 | LostMemory_Item_00004 | 58.7% | 깔끔 |
 | AutoPix_Test_00001 | 75.3% | 깔끔 |
 
-### AI-311/312와 통합 (예정)
+### 기존 아이템 워크플로 통합
 
-미소녀/캐릭터 워크플로 작성 시 KSampler 출력 → BgRemove 추가 갈래로 연결해 한 번에 RGBA sprite 출력. 패턴은 LostMemory_Item_TXT2IMG.json + LostMemoryPixelize와 동일 분기 구조.
+`LostMemory_Item_TXT2IMG.json` / `LostMemory_Item_IMG2IMG.json`은 VAEDecode 출력을 세 갈래로 분기해 한 번의 Queue Prompt로 PNG 3장을 동시에 생성합니다.
+
+```
+VAEDecode → SaveImage                  → output/LostMemory_Item_*.png            (원본 512×512)
+         → LostMemoryPixelize → SaveImage     → output/LostMemory_Item_pixel_*.png      (게임 톤 48×48)
+         → LostMemoryBgRemove → SaveImageRGBA → output/LostMemory_Item_bgremove_*.png   (RGBA 512×512, 알파 배경)
+```
+
+배경 투명화가 필요 없는 경우 노드 32 (BgRemove)와 33 (SaveImageRGBA)을 우클릭 → Bypass(`Ctrl+B`)로 해당 갈래만 끔.
+
+### AI-311/312 워크플로 신규 작성 시
+
+미소녀/캐릭터 워크플로를 같은 패턴(VAEDecode 세 갈래)으로 만들면 됩니다. BgRemove 노드의 `model`은 `isnet-anime` 권장.
 
 ## 변경 기록
 
