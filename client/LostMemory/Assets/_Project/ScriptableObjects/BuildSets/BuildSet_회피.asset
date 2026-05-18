@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 557189643fb1cb543b9862b81019d515, type: 3}
+  m_Name: "BuildSet_회피"
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildSetData
+  _setTag: 12
+  _displayName: "회피"
+  _tiers:
+  - RequiredCount: 2
+    EffectType: 15
+    Magnitude: 0.02
+    Duration: 0
+    Description: "회피 +2%"
+  - RequiredCount: 4
+    EffectType: 15
+    Magnitude: 0.06
+    Duration: 0
+    Description: "회피 +6%"

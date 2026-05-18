@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42905543ce9c5409c2600fc40176ce61, type: 3}
+  m_Name: MysteryShopConfig_Default
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Events.MysteryShopConfig
+  slotPrices:
+  - 80
+  - 200
+  - 400
+  tier1Weights:
+    common: 80
+    rare: 20
+    unique: 0
+    legendary: 0
+  tier2Weights:
+    common: 30
+    rare: 50
+    unique: 20
+    legendary: 0
+  tier3Weights:
+    common: 0
+    rare: 30
+    unique: 50
+    legendary: 20
+  tier1MaxPrice: 80
+  tier2MaxPrice: 250
+  fallbackConsumable: {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}

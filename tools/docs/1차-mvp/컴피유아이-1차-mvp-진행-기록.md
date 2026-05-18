@@ -1,0 +1,906 @@
+# 컴피유아이 1차 MVP 진행 기록
+
+## 문서 목적
+
+이 문서는 `컴피유아이-1차-mvp-통합-작업표.csv`의 주요 작업코드별 진행 결과를 기록한다.
+
+CSV는 완료 여부를 빠르게 보기 위한 표이고, 이 문서는 왜 완료로 판단했는지와 산출물이 어디에 있는지를 남기는 기록이다.
+
+## 기록 기준
+
+- 완료여부 `Y`: 실행 또는 산출물 확인까지 끝난 작업
+- 상태 `완료`: 다음 작업이 이 결과를 선행 조건으로 사용할 수 있는 상태
+- 완료 근거: 접속 URL, 실행 명령, workflow JSON, output 이미지처럼 재확인 가능한 자료를 우선 기록
+
+## AI-201. GPU 데스크탑 ComfyUI host, port, output 경로 고정
+
+### 작업 범위
+
+- GPU 데스크탑 내부 IP 또는 고정 호스트명 확인
+- ComfyUI listen 주소를 내부망 접근 가능 상태로 조정
+- `output`, `models`, `loras` 경로와 운영 위치 확인
+- 실행 명령과 재기동 스크립트 표준화
+
+### 결정 내용
+
+- GPU 데스크탑 내부 IP: `192.168.100.77`
+- ComfyUI 포트: `8188`
+- GPU PC 로컬 접속 주소: `http://127.0.0.1:8188`
+- 팀원 내부망 접속 주소: `http://192.168.100.77:8188`
+- 실행 스크립트: `tools/ComfyUI/run/start_comfyui.cmd`
+- 실행 기준: `main.py --listen 0.0.0.0 --port 8188`
+
+### 완료 근거
+
+- GPU PC에서 `http://127.0.0.1:8188` 접속 확인
+- GPU PC에서 `http://192.168.100.77:8188` 접속 확인
+- 팀원 PC에서 `http://192.168.100.77:8188` 접속 확인
+- `tools/ComfyUI/run/start_comfyui_readme.md`에 실행 기준 정리
+- `tools/ai_server/.env.example`에 `COMFYUI_BASE_URL` 기준 추가
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-202`, `AI-301`, `AI-507`
+
+## AI-202. 기준 workflow 1종과 기준 프롬프트 확정
+
+### 작업 범위
+
+- 1차 MVP 기준 workflow 1종 선정
+- 기준 프롬프트, negative prompt, seed, steps 등 테스트 값을 정리
+- 기준 workflow로 output 이미지 생성
+
+### 결정 내용
+
+- 기준 모델: `Z-Image-Turbo`
+- 기준 용도: 1차 MVP의 text-to-image 생성, API 샘플 확보, 저장/조회 검증
+- 장기 방향: 도트풍은 공개 pixel-art LoRA와 이후 프로젝트 전용 LoRA 학습으로 강화
+- 현재 단계: 직접 학습 모델이 아니라 Z-Image-Turbo + pixel-art LoRA 적용 가능성 확인
+
+### 모델 구성
+
+- diffusion model: `z_image_turbo_bf16`
+- text encoder: `qwen_3_4b`
+- CLIP loader type: `lumina2`
+- VAE: `ae.safetensors`
+- LoRA: `pixel_art_style_z_image_turbo`
+
+### 기준 프롬프트
+
+Positive prompt:
+
+```text
+Pixel art style. a small fantasy game character, full body, front view, yellow spiky hair, pale white skin, green tunic, red scarf, wooden shield, iron sword, brown boots, clean black outline, limited color palette, simple shading, readable silhouette, game sprite, centered, plain white background
+```
+
+Negative prompt:
+
+```text
+blurry, smooth shading, realistic, 3d render, painterly, noisy background, detailed background, text, watermark, deformed, extra limbs, bad hands, cropped, side view, back view
+```
+
+### 산출물
+
+Workflow JSON:
+
+- `산출물/AI-202-Z-Image-Turbo/workflows/Z-Image-turbo-test1.json`
+- `산출물/AI-202-Z-Image-Turbo/workflows/Z-Image-turbo-test2-prompt-change.json`
+- `산출물/AI-202-Z-Image-Turbo/workflows/Z-Image-turbo-test3-ksampler-change.json`
+
+Output 이미지:
+
+- 생성 이미지는 로컬 보관 대상으로 전환
+- 저장소에는 `산출물/AI-202-Z-Image-Turbo/outputs/README.md`만 유지
+
+### 완료 근거
+
+- Z-Image-Turbo workflow에서 이미지 생성 성공
+- pixel-art LoRA를 붙인 상태에서 output 이미지 3개 생성
+- 프롬프트 구체화 후 캐릭터 속성 반영 방향 확인
+- 생성 output 이미지는 Git LFS pointer 충돌 방지를 위해 저장소에서 제외하고 로컬 보관
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-301`, `AI-302`, `AI-303`
+
+## AI-301. POST /prompt 요청 샘플 확보
+
+### 작업 범위
+
+- 실제 성공하는 `/prompt` request body JSON 저장
+- 기준 workflow와 `/prompt` body 차이 정리
+- curl 기준 재현 절차 문서화
+
+### 결정 내용
+
+- 기준 workflow는 `Z-Image-turbo-test3-ksampler-change.json`으로 고정한다.
+- `/prompt` sample은 UI workflow export 전체를 그대로 쓰지 않고, `prompt` map과 `client_id`만 남긴 최소 성공 body를 기준으로 둔다.
+- sample 재현을 위해 `seed`와 `filename_prefix`를 고정한다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-301-prompt-sample/README.md`
+- `tools/docs/1차-mvp/산출물/AI-301-prompt-sample/successful-prompt-request-test3.json`
+- `tools/docs/1차-mvp/산출물/AI-301-prompt-sample/successful-prompt-response-test3.json`
+- `tools/docs/1차-mvp/산출물/AI-301-prompt-sample/reproduce-with-curl.md`
+
+### 완료 근거
+
+- `http://127.0.0.1:8188/prompt`에 실제 POST 요청 성공
+- sample request body로 `prompt_id = d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6` 수신
+- `node_errors`가 비어 있는 성공 응답 저장
+- `curl.exe` 기준 재현 명령과 응답 예시 문서화
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-302`, `AI-303`, `AI-404`
+
+## AI-302. GET /history/{prompt_id} 응답 샘플 확보
+
+### 작업 범위
+
+- `AI-301`에서 받은 `prompt_id` 기준 `/history/{prompt_id}` raw JSON 저장
+- output 파일 정보와 상태 key 해석 기준 정리
+
+### 결정 내용
+
+- 기준 `prompt_id`는 `d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6`으로 둔다.
+- 이번 sample에서 output node는 `8`이고, 이미지 파일 정보는 `outputs["8"].images[0]` 기준으로 읽는다.
+- backend 구현에서는 output node id를 고정하지 않고 `outputs` map 순회 기준으로 파싱하는 쪽이 안전하다고 본다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-302-history-sample/README.md`
+- `tools/docs/1차-mvp/산출물/AI-302-history-sample/history-response-d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6.json`
+
+### 완료 근거
+
+- `http://127.0.0.1:8188/history/d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6` 응답 원본 저장
+- `status.status_str = success`, `status.completed = true` 확인
+- output 파일 `AI301_Test3_PromptSample_00001_.png` 생성 확인
+- output filename, subfolder, type 추출 위치를 문서화
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-303`, `AI-404`, `AI-405`
+
+## AI-303. prompt_id와 output 파일 매핑 규칙 정리
+
+### 작업 범위
+
+- `prompt_id`, 생성 시각, output 파일명을 서로 어떻게 연결할지 규칙 문서화
+- DB에 저장할 workflow 이름과 모델명을 어디서 읽을지 기준 정리
+
+### 결정 내용
+
+- 1차 추적 키는 `/prompt` 응답의 `prompt_id`를 그대로 사용한다.
+- output 파일명은 `/history/{prompt_id}`의 `outputs[*].images[*].filename`에서 읽는다.
+- 생성 시각은 `/history` raw JSON에 없으므로 1차 MVP에서는 output 파일의 filesystem timestamp를 사용한다.
+- workflow 이름은 `/history` 응답에서 읽지 않고, 1차 MVP에서는 source workflow 파일명 stem을 그대로 저장한다.
+- 모델명은 `/history`가 아니라 workflow/request body 안의 loader node에서 읽는다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-303-prompt-output-mapping/README.md`
+- `tools/docs/1차-mvp/산출물/AI-303-prompt-output-mapping/prompt-output-mapping-table.md`
+
+### 완료 근거
+
+- `prompt_id = d4bc5cf9-f555-430c-a32b-b61e4c8b4bb6`와 output 파일 `AI301_Test3_PromptSample_00001_.png`의 연결 규칙 정리
+- `CreationTime = 2026-04-27 14:38:30 +09:00`를 1차 생성 시각 기준으로 문서화
+- source workflow `Z-Image-turbo-test3-ksampler-change.json` 기준 workflow 이름을 `Z-Image-turbo-test3-ksampler-change`로 고정하고 UNET/LoRA/CLIP/VAE 추출 위치 정리
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-304`, `AI-404`, `AI-405`, `AI-507`
+
+## AI-304. 실패 및 timeout 시나리오 샘플 수집
+
+### 작업 범위
+
+- `/prompt` 단계에서 재현 가능한 실패 케이스 1건 이상 수집
+- polling timeout 기준값 초안 작성
+- 사용자 노출 문구와 내부 로그 문구 분리 초안 작성
+
+### 결정 내용
+
+- 실패 샘플은 `모델 없음`, `output node 없음`, `잘못된 node reference`, `malformed JSON` 4종으로 정리한다.
+- polling timeout 초안은 `interval = 2초`, `soft warning = 60초`, `hard timeout = 120초`로 둔다.
+- 실패 메시지는 사용자 문구와 내부 로그 문구를 분리해 관리한다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/README.md`
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/failure-sample-results.md`
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/timeout-draft.md`
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/failure-message-draft.md`
+- `tools/docs/1차-mvp/산출물/AI-304-failure-timeout-samples/requests/*.json`
+
+### 완료 근거
+
+- `invalid-unet-name-request.json`으로 모델 없음 validation 실패 재현
+- `missing-output-node-request.json`으로 `prompt_no_outputs` 실패 재현
+- `invalid-node-reference-request.json`으로 broken graph validation 실패 재현
+- `malformed-json-request.txt`로 JSON parse 실패 재현
+- 최근 성공 실행 시간 `13.32 ~ 51.55초` 기준으로 timeout 초안 정리
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-404`, `AI-405`, `AI-406`, `AI-507`
+
+## AI-404. 서버에서 ComfyUI /prompt 호출 구현
+
+### 작업 범위
+
+- Controller 입력을 실제 ComfyUI `/prompt` request body로 조립
+- `/prompt` submit 수행
+- 응답의 `prompt_id`를 API 응답으로 반환
+- 실패 분석용 debug logging 지점 추가
+
+### 결정 내용
+
+- 실행 template는 `AI-301` 성공 sample을 classpath resource로 옮겨 사용한다.
+- 1차 MVP 기준 지원 workflow는 `pixel-art-character-v1` 1종으로 제한한다.
+- prompt는 현재 sample 기준 positive prompt node `4`에 주입한다.
+- `workflow_name` 기준은 이미 `AI-303` 문서에서 확정한 source workflow 파일명 stem 규칙을 유지한다.
+- ComfyUI submit 실패는 `502`, unsupported workflow는 `400`으로 응답한다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/AI-404-prompt-submit/README.md`
+
+### 완료 근거
+
+- `PromptAssemblyService` 추가
+- `pixel-art-character-v1` template resource 추가
+- `GenerationService`에서 실제 `ComfyUiClient.submitPrompt(...)` 호출
+- 응답 DTO에 `promptId`, `status = SUBMITTED` 반영
+- controller/integration test와 assembly service unit test 통과
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-405`, `AI-406`, `AI-505`
+
+## AI-203. Reverse Proxy 기본 경로 설계
+
+### 작업 범위
+
+- 구매 예정 도메인 기준 공개 경로 전략 선택
+- 운영 데스크탑, GPU 데스크탑, S3, Postgres 역할 확정
+- `tools` 하위 AI 도구 전용 Nginx 설정 초안 작성
+- ComfyUI WebSocket 프록시 기준 포함
+- `tools/infra` 기준 Docker Compose와 디렉터리 구조 작성
+- Nginx 단독 smoke test 절차 문서화
+
+### 결정 내용
+
+- 기존 프로젝트 루트의 `server/`, `client/`는 이번 작업에서 수정하지 않는다.
+- AI 도구 인프라는 `tools/infra`에 새로 둔다.
+- 도메인은 직접 구매할 예정이며, 최종 도메인 이름은 추후 확정한다.
+- ComfyUI 공개 경로는 `comfy.<구매한-도메인>` 형태의 subdomain 방식으로 한다.
+- 작은 EC2를 도메인이 가리키는 공개 진입 서버로 두는 방향을 우선한다.
+- EC2는 Nginx, AI 도구 백엔드, Postgres, S3 연동, 결과 조회를 맡는다.
+- 운영 데스크탑은 ComfyUI 이미지 생성 worker 후보로 둔다.
+- 운영 데스크탑에서 이미지 생성이 어렵거나 학습이 필요하면 GPU 데스크탑을 ComfyUI 추론 또는 학습용으로 쓴다.
+- EC2와 운영/GPU 데스크탑이 다른 네트워크에 있어도 가능하지만, 포트포워딩, VPN/mesh network, SSH reverse tunnel 같은 연결 통로가 필요하다.
+- DB는 SQLite가 아니라 Postgres로 고정한다.
+- S3는 결과 이미지와 workflow snapshot JSON 저장 후보로 둔다.
+
+### 산출물
+
+인프라 초안:
+
+- `tools/infra/docker-compose.yml`
+- `tools/infra/.env.example`
+- `tools/infra/nginx/nginx.conf`
+- `tools/infra/nginx/templates/ai-tool.conf.template`
+- `tools/infra/postgres/`
+
+결정 문서:
+
+- `산출물/AI-203-reverse-proxy/proxy-path-decision.md`
+- `산출물/AI-203-reverse-proxy/deployment-role-memo.md`
+- `산출물/AI-203-reverse-proxy/proxy-checklist.md`
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-203-07`, `AI-204`, `AI-205`, `AI-206`
+
+### AI-203-07 smoke test 결과
+
+- Docker Desktop 실행 후 `docker compose up -d nginx` 성공
+- `nginx:1.27-alpine` image pull 성공
+- `infra-nginx-1` container 생성 성공
+- `docker compose exec nginx nginx -t` 성공
+- `Host: example.com`, `Host: comfy.example.com` 기준 `/nginx-health` 응답 200 확인
+- `localhost` Host 요청은 공식 nginx 이미지의 기본 `default.conf`가 잡아 404가 발생했으므로, compose에서 시작 시 기본 `default.conf`를 제거하도록 보강
+- 공식 entrypoint template 자동 생성은 `command: sh -c ...`일 때 실행되지 않아 `/etc/nginx/conf.d`가 비는 문제가 있었고, compose command에서 `envsubst`로 `ai-tool.conf`를 직접 생성하도록 보강
+- 최종 재검증에서 `/etc/nginx/conf.d/ai-tool.conf`만 남는 것을 확인
+- `localhost`, `Host: example.com`, `Host: comfy.example.com` 기준 `/nginx-health` 응답 200 확인
+
+## 현재 주의사항
+
+- `tools/ComfyUI/output`은 런타임 산출물이라 Git 추적 대상이 아니다.
+- MR에 남길 기준 이미지는 `tools/docs/1차-mvp/산출물` 아래에 별도로 복사해야 한다.
+- 이번 AI-202는 “생성 가능 여부와 기준 workflow 확정”까지이며, 프로젝트 전용 LoRA 학습은 2차 이후 별도 작업으로 분리한다.
+- AI 도구 인프라는 `tools/infra` 기준으로 새로 관리하며, 기존 루트 `server/` 설정과 섞지 않는다.
+- AI 도구 백엔드 실제 구현 위치는 `tools/ai_server`를 기준으로 유지한다.
+
+## AI-205. 도메인 및 HTTPS 적용
+
+### 작업 범위
+
+- AI 도구용 대표 도메인과 ComfyUI subdomain 기준 정리
+- 80, 443 포트 외부 접근 체크리스트 작성
+- Let's Encrypt HTTP-01 challenge용 Nginx webroot 설정
+- HTTPS 443 server block과 HTTP -> HTTPS redirect 초안 작성
+- certbot service, 인증서 volume, 갱신 검증 절차 작성
+
+### 결정 내용
+
+- ComfyUI 공개 경로는 기존 AI-203 결정대로 `comfy.<구매한-도메인>` subdomain 방식을 유지한다.
+- 인증서는 Let's Encrypt HTTP-01 challenge와 certbot webroot 방식으로 발급한다.
+- Nginx는 `/.well-known/acme-challenge/`와 `/nginx-health`를 제외한 HTTP 요청을 HTTPS로 리다이렉트한다.
+- Basic Auth는 AI-206에서 별도로 적용한다.
+
+### 산출물
+
+- `tools/infra/docker-compose.yml`
+- `tools/infra/.env.example`
+- `tools/infra/nginx/templates/ai-tool.conf.template`
+- `산출물/AI-205-domain-https/README.md`
+- `산출물/AI-205-domain-https/dns-and-port-checklist.md`
+- `산출물/AI-205-domain-https/letsencrypt-nginx-runbook.md`
+- `산출물/AI-205-domain-https/renewal-check-result.md`
+- `산출물/AI-205-domain-https/mr-description.md`
+
+### 현재 판정
+
+2026-04-27 기준 구매 도메인이 아직 없으므로 실제 DNS A 레코드 생성, Let's Encrypt 인증서 발급, `certbot renew --dry-run` 검증은 수행하지 않는다.
+
+이번 작업에서는 AI-205의 설정과 운영 절차를 준비한 상태로 둔다. AI-204에서 내부망/로컬 프록시 기준 ComfyUI UI, WebSocket, 생성 smoke test가 통과했으므로, 도메인 구매 전에는 이 상태를 AI-206 Basic Auth 작업의 선행 조건으로 사용한다.
+
+### 상태
+
+- 완료여부: `N`
+- 상태: `설정/절차 준비 완료, 실제 도메인 검증 대기`
+- 후속 작업: `AI-206`, 도메인 구매 후 `AI-205-01`~`AI-205-05` 실검증
+
+## AI-206. 도메인 앞단 Basic Auth 적용
+
+### 작업 범위
+
+- Basic Auth 보호 대상과 예외 경로 확정
+- Nginx Basic Auth 설정 반영
+- `.htpasswd` 파일 마운트와 Git 제외 규칙 반영
+- 팀 공유용 계정 생성, 전달, 교체 기준 문서화
+
+### 결정 내용
+
+- `COMFYUI_DOMAIN`은 전체 경로를 Basic Auth로 보호한다.
+- `PUBLIC_DOMAIN`은 현재 백엔드 진입점인 `/api/`를 Basic Auth로 보호한다.
+- `/.well-known/acme-challenge/`는 Let's Encrypt HTTP-01 검증을 위해 인증 예외로 둔다.
+- `/nginx-health`는 운영 health check를 위해 인증 예외로 둔다.
+- 실제 계정 파일은 `tools/infra/nginx/auth/.htpasswd`에 만들고 Git에는 올리지 않는다.
+
+### 산출물
+
+- `tools/infra/docker-compose.yml`
+- `tools/infra/.env.example`
+- `tools/infra/README.md`
+- `tools/infra/nginx/README.md`
+- `tools/infra/nginx/auth/README.md`
+- `tools/infra/nginx/templates/ai-tool.conf.template`
+- `산출물/AI-206-basic-auth/README.md`
+- `산출물/AI-206-basic-auth/mr-description.md`
+
+### 현재 판정
+
+2026-04-27 기준 구매 도메인과 실제 인증서가 아직 없으므로 브라우저에서 실제 Basic Auth 팝업, 401 응답, 인증 성공 후 ComfyUI UI/API 접근은 검증하지 않는다.
+
+이번 작업에서는 AI-206의 설정과 운영 절차를 준비한 상태로 둔다. 실제 도메인과 인증서가 준비되면 `.htpasswd`를 생성하고 Nginx를 재시작한 뒤 실검증한다.
+
+### 상태
+
+- 완료여부: `N`
+- 상태: `설정/절차 준비 완료, 실제 도메인 검증 대기`
+- 후속 작업: 도메인/인증서 준비 후 `AI-206-01`, `AI-206-03` 실검증
+
+## AI-401. AI 도구 백엔드 프로젝트 부트스트랩
+
+### 작업 범위
+
+- AI 도구 백엔드 실제 구현 위치 확정
+- `GET /health`와 공통 응답 포맷 추가
+- 패키지 구조와 기본 설정 파일 뼈대 생성
+- `build.gradle` 의존성과 기본 패키지 정리
+- Dockerfile과 jar 빌드 경로 정리
+
+### 결정 내용
+
+- 실제 구현 위치는 루트 `server/`가 아니라 `tools/ai_server`로 고정한다.
+- 기존 게임 서버와 AI 도구 백엔드는 코드와 배포 단위를 분리한다.
+- Spring Boot base package는 `com.lostmemory.aiserver`를 사용한다.
+- 외부 진입 경로는 프록시 기준을 맞추기 위해 `/api` context path를 유지한다.
+- health check endpoint는 `GET /api/health`로 두고, 공통 응답 포맷은 `ApiResponse` record로 통일한다.
+- OpenAPI 확인용 `swagger-ui`와 actuator health endpoint를 같이 연다.
+- JPA/Postgres 의존성은 먼저 넣되, 실제 DB 연결 전까지는 datasource/JPA auto-configuration을 제외해 부트스트랩 단계에서도 서버가 뜨게 한다.
+
+### 산출물
+
+- `tools/ai_server/README.md`
+- `tools/ai_server/.env.example`
+- `tools/ai_server/build.gradle`
+- `tools/ai_server/settings.gradle`
+- `tools/ai_server/Dockerfile`
+- `tools/ai_server/gradlew`
+- `tools/ai_server/gradlew.bat`
+- `tools/ai_server/gradle/wrapper/`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/`
+- `tools/ai_server/src/main/resources/application.yml`
+- `tools/ai_server/src/main/resources/application-dev.yml`
+- `tools/ai_server/src/main/resources/application-prod.yml`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/`
+
+### 완료 근거
+
+- `tools/ai_server` 아래에 독립 Gradle/Spring Boot 프로젝트 생성
+- `GET /api/health`용 controller, service, `ApiResponse` 공통 응답 추가
+- `config`, `health`, `repository`, `common` 패키지 뼈대 생성
+- ComfyUI, Postgres, S3 환경변수 skeleton을 `application.yml`과 `.env.example`에 반영
+- `ai-server.jar` 고정 파일명과 Dockerfile build path를 정리
+- `tools/ai_server`에서 `GRADLE_USER_HOME=.gradle-home ./gradlew test bootJar` 검증 성공
+- `tools/ai_server/build/libs/ai-server.jar` 생성 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-402`, `AI-403`, `AI-501`
+
+## AI-402. ComfyUI·S3·Postgres 연동 설정값 구현
+
+### 작업 범위
+
+- `.env.example`와 profile별 환경파일 기준 정리
+- ComfyUI HTTP client bean과 timeout 설정 구현
+- S3, Postgres, ComfyUI 설정 객체 분리
+- 필수 환경변수 누락 시 시작 단계 fail-fast 검증 추가
+- dev/prod 환경 매핑표 문서화
+
+### 결정 내용
+
+- ComfyUI 연결값은 `COMFYUI_BASE_URL`을 canonical 값으로 두고, host/port는 코드에서 파생해서 사용한다.
+- `application.yml`은 공통 `.env`를 읽고, profile별로 `.env.dev`, `.env.prod`를 override로 읽는다.
+- Postgres와 S3는 각각 별도 `@ConfigurationProperties` 클래스로 분리한다.
+- `COMFYUI_BASE_URL`, `POSTGRES_*`, `AWS_*`는 필수값으로 보고 누락 시 애플리케이션 시작을 중단한다.
+- 로그인 관련 env는 아직 기능은 없지만 `JWT_SECRET`, `JWT_EXPIRATION` 이름으로 먼저 예약한다.
+
+### 산출물
+
+- `tools/ai_server/.env.example`
+- `tools/ai_server/src/main/resources/application.yml`
+- `tools/ai_server/src/main/resources/application-dev.yml`
+- `tools/ai_server/src/main/resources/application-prod.yml`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/config/ComfyUiProperties.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/config/PostgresProperties.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/config/StorageS3Properties.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/config/ComfyUiClientConfig.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/comfyui/ComfyUiClient.java`
+- `tools/docs/1차-mvp/산출물/AI-402-config/README.md`
+
+### 완료 근거
+
+- `.env.example`에 ComfyUI timeout, Postgres password, S3, JWT 예약 env까지 정리
+- `application.yml`에서 ComfyUI, S3, Postgres 필수값을 placeholder로 읽도록 변경
+- `application-prod.yml`에 `.env.prod` override import 추가
+- ComfyUI `RestClient` bean과 `/prompt`, `/history/{promptId}` 호출용 `ComfyUiClient` 추가
+- `ComfyUiProperties`, `PostgresProperties`, `StorageS3Properties`에 validation과 helper 메서드 추가
+- 테스트 profile과 startup validation test를 추가해 fail-fast 동작을 검증
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-403`, `AI-404`, `AI-501`
+
+## AI-403. 생성 요청용 최소 API 엔드포인트 구현
+
+### 작업 범위
+
+- 생성 요청 DTO와 검증 규칙 정의
+- 최소 `POST` controller 엔드포인트 추가
+- 입력 오류 응답 형식 정리
+- Swagger/OpenAPI에서 요청·응답 초안 노출
+
+### 결정 내용
+
+- 생성 요청 경로는 `POST /api/generation-requests`로 둔다.
+- `AI-403` 단계에서는 ComfyUI `/prompt`를 아직 직접 호출하지 않고, API 계약과 validation, 수락 응답 구조를 먼저 고정한다.
+- 최소 요청 필드는 `workflowId`, `prompt`, `userId`로 둔다.
+- 성공 응답은 `202 Accepted`와 함께 서버 생성 `requestId`, `status=RECEIVED`, `acceptedAt`를 반환한다.
+- 입력 오류는 공통 `ApiResponse.failure(...)` 형식을 유지하고, validation 실패와 malformed JSON body를 구분한다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/CreateGenerationRequest.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationRequestStatus.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationRequestAcceptedResponse.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationController.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/exception/GlobalExceptionHandler.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationControllerTest.java`
+- `tools/docs/1차-mvp/산출물/AI-403-generate-api/README.md`
+
+### 완료 근거
+
+- `CreateGenerationRequest`에 `workflowId`, `prompt`, `userId`와 validation 규칙을 정의
+- `GenerationController`에 `POST /generation-requests` 추가
+- `GenerationService`가 현재 단계용 수락 응답을 생성하고 `requestId`, `status`, `acceptedAt`를 반환
+- validation 실패 시 `INVALID_REQUEST`, malformed JSON body 시 `INVALID_REQUEST_BODY` 응답 형식 정리
+- OpenAPI 문서에 생성 요청 endpoint와 summary가 노출되도록 annotation과 테스트 추가
+- `GenerationControllerTest`에서 정상 요청, validation 오류, malformed JSON, OpenAPI 노출을 검증
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-404`, `AI-405`, `AI-501`
+
+## AI-404. 서버에서 ComfyUI /prompt 호출 구현
+
+### 작업 범위
+
+- `workflowId` 기준 prompt template 조립 서비스 구현
+- 실제 ComfyUI `/prompt` submit 호출
+- `prompt_id` 수신 및 응답 계약 반영
+- `/prompt` request/response raw debug logging 추가
+
+### 결정 내용
+
+- 1차 구현에서는 `workflowId = pixel-art-character-v1` 단일 workflow만 지원한다.
+- prompt template source는 classpath resource `pixel-art-character-v1.json`로 둔다.
+- `prompt`는 positive prompt node `4`에 주입하고, seed node `6`, save image node `8`만 최소 변경한다.
+- submit 성공 응답은 `promptId`, `status = SUBMITTED`, `submittedAt`을 반환한다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/PromptAssemblyService.java`
+- `tools/ai_server/src/main/resources/comfyui/prompt-templates/pixel-art-character-v1.json`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationController.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/exception/ApiRequestException.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/exception/GlobalExceptionHandler.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/PromptAssemblyServiceTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationControllerTest.java`
+- `tools/docs/1차-mvp/산출물/AI-404-prompt-submit/README.md`
+
+### 완료 근거
+
+- `PromptAssemblyService`가 `CreateGenerationRequest`를 실제 ComfyUI `/prompt` body로 조립
+- `GenerationService`가 실제 `ComfyUiClient.submitPrompt(...)`를 호출하고 `prompt_id`를 추출
+- `UNSUPPORTED_WORKFLOW`, `COMFYUI_SUBMIT_FAILED`, `INVALID_COMFYUI_RESPONSE` 예외 코드 추가
+- `GenerationControllerTest`, `PromptAssemblyServiceTest`로 success/validation/failure 검증
+- `tools/ai_server`에서 `./gradlew test bootJar` 검증 성공
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-405`, `AI-406`, `AI-505`
+
+## AI-405. /history 폴링 서비스 구현
+
+### 작업 범위
+
+- `/history/{promptId}` polling service 구현
+- polling 간격과 timeout 상수 확정
+- `/history` 응답 파서 구현
+- 조회용 최소 GET endpoint 추가
+
+### 결정 내용
+
+- polling 상수는 `interval = 2초`, `soft warning = 60초`, `hard timeout = 120초`로 고정한다.
+- `AI-405`의 종료 기준은 우선 `history[promptId]` 존재 + `status.completed == true`로 둔다.
+- output image는 `outputs["8"]` 같은 고정 node id를 쓰지 않고 `outputs` map 순회 기준으로 읽는다.
+- `AI-405`는 success-path polling과 parser까지만 다루고, timeout/failed 상태 맵핑은 `AI-406`으로 넘긴다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryParser.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryResponse.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationOutputImage.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationController.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationHistoryParserTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationHistoryServiceTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationControllerTest.java`
+- `tools/docs/1차-mvp/산출물/AI-405-history-polling/README.md`
+
+### 완료 근거
+
+- `GenerationHistoryService`가 `/history/{promptId}`를 polling하고 soft warning / hard timeout 상수를 사용
+- `GenerationHistoryParser`가 `status.completed`, `status.status_str`, `messageTypes`, `outputImage`를 추출
+- `GenerationController`에 `GET /generation-requests/{promptId}` 추가
+- parser가 `outputs` map 순회 방식으로 첫 번째 image 메타데이터를 읽도록 테스트로 검증
+- `GenerationHistoryServiceTest`, `GenerationHistoryParserTest`, `GenerationControllerTest`와 전체 `./gradlew test` 검증 성공
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-406`, `AI-507`, `AI-508`
+
+## AI-406. timeout 및 failed 상태 처리 구현
+
+### 작업 범위
+
+- `/history` polling의 timeout 및 failed 상태 처리
+- 생성 실행 상태 enum과 전이 규칙 정리
+- 사용자 노출 메시지와 내부 로그 메시지 분리
+- 실패 시 audit logging hook 연결
+- polling 방식 동기 유지 결정
+
+### 결정 내용
+
+- 제출 상태(`GenerationRequestStatus`)와 실행 상태(`GenerationExecutionStatus`)를 분리한다.
+- 실행 상태는 `SUBMITTED`, `RUNNING`, `SUCCEEDED`, `FAILED`, `TIMED_OUT`로 고정한다.
+- 성공 조건은 `completed == true`, `status_str == success`, output image 존재를 모두 만족해야 한다.
+- `/history` fetch는 연속 3회 실패해야 terminal failure로 본다.
+- timeout과 failed는 HTTP 오류가 아니라 `200 OK + body.executionStatus`로 반환한다.
+- audit logging 공통 계약은 `common/audit`에 두고, generation 전용 상태 판정은 `generation` 패키지에 둔다.
+- polling 방식은 초기 MVP에서 동기 유지로 확정한다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/AuditRecorder.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/LoggingAuditRecorder.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationExecutionStatus.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationFailureReason.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationFailureMessageResolver.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationStatusResolver.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryResponse.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationController.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationHistoryServiceTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/GenerationControllerTest.java`
+- `tools/docs/1차-mvp/산출물/AI-406-status-handling/README.md`
+
+### 완료 근거
+
+- `GenerationExecutionStatus`, `GenerationFailureReason`를 추가하고 enum 의미를 코드 주석으로 고정
+- `GenerationStatusResolver`가 `completed + status_str + output` 기준으로 success/failure/timeout을 판정
+- `GenerationHistoryService`가 fetch 연속 실패 3회, output missing, terminal non-success, timeout을 비즈니스 상태로 반환
+- `AuditRecorder` / `LoggingAuditRecorder`를 추가해 failed와 timeout 시 구조화된 audit log payload를 남김
+- `GenerationControllerTest`, `GenerationHistoryServiceTest`를 상태 응답 방식으로 갱신
+- `./gradlew.bat --no-daemon test`, `./gradlew.bat --no-daemon bootJar` 검증 성공
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-501`, `AI-505`, `AI-507`, `AI-702`
+
+## AI-501. Postgres 최소 스키마 생성 및 문서화
+
+### 작업 범위
+
+- AI 도구 DB를 Docker Postgres 기준으로 고정
+- 최소 스키마 source of truth를 SQL 파일로 확정
+- VSCode DB client 접속 기준과 dev 포트 override 정리
+- named volume, `pg_dump` 백업, init SQL 재실행 주의사항 문서화
+- `users`, `workflow_snapshots`, `generations`, `generation_outputs`, `audit_logs` 최소 테이블 생성
+
+### 결정 내용
+
+- 로컬 Windows 설치형 PostgreSQL 대신 `tools/infra/docker-compose.yml`의 Postgres 컨테이너를 사용한다.
+- 게임 서버 DB와는 별도 컨테이너 / 별도 DB 문맥으로 운영한다.
+- 개발 환경에서만 `tools/infra/docker-compose.override.yml`로 `55432:5432`를 연다.
+- 초기 스키마 source of truth는 Spring JPA 자동 생성이 아니라 `tools/infra/postgres/init/001_init_schema.sql`로 둔다.
+- volume은 `postgres_data` named volume을 유지하고, 최소 백업 방식은 `pg_dump`로 통일한다.
+- `docker-entrypoint-initdb.d` SQL은 빈 volume 첫 생성 시점에만 자동 실행된다는 점을 운영 주의사항으로 고정한다.
+
+### 산출물
+
+- `tools/docs/1차-mvp/산출물/README.md`
+- `tools/docs/1차-mvp/산출물/AI-501-postgres-min-schema/README.md`
+- `tools/infra/docker-compose.override.yml`
+- `tools/infra/.env.example`
+- `tools/infra/README.md`
+- `tools/infra/postgres/README.md`
+- `tools/infra/postgres/init/README.md`
+- `tools/infra/postgres/init/001_init_schema.sql`
+
+### 완료 근거
+
+- 산출물 전체 지도 문서를 추가해 `AI-202`, `AI-301~304`, `AI-402~406`, `AI-501` 참조 경로를 한 문서에서 찾을 수 있게 정리
+- `docker-compose.override.yml`로 개발용 Postgres 포트를 `55432:5432`로 노출
+- `001_init_schema.sql`에 `users`, `workflow_snapshots`, `generations`, `generation_outputs`, `audit_logs` 최소 테이블과 인덱스를 추가
+- `workflow_name`, `prompt_id`, `execution_status`, `failure_reason`, output 메타데이터가 어느 테이블에 들어가는지 README로 문서화
+- `tools/infra/postgres/README.md`에 VSCode DB client 연결값, `pg_dump` 백업/복구 예시, init SQL 재실행 주의점을 반영
+- `docker compose config` 기준으로 Compose + override 구성이 정상 파싱되는지 검증
+- `docker compose up -d postgres` 후 컨테이너가 `healthy` 상태로 올라왔고, `psql -c "\dt"`로 5개 최소 테이블 생성까지 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-502`, `AI-503`, `AI-504`, `AI-505`
+
+## AI-502. users 및 workflow_snapshots 테이블 상세 필드 구현
+
+### 작업 범위
+
+- `users` 상세 컬럼 확정
+- `workflow_snapshots` 상세 컬럼 확정
+- workflow snapshot 재현성과 upsert 기준이 되는 hash / metadata 컬럼 반영
+
+### 결정 내용
+
+- `users`는 `username`, `display_name`, `is_active`, `last_login_at`, timestamps 기준으로 확정한다.
+- `password_hash`, `role` 같은 로그인 상세 필드는 `AI-701`로 넘긴다.
+- `workflow_snapshots`는 immutable snapshot으로 보고 `updated_at`은 두지 않는다.
+- `workflow_hash`를 `UNIQUE` 기준으로 두고, 이후 `AI-505-02`의 upsert 기준으로 사용한다.
+- 모델 정보는 고정 컬럼 여러 개보다 `primary_model_name` + `model_metadata_json` 조합으로 먼저 정리한다.
+- raw workflow는 `workflow_json` JSONB 컬럼 하나로 보관한다.
+
+### 산출물
+
+- `tools/infra/postgres/init/001_init_schema.sql`
+- `tools/docs/1차-mvp/산출물/AI-502-503-detailed-schema/README.md`
+
+### 완료 근거
+
+- `users`에 `is_active`, `last_login_at`, username 공백 방지 constraint를 추가
+- `workflow_snapshots`에 `workflow_version`, `workflow_hash UNIQUE`, `primary_model_name`, `model_metadata_json`, `workflow_json`을 추가
+- `workflow_snapshots`를 immutable snapshot으로 보는 이유와 필드 경계를 README에 문서화
+- fresh DB init 후 `\d+ users`, `\d+ workflow_snapshots`로 컬럼 / constraint / index 생성 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-503`, `AI-505`
+
+## AI-503. generations 및 generation_outputs 테이블 상세 필드 구현
+
+### 작업 범위
+
+- `generations` 상세 컬럼 확정
+- `generation_outputs` 상세 컬럼 확정
+- 조회와 후속 업로드 작업을 고려한 핵심 인덱스 검토
+
+### 결정 내용
+
+- `generations`에는 `execution_status`, `failure_reason`, `failed_stage`, `prompt_summary`, `full_prompt`, `user_message`, `internal_message`, `completed_at`을 포함한다.
+- 성공/실패 상태 값과 실패 사유는 `AI-406`에서 확정한 enum 기준을 SQL constraint로 같이 고정한다.
+- `failed_stage`는 `PROMPT_SUBMIT`, `GENERATION`, `HISTORY_POLL`, `OUTPUT_DISCOVERY`, `S3_UPLOAD`, `METADATA_SAVE` 여섯 단계로 고정한다.
+- `generation_outputs`는 1장 고정이 아니라 여러 결과를 열어두기 위해 `output_index`를 둔다.
+- `local_path`는 장기 저장 기준으로 보지 않고 DB에서 제외한다.
+- 인덱스는 `prompt_id`, `execution_status`, `created_at`, `created_by + created_at`, `generation_id + output_index` 기준으로 확정한다.
+
+### 산출물
+
+- `tools/infra/postgres/init/001_init_schema.sql`
+- `tools/docs/1차-mvp/산출물/AI-502-503-detailed-schema/README.md`
+
+### 완료 근거
+
+- `generations`에 `workflow_snapshot_id NOT NULL`, `failed_stage`, `full_prompt`, `completed_at`, status/failure/stage check constraint를 반영
+- `generation_outputs`에 `output_index`, `mime_type`, `(generation_id, output_index)` unique constraint를 반영
+- `idx_generations_created_at_desc`, `idx_generations_created_by_created_at_desc`, `idx_workflow_snapshots_workflow_name` 인덱스를 추가
+- output/image 저장 기준과 deferred storage 필드를 README에 문서화
+- fresh DB init 후 `\d+ generations`, `\d+ generation_outputs`로 상세 컬럼과 check/unique constraint 생성 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-504`, `AI-505`, `AI-507`, `AI-508`
+
+## AI-504. audit_logs 테이블 구현
+
+### 작업 범위
+
+- `audit_logs` action_type / status 표준값 확정
+- audit helper 구조를 현재 코드 기준으로 정리
+- timeout과 failed가 audit_logs에서 어떻게 표현되는지 기준 고정
+
+### 결정 내용
+
+- `audit_logs.action_type`은 `LOGIN`, `GENERATE`, `UPLOAD`, `DOWNLOAD` 네 값만 허용한다.
+- `audit_logs.status`는 `SUCCESS`, `FAILED` 두 값만 허용한다.
+- timeout은 별도 status가 아니라 `FAILED`로 기록하고, 세부 사유는 payload의 `failureReason`으로 분리한다.
+- 공통 helper는 `common/audit` 패키지에 두고, 현재 구현은 `LoggingAuditRecorder`로 유지한다.
+- 현재 `AuditRecorder` 시그니처도 `actionType`, `status`, `payload` 기준으로 바꿔 DB 컬럼 구조와 의미를 맞춘다.
+
+### 산출물
+
+- `tools/infra/postgres/init/001_init_schema.sql`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/AuditActionType.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/AuditStatus.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/AuditRecorder.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/common/audit/LoggingAuditRecorder.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationHistoryService.java`
+- `tools/docs/1차-mvp/산출물/AI-504-audit-log-standard/README.md`
+
+### 완료 근거
+
+- `audit_logs`에 action_type / status check constraint를 추가
+- `AuditActionType`, `AuditStatus` enum을 추가해 helper와 DB 값 기준을 일치시킴
+- `GenerationHistoryService`가 실패 시 `GENERATE + FAILED` 형태로 audit recorder를 호출하도록 정리
+- timeout을 별도 status로 두지 않고 `FAILED + failureReason=POLL_TIMEOUT`로 남기는 기준을 README에 문서화
+- `./gradlew.bat --no-daemon test`, `./gradlew.bat --no-daemon bootJar`로 audit helper 시그니처 변경 후 컴파일/패키징 검증
+- fresh DB init 후 `\d+ audit_logs`로 action/status constraint 생성 확인
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-505`, `AI-702`
+
+## AI-505. generation 메타데이터 저장 구현
+
+### 작업 범위
+
+- workflow snapshot upsert 구현
+- `/prompt` 성공 직후 generation row insert 구현
+- `prompt_summary` 추출 규칙 구현
+- JPA / datasource 활성화와 test profile 정비
+
+### 결정 내용
+
+- `workflow_hash`는 runtime payload가 아니라 source workflow template JSON 기준으로 계산한다.
+- hash 방식은 canonicalized JSON 기준 `SHA-256`으로 고정한다.
+- `created_by`는 로그인 전 단계라 현재 nullable로 유지한다.
+- `prompt_summary`는 workflow JSON 일부가 아니라 사람이 목록에서 읽는 짧은 텍스트로 만든다.
+- `prompt_summary`는 공백 normalize, trim, 최대 100자, 빈 값 fallback 기준으로 만든다.
+- `workflow_snapshots`는 `/prompt` submit 전에 저장 또는 재사용하고, `generations`는 `prompt_id`를 받은 직후 `SUBMITTED` 상태로 insert한다.
+
+### 산출물
+
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/PromptAssemblyResult.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/WorkflowHashCalculator.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/PromptSummaryExtractor.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/WorkflowSnapshotEntity.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationEntity.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/WorkflowSnapshotService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationMetadataService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/generation/GenerationService.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/repository/WorkflowSnapshotRepository.java`
+- `tools/ai_server/src/main/java/com/lostmemory/aiserver/repository/GenerationRepository.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/PromptSummaryExtractorTest.java`
+- `tools/ai_server/src/test/java/com/lostmemory/aiserver/generation/WorkflowHashCalculatorTest.java`
+- `tools/docs/1차-mvp/산출물/AI-505-generation-metadata-persistence/README.md`
+
+### 완료 근거
+
+- `PromptAssemblyService`가 source template와 submit payload를 분리하고, source template 기준으로 workflow snapshot 메타데이터를 돌려주도록 변경
+- `WorkflowHashCalculator`에서 canonicalized workflow JSON 기준 `SHA-256` hash 계산 구현
+- `WorkflowSnapshotService`가 `workflow_hash` 기준으로 snapshot 재사용 또는 insert 수행
+- `GenerationMetadataService`가 `/prompt` 성공 직후 `generations` row를 `SUBMITTED` 상태로 insert
+- `application.yml`에서 datasource / JPA validate 설정을 활성화하고, `application-test.yml`에 H2 test datasource를 추가
+- `GenerationControllerTest`에서 `/generation-requests` 호출 후 실제 `workflow_snapshots`, `generations` 저장 확인
+- `./gradlew.bat --no-daemon test`, `./gradlew.bat --no-daemon bootJar` 통과
+
+### 상태
+
+- 완료여부: `Y`
+- 상태: `완료`
+- 후속 작업: `AI-507`, `AI-508`

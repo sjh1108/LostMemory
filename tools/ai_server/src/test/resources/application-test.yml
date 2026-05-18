@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:ai-server-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+comfyui:
+  base-url: http://localhost:8188
+
+database:
+  postgres:
+    host: localhost
+    port: 5432
+    name: ai_tool
+    username: ai_tool
+    password: test-password
+
+storage:
+  s3:
+    region: ap-northeast-2
+    bucket: test-bucket
+    access-key-id: test-access-key
+    secret-access-key: test-secret-key

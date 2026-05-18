@@ -1,0 +1,19 @@
+# Grafana 데이터소스 자동 등록 — 컨테이너 첫 기동 시 적용.
+# docs: https://grafana.com/docs/grafana/latest/administration/provisioning/#data-sources
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    # 고정 UID — dashboards/lostmemory-containers.json 가 "uid": "prometheus" 로 참조.
+    # Node Exporter Full (1860) 은 datasource 타입 template var 로 자동 바인딩.
+    uid: prometheus
+    access: proxy
+    # 같은 monitoring docker network 안에서 컨테이너 이름으로 접근.
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s          # prometheus global.scrape_interval 과 정합
+      httpMethod: POST

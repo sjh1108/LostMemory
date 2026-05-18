@@ -1,0 +1,31 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate    # 운영은 검증만 (스키마 변경 금지)
+    show-sql: false
+
+# Actuator — health 만 노출 (env / heapdump 등 민감 엔드포인트 차단)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+# Swagger / OpenAPI — 운영에선 API 스펙 노출 차단
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    root: info
+    com.yourpackage: info
+  file:
+    name: /var/log/app/application.log

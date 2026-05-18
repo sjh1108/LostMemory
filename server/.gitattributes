@@ -1,0 +1,19 @@
+/gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+
+# 서버/인프라 자산은 EC2 (Linux) 에서 실행 — CRLF 가 섞이면 dash source / sed / shebang 깨짐
+# (메모리 룰 feedback_dash_env_pitfalls.md). Windows 작업 환경 무관하게 LF 강제.
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.conf text eol=lf
+*.json text eol=lf
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+.env.example text eol=lf
+.env.dev.example text eol=lf
+scripts/* text eol=lf
+nginx/** text eol=lf
+monitoring/** text eol=lf
+etc/** text eol=lf

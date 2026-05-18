@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement class="be-root">
+        <uie:Toolbar class="be-toolbar">
+            <ui:Label text="Balance Editor" class="be-title" />
+            <uie:ToolbarSearchField name="SearchField" class="be-search" />
+            <uie:ToolbarMenu name="ExportMenu" text="Export ▾" class="be-export-menu" />
+            <uie:ToolbarMenu name="ImportMenu" text="Import ▾" class="be-import-menu" />
+            <ui:VisualElement class="be-toolbar-spacer" />
+            <uie:ToolbarToggle name="AutoSaveToggle" label="Auto-save" class="be-autosave-toggle" />
+            <uie:IntegerField name="AutoSaveDelay" value="60" class="be-autosave-delay" />
+            <uie:ToolbarButton name="RefreshButton" text="Refresh" class="be-refresh-btn" />
+            <uie:ToolbarButton name="SaveButton" text="Save All" class="be-save-btn" />
+        </uie:Toolbar>
+
+        <ui:VisualElement class="be-body">
+            <ui:VisualElement class="be-left-panel" name="LeftPanel" />
+            <ui:VisualElement class="be-right-panel" name="RightPanel" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="be-statusbar">
+            <ui:Label text="Ready" name="StatusLabel" class="be-status-text" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,385 @@
+using System;
+using LostMemory.Combat;
+using LostMemory.Networking.Common;
+using LostMemory.Stage.Data;
+using MoreMountains.TopDownEngine;
+using UnityEngine;
+
+namespace LostMemory.Stage
+{
+    /// <summary>
+    /// 방 단위 진입 권위. layout prefab 루트에 붙는다.
+    ///
+    /// 진입 흐름:
+    ///   BeginRoomEntry(initiator)
+    ///     → IsAuthority 가드 → 1회 보장
+    ///     → progress.MarkVisited()
+    ///     → ApplyInitContext (player 정렬 / facing / BGM stub log / 출구 잠금 시그널)
+    ///     → BeginEncounter (clear tracker 등록 + spawner 시작)
+    ///     → 이벤트 발행 (RoomEntered / ExitDoorsLockRequested / RoomCombatStarted)
+    ///
+    /// CL-035 가 IRoomClearConditionTracker 본체를 채우고,
+    /// CL-036 이 ExitDoorsLockRequested 와 RoomCombatStarted 를 받아 문 흐름을 잡는다.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [AddComponentMenu("Lost Memory/Stage/Room Entry Runtime Controller")]
+    public sealed class RoomEntryRuntimeController : MonoBehaviour
+    {
+        [Header("Data")]
+        [SerializeField] private RoomData roomData;
+        [SerializeField] private EnemyCatalog enemyCatalog;
+
+        [Header("Refs (자식 또는 같은 GameObject)")]
+        [SerializeField] private RoomEncounterAnchor encounterAnchor;
+        [SerializeField] private EnemyEncounterSpawner encounterSpawner;
+        [SerializeField] private RoomEntryAnchor[] entryAnchors = Array.Empty<RoomEntryAnchor>();
+        // CL-036: 진입 시 활성화 (player 못 나감), 클리어 시 비활성화 (다음 방 통과 가능).
+        [SerializeField] private RoomExitWall[] exitWalls = Array.Empty<RoomExitWall>();
+
+        [Header("Optional Refs")]
+        // CL-035: tracker 가 OnRoomCleared 발행 시 자동으로 TryMarkRoomCompleted(roomId) 호출.
+        // null 허용 — 보스 의존성 없는 단독 검증 씬에서는 비워둠.
+        [SerializeField] private BossRoomEntryTracker bossTracker;
+
+        [Header("Reward Integration (CL-110)")]
+        [Tooltip("true 면 클리어 시 자동으로 출구 벽 비활성화 (기존 동작). RewardController 가 관리하는 Combat 방은 false 로 두고 RewardController 가 OpenExits() 호출.")]
+        [SerializeField] private bool autoOpenExitsOnCleared = true;
+
+        public event Action<RoomEnteredPayload> RoomEntered;
+        public event Action<RoomCombatStartedPayload> RoomCombatStarted;
+        public event Action<EnemySpawnedPayload> EnemySpawned;
+        public event Action<WaveSpawnedPayload> WaveSpawned;
+        public event Action<ExitDoorsLockRequestPayload> ExitDoorsLockRequested;
+        // CL-035: tracker 가 모든 wave + 모든 적 사망을 판정하면 1회 발행.
+        public event Action<RoomClearedPayload> RoomCleared;
+
+        private readonly StageRoomProgress progress = new StageRoomProgress();
+        private IRoomClearConditionTracker clearTracker;
+        private bool entryConsumed;
+        private bool roomCleared;
+
+        // Phase B-1: HostAuthority.IsHost 로 통일. 싱글 실행 시 NetworkManager 비활성 → true 반환.
+        // 멀티 실행 시 호스트만 BeginRoomEntry / NotifyCustomRoomCleared 권위 보유.
+        public bool IsAuthority => HostAuthority.IsHost;
+
+        public RoomData RoomData => roomData;
+        public StageRoomProgress Progress => progress;
+
+        /// <summary>CL-110: RewardController 가 RoomCleared payload 와 controller 매칭에 사용.</summary>
+        public string RoomId => roomData != null ? roomData.RoomId : null;
+
+        private void Awake()
+        {
+            if (roomData != null)
+            {
+                progress.Configure(
+                    roomData.RoomId,
+                    roomData.RoomType,
+                    roomData.BossEntryRequirementMode,
+                    roomData);
+            }
+
+            if (encounterAnchor == null)
+            {
+                encounterAnchor = GetComponentInChildren<RoomEncounterAnchor>(includeInactive: true);
+            }
+            if (encounterSpawner == null)
+            {
+                encounterSpawner = GetComponentInChildren<EnemyEncounterSpawner>(includeInactive: true);
+            }
+            if (entryAnchors == null || entryAnchors.Length == 0)
+            {
+                entryAnchors = GetComponentsInChildren<RoomEntryAnchor>(includeInactive: true);
+            }
+            if (exitWalls == null || exitWalls.Length == 0)
+            {
+                exitWalls = GetComponentsInChildren<RoomExitWall>(includeInactive: true);
+            }
+
+            // CL-323: 시작 시 *모든 ExitWall 비활성화* — 진입 전이라 막을 필요 X.
+            // BeginRoomEntry 의 ApplyInitContext 가 lockExitDoors=true 일 때 활성화.
+            // 디자이너 셋업 (prefab 의 active 상태) 무관하게 안전한 기본 상태 보장.
+            SetExitWallsActive(false);
+        }
+
+        private void Reset()
+        {
+            encounterAnchor = GetComponentInChildren<RoomEncounterAnchor>(includeInactive: true);
+            encounterSpawner = GetComponentInChildren<EnemyEncounterSpawner>(includeInactive: true);
+            entryAnchors = GetComponentsInChildren<RoomEntryAnchor>(includeInactive: true);
+            exitWalls = GetComponentsInChildren<RoomExitWall>(includeInactive: true);
+        }
+
+        public void BeginRoomEntry(Character initiator)
+        {
+            if (!IsAuthority)
+            {
+                return;
+            }
+            if (entryConsumed)
+            {
+                return;
+            }
+            if (roomData == null)
+            {
+                Debug.LogWarning($"[RoomEntryRuntimeController] roomData is null on '{name}'. Skip entry.", this);
+                return;
+            }
+
+            entryConsumed = true;
+            roomCleared = false;
+            progress.MarkVisited();
+
+            ApplyInitContext(initiator);
+            BeginEncounter();
+
+            RoomEntered?.Invoke(new RoomEnteredPayload(roomData.RoomId, initiator));
+        }
+
+        public void NotifyCustomRoomCleared()
+        {
+            if (!IsAuthority)
+            {
+                return;
+            }
+            if (roomData == null)
+            {
+                Debug.LogWarning($"[RoomEntryRuntimeController] roomData is null on '{name}'. Cannot clear room.", this);
+                return;
+            }
+
+            FireRoomCleared(new RoomClearedPayload(roomData.RoomId, roomData));
+        }
+
+        // CL-112: DA spawn 후 DungeonRunBootstrap 이 시퀀스별 RoomData 를 주입.
+        // Awake 의 progress.Configure 를 *덮어쓰기* 위해 같은 호출을 재실행.
+        public void SetRoomData(RoomData data)
+        {
+            if (entryConsumed)
+            {
+                Debug.LogWarning($"[RoomEntryRuntimeController] SetRoomData called after entry on '{name}'. Ignored.", this);
+                return;
+            }
+            roomData = data;
+            if (data != null)
+            {
+                progress.Configure(
+                    data.RoomId,
+                    data.RoomType,
+                    data.BossEntryRequirementMode,
+                    data);
+            }
+        }
+
+        private void ApplyInitContext(Character initiator)
+        {
+            RoomInitContextSpec init = roomData.InitContext;
+            if (init == null)
+            {
+                return;
+            }
+
+            if (initiator != null && !string.IsNullOrEmpty(init.PlayerSpawnAnchorTag))
+            {
+                RoomEntryAnchor anchor = ResolveEntryAnchor(init.PlayerSpawnAnchorTag);
+                if (anchor != null)
+                {
+                    AlignCharacterTo(initiator, anchor.transform.position, init.Facing);
+                }
+            }
+
+            if (init.LockExitDoors)
+            {
+                SetExitWallsActive(true);
+                ExitDoorsLockRequested?.Invoke(new ExitDoorsLockRequestPayload(roomData.RoomId));
+            }
+
+            if (!string.IsNullOrEmpty(init.BgmCueId))
+            {
+                Debug.Log($"[RoomEntryRuntimeController] BGM stub: roomId='{roomData.RoomId}' cue='{init.BgmCueId}'", this);
+            }
+        }
+
+        private RoomEntryAnchor ResolveEntryAnchor(string tag)
+        {
+            for (int i = 0; i < entryAnchors.Length; i++)
+            {
+                RoomEntryAnchor anchor = entryAnchors[i];
+                if (anchor != null && anchor.Matches(tag))
+                {
+                    return anchor;
+                }
+            }
+            return null;
+        }
+
+        // BossRoomLocalTransitionDriver.TeleportCharacter / AlignFacingDirection 의 알고리즘을 본 컴포넌트 결로 옮겼다.
+        // (보스 driver 직접 호출 X — 컴포넌트는 보스 전용)
+        private static void AlignCharacterTo(Character character, Vector3 position, Vector2 facing)
+        {
+            TopDownController controller = character.GetComponent<TopDownController>();
+            if (controller != null)
+            {
+                controller.SetMovement(Vector3.zero);
+                controller.MovePosition(position, true);
+            }
+            else
+            {
+                character.transform.position = position;
+            }
+
+            if (facing.sqrMagnitude <= Mathf.Epsilon)
+            {
+                return;
+            }
+
+            Character.FacingDirections direction = ResolveFacing(facing);
+            CharacterOrientation2D orientation2D = character.FindAbility<CharacterOrientation2D>();
+            if (orientation2D != null)
+            {
+                orientation2D.InitialFacingDirection = direction;
+                orientation2D.Face(direction);
+                return;
+            }
+
+            CharacterOrientation3D orientation3D = character.FindAbility<CharacterOrientation3D>();
+            if (orientation3D != null)
+            {
+                orientation3D.Face(direction);
+            }
+        }
+
+        private static Character.FacingDirections ResolveFacing(Vector2 facing)
+        {
+            if (Mathf.Abs(facing.x) >= Mathf.Abs(facing.y))
+            {
+                return facing.x >= 0f ? Character.FacingDirections.East : Character.FacingDirections.West;
+            }
+            return facing.y >= 0f ? Character.FacingDirections.North : Character.FacingDirections.South;
+        }
+
+        private void BeginEncounter()
+        {
+            clearTracker = CreateTrackerFor(roomData.ClearCondition);
+            clearTracker.OnNextWaveReady += HandleNextWaveReady;
+            clearTracker.OnRoomCleared += HandleRoomCleared;
+            clearTracker.Begin(roomData);
+
+            if (encounterSpawner != null && encounterAnchor != null && enemyCatalog != null && roomData.Encounter != null)
+            {
+                encounterSpawner.Spawned += HandleSpawned;
+                encounterSpawner.WaveCompleted += HandleWaveCompleted;
+                encounterSpawner.Begin(roomData.RoomId, roomData.Encounter, encounterAnchor, enemyCatalog);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[RoomEntryRuntimeController] encounter dependency missing. spawner={encounterSpawner!=null} anchor={encounterAnchor!=null} catalog={enemyCatalog!=null} encounter={roomData.Encounter!=null}",
+                    this);
+            }
+
+            int waveCount = roomData.Encounter != null ? roomData.Encounter.Waves.Count : 0;
+            RoomCombatStarted?.Invoke(new RoomCombatStartedPayload(roomData.RoomId, waveCount));
+        }
+
+        private static IRoomClearConditionTracker CreateTrackerFor(RoomClearConditionType clearCondition)
+        {
+            switch (clearCondition)
+            {
+                case RoomClearConditionType.AllEnemiesDefeated:
+                    return new AllEnemiesDefeatedTracker();
+                default:
+                    // InteractionComplete / Custom 분기는 후속 CL 가 채울 때까지 stub.
+                    return new StubRoomClearConditionTracker();
+            }
+        }
+
+        private void HandleSpawned(EnemySpawnedPayload payload)
+        {
+            clearTracker?.RegisterEnemy(payload);
+            EnemySpawned?.Invoke(payload);
+        }
+
+        private void HandleWaveCompleted(WaveSpawnedPayload payload)
+        {
+            clearTracker?.NotifyWaveSpawned(payload);
+            WaveSpawned?.Invoke(payload);
+        }
+
+        private void HandleNextWaveReady(int nextWaveIndex)
+        {
+            if (encounterSpawner == null)
+            {
+                return;
+            }
+            encounterSpawner.SpawnNextWave();
+        }
+
+        private void HandleRoomCleared(RoomClearedPayload payload)
+        {
+            // CL-110: 옵트인. RewardController 가 관리하는 방은 false 로 두고 카드 선택 후 OpenExits() 호출.
+            if (autoOpenExitsOnCleared)
+            {
+                SetExitWallsActive(false);
+            }
+            FireRoomCleared(payload);
+        }
+
+        private void FireRoomCleared(RoomClearedPayload payload)
+        {
+            if (roomCleared)
+            {
+                return;
+            }
+
+            roomCleared = true;
+            // develop 의 로그는 살림. 단 옵트인 시에는 *문이 닫힌 채로 이벤트 발화* 라
+            // "Disabling exit walls" 문구는 상태와 어긋남 → 메시지만 정리.
+            Debug.Log($"[Controller] RoomCleared: roomId='{payload.RoomId}' on '{name}'.");
+            // develop 의 SetExitWallsActive(false) 제거 — HandleRoomCleared 의 옵트인이 이미 결정.
+            RoomCleared?.Invoke(payload);
+
+            if (bossTracker != null && !string.IsNullOrEmpty(payload.RoomId))
+            {
+                bossTracker.TryMarkRoomCompleted(payload.RoomId);
+            }
+        }
+
+        /// <summary>CL-110: RewardController 가 보상 선택 후 호출. autoOpenExitsOnCleared=false 일 때 외부에서 문 열기 트리거.</summary>
+        public void OpenExits()
+        {
+            SetExitWallsActive(false);
+        }
+
+        // CL-036: 모든 출구 벽 일괄 토글. 출구별 다른 정책 (LockPolicy 등) 은 후속 CL.
+        private void SetExitWallsActive(bool active)
+        {
+            if (exitWalls == null)
+            {
+                return;
+            }
+            for (int i = 0; i < exitWalls.Length; i++)
+            {
+                RoomExitWall wall = exitWalls[i];
+                if (wall != null)
+                {
+                    wall.gameObject.SetActive(active);
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (encounterSpawner != null)
+            {
+                encounterSpawner.Spawned -= HandleSpawned;
+                encounterSpawner.WaveCompleted -= HandleWaveCompleted;
+            }
+            if (clearTracker != null)
+            {
+                clearTracker.OnNextWaveReady -= HandleNextWaveReady;
+                clearTracker.OnRoomCleared -= HandleRoomCleared;
+            }
+        }
+    }
+}

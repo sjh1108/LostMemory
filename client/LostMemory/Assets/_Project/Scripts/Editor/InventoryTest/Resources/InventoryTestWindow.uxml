@@ -1,0 +1,31 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement class="iv-root">
+        <uie:Toolbar class="iv-toolbar">
+            <ui:Label text="Inventory Test" class="iv-title" />
+            <uie:ToolbarSearchField name="SearchField" class="iv-search-field" />
+            <ui:VisualElement class="iv-toolbar-spacer" />
+            <uie:ToolbarButton name="ClearPermanentButton"  text="Clear Permanent"  class="iv-clear-btn" />
+            <uie:ToolbarButton name="ClearConsumableButton" text="Clear Consumable" class="iv-clear-btn" />
+            <uie:ToolbarButton name="RefreshButton" text="Refresh" class="iv-refresh-btn" />
+        </uie:Toolbar>
+
+        <ui:Label name="ModeHint"
+                  text="Play 모드 진입 시 인벤토리 테스트가 활성화됩니다."
+                  class="iv-mode-hint" />
+
+        <ui:VisualElement name="BodyContainer" class="iv-body">
+            <ui:VisualElement name="LeftPanel" class="iv-left-panel" />
+
+            <ui:VisualElement name="RightPanel" class="iv-right-panel">
+                <ui:VisualElement name="PermanentArea" class="iv-area">
+                    <ui:Label name="PermanentHeader" text="Permanent (0/0)" class="iv-area-header" />
+                    <ui:VisualElement name="PermanentGrid" class="iv-slot-grid" />
+                </ui:VisualElement>
+                <ui:VisualElement name="ConsumableArea" class="iv-area">
+                    <ui:Label name="ConsumableHeader" text="Consumable (0/4)" class="iv-area-header" />
+                    <ui:VisualElement name="ConsumableGrid" class="iv-slot-grid" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

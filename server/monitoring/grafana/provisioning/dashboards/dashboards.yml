@@ -1,0 +1,16 @@
+# Grafana 대시보드 자동 import — /etc/grafana/dashboards 디렉토리의 JSON 을 주기적으로 스캔.
+# docs: https://grafana.com/docs/grafana/latest/administration/provisioning/#dashboards
+
+apiVersion: 1
+
+providers:
+  - name: "default"
+    orgId: 1
+    folder: ""                   # 루트 폴더에 표시
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true         # UI 에서 수정 가능 (저장 시 JSON 파일은 안 바뀜 — 임시 변경)
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false
