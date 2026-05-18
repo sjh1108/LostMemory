@@ -1,0 +1,65 @@
+/* LostMemory 게임 톤 override — 픽셀 / 다크 / 판타지 */
+
+/* Galmuri9 — 한글 픽셀 폰트 (SIL OFL 라이선스, GitHub release CDN) */
+@font-face {
+  font-family: 'Galmuri9';
+  src: url('https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/Galmuri9.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Material 의 CSS 변수 override — 다크 + 노란 accent */
+:root,
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #000000;
+  --md-primary-fg-color--light: #1a1a1a;
+  --md-primary-fg-color--dark: #000000;
+  --md-accent-fg-color: #ffff00;
+  --md-default-bg-color: #000000;
+  --md-default-fg-color: #ffffff;
+  --md-default-fg-color--light: #cccccc;
+  --md-typeset-a-color: #ffff00;
+  --md-code-bg-color: #1a1a1a;
+  --md-code-fg-color: #ffff00;
+}
+
+/* 픽셀 폰트 — 게임 타이틀/UI 와 동일 (Galmuri9, NeoDungGeunMo 폴백) */
+body,
+.md-typeset,
+.md-nav,
+.md-header,
+.md-tabs,
+.md-footer {
+  font-family: 'Galmuri9', 'NeoDungGeunMo', 'NeoDunggeunmo', monospace !important;
+  image-rendering: pixelated;
+}
+
+/* hover 시 노란색 — 게임 ButtonTextColorHover (White → Yellow) 패턴 일치 */
+a:hover,
+.md-nav__link:hover,
+.md-tabs__link:hover,
+.md-header-nav__button:hover {
+  color: #ffff00 !important;
+}
+
+/* code block — 다크 배경 + 노란 텍스트 */
+.md-typeset code,
+.md-typeset pre {
+  font-family: 'Galmuri9', monospace;
+  background: #1a1a1a;
+  color: #ffff00;
+}
+
+/* heading — 흰색 기본, 강조용 */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  color: #ffffff;
+}
+
+/* admonition — 다크 모드 가독성 */
+.md-typeset .admonition {
+  background: #1a1a1a;
+  border-left-color: #ffff00;
+}
