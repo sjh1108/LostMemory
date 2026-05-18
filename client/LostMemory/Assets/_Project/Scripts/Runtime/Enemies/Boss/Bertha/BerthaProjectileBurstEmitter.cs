@@ -1,3 +1,4 @@
+using LostMemory.Rendering;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -190,6 +191,7 @@ namespace LostMemory.Enemies.Boss.Bertha
             }
 
             SpriteRenderer projectileRenderer = projectileObject.AddComponent<SpriteRenderer>();
+            RuntimeSpriteMaterialUtility.ApplySpriteMaterial(projectileRenderer);
             ApplySorting(projectileRenderer);
             if ((projectileAnimationFrames == null || projectileAnimationFrames.Length == 0) && projectileRenderer.sprite == null)
             {
