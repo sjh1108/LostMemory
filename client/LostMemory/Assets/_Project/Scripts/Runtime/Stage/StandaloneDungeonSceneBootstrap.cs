@@ -31,20 +31,19 @@ namespace LostMemory.Stage
                 return;
             }
 
-            if (StageRouteManager.Instance != null)
-            {
-                return;
-            }
-
             NetworkManager networkManager = NetworkManager.Singleton;
             if (networkManager != null && networkManager.IsListening && !networkManager.IsServer)
             {
                 return;
             }
 
-            GameObject routeManagerObject = new GameObject("StageRouteManager (Standalone Test)");
-            routeManagerObject.AddComponent<NetworkObject>();
-            StageRouteManager routeManager = routeManagerObject.AddComponent<StageRouteManager>();
+            StageRouteManager routeManager = StageRouteManager.Instance;
+            if (routeManager == null)
+            {
+                GameObject routeManagerObject = new GameObject("StageRouteManager (Standalone Test)");
+                routeManagerObject.AddComponent<NetworkObject>();
+                routeManager = routeManagerObject.AddComponent<StageRouteManager>();
+            }
             routeManager.ConfigureRouteNodes(CreateDefaultRouteNodes(), routeNodeIndex, DefaultEntrySpawnId, false);
 
             if (scene.name != "Dungeon_1F_Boss")
@@ -66,7 +65,10 @@ namespace LostMemory.Stage
                 CreateNode("stage1_4r", "Dungeon_1F_4R", "Dungeon_1F_4R", "to_1f_boss"),
                 CreateNode("stage1_boss", "Dungeon_1F_Boss", "Dungeon_1F_Boss", "to_2f_1r"),
                 CreateNode("stage2_1r", "Dungeon_2F_1R", "Dungeon_2F_1R", "to_2f_2r"),
-                CreateNode("stage2_2r", "Dungeon_2F_2R", "Dungeon_2F_2R", string.Empty),
+                CreateNode("stage2_2r", "Dungeon_2F_2R", "Dungeon_2F_2R", "to_2f_3r"),
+                CreateNode("stage2_3r", "Dungeon_2F_3R", "Dungeon_2F_3R", "to_2f_4r"),
+                CreateNode("stage2_4r", "Dungeon_2F_4R", "Dungeon_2F_4R", "to_2f_boss"),
+                CreateNode("stage2_boss", "Dungeon_2F_Boss", "Dungeon_2F_Boss", string.Empty),
             };
         }
 
