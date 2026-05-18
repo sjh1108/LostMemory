@@ -3,8 +3,9 @@
 > 회신 대상: 손홍민 (백엔드)
 > 원문: `lostmemory_multi_session_design_discussion.md` (2026-05-13 작성)
 > 회신 기한: 2026-05-14
-> 발표: D-7 (2026-05-21)
+> 발표: D-6 (2026-05-21)
 > 작성: 김회인
+> 갱신: 2026-05-15 (작업 분담 제안 / Editor 단일 씬 테스트 보존 / 던전 검증 결과 반영)
 
 ---
 
@@ -252,6 +253,67 @@ Dungeon 환경 (PlayerRunState, GoldWallet, Relic 초기값, 적 컨테이너 �
 ### 일정 위험 대비
 - Canvas wiring 마이그레이션 작업량이 audit 후 8h 초과로 추정되면 **PlayerPrefab 정식 캐릭터 교체** 와 **NetworkManager prefab rename** 은 발표 후로 보류
 - PK 가 던전 분신 fix 후에도 재현되면 발표용은 **무기 LayerMask 확인 + 임시 비활성화** 로 처리하고 정공법은 발표 후
+
+---
+
+## 8.5 작업 분담 제안 — 클라 vs 백엔드
+
+본 fix 작업은 클라 영역에 거의 집중돼 있어 (20-29h) 클라 부담이 큰 반면, 백엔드는 본인 영역 작업 (4인 stress 검증, 세션 API 정리 등 4-6h) 외 여유. 일정 위험 분산 + 발표 리허설 여유 확보 목적으로 분담 제안.
+
+### 분담 v1 — 최소 (백엔드 부담 적음)
+
+백엔드가 본인 영역에 가까운 **C# 코드 + NGO 진입부** 만 가져감.
+
+| 사람 | 작업 | 시간 |
+|---|---|---|
+| **백엔드** | 본인 영역 (stress 검증, 세션 API) + `LocalPlayerResolver` 확장 + `EditorTestCharacterMarker.cs` + `LobbyController.cs` NGO API 부분 + Town→Dungeon `StartHost` 진입부 + `NetworkManager .prefab` rename + (조건부) `PlayerDamageReceiver` Layer 보강 | **9-14h** |
+| **클라** | 8개 던전 씬 marker 부착 + spawn anchor + Lobby.unity UI + Canvas wiring audit + 마이그레이션 + PlayerPrefab 정식 캐릭터 교체 + 회귀 검증 | **13-22h** |
+
+### 분담 v2 — 확대 (백엔드 적극 분담, Unity 작업도 일부)
+
+클라 부담 절반 이하로 줄임. 백엔드가 Unity 살짝 만져도 OK 한 경우.
+
+| 사람 | 작업 | 시간 |
+|---|---|---|
+| **백엔드** | v1 + 8개 던전 씬 marker 부착 (1.5-2h) + Lobby 기능 셋업 (2-3h, UI 비주얼 제외) + Canvas wiring 코드 변환 (2-3h, 클라 audit 보고서 받아서) + 회귀 검증 절반 (1.5-2.5h) | **16-23h** |
+| **클라** | Canvas wiring audit 보고서 (1-2h) + Lobby UI 비주얼 / 디자인 (2-3h) + 던전 spawn anchor 조정 (1h) + PlayerPrefab 정식 캐릭터 교체 (1-2h) + 회귀 검증 절반 (1.5-2.5h) | **6.5-10.5h** |
+
+### 백엔드 분담의 한계 — 더 떠넘기지 말 것
+
+다음 작업은 백엔드도 가능하지만 시간 대비 산출이 클라 절반 이하 → 떠넘기면 오버헤드만 늘고 일정 안 빨라짐:
+- PlayerPrefab 정식 캐릭터 교체 (캐릭터 의도 / 애니메이션 / 시각 조정 필요)
+- Lobby UI 비주얼 / 레이아웃 (게임 톤앤매너 / UX)
+- 던전 spawn 위치 조정 (룸별 카메라 / 적 배치 이해)
+- Canvas wiring audit 자체 (Inspector 패턴 파악)
+
+### 협업 오버헤드 (분담 v2 기준 +2-4h)
+
+- Canvas wiring **audit 보고서 작성 → 백엔드 전달 → 질의응답** 사이클: 1-1.5h
+- `LocalPlayerResolver.GetComponentOnLocalPlayer<T>()` API 시그니처 합의 미팅: 30분
+- Lobby UI 디자인 / 기능 셋업 통합 시점 페어 검증: 30분-1h
+- Git 충돌 / PR 리뷰 / 코드 컨벤션 정렬: 30분-1h
+
+분담 이득 (5-10h 단축) > 오버헤드 (2-4h) → 분담 v2 도 순 이득.
+
+### 권장 — 단계적 제안
+
+1. 백엔드에 **v1 먼저 제안** (백엔드 페이스 존중)
+2. 백엔드가 흔쾌히 받으면 **v2 의 추가 분담** 도 가능한지 물어봄
+3. 백엔드가 부담스러워하면 v1 만 유지 또는 백엔드 다음 sprint 작업 우선
+
+### Git / 충돌 방지
+
+| 파일 / 영역 | 담당 |
+|---|---|
+| `LocalPlayerResolver.cs`, `EditorTestCharacterMarker.cs`, `LobbyController.cs`, Town→Dungeon 전환 코드, NetworkManager prefab | 백엔드 (단독) |
+| 던전 씬 `.unity` 파일들, Canvas / UI 컴포넌트 wiring 받는 측 코드 (BuildManager, KhiWeaponPresenter 등) 의 변환, Lobby.unity, PlayerPrefab | 클라 (단독) |
+| 회귀 검증 시 발견된 버그 fix | 발견자 / 영역 담당자 |
+
+같은 파일 동시 수정 X. 사전 영역 분리 명확히.
+
+### 백엔드에 회신할 메시지 (제안 톤)
+
+> "분신 fix 작업이 클라 단독으로 20-29h 인데, C# 코드 / NGO 진입부 / 던전 씬 marker 부착 / Lobby 기능 셋업 / Canvas wiring 코드 변환 등은 백엔드 영역에 가까워서 분담 가능할 것 같습니다. 9-14h (v1) ~ 16-23h (v2) 정도. 가능한 영역 중에 손홍민님이 가져가실 만한 게 있을까요? 분담 / 페어 / 다음 sprint 작업 우선 어느 쪽이든 손홍민님 페이스 우선입니다."
 
 ---
 
