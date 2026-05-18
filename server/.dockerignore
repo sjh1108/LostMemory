@@ -1,0 +1,36 @@
+# 빌드 컨텍스트 최소화
+
+# VCS / IDE
+.git
+.gitignore
+.gitattributes
+.idea
+.vscode
+*.iml
+
+# Gradle 산출물/캐시 — 이미지 내부에서 새로 빌드
+.gradle
+build
+out
+
+# 문서/메모
+**/*.md
+docs/
+HELP.md
+
+# 인프라 자산 — 이미지에 포함될 이유 없음
+nginx/
+postgres/
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# 환경변수 파일 — 런타임에 주입
+.env
+.env.*
+!.env.example
+!.env.dev.example
+
+# 로그
+*.log
+logs/

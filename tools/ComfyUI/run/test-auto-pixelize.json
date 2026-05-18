@@ -1,0 +1,17 @@
+{
+  "prompt": {
+    "1": {"inputs": {"weight_dtype": "default", "unet_name": "z_image_turbo_bf16.safetensors"}, "class_type": "UNETLoader"},
+    "3": {"inputs": {"clip": ["10", 0], "strength_clip": 0.85, "model": ["1", 0], "strength_model": 0.85, "lora_name": "pixel_art_style_z_image_turbo.safetensors"}, "class_type": "LoraLoader"},
+    "5": {"inputs": {"batch_size": 1, "width": 512, "height": 512}, "class_type": "EmptyLatentImage"},
+    "4": {"inputs": {"text": "Pixel art game icon style. a single red health potion bottle with cork stopper, glowing red liquid, isolated, centered, plain white background, clean black outline, simple flat shading, muted vintage colors with subtle red and pink accents, no gradient, sharp pixel edges, game inventory icon\n", "clip": ["3", 1]}, "class_type": "CLIPTextEncode"},
+    "11": {"inputs": {"text": "realistic, 3d render, photo, smooth shading, anti-aliased, blurry, gradient, detailed background, text, watermark, low quality, cluster\n", "clip": ["3", 1]}, "class_type": "CLIPTextEncode"},
+    "6": {"inputs": {"denoise": 1.0, "steps": 10, "cfg": 1.8, "sampler_name": "euler", "seed": 555, "scheduler": "simple", "negative": ["11", 0], "latent_image": ["5", 0], "model": ["3", 0], "positive": ["4", 0]}, "class_type": "KSampler"},
+    "7": {"inputs": {"samples": ["6", 0], "vae": ["9", 0]}, "class_type": "VAEDecode"},
+    "8": {"inputs": {"images": ["7", 0], "filename_prefix": "AutoPix_Test"}, "class_type": "SaveImage"},
+    "9": {"inputs": {"vae_name": "ae.safetensors"}, "class_type": "VAELoader"},
+    "10": {"inputs": {"type": "lumina2", "clip_name": "qwen_3_4b.safetensors", "device": "default"}, "class_type": "CLIPLoader"},
+    "30": {"inputs": {"image": ["7", 0], "preset": "game-item48"}, "class_type": "LostMemoryPixelize"},
+    "31": {"inputs": {"images": ["30", 0], "filename_prefix": "AutoPix_Test_pixel"}, "class_type": "SaveImage"}
+  },
+  "client_id": "test-auto-pixelize"
+}

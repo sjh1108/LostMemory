@@ -1,0 +1,183 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3672130645875568416
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2349436938613031475}
+  - component: {fileID: 2772023875146963655}
+  - component: {fileID: 7234946648358785153}
+  - component: {fileID: 1685423237894597832}
+  - component: {fileID: 1717593438315529282}
+  - component: {fileID: 5665802052371369666}
+  - component: {fileID: 884511603616373635}
+  - component: {fileID: 1326582478875418029}
+  m_Layer: 0
+  m_Name: MapMaker_LM
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2349436938613031475
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2772023875146963655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e65b74248fe594982b0d9bfde7d96c6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dungeonThemes: []
+  patterns: []
+  debugDraw: 0
+--- !u!114 &7234946648358785153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0abe472f19a42d4e8f6efec44ea3dbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Seed: 417251614
+  Modules:
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  - module: {fileID: 6418301402336183476, guid: 0a6756c4ca5ec52429091328379622a6,
+      type: 3}
+    category: Room
+  snapFlow: {fileID: 11400000, guid: 22ed9cd54efc8e24eab1748c237ebe0b, type: 2}
+  runGraphGenerationScripts: 0
+  RotateModulesToFit: 1
+  CollisionTestContraction: 0.1
+  hideDuplicateDoors: 0
+  MaxProcessingPower: 1000000
+--- !u!114 &1685423237894597832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f82308cb33fb564bbdfd3a81375cabe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nrandom:
+    seed: 417251614
+  random:
+    seed: 417251614
+  asyncBuild: 0
+  maxBuildTimePerFrame: 32
+  asyncBuildStartPosition: {fileID: 0}
+  isLayoutBuilt: 0
+--- !u!114 &1717593438315529282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efb7ca94bb2e6e140bdc9938b596d66a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  modules: []
+  connections: []
+--- !u!114 &5665802052371369666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd0ef9172759d43928c6f1131063f690, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  itemParent: {fileID: 0}
+--- !u!114 &884511603616373635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f137194ce2e2ab2448b5f482deeca829, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DungeonArchitect.Builders::DungeonArchitect.Builders.Snap.SnapQuery
+  modules: []
+--- !u!114 &1326582478875418029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672130645875568416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19fe98f618cd9974e9318408f58bead1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.DungeonRunBootstrap
+  dungeon: {fileID: 2772023875146963655}
+  player: {fileID: 0}
+  randomizeSeedOnStart: 0
+  fixedSeed: 417251614
+  autoBuildOnStart: 0
+  warpPlayerToFirstRoom: 1

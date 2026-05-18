@@ -1,0 +1,31 @@
+# 1차 MVP 작업표
+
+## 문서 목적
+
+- 1차 MVP backlog 관련 원본 작업표를 한 폴더에서 보게 한다.
+- `생성 -> 저장 -> 조회` 최소 흐름을 닫는 작업만 이 폴더에서 관리한다.
+
+## 포함 파일
+
+- `컴피유아이-1차-mvp-작업-리스트.csv`
+- `컴피유아이-1차-mvp-작업-세분화.csv`
+- `컴피유아이-1차-mvp-통합-작업표.csv`
+- `컴피유아이-1차-mvp-진행-가이드.md`
+- `컴피유아이-1차-mvp-진행-기록.md`
+- `산출물/AI-202-Z-Image-Turbo/`
+- `산출물/AI-203-reverse-proxy/`
+- `산출물/AI-204-comfyui-ui-internal-address/`
+- `산출물/AI-205-domain-https/`
+- `산출물/AI-206-basic-auth/`
+
+## 사용 기준
+
+- 메인 source of truth는 `컴피유아이-1차-mvp-통합-작업표.csv`
+- 상위 범위 확인은 `컴피유아이-1차-mvp-작업-리스트.csv`
+- 상세 단계 확인은 `컴피유아이-1차-mvp-작업-세분화.csv`
+- 시작 순서와 해석 기준은 `컴피유아이-1차-mvp-진행-가이드.md`
+- 실제 완료 근거와 산출물 위치는 `컴피유아이-1차-mvp-진행-기록.md`
+- Reverse Proxy 결정 문서와 체크리스트는 `산출물/AI-203-reverse-proxy/`에서 본다.
+- ComfyUI UI 내부 주소 연결 결과는 `산출물/AI-204-comfyui-ui-internal-address/`에서 본다.
+- 도메인과 HTTPS 적용 절차는 `산출물/AI-205-domain-https/`에서 본다.
+- 도메인 앞단 Basic Auth 적용 기준은 `산출물/AI-206-basic-auth/`에서 본다.

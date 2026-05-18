@@ -1,0 +1,45 @@
+# 호스트 자원 임계 알림 — INFRA-21 (S14P31C201-127)
+#
+# 임계치: CPU / Memory / Disk 사용률 80% 초과 + 5분 지속 시 firing.
+# Alertmanager 의 repeat_interval 24h + send_resolved 가 firing 1회 + resolved 1회 정책 보장.
+#
+# 임계 조정 시 이 파일만 수정 후:
+#   curl -X POST http://localhost:9090/-/reload
+
+groups:
+  - name: server-health
+    interval: 30s
+    rules:
+      - alert: HighCpuUsage
+        # 5분 평균 idle 비율 → 100 에서 빼면 사용률.
+        # avg() 로 모든 mode 합산 평균 (single-host 환경이므로 instance 라벨 묶을 필요 X)
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          metric: cpu
+        annotations:
+          summary: "EC2 CPU 사용률 80% 초과 (5분 지속)"
+          description: "현재 사용률: {{ $value | printf \"%.1f\" }}%. top / docker stats 로 부하 원인 확인 필요."
+
+      - alert: HighMemoryUsage
+        # MemAvailable 은 cache/buffer 제외 실제 가용. swap 사용 전 단계 감지.
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          metric: memory
+        annotations:
+          summary: "EC2 메모리 사용률 80% 초과 (5분 지속)"
+          description: "현재 사용률: {{ $value | printf \"%.1f\" }}%. free -h / docker stats 로 컨테이너별 점유 확인."
+
+      - alert: HighDiskUsage
+        # 루트 파일시스템만. data volume 은 별도 mountpoint 일 때 라벨 추가 (현재 단일 309GB /).
+        expr: (1 - (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"})) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          metric: disk
+        annotations:
+          summary: "EC2 / 디스크 사용률 80% 초과 (5분 지속)"
+          description: "현재 사용률: {{ $value | printf \"%.1f\" }}%. ./scripts/docker-prune.sh 수동 실행 또는 docker system df 점검."

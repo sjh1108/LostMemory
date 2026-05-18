@@ -1,0 +1,57 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.13'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.lostmemory'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+// Spring Boot Gradle plugin 의 resolveMainClassName 자동 추론은 @SpringBootApplication 가
+// 1개일 때만 동작. RelayApplication 추가로 후보가 2개 (ServerApplication / RelayApplication)
+// 가 되면서 bootJar fail. jar manifest 의 Main-Class 는 ServerApplication 으로 고정한다.
+// RelayApplication 은 compose entrypoint 의 PropertiesLauncher + -Dloader.main=... 으로
+// 런타임 override 한다 (S14P31C201-462 인프라 PR 참조).
+springBoot {
+	mainClass = 'com.lostmemory.server.ServerApplication'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+
+	implementation("io.jsonwebtoken:jjwt-api:0.13.0")
+	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
+	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
+
+	// 자체 Relay (RelayApplication) 의 UDP 서버 — Netty
+	// (Spring Boot BOM 이 버전 관리: 4.1.x)
+	implementation 'io.netty:netty-handler'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

@@ -21,6 +21,9 @@ Desktop.ini
 .env.*
 !.env.example
 
+# Local Basic Auth secrets
+/tools/infra/nginx/auth/.htpasswd
+
 # Common build/output directories
 build/
 dist/
@@ -46,3 +49,35 @@ node_modules/
 /[Uu]ser[Ss]ettings/
 /[Mm]emoryCaptures/
 
+# ComfyUI local runtime
+/tools/ComfyUI/.git/
+/tools/ComfyUI/.venv/
+/tools/ComfyUI/.venv313/
+/tools/ComfyUI/.venv_local/
+/tools/ComfyUI/.tmp/
+/tools/ComfyUI/models/
+/tools/ComfyUI/input/
+/tools/ComfyUI/output/
+/tools/ComfyUI/temp/
+/tools/ComfyUI/**/__pycache__/
+# Pip wheel cache (~2GB torch + cu130 wheel)
+/tools/ComfyUI/.wheels/
+# pixelize.py 후처리 결과 폴더 (시나리오별로 자동 생성)
+/tools/ComfyUI/output_*/
+# 런타임 로그
+/tools/ComfyUI/run/*.log
+/tools/ComfyUI/run/comfyui-*.log
+/tools/docs/games/
+# Generated artifact images under docs are kept out of Git.
+/tools/docs/1차-mvp/산출물/**/outputs/*.png
+
+# Unity - auto-generated IDE solution files
+*.sln
+*.csproj
+*.slnx
+
+# Unity Services - per-environment settings (contains Environment ID, treat as secret)
+client/LostMemory/ProjectSettings/Packages/
+
+# Claude Code internal
+.claude/
