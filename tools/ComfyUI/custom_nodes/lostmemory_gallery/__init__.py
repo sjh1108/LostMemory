@@ -247,10 +247,13 @@ async def _view(request: web.Request) -> web.Response:
     return web.Response(text=html, content_type="text/html")
 
 
-# PromptServer에 라우트 등록 (ComfyUI 시작 시 자동 등록됨)
+# PromptServer에 라우트 등록 (ComfyUI 시작 시 자동 등록됨).
+# /gallery 와 /gallery/ 둘 다 등록 — 외부 nginx(또는 reverse proxy)가
+# 디렉토리 형태로 trailing slash 를 추가하는 경우에도 동작하도록.
 if PromptServer is not None:
     routes = PromptServer.instance.routes
     routes.get("/gallery")(_index)
+    routes.get("/gallery/")(_index)
     routes.get("/gallery/thumb/{name}")(_thumb)
     routes.get("/gallery/file/{name}")(_file)
     routes.get("/gallery/view/{name}")(_view)
