@@ -47,7 +47,11 @@ namespace LostMemory.Stage
             StageRouteManager routeManager = routeManagerObject.AddComponent<StageRouteManager>();
             routeManager.ConfigureRouteNodes(CreateDefaultRouteNodes(), routeNodeIndex, DefaultEntrySpawnId, false);
 
-            UnlockRouteExitTriggers();
+            if (scene.name != "Dungeon_1F_Boss")
+            {
+                UnlockRouteExitTriggers(routeManager);
+            }
+
             Debug.Log($"[StandaloneDungeonSceneBootstrap] Bootstrapped route context for '{scene.name}' at node index {routeNodeIndex}.");
         }
 
@@ -60,7 +64,9 @@ namespace LostMemory.Stage
                 CreateNode("stage1_shop", "Dungeon_1F_Shop", "Dungeon_1F_Shop", "to_1f_3r"),
                 CreateNode("stage1_3r", "Dungeon_1F_3R", "Dungeon_1F_3R", "to_1f_4r"),
                 CreateNode("stage1_4r", "Dungeon_1F_4R", "Dungeon_1F_4R", "to_1f_boss"),
-                CreateNode("stage1_boss", "Dungeon_1F_Boss", "Dungeon_1F_Boss", string.Empty),
+                CreateNode("stage1_boss", "Dungeon_1F_Boss", "Dungeon_1F_Boss", "to_2f_1r"),
+                CreateNode("stage2_1r", "Dungeon_2F_1R", "Dungeon_2F_1R", "to_2f_2r"),
+                CreateNode("stage2_2r", "Dungeon_2F_2R", "Dungeon_2F_2R", string.Empty),
             };
         }
 
@@ -95,7 +101,7 @@ namespace LostMemory.Stage
             return false;
         }
 
-        private static void UnlockRouteExitTriggers()
+        private static void UnlockRouteExitTriggers(StageRouteManager routeManager)
         {
             RouteNodeExitTrigger[] triggers = UnityEngine.Object.FindObjectsByType<RouteNodeExitTrigger>(
                 FindObjectsInactive.Include,
@@ -105,7 +111,12 @@ namespace LostMemory.Stage
             {
                 if (triggers[i] != null)
                 {
-                    triggers[i].Unlock();
+                    if (routeManager == null ||
+                        triggers[i].UsesLocalTeleport ||
+                        routeManager.CanAdvanceRouteNode(triggers[i].TriggerId))
+                    {
+                        triggers[i].Unlock();
+                    }
                 }
             }
         }

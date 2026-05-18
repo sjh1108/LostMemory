@@ -22,6 +22,11 @@ namespace LostMemory.Stage
         [SerializeField] private GameObject visualRoot;
         [SerializeField] private bool hideVisualWhenLocked;
         [SerializeField] private RouteNodeExitTriggerView triggerView;
+        [SerializeField] private bool useLocalTeleport;
+        [SerializeField] private Transform localTeleportTarget;
+        [SerializeField] private string localTeleportTargetRootName = string.Empty;
+        [SerializeField] private string localTeleportAnchorTag = "default";
+        [SerializeField] private Vector3 localTeleportOffset;
         [SerializeField] private bool debugLogging;
 
         private readonly HashSet<Character> candidates = new HashSet<Character>();
@@ -32,6 +37,7 @@ namespace LostMemory.Stage
 
         public string TriggerId => triggerId;
         public bool IsUnlocked => unlocked;
+        public bool UsesLocalTeleport => useLocalTeleport;
 
         public void Unlock()
         {
@@ -305,6 +311,12 @@ namespace LostMemory.Stage
             }
 
             RefreshReferences();
+            if (useLocalTeleport)
+            {
+                RequestLocalTeleport(character);
+                return;
+            }
+
             if (routeManager == null)
             {
                 Debug.LogWarning($"[RouteNodeExitTrigger] No StageRouteManager found for trigger '{triggerId}'.", this);
@@ -319,6 +331,76 @@ namespace LostMemory.Stage
                 requestInProgress = false;
                 ApplyCurrentViewState();
             }
+        }
+
+        private void RequestLocalTeleport(Character character)
+        {
+            requestInProgress = true;
+            ApplyCurrentViewState();
+
+            Transform target = ResolveLocalTeleportTarget();
+            if (target == null)
+            {
+                Debug.LogWarning($"[RouteNodeExitTrigger] Local teleport target not found for trigger '{triggerId}'.", this);
+                requestInProgress = false;
+                ApplyCurrentViewState();
+                return;
+            }
+
+            TeleportCharacter(character, target.position + localTeleportOffset);
+            candidates.Clear();
+            requestInProgress = false;
+            ApplyCurrentViewState();
+            Log($"Local teleported '{character.name}' to '{target.name}'.");
+        }
+
+        private Transform ResolveLocalTeleportTarget()
+        {
+            if (localTeleportTarget != null)
+            {
+                return localTeleportTarget;
+            }
+
+            if (string.IsNullOrWhiteSpace(localTeleportTargetRootName))
+            {
+                return null;
+            }
+
+            GameObject root = GameObject.Find(localTeleportTargetRootName);
+            return root != null ? ResolveEntryAnchor(root.transform) : null;
+        }
+
+        private Transform ResolveEntryAnchor(Transform root)
+        {
+            RoomEntryAnchor[] anchors = root.GetComponentsInChildren<RoomEntryAnchor>(includeInactive: true);
+            for (int i = 0; i < anchors.Length; i++)
+            {
+                RoomEntryAnchor anchor = anchors[i];
+                if (anchor != null && anchor.Matches(localTeleportAnchorTag))
+                {
+                    return anchor.transform;
+                }
+            }
+
+            return anchors.Length > 0 ? anchors[0].transform : root;
+        }
+
+        private static void TeleportCharacter(Character character, Vector3 targetPosition)
+        {
+            if (character == null)
+            {
+                return;
+            }
+
+            TopDownController controller = character.GetComponent<TopDownController>();
+            if (controller != null)
+            {
+                controller.SetMovement(Vector3.zero);
+                controller.MovePosition(targetPosition, true);
+                return;
+            }
+
+            character.transform.position = targetPosition;
         }
 
         private void ApplyCurrentViewState(bool hasCandidate = false)
