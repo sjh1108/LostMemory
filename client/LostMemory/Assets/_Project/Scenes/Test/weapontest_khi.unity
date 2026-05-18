@@ -5886,18 +5886,65 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6080767444732385328, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6080767444732385328, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6080767444732385328, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9659258
+      objectReference: {fileID: 0}
+    - target: {fileID: 6080767444732385328, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.2588191
+      objectReference: {fileID: 0}
+    - target: {fileID: 6080767444732385328, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 6162154028708080848, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6162154028708080848, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7597007434435170627, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: weaponUpgradeService
       value: 
       objectReference: {fileID: 1799985273}
+    - target: {fileID: 8227507200510944571, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8227507200510944571, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 9053980675064386983, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: GlobalObjectIdHash
       value: 1536058110
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 631679902849209826, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
+    - {fileID: 119921331620203213, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
@@ -6115,12 +6162,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c677899e963b6c47964f9a5bcc5fc78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiWeaponUpgradeDebug
-  upgradeKey: 102
-  revertKey: 103
-  ninjaKey: 101
-  showOnGuiHint: 1
-  hintOrigin: {x: 10, y: 260}
-  fontSize: 12
 --- !u!114 &1799985273
 MonoBehaviour:
   m_ObjectHideFlags: 0
