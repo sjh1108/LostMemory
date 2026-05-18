@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${patchNoteId == null ? '새 패치노트' : '패치노트 편집'})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<div th:replace="~{fragments/layout :: admin-bar}"></div>
+
+<main class="site-main">
+  <h2 th:text="${patchNoteId == null ? '새 패치노트 작성' : '패치노트 편집'}">패치노트</h2>
+
+  <form th:action="${patchNoteId == null} ? @{/admin/patch-notes} : @{/admin/patch-notes/{id}(id=${patchNoteId})}"
+        method="post" th:object="${form}" class="admin-form">
+    <div>
+      <label for="version">버전 (예: v1.0.0)</label>
+      <input type="text" id="version" th:field="*{version}" maxlength="50" required>
+      <div class="field-error" th:if="${#fields.hasErrors('version')}" th:errors="*{version}"></div>
+    </div>
+    <div>
+      <label for="releaseDate">릴리스 날짜</label>
+      <input type="date" id="releaseDate" th:field="*{releaseDate}" required>
+      <div class="field-error" th:if="${#fields.hasErrors('releaseDate')}" th:errors="*{releaseDate}"></div>
+    </div>
+    <div>
+      <label for="body">본문</label>
+      <textarea id="body" th:field="*{body}" required></textarea>
+      <div class="field-error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
+    </div>
+    <div>
+      <label>
+        <input type="checkbox" th:field="*{published}"> 공개
+      </label>
+    </div>
+    <div>
+      <input type="submit" value="저장">
+      <a th:href="@{/admin/patch-notes}" style="margin-left:1rem">취소</a>
+    </div>
+  </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

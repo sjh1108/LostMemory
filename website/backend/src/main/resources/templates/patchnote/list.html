@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('패치노트')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="site-main">
+  <h2>패치노트</h2>
+  <ul class="entry-list" th:if="${!patchNotes.isEmpty()}">
+    <li th:each="p : ${patchNotes}">
+      <a th:href="@{/patch-notes/{id}(id=${p.id})}">
+        <strong th:text="${p.version}">v0.0.0</strong>
+        — <span th:text="${#temporals.format(p.releaseDate, 'yyyy-MM-dd')}">날짜</span>
+      </a>
+    </li>
+  </ul>
+  <p th:if="${patchNotes.isEmpty()}" class="entry-meta">등록된 패치노트가 없습니다.</p>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

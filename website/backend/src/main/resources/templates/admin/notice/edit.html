@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${noticeId == null ? '새 공지' : '공지 편집'})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<div th:replace="~{fragments/layout :: admin-bar}"></div>
+
+<main class="site-main">
+  <h2 th:text="${noticeId == null ? '새 공지 작성' : '공지 편집'}">공지</h2>
+
+  <form th:action="${noticeId == null} ? @{/admin/notices} : @{/admin/notices/{id}(id=${noticeId})}"
+        method="post" th:object="${form}" class="admin-form">
+    <div>
+      <label for="title">제목</label>
+      <input type="text" id="title" th:field="*{title}" maxlength="200" required>
+      <div class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+    </div>
+    <div>
+      <label for="body">본문 (Markdown 또는 plain text)</label>
+      <textarea id="body" th:field="*{body}" required></textarea>
+      <div class="field-error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
+    </div>
+    <div>
+      <label>
+        <input type="checkbox" th:field="*{published}"> 공개 (체크 해제 시 임시저장)
+      </label>
+    </div>
+    <div>
+      <input type="submit" value="저장">
+      <a th:href="@{/admin/notices}" style="margin-left:1rem">취소</a>
+    </div>
+  </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
