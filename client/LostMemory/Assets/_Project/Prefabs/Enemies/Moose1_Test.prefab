@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 114900000000300001}
   - component: {fileID: 114900000000300002}
   - component: {fileID: 114900000000300003}
+  - component: {fileID: 114900000000400001}
   m_Layer: 13
   m_Name: Moose1_Test
   m_TagString: Enemy
@@ -278,6 +279,24 @@ SortingGroup:
   m_SortingOrder: 50
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
+--- !u!114 &114900000000400001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f068cacebdbb46ff841d96f4e98928a7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemyDeathVisualCleanup
+  health: {fileID: 114767317845071676}
+  visualRoot: {fileID: 2126021325580802323}
+  applyRuntimeSpriteMaterialOnEnable: 1
+  applyRuntimeSpriteMaterialOnDeath: 1
+  renderersToHideOnDeath:
+  - {fileID: 212145249918404048}
 --- !u!114 &114002022934925870
 MonoBehaviour:
   m_ObjectHideFlags: 0
