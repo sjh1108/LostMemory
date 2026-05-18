@@ -25,6 +25,30 @@ server {
 server {
     listen      80;
     listen      [::]:80;
+    server_name ${WEBSITE_DOMAIN};
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+
+    location = /nginx-health {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen      80;
+    listen      [::]:80;
     server_name ${COMFYUI_DOMAIN};
 
     resolver 127.0.0.11 valid=10s ipv6=off;
@@ -142,5 +166,50 @@ server {
 
         proxy_buffering off;
         proxy_request_buffering off;
+    }
+}
+
+# ===========================================
+# Game 공식 사이트 (lostmemory.duckdns.org)
+# website-nginx 컨테이너 (별도 docker-compose, infra_public network) 로 proxy
+# ===========================================
+server {
+    listen      443 ssl http2;
+    listen      [::]:443 ssl http2;
+    server_name ${WEBSITE_DOMAIN};
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
+    ssl_certificate     /etc/letsencrypt/live/${WEBSITE_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${WEBSITE_DOMAIN}/privkey.pem;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    # Mozilla Intermediate (current) — AEAD only, WEAK CBC 제외
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305;
+    ssl_prefer_server_ciphers off;
+
+    proxy_connect_timeout  10s;
+    proxy_send_timeout     30s;
+    proxy_read_timeout     30s;
+
+    location = /nginx-health {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # 정적 사이트 (MkDocs Material 빌드 결과) — website-nginx 가 frontend network 안에서 서빙
+    # variable-based proxy_pass — website-nginx 가 없어도 nginx 기동 가능 (graceful 502)
+    location / {
+        set $website_upstream http://website-nginx;
+        proxy_pass $website_upstream$request_uri;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
     }
 }

@@ -1,0 +1,51 @@
+# LostMemory 게임 공식 사이트 (lostmemory.duckdns.org).
+#
+# 외부 진입은 tools/infra/nginx 가 처리 (server_name WEBSITE_DOMAIN → website-nginx proxy).
+# 본 stack 의 website-nginx 는 frontend network 안에서만 정적 파일 서빙 (외부 노출 X).
+#
+# 콘텐츠 변경 흐름:
+#   1. docs/*.md 수정 → git push
+#   2. EC2#2 운영자 SSH:
+#        cd /home/ubuntu/lostmemory/website
+#        docker compose --profile mkdocs run --rm mkdocs-builder
+#   3. nginx recreate/reload 불요 — 마운트된 site/ 만 갱신됨.
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
+services:
+  # 정적 사이트 서빙 전용 nginx — internal-only.
+  # tools/infra/nginx 가 lostmemory.duckdns.org HTTPS 종단 + 본 컨테이너로 proxy.
+  website-nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./site:/usr/share/nginx/html:ro
+    logging: *default-logging
+    networks:
+      - public
+
+  # MkDocs Material 빌드 전용 컨테이너 — 평소 미기동 (`profiles: ["mkdocs"]`).
+  # 호출: docker compose --profile mkdocs run --rm mkdocs-builder
+  # 결과: ./site/ (gitignore) — website-nginx 가 read-only mount 로 자동 서빙.
+  mkdocs-builder:
+    image: squidfunk/mkdocs-material:latest
+    profiles: ["mkdocs"]
+    volumes:
+      - .:/docs:rw
+    working_dir: /docs
+    command: build --clean --strict
+    logging: *default-logging
+
+networks:
+  # tools/infra stack 의 public network 공유 — tools/infra/nginx 가 website-nginx 도달 가능.
+  # 운영자가 `cd tools/infra` 후 compose 실행 → project name = infra, network = infra_public.
+  # 검증: EC2#2 에서 `docker network ls | grep public` 으로 정확한 이름 확인 후 일치 보장.
+  public:
+    external: true
+    name: infra_public
