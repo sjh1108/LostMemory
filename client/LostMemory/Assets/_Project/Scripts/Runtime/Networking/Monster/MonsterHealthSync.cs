@@ -33,10 +33,19 @@ namespace LostMemory.Networking.Monster
         [SerializeField, Tooltip("server 측 health 변경 감지 최소 단위. 너무 작으면 NetworkVariable broadcast 폭증.")]
         private float minDelta = 0.01f;
 
+        [SerializeField, Tooltip("server 측 CurrentHealth=0 감지 후 NetworkObject.Despawn 까지 대기. " +
+            "호스트 측 사망 애니메이션을 잠시 보여주고, 게스트도 거의 동시에 사라지도록 함.")]
+        private float deathDespawnDelay = 2f;
+
+        [SerializeField, Tooltip("OnNetworkSpawn / NetworkVariable write / OnValueChanged / Despawn 로그 출력.")]
+        private bool verboseLog = false;
+
         private readonly NetworkVariable<float> _syncedHealth = new(
             0f,
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
+
+        private bool _deathScheduled;
 
         private void Awake()
         {
@@ -58,6 +67,7 @@ namespace LostMemory.Networking.Monster
             if (IsServer)
             {
                 _syncedHealth.Value = health.CurrentHealth;
+                if (verboseLog) Debug.Log($"[MonsterHealthSync] OnNetworkSpawn SERVER {gameObject.name} initial={health.CurrentHealth}", this);
             }
             else
             {
@@ -67,6 +77,7 @@ namespace LostMemory.Networking.Monster
                 {
                     health.SetHealth(_syncedHealth.Value);
                 }
+                if (verboseLog) Debug.Log($"[MonsterHealthSync] OnNetworkSpawn CLIENT {gameObject.name} synced={_syncedHealth.Value}", this);
             }
         }
 
@@ -83,8 +94,27 @@ namespace LostMemory.Networking.Monster
             float current = health.CurrentHealth;
             if (Mathf.Abs(current - _syncedHealth.Value) >= minDelta)
             {
+                if (verboseLog) Debug.Log($"[MonsterHealthSync] SERVER write {gameObject.name} {_syncedHealth.Value} -> {current}", this);
                 _syncedHealth.Value = current;
             }
+
+            // 사망 시각 sync — server 측 CurrentHealth=0 후:
+            //   1. 즉시 ClientRpc 발화 → 게스트 측에서 Animator SetTrigger("Death") + Collider disable
+            //   2. deathDespawnDelay 후 NGO Despawn → 양측 GameObject 사라짐
+            if (!_deathScheduled && current <= 0f)
+            {
+                _deathScheduled = true;
+                if (verboseLog) Debug.Log($"[MonsterHealthSync] SERVER death detected. Broadcast visuals + Despawn in {deathDespawnDelay}s: {gameObject.name}", this);
+                TriggerDeathVisualsClientRpc();
+                Invoke(nameof(DespawnAfterDeathDelay), deathDespawnDelay);
+            }
+        }
+
+        private void DespawnAfterDeathDelay()
+        {
+            if (NetworkObject == null || !NetworkObject.IsSpawned) return;
+            if (verboseLog) Debug.Log($"[MonsterHealthSync] SERVER Despawn(destroy:true): {gameObject.name}", this);
+            NetworkObject.Despawn(destroy: true);
         }
 
         private void HandleSyncedHealthChanged(float previous, float current)
@@ -93,9 +123,33 @@ namespace LostMemory.Networking.Monster
             if (IsServer) return;
             if (health == null) return;
 
+            if (verboseLog) Debug.Log($"[MonsterHealthSync] CLIENT OnValueChanged {gameObject.name} {previous} -> {current}", this);
             health.SetHealth(current);
-            // 사망 sync 는 server 측 Health.Kill → NetworkObject.Despawn 자동 흐름에 위임.
-            // 비-server 측에서 Kill 명시 호출 X (NGO unauthorized destroy 에러 회피).
+
+            // 체력바 가시화 — Health.SetHealth 안의 UpdateHealthBar(false) 는 _showBar 를 켜지 않아
+            // AlwaysVisible=false 인 MMHealthBar 가 게스트 측에서 자동 표시되지 않음. show=true 로 한 번 더 호출.
+            health.UpdateHealthBar(true);
+        }
+
+        [ClientRpc]
+        private void TriggerDeathVisualsClientRpc()
+        {
+            // 호스트는 자체 Health.Kill 흐름으로 처리. 비-server (게스트) 만 시각 효과 모방.
+            if (IsServer) return;
+            if (health == null) return;
+
+            if (verboseLog) Debug.Log($"[MonsterHealthSync] CLIENT death visuals: {gameObject.name}", this);
+
+            // TDE Health.Kill 의 시각 효과 모방. DestroyObject 는 호스트의 NGO Despawn sync 에 위임.
+            Animator animator = health.GetComponentInChildren<Animator>();
+            if (animator != null)
+            {
+                animator.SetTrigger("Death");
+            }
+            foreach (Collider2D col in health.GetComponentsInChildren<Collider2D>())
+            {
+                col.enabled = false;
+            }
         }
     }
 }

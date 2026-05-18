@@ -92,6 +92,8 @@ GameObject:
   - component: {fileID: 8147428423782863227}
   - component: {fileID: 4362045906954319907}
   - component: {fileID: 2165398457196784295}
+  - component: {fileID: 2259337896623269115}
+  - component: {fileID: 2884954370927517461}
   m_Layer: 10
   m_Name: Test_shm_nickname
   m_TagString: Player
@@ -681,6 +683,7 @@ MonoBehaviour:
   targetInvincibilityDuration: 0
   targetFlickerDuration: 0
   statContainer: {fileID: 1496170365699431617}
+  damageRelay: {fileID: 0}
   drawDebugGizmos: 1
   debugGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showRuntimePreview: 0
@@ -1499,7 +1502,17 @@ MonoBehaviour:
   bowController: {fileID: 3769329048501235405}
   bowPresenter: {fileID: 8898648390547866743}
   bowObject: {fileID: 271686056155902964}
+  staffController: {fileID: 0}
+  staffPresenter: {fileID: 0}
+  staffObject: {fileID: 0}
+  flamethrowerController: {fileID: 0}
+  flamethrowerPresenter: {fileID: 0}
+  flamethrowerZone: {fileID: 0}
+  flamethrowerObject: {fileID: 0}
+  weaponUpgradeService: {fileID: 0}
   switchKey: 31
+  enableMouseWheelSwitch: 1
+  wheelSwitchCooldown: 0.15
   logModeChanges: 1
 --- !u!114 &8147428423782863227
 MonoBehaviour:
@@ -1588,9 +1601,55 @@ MonoBehaviour:
   - {fileID: 7445542604703793321}
   - {fileID: 6753678586816588783}
   - {fileID: 5232590325398445965}
+  extraSlashSlots: []
   slashSortingOrder: 1001
   slashSortingLayer: 
+  elementCatalog: {fileID: 0}
+  elementMaterial: {fileID: 0}
   slashRigCenterY: 0.6
+--- !u!114 &2259337896623269115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a505a93a3cfd664eb84c71d248d4698, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.PlayerDamageRelay
+  ShowTopMostFoldoutHeaderGroup: 1
+  verboseLog: 1
+--- !u!114 &2884954370927517461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6edc758d6f60b94184e65f8bb735143, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.PlayerHealthSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  health: {fileID: 0}
+  minDelta: 0.01
+  syncHit: 1
+  hitAnimatorTrigger: Hit
+  syncDown: 1
+  downAnimatorTrigger: Down
+  syncDeath: 1
+  deathAnimatorTrigger: Down
+  inputComponentNamesToDisableOnDeath:
+  - KhiMeleeComboController
+  - KhiParryController
+  - KhiDashController
+  - KhiFinisherLunge
+  deathOverlayObject: {fileID: 0}
+  deathOverlayFallbackText: You Died
+  verboseLog: 1
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
@@ -2533,6 +2592,8 @@ MonoBehaviour:
   playerAim: {fileID: 0}
   comboController: {fileID: 0}
   downController: {fileID: 0}
+  weaponData: {fileID: 0}
+  isSecondaryHand: 0
   externalSprite: {fileID: 0}
   useProceduralIfNoExternal: 1
   swordWidthPx: 48
