@@ -45788,30 +45788,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1191989722571031113}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &170782375005959013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 841092205810639426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a23bd0a9071f7fb48958dbc9cea6ca0f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RouteNodeExitTrigger
-  triggerId: to_2f_1r
-  routeManager: {fileID: 0}
-  unlockedOnStart: 0
-  requireInteractInput: 1
-  fallbackInteractKey: 102
-  acceptedPlayerId: Player1
-  useDistanceFallback: 1
-  activationRadius: 1.5
-  visualRoot: {fileID: 7717136797002712949}
-  hideVisualWhenLocked: 1
-  triggerView: {fileID: 170782375005959012}
-  debugLogging: 0
 --- !u!114 &170782375005959012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45836,6 +45812,36 @@ MonoBehaviour:
   unlockedColor: {r: 0.2, g: 0.9, b: 0.55, a: 0.65}
   candidateInsideColor: {r: 1, g: 0.78, b: 0.2, a: 0.8}
   transitioningColor: {r: 0.25, g: 0.9, b: 1, a: 0.9}
+--- !u!114 &170782375005959013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 841092205810639426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a23bd0a9071f7fb48958dbc9cea6ca0f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RouteNodeExitTrigger
+  triggerId: to_2f_1r
+  routeManager: {fileID: 0}
+  unlockedOnStart: 0
+  requireInteractInput: 1
+  fallbackInteractKey: 102
+  acceptedPlayerId: Player1
+  useDistanceFallback: 1
+  activationRadius: 1.5
+  visualRoot: {fileID: 7717136797002712949}
+  hideVisualWhenLocked: 1
+  triggerView: {fileID: 170782375005959012}
+  completeRunInsteadOfAdvancingRoute: 1
+  useLocalTeleport: 0
+  localTeleportTarget: {fileID: 0}
+  localTeleportTargetRootName:
+  localTeleportAnchorTag: default
+  localTeleportOffset: {x: 0, y: 0, z: 0}
+  debugLogging: 0
 --- !u!4 &3284886842764160662 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4403552297251810527, guid: 0b929cfd4cfd14f4e8b95e801a332412,

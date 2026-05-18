@@ -22,6 +22,7 @@ namespace LostMemory.Stage
         [SerializeField] private GameObject visualRoot;
         [SerializeField] private bool hideVisualWhenLocked;
         [SerializeField] private RouteNodeExitTriggerView triggerView;
+        [SerializeField] private bool completeRunInsteadOfAdvancingRoute;
         [SerializeField] private bool useLocalTeleport;
         [SerializeField] private Transform localTeleportTarget;
         [SerializeField] private string localTeleportTargetRootName = string.Empty;
@@ -317,6 +318,12 @@ namespace LostMemory.Stage
                 return;
             }
 
+            if (completeRunInsteadOfAdvancingRoute)
+            {
+                RequestRunCompletion(character);
+                return;
+            }
+
             if (routeManager == null)
             {
                 Debug.LogWarning($"[RouteNodeExitTrigger] No StageRouteManager found for trigger '{triggerId}'.", this);
@@ -331,6 +338,29 @@ namespace LostMemory.Stage
                 requestInProgress = false;
                 ApplyCurrentViewState();
             }
+        }
+
+        private void RequestRunCompletion(Character character)
+        {
+            RunManager runManager = RunManager.Instance;
+            if (runManager == null)
+            {
+                Debug.LogWarning($"[RouteNodeExitTrigger] No RunManager found for trigger '{triggerId}'.", this);
+                return;
+            }
+
+            requestInProgress = true;
+            ApplyCurrentViewState();
+
+            bool accepted = runManager.NotifyBossClearPortalEntered();
+            if (!accepted)
+            {
+                requestInProgress = false;
+                ApplyCurrentViewState();
+                return;
+            }
+
+            Log($"Completed run from trigger '{triggerId}' for '{character.name}'.");
         }
 
         private void RequestLocalTeleport(Character character)
