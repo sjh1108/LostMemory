@@ -6,8 +6,12 @@
 
 | 파일 | 용도 | 입력 | 출력 |
 |---|---|---|---|
-| `LostMemory_Item_TXT2IMG.json` | 텍스트만으로 아이템 생성 + 픽셀 양자화 + **배경 투명화** 한 번에 | 프롬프트 | PNG 3장 (원본 / 픽셀 / RGBA) |
-| `LostMemory_Item_IMG2IMG.json` | 레퍼런스 이미지 변형 + 픽셀 양자화 + **배경 투명화** | 이미지 + 프롬프트 | PNG 3장 (원본 / 픽셀 / RGBA) |
+| `LostMemory_Item_TXT2IMG.json` | 텍스트만으로 아이템 생성 + 픽셀 양자화 + **배경 투명화** 한 번에 | 프롬프트 | PNG 3장 (원본 / 픽셀 48×48 / RGBA) |
+| `LostMemory_Item_IMG2IMG.json` | 레퍼런스 이미지 변형 + 픽셀 양자화 + **배경 투명화** | 이미지 + 프롬프트 | PNG 3장 (원본 / 픽셀 48×48 / RGBA) |
+| `LostMemory_Bishoujo_TXT2IMG.json` | 미소녀 캐릭터 sprite 생성 (`isnet-anime`, `game-item64`) | 프롬프트 | PNG 3장 (원본 / 픽셀 64×64 / RGBA) |
+| `LostMemory_Bishoujo_IMG2IMG.json` | 레퍼런스 이미지 → 미소녀 sprite 변형 | 이미지 + 프롬프트 | PNG 3장 |
+| `LostMemory_Character_TXT2IMG.json` | 일반 캐릭터(플레이어/적/NPC) sprite 생성 — Bishoujo 패턴 답습 | 프롬프트 | PNG 3장 |
+| `LostMemory_Character_IMG2IMG.json` | 레퍼런스 이미지 → 일반 캐릭터 sprite 변형 | 이미지 + 프롬프트 | PNG 3장 |
 | `LostMemory_BgRemove_Standalone.json` | 기존 PNG 한 장을 배경 투명화 (단독) | 이미지 1장 | RGBA PNG |
 
 ## 사용법
