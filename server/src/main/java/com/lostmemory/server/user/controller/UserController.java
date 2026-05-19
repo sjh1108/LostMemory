@@ -89,7 +89,8 @@ public class UserController {
                     `user_records` 의 `cleared_chapter` (최고 도달 챕터) / `cleared_stage` (최고 도달 스테이지) 조회.
                     row 미존재 시 default (0/0) 응답.
 
-                    런 종료 시 백엔드가 `GREATEST` 로 max-update 처리. 본 endpoint 는 마을 / 결과창 표시용.
+                    런 종료 시 백엔드가 chapter 우선 + 동일 chapter 면 stage 비교로 더 깊을 때만 갱신.
+                    본 endpoint 는 마을 / 결과창 표시용.
                     """
     )
     @ApiResponses({
