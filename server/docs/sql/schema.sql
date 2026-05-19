@@ -270,6 +270,23 @@ CREATE TABLE user_record (
 
 
 -- =====================================================================
+-- 15. USER_WEAPON_SELECTION : 유저별 마지막 선택 무기
+--   * 다음 런 시작 시 자동으로 쥐어줄 무기. 회원가입 시 weapon_id=1 (검) 으로 초기화.
+--   * user_id PK = 1:1. weapons.weapon_id FK. 무기 마스터 삭제는 RESTRICT 로 차단 (마스터 무결성).
+-- =====================================================================
+CREATE TABLE user_weapon_selection (
+    user_id              BIGINT      PRIMARY KEY
+                                     REFERENCES users(user_id) ON DELETE CASCADE,
+    selected_weapon_id   BIGINT      NOT NULL
+                                     REFERENCES weapons(weapon_id) ON DELETE RESTRICT,
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON COLUMN user_weapon_selection.selected_weapon_id
+    IS '다음 런 시작 시 자동 선택될 무기 ID. 회원가입 시 1 (검).';
+
+
+-- =====================================================================
 -- updated_at 자동 갱신 트리거
 -- =====================================================================
 CREATE OR REPLACE FUNCTION set_updated_at()
@@ -294,6 +311,10 @@ CREATE TRIGGER trg_user_talent_allocations_updated_at
 
 CREATE TRIGGER trg_user_record_updated_at
     BEFORE UPDATE ON user_record
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_user_weapon_selection_updated_at
+    BEFORE UPDATE ON user_weapon_selection
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 

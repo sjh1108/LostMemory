@@ -19,11 +19,15 @@ import com.lostmemory.server.memory.repository.UserMemoryProgressRepository;
 import com.lostmemory.server.user.entity.User;
 import com.lostmemory.server.user.entity.UserCurrency;
 import com.lostmemory.server.user.entity.UserRecord;
+import com.lostmemory.server.user.entity.UserTalentAllocation;
 import com.lostmemory.server.user.repository.UserCurrencyRepository;
 import com.lostmemory.server.user.repository.UserRecordRepository;
 import com.lostmemory.server.user.repository.UserRepository;
+import com.lostmemory.server.user.repository.UserTalentAllocationRepository;
+import com.lostmemory.server.weapon.entity.UserWeaponSelection;
 import com.lostmemory.server.weapon.entity.UserWeaponUnlock;
 import com.lostmemory.server.weapon.entity.Weapon;
+import com.lostmemory.server.weapon.repository.UserWeaponSelectionRepository;
 import com.lostmemory.server.weapon.repository.UserWeaponUnlockRepository;
 import com.lostmemory.server.weapon.repository.WeaponRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +55,13 @@ public class AuthService {
     private final UserMemoryProgressRepository userMemoryProgressRepository;
     private final WeaponRepository weaponRepository;
     private final UserWeaponUnlockRepository userWeaponUnlockRepository;
+    private final UserTalentAllocationRepository userTalentAllocationRepository;
+    private final UserWeaponSelectionRepository userWeaponSelectionRepository;
+
+    /** 회원가입 시 talent total_point 초기값. */
+    private static final int INITIAL_TALENT_TOTAL_POINT = 5;
+    /** 회원가입 시 default 장착 무기 ID — 검(weapon_id=1). */
+    private static final long DEFAULT_SELECTED_WEAPON_ID = 1L;
 
     /**
      * 회원가입: loginId/nickname 중복 검증 후 BCrypt 해시한 비밀번호로 User 저장 +
@@ -59,6 +70,8 @@ public class AuthService {
      *  - user_record: cleared_chapter=0, cleared_stage=0
      *  - user_memory_progress: 모든 frame 에 대해 unlocked_mask=0 (Locked)
      *  - user_weapon_unlocks: 트리 루트 무기(parent IS NULL) 자동 해금 — 검·활·스태프
+     *  - user_talent_allocations: total_point=5, 5개 slot 분배 모두 0
+     *  - user_weapon_selection: 검(weapon_id=1) default 장착
      */
     @Transactional
     public void signup(SignupRequest request) {
@@ -93,6 +106,14 @@ public class AuthService {
         for (Weapon weapon : rootWeapons) {
             userWeaponUnlockRepository.save(UserWeaponUnlock.of(user, weapon.getId()));
         }
+
+        // 5. 재능 분배 초기값 — total_point=5, 5개 slot 모두 0
+        userTalentAllocationRepository.save(
+                UserTalentAllocation.create(user, INITIAL_TALENT_TOTAL_POINT));
+
+        // 6. default 장착 무기 — 검(weapon_id=1)
+        userWeaponSelectionRepository.save(
+                UserWeaponSelection.create(user, DEFAULT_SELECTED_WEAPON_ID));
     }
 
     /** 로그인: 비밀번호 검증 후 access/refresh 발급, refresh 해시 DB 저장, lastLoginAt 갱신 */
