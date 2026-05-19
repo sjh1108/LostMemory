@@ -112,6 +112,7 @@ namespace LostMemory.Enemies.Boss.Rena
         [SerializeField, Min(0.01f)] private float iceSweepCastDuration = 1.55f;
         [SerializeField, Min(0f)] private float iceSweepReleaseTime = 1.55f;
         [SerializeField, Min(0f)] private float iceSweepDamage = 18f;
+        [SerializeField] private Transform iceSweepAreaCenterAnchor;
         [SerializeField] private bool iceSweepCenterFollowsBoss = true;
         [SerializeField] private Vector2 iceSweepAreaCenter = Vector2.zero;
         [SerializeField] private Vector2 iceSweepAreaSize = new Vector2(24f, 12f);
@@ -129,6 +130,7 @@ namespace LostMemory.Enemies.Boss.Rena
         [SerializeField, Min(0f)] private float iceSweepPillarSpawnInterval = 0.02f;
         [SerializeField, Min(0f)] private float iceSweepWaveInterval = 0.45f;
         [SerializeField, Min(0f)] private float iceSweepCellDamageDelay = 0.08f;
+        [SerializeField, Min(0f)] private float iceSweepCellDamageActiveDuration = 0.16f;
         [SerializeField] private bool iceSweepSkipBlockedCells = true;
         [SerializeField, Min(0.01f)] private float iceSweepVisualScale = 1.4f;
         [SerializeField] private Vector2 iceSweepPillarVisualJitter = new Vector2(0.22f, 0.32f);
@@ -802,6 +804,9 @@ namespace LostMemory.Enemies.Boss.Rena
                 return;
             }
 
+            float previousMaxHealth = Mathf.Max(health.MaximumHealth, health.InitialHealth);
+            bool wasAtFullHealth = previousMaxHealth <= 0f ||
+                                   health.CurrentHealth >= previousMaxHealth - 0.01f;
             float maxHealth = Mathf.Max(0f, balanceData.MaxHealth);
             health.InitialHealth = maxHealth;
             health.MaximumHealth = maxHealth;
@@ -810,7 +815,7 @@ namespace LostMemory.Enemies.Boss.Rena
                 return;
             }
 
-            if (resetCurrentHealth)
+            if (resetCurrentHealth || wasAtFullHealth)
             {
                 health.SetHealth(maxHealth);
             }
@@ -902,10 +907,7 @@ namespace LostMemory.Enemies.Boss.Rena
                 float x = left + column * cellWidth;
                 float y = bottom + row * cellHeight;
                 Vector2 cellCenter = new Vector2(x, y);
-                if (!IsIceSweepCellBlocked(cellCenter, cellSize))
-                {
-                    SpawnIcePillarCell(cellCenter, cellSize);
-                }
+                SpawnIcePillarCell(cellCenter, cellSize, !IsIceSweepCellBlocked(cellCenter, cellSize));
             }
         }
 
@@ -1021,12 +1023,17 @@ namespace LostMemory.Enemies.Boss.Rena
 
         private Vector2 ResolveIceSweepAreaCenter()
         {
+            if (iceSweepAreaCenterAnchor != null)
+            {
+                return (Vector2)iceSweepAreaCenterAnchor.position + iceSweepAreaCenter;
+            }
+
             return iceSweepCenterFollowsBoss
                 ? (Vector2)transform.position + iceSweepAreaCenter
                 : iceSweepAreaCenter;
         }
 
-        private void SpawnIcePillarCell(Vector2 center, Vector2 size)
+        private void SpawnIcePillarCell(Vector2 center, Vector2 size, bool showVisual)
         {
             GameObject areaObject = new GameObject("RenaIcePillarArea");
             RenaBossIcePillarArea area = areaObject.AddComponent<RenaBossIcePillarArea>();
@@ -1038,10 +1045,12 @@ namespace LostMemory.Enemies.Boss.Rena
                 size,
                 iceSweepDamage,
                 iceSweepCellDamageDelay,
+                iceSweepCellDamageActiveDuration,
                 targetInvincibilityDuration,
                 ResolveIceSweepPillarVisualOffset(size),
                 iceSweepPillarVisualRows,
                 iceSweepVisualScale,
+                showVisual,
                 iceSweepFrames,
                 iceSweepAnimationFrameRate,
                 string.IsNullOrWhiteSpace(iceSweepSortingLayerName) ? projectileSortingLayerName : iceSweepSortingLayerName,
@@ -1060,9 +1069,15 @@ namespace LostMemory.Enemies.Boss.Rena
 
         private bool IsIceSweepCellBlocked(Vector2 center, Vector2 size)
         {
-            return iceSweepSkipBlockedCells
-                   && obstacleLayerMask.value != 0
-                   && Physics2D.OverlapBox(center, size * 0.9f, 0f, obstacleLayerMask) != null;
+            if (!iceSweepSkipBlockedCells || obstacleLayerMask.value == 0)
+            {
+                return false;
+            }
+
+            Vector2 probeSize = new Vector2(
+                Mathf.Max(0.05f, Mathf.Min(size.x * 0.9f, 0.75f)),
+                Mathf.Max(0.05f, Mathf.Min(size.y * 0.9f, 0.75f)));
+            return Physics2D.OverlapBox(center, probeSize, 0f, obstacleLayerMask) != null;
         }
 
         private int ResolveIceSweepAttackCount()
