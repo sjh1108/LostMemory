@@ -5,6 +5,7 @@ import com.lostmemory.website.faqcategory.entity.FaqCategory;
 import com.lostmemory.website.faqcategory.service.FaqCategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,11 +17,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/admin/faq-categories")
+@RequestMapping("${app.admin.base-path}/faq-categories")
 @RequiredArgsConstructor
 public class FaqCategoryAdminController {
 
     private final FaqCategoryService service;
+
+    @Value("${app.admin.base-path}")
+    private String adminBase;
 
     @GetMapping
     public String list(Model model) {
@@ -44,7 +48,7 @@ public class FaqCategoryAdminController {
         }
         service.create(form);
         ra.addFlashAttribute("message", "FAQ 카테고리 저장 완료");
-        return "redirect:/admin/faq-categories";
+        return "redirect:" + adminBase + "/faq-categories";
     }
 
     @GetMapping("/{id}/edit")
@@ -67,13 +71,13 @@ public class FaqCategoryAdminController {
         }
         service.update(id, form);
         ra.addFlashAttribute("message", "FAQ 카테고리 갱신 완료");
-        return "redirect:/admin/faq-categories";
+        return "redirect:" + adminBase + "/faq-categories";
     }
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         service.delete(id);
         ra.addFlashAttribute("message", "FAQ 카테고리 삭제 완료. 연결된 FAQ 는 미분류로 이동.");
-        return "redirect:/admin/faq-categories";
+        return "redirect:" + adminBase + "/faq-categories";
     }
 }

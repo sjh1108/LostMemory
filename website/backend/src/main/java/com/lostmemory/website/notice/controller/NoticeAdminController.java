@@ -5,6 +5,7 @@ import com.lostmemory.website.notice.entity.Notice;
 import com.lostmemory.website.notice.service.NoticeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,11 +17,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/admin/notices")
+@RequestMapping("${app.admin.base-path}/notices")
 @RequiredArgsConstructor
 public class NoticeAdminController {
 
     private final NoticeService service;
+
+    @Value("${app.admin.base-path}")
+    private String adminBase;
 
     @GetMapping
     public String list(Model model) {
@@ -45,7 +49,7 @@ public class NoticeAdminController {
         // MVP — authorId 단순화 (null). 추후 SecurityContext 의 username → admin_user.id lookup.
         service.create(form, null);
         ra.addFlashAttribute("message", "공지 저장 완료");
-        return "redirect:/admin/notices";
+        return "redirect:" + adminBase + "/notices";
     }
 
     @GetMapping("/{id}/edit")
@@ -68,13 +72,13 @@ public class NoticeAdminController {
         }
         service.update(id, form);
         ra.addFlashAttribute("message", "공지 갱신 완료");
-        return "redirect:/admin/notices";
+        return "redirect:" + adminBase + "/notices";
     }
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         service.delete(id);
         ra.addFlashAttribute("message", "공지 삭제 완료");
-        return "redirect:/admin/notices";
+        return "redirect:" + adminBase + "/notices";
     }
 }

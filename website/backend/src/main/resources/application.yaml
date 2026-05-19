@@ -38,6 +38,12 @@ admin:
     username: ${ADMIN_USERNAME}
     password: ${ADMIN_PASSWORD}
 
+# Admin URL obscure path — surface 축소용. .env 의 ADMIN_BASE_PATH 운영자 임의값.
+# silent fallback X (envvar 정책 준수, .env 누락 시 BindException 강제 fail).
+app:
+  admin:
+    base-path: ${ADMIN_BASE_PATH}
+
 logging:
   level:
     org.springframework.security: INFO

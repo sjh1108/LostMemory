@@ -8,7 +8,7 @@
 <main class="site-main">
   <h2 th:text="${faqId == null ? '새 FAQ 추가' : 'FAQ 편집'}">FAQ</h2>
 
-  <form th:action="${faqId == null} ? @{/admin/faqs} : @{/admin/faqs/{id}(id=${faqId})}"
+  <form th:action="${faqId == null} ? @{__${adminBase}__/faqs} : @{__${adminBase}__/faqs/{id}(id=${faqId})}"
         method="post" th:object="${form}" class="admin-form">
     <div>
       <label for="question">질문</label>
@@ -41,7 +41,7 @@
     </div>
     <div>
       <input type="submit" value="저장">
-      <a th:href="@{/admin/faqs}" style="margin-left:1rem">취소</a>
+      <a th:href="@{__${adminBase}__/faqs}" style="margin-left:1rem">취소</a>
     </div>
   </form>
 </main>

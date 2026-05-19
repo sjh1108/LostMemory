@@ -10,7 +10,7 @@
 
   <div th:if="${message}" class="flash" th:text="${message}"></div>
 
-  <p><a th:href="@{/admin/faqs/new}">+ 새 FAQ 추가</a></p>
+  <p><a th:href="@{__${adminBase}__/faqs/new}">+ 새 FAQ 추가</a></p>
 
   <table class="admin-table">
     <thead>
@@ -20,11 +20,11 @@
       <tr th:each="f : ${faqs}">
         <td th:text="${f.id}">1</td>
         <td th:text="${f.category != null ? f.category.name : '(미분류)'}">카테고리</td>
-        <td><a th:href="@{/admin/faqs/{id}/edit(id=${f.id})}" th:text="${f.question}">질문</a></td>
+        <td><a th:href="@{__${adminBase}__/faqs/{id}/edit(id=${f.id})}" th:text="${f.question}">질문</a></td>
         <td th:text="${f.sortOrder}">0</td>
         <td th:text="${f.published} ? '공개' : '비공개'">공개</td>
         <td>
-          <form th:action="@{/admin/faqs/{id}/delete(id=${f.id})}" method="post" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?')">
+          <form th:action="@{__${adminBase}__/faqs/{id}/delete(id=${f.id})}" method="post" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?')">
             <button type="submit" class="btn-danger">삭제</button>
           </form>
         </td>

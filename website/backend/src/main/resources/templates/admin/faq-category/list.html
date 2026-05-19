@@ -10,7 +10,7 @@
 
   <div th:if="${message}" class="flash" th:text="${message}"></div>
 
-  <p><a th:href="@{/admin/faq-categories/new}">+ 새 카테고리 추가</a></p>
+  <p><a th:href="@{__${adminBase}__/faq-categories/new}">+ 새 카테고리 추가</a></p>
 
   <table class="admin-table">
     <thead>
@@ -19,11 +19,11 @@
     <tbody>
       <tr th:each="c : ${categories}">
         <td th:text="${c.id}">1</td>
-        <td><a th:href="@{/admin/faq-categories/{id}/edit(id=${c.id})}" th:text="${c.name}">카테고리</a></td>
+        <td><a th:href="@{__${adminBase}__/faq-categories/{id}/edit(id=${c.id})}" th:text="${c.name}">카테고리</a></td>
         <td th:text="${c.sortOrder}">0</td>
         <td th:text="${c.published} ? '공개' : '비공개'">공개</td>
         <td>
-          <form th:action="@{/admin/faq-categories/{id}/delete(id=${c.id})}" method="post" style="display:inline"
+          <form th:action="@{__${adminBase}__/faq-categories/{id}/delete(id=${c.id})}" method="post" style="display:inline"
                 onsubmit="return confirm('삭제하시겠습니까? 연결된 FAQ 는 미분류로 이동합니다.')">
             <button type="submit" class="btn-danger">삭제</button>
           </form>

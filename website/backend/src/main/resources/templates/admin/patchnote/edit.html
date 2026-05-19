@@ -8,7 +8,7 @@
 <main class="site-main">
   <h2 th:text="${patchNoteId == null ? '새 패치노트 작성' : '패치노트 편집'}">패치노트</h2>
 
-  <form th:action="${patchNoteId == null} ? @{/admin/patch-notes} : @{/admin/patch-notes/{id}(id=${patchNoteId})}"
+  <form th:action="${patchNoteId == null} ? @{__${adminBase}__/patch-notes} : @{__${adminBase}__/patch-notes/{id}(id=${patchNoteId})}"
         method="post" th:object="${form}" class="admin-form">
     <div>
       <label for="version">버전 (예: v1.0.0)</label>
@@ -45,7 +45,7 @@
     </div>
     <div>
       <input type="submit" value="저장">
-      <a th:href="@{/admin/patch-notes}" style="margin-left:1rem">취소</a>
+      <a th:href="@{__${adminBase}__/patch-notes}" style="margin-left:1rem">취소</a>
     </div>
   </form>
 </main>

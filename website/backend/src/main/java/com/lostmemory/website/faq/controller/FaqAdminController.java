@@ -6,6 +6,7 @@ import com.lostmemory.website.faq.service.FaqService;
 import com.lostmemory.website.faqcategory.service.FaqCategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,12 +18,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/admin/faqs")
+@RequestMapping("${app.admin.base-path}/faqs")
 @RequiredArgsConstructor
 public class FaqAdminController {
 
     private final FaqService service;
     private final FaqCategoryService categoryService;
+
+    @Value("${app.admin.base-path}")
+    private String adminBase;
 
     @GetMapping
     public String list(Model model) {
@@ -49,7 +53,7 @@ public class FaqAdminController {
         }
         service.create(form);
         ra.addFlashAttribute("message", "FAQ 저장 완료");
-        return "redirect:/admin/faqs";
+        return "redirect:" + adminBase + "/faqs";
     }
 
     @GetMapping("/{id}/edit")
@@ -74,13 +78,13 @@ public class FaqAdminController {
         }
         service.update(id, form);
         ra.addFlashAttribute("message", "FAQ 갱신 완료");
-        return "redirect:/admin/faqs";
+        return "redirect:" + adminBase + "/faqs";
     }
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         service.delete(id);
         ra.addFlashAttribute("message", "FAQ 삭제 완료");
-        return "redirect:/admin/faqs";
+        return "redirect:" + adminBase + "/faqs";
     }
 }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('건의/버그 리포트')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="site-main">
+  <h2>건의/버그 리포트</h2>
+  <p class="entry-meta">게임 운영에 도움이 되는 건의나 버그 신고를 보내주세요. 운영자가 직접 확인합니다.</p>
+
+  <form th:action="@{/feedback}" method="post" th:object="${form}" class="admin-form">
+    <div>
+      <label for="category">카테고리</label>
+      <select id="category" th:field="*{category}" required>
+        <option value="" disabled th:selected="${form.category == null}">— 선택 —</option>
+        <option th:each="c : ${categories}" th:value="${c}" th:text="${c.displayName}">카테고리</option>
+      </select>
+      <div class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></div>
+    </div>
+    <div>
+      <label for="title">제목</label>
+      <input type="text" id="title" th:field="*{title}" maxlength="200" required>
+      <div class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+    </div>
+    <div>
+      <label for="body">본문</label>
+      <textarea id="body" th:field="*{body}" rows="8" required></textarea>
+      <div class="field-error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
+    </div>
+    <div>
+      <label for="contact">연락처 (선택 — 이메일 / 디스코드 / Discord ID)</label>
+      <input type="text" id="contact" th:field="*{contact}" maxlength="255">
+      <div class="field-hint">답변이 필요하면 입력해주세요. 비워두면 익명 제출.</div>
+      <div class="field-error" th:if="${#fields.hasErrors('contact')}" th:errors="*{contact}"></div>
+    </div>
+    <div>
+      <input type="submit" value="제출">
+      <a th:href="@{/}" style="margin-left:1rem">취소</a>
+    </div>
+  </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
