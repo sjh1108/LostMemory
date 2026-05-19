@@ -29,6 +29,11 @@ dependencies {
     // Thymeleaf Spring Security dialect — sec:authorize 등 사용 가능
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
+    // Markdown 렌더링 — commonmark-java 파싱 + HtmlRenderer, jsoup safelist sanitize
+    implementation 'org.commonmark:commonmark:0.21.0'
+    implementation 'org.commonmark:commonmark-ext-autolink:0.21.0'
+    implementation 'org.jsoup:jsoup:1.17.2'
+
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'

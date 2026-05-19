@@ -7,7 +7,7 @@
 <main class="site-main">
   <h2 th:text="${notice.title}">제목</h2>
   <div class="entry-meta" th:text="${#temporals.format(notice.createdAt, 'yyyy-MM-dd HH:mm')}">날짜</div>
-  <pre style="white-space:pre-wrap;margin-top:1rem;background:transparent;padding:0;color:var(--fg)" th:text="${notice.body}">본문</pre>
+  <div class="markdown-body" th:utext="${bodyHtml}">본문</div>
 
   <p style="margin-top:2rem"><a th:href="@{/notices}">← 목록으로</a></p>
 </main>
