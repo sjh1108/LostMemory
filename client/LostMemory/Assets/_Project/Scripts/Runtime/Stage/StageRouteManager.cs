@@ -66,6 +66,7 @@ namespace LostMemory.Stage
         [SerializeField] private bool dontDestroyOnLoad = true;
         [SerializeField] private bool placePlayersAfterSceneLoad = true;
         [SerializeField] private bool destroyWhenSceneOutsideRoute = true;
+        [SerializeField] private bool completeDefaultRouteIfIncomplete = true;
         [SerializeField] private Vector3 playerSpawnOffset = new Vector3(0.75f, 0f, 0f);
         [SerializeField] private bool debugLogging = true;
 
@@ -107,6 +108,7 @@ namespace LostMemory.Stage
             }
 
             Instance = this;
+            CompleteDefaultRouteIfIncompleteForActiveScene();
             currentNodeIndex = Mathf.Clamp(initialNodeIndex, 0, Mathf.Max(0, routeNodes.Length - 1));
 
             if (dontDestroyOnLoad)
@@ -128,6 +130,54 @@ namespace LostMemory.Stage
             {
                 Instance = null;
             }
+        }
+
+        private void CompleteDefaultRouteIfIncompleteForActiveScene()
+        {
+            if (!completeDefaultRouteIfIncomplete)
+            {
+                return;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() ||
+                !StageRouteDefaults.TryResolveRouteIndex(activeScene.name, out int routeNodeIndex))
+            {
+                return;
+            }
+
+            StageRouteManager.RouteNode[] defaultNodes = StageRouteDefaults.CreateRouteNodes();
+            if (HasRouteCoverage(defaultNodes))
+            {
+                return;
+            }
+
+            routeNodes = defaultNodes;
+            initialNodeIndex = routeNodeIndex;
+            Log($"Completed default dungeon route for scene '{activeScene.name}' at node index {routeNodeIndex}.");
+        }
+
+        private bool HasRouteCoverage(RouteNode[] expectedNodes)
+        {
+            if (routeNodes == null || expectedNodes == null || routeNodes.Length < expectedNodes.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < expectedNodes.Length; i++)
+            {
+                RouteNode current = routeNodes[i];
+                RouteNode expected = expectedNodes[i];
+                if (current == null ||
+                    expected == null ||
+                    current.SceneName != expected.SceneName ||
+                    current.ExitTriggerId != expected.ExitTriggerId)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public bool RequestAdvanceRouteNode(string triggerId, Character requester)
@@ -180,6 +230,22 @@ namespace LostMemory.Stage
             return current == null ||
                    string.IsNullOrEmpty(current.ExitTriggerId) ||
                    current.ExitTriggerId == triggerId;
+        }
+
+        public bool CanAdvanceCurrentRouteNode()
+        {
+            return TryGetCurrentRouteExitTriggerId(out string triggerId) &&
+                   CanAdvanceRouteNode(triggerId);
+        }
+
+        public bool RequestAdvanceCurrentRouteNode(Character requester)
+        {
+            if (!TryGetCurrentRouteExitTriggerId(out string triggerId))
+            {
+                return false;
+            }
+
+            return RequestAdvanceRouteNode(triggerId, requester);
         }
 
         public bool LoadRouteNode(int nodeIndex)
@@ -236,6 +302,25 @@ namespace LostMemory.Stage
             }
 
             return TryLoadRouteNode(currentNodeIndex + 1);
+        }
+
+        private bool TryGetCurrentRouteExitTriggerId(out string triggerId)
+        {
+            triggerId = string.Empty;
+
+            if (routeNodes == null || currentNodeIndex < 0 || currentNodeIndex >= routeNodes.Length)
+            {
+                return false;
+            }
+
+            RouteNode current = routeNodes[currentNodeIndex];
+            if (current == null)
+            {
+                return false;
+            }
+
+            triggerId = current.ExitTriggerId;
+            return true;
         }
 
         private bool TryLoadRouteNode(int nodeIndex)

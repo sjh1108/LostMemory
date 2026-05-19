@@ -15,6 +15,18 @@ namespace LostMemory.Stage
         public string EntryPointId => entryPointId;
         public Character.FacingDirections FacingDirection => facingDirection;
 
+        public void Configure(
+            string configuredEntryPointId,
+            Character.FacingDirections configuredFacingDirection,
+            Transform[] configuredArrivalPoints = null)
+        {
+            entryPointId = string.IsNullOrWhiteSpace(configuredEntryPointId)
+                ? "Boss"
+                : configuredEntryPointId;
+            facingDirection = configuredFacingDirection;
+            arrivalPoints = configuredArrivalPoints ?? Array.Empty<Transform>();
+        }
+
         public bool Matches(string candidateId)
         {
             return !string.IsNullOrWhiteSpace(entryPointId) &&

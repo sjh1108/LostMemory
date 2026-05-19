@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 4634257511837238534}
   - component: {fileID: 6656129598841737112}
   - component: {fileID: 9004953548928854438}
+  - component: {fileID: 3299514422427016927}
   m_Layer: 0
   m_Name: RenaRoot
   m_TagString: Boss
@@ -521,11 +522,11 @@ MonoBehaviour:
   phaseTwoIntroStateName: Rest
   phaseTwoFallbackIntroStateName: Entry
   phaseTwoAnimatorIntroDuration: 2.25
-  phaseTwoInfernoStateName: Pose2
   makeInvulnerableDuringPhaseTransition: 1
   phaseTwoOpeningInfernoDelay: 0.9
   phaseTwoInfernoProjectileCount: 6
   phaseTwoInfernoTotalSpreadAngle: 72
+  phaseTwoInfernoStateName: Pose2
   firstThunderStrikeDelay: 5
   thunderStrikeCooldown: 13
   thunderStrikeRange: 14
@@ -846,3 +847,19 @@ MonoBehaviour:
   forceImmediateStatePlay: 1
   forceAnimatorUpdate: 1
   keepDeathStateLocked: 1
+--- !u!114 &3299514422427016927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4383979573215819367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddf343186ec14c02a5705090ea3d395d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossDefeatRoomClearController
+  bossHealth: {fileID: 2685329039481583086}
+  roomController: {fileID: 0}
+  clearDelaySeconds: 0
+  debugLogging: 0

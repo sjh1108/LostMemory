@@ -9,14 +9,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c7800ab121f38b24faea2380dfe76202, type: 3}
+  m_Script: {fileID: 11500000, guid: f3cbd1ad5c074d4e88ec2f032da13ef9, type: 3}
   m_Name: EnemyData_SkeletonElite
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.EnemyData
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.SkeletonEliteData
   _displayName: Skeleton Elite
-  _maxHealth: 65
+  _maxHealth: 150
   _moveSpeed: 2.05
   _attackDamages:
   - _attackType: 0
-    _damage: 9
+    _damage: 25
   _expReward: 0
   _dropWeight: 1
+  _shieldHealth: 100
