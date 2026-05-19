@@ -16,10 +16,12 @@ namespace LostMemory.Enemies.Boss.Rena
         [SerializeField] private Vector2 areaSize = new Vector2(2f, 3f);
         [SerializeField, Min(0f)] private float damage = 18f;
         [SerializeField, Min(0f)] private float damageDelay = 0.08f;
+        [SerializeField, Min(0f)] private float damageActiveDuration = 0.16f;
         [SerializeField, Min(0f)] private float invincibilityDuration = 0.35f;
         [SerializeField] private Vector2 visualOffset = Vector2.zero;
         [SerializeField, Min(1)] private int visualRows = 1;
         [SerializeField, Min(0.01f)] private float visualScale = 1.4f;
+        [SerializeField] private bool visualEnabled = true;
         [SerializeField, Min(0f)] private float animationFrameRate = 18f;
         [SerializeField] private string sortingLayerName = "Foreground";
         [SerializeField] private int sortingOrder = 28;
@@ -29,7 +31,7 @@ namespace LostMemory.Enemies.Boss.Rena
         private readonly HashSet<Health> _hitTargets = new HashSet<Health>();
         private readonly List<SpriteRenderer> _renderers = new List<SpriteRenderer>();
         private float _elapsed;
-        private bool _damaged;
+        private bool _damageWindowCompleted;
 
         private void Update()
         {
@@ -40,10 +42,10 @@ namespace LostMemory.Enemies.Boss.Rena
             }
 
             _elapsed += Time.deltaTime;
-            if (!_damaged && _elapsed >= damageDelay)
+            if (!_damageWindowCompleted && _elapsed >= damageDelay)
             {
-                _damaged = true;
                 DamageTargets();
+                _damageWindowCompleted = IsDamageWindowComplete();
             }
 
             UpdateAnimation();
@@ -57,10 +59,12 @@ namespace LostMemory.Enemies.Boss.Rena
             Vector2 configuredAreaSize,
             float configuredDamage,
             float configuredDamageDelay,
+            float configuredDamageActiveDuration,
             float configuredInvincibilityDuration,
             Vector2 configuredVisualOffset,
             int configuredVisualRows,
             float configuredVisualScale,
+            bool configuredVisualEnabled,
             Sprite[] configuredFrames,
             float configuredAnimationFrameRate,
             string configuredSortingLayerName,
@@ -76,10 +80,12 @@ namespace LostMemory.Enemies.Boss.Rena
                 Mathf.Max(0.05f, configuredAreaSize.y));
             damage = Mathf.Max(0f, configuredDamage);
             damageDelay = Mathf.Max(0f, configuredDamageDelay);
+            damageActiveDuration = Mathf.Max(0f, configuredDamageActiveDuration);
             invincibilityDuration = Mathf.Max(0f, configuredInvincibilityDuration);
             visualOffset = configuredVisualOffset;
             visualRows = Mathf.Max(1, configuredVisualRows);
             visualScale = Mathf.Max(0.01f, configuredVisualScale);
+            visualEnabled = configuredVisualEnabled;
             frames = configuredFrames ?? Array.Empty<Sprite>();
             animationFrameRate = Mathf.Max(0f, configuredAnimationFrameRate);
             sortingLayerName = configuredSortingLayerName;
@@ -87,7 +93,7 @@ namespace LostMemory.Enemies.Boss.Rena
             debugLogging = configuredDebugLogging;
 
             _elapsed = 0f;
-            _damaged = false;
+            _damageWindowCompleted = false;
             _hitTargets.Clear();
             EnsureRenderers();
             ApplyVisualTransforms();
@@ -145,7 +151,8 @@ namespace LostMemory.Enemies.Boss.Rena
 
         private void EnsureRenderers()
         {
-            while (_renderers.Count < visualRows)
+            int targetVisualRows = visualEnabled ? visualRows : 0;
+            while (_renderers.Count < targetVisualRows)
             {
                 GameObject visualObject = new GameObject("Visual");
                 visualObject.transform.SetParent(transform, false);
@@ -154,7 +161,7 @@ namespace LostMemory.Enemies.Boss.Rena
                 _renderers.Add(renderer);
             }
 
-            for (int i = _renderers.Count - 1; i >= visualRows; i--)
+            for (int i = _renderers.Count - 1; i >= targetVisualRows; i--)
             {
                 SpriteRenderer renderer = _renderers[i];
                 if (renderer != null)
@@ -189,20 +196,47 @@ namespace LostMemory.Enemies.Boss.Rena
 
         private void UpdateAnimation()
         {
+            if (!visualEnabled)
+            {
+                DestroyIfDamageWindowComplete();
+                return;
+            }
+
             if (animationFrameRate <= 0f || frames == null || frames.Length == 0)
             {
-                Destroy(gameObject);
+                DestroyIfDamageWindowComplete();
                 return;
             }
 
             int frameIndex = Mathf.FloorToInt(_elapsed * animationFrameRate);
             if (frameIndex >= frames.Length)
             {
-                Destroy(gameObject);
+                if (IsDamageWindowComplete())
+                {
+                    Destroy(gameObject);
+                }
+                else
+                {
+                    ApplyFrame(frames.Length - 1);
+                }
+
                 return;
             }
 
             ApplyFrame(frameIndex);
+        }
+
+        private bool IsDamageWindowComplete()
+        {
+            return _elapsed >= damageDelay + damageActiveDuration;
+        }
+
+        private void DestroyIfDamageWindowComplete()
+        {
+            if (IsDamageWindowComplete())
+            {
+                Destroy(gameObject);
+            }
         }
 
         private void ApplyFrame(int frameIndex)
