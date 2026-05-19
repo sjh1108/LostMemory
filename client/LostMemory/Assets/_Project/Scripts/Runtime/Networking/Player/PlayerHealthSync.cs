@@ -121,15 +121,126 @@ namespace LostMemory.Networking.Player
             _downController = GetComponent<KhiDownController>();
         }
 
+        // SceneManager.activeSceneChanged hook — RPC 가 LoadScene 시점 race 로 무효될 가능성 대비.
+        // 자기 측에서 자동 reset 호출 (idempotent — RPC 와 중복 호출 무해).
+        private void OnEnable()
+        {
+            SceneManager.activeSceneChanged += HandleActiveSceneChangedForReset;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.activeSceneChanged -= HandleActiveSceneChangedForReset;
+        }
+
+        private void HandleActiveSceneChangedForReset(Scene previous, Scene current)
+        {
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] activeSceneChanged ({previous.name} -> {current.name}) — Animator force reset. {gameObject.name}", this);
+
+            // server 측 KhiDownController 가 Defeated 면 reset.
+            if (IsServer && _downController != null && _downController.IsDefeated)
+            {
+                _downController.DebugRespawn();
+            }
+
+            // 사망 잔재 flag 있으면 전체 reset.
+            if (_deathTriggered || _visualHiddenAfterDefeat || _ownerComponentsDisabledForDown)
+            {
+                ApplyLocalDeathReset();
+            }
+            else
+            {
+                // 잔재 flag 없어도 Animator 만 한 번 더 default state 강제 (LoadScene 후 Dead state 잔재 대비).
+                ForceAnimatorToDefaultState();
+            }
+        }
+
         /// <summary>
         /// server 가 호출 — 모든 PlayerHealthSync server 인스턴스에 대해 사망 상태 reset ClientRpc 발화.
         /// 마을 복귀 / 다음 던전 진입 등 게스트 사망 잔재 정리용. 씬 전환 이벤트 의존성 제거 (server-authoritative 단일 트리거).
         /// </summary>
+        /// <summary>
+        /// 정공법 — server 가 모든 PlayerObject 를 Despawn(destroy=true) 후 새 씬 LoadScene 완료 시점에 PlayerPrefab 으로 fresh 재 spawn.
+        /// DontDestroyOnLoad 인 player 가 사망 상태를 유지하는 문제를 근본 해결 (사망 잔재 거꾸로 풀기 불필요).
+        /// 호스트가 LoadScene 전에 호출 — 콜백이 LoadScene 완료 후 재 spawn 처리.
+        /// </summary>
+        public static void RespawnPlayersAfterSceneLoad()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsServer) return;
+
+            GameObject playerPrefab = nm.NetworkConfig.PlayerPrefab;
+            if (playerPrefab == null)
+            {
+                Debug.LogWarning("[PlayerHealthSync] NetworkManager.NetworkConfig.PlayerPrefab is null — fresh respawn 불가. 인스펙터에서 PlayerPrefab 등록 필요.");
+                return;
+            }
+
+            // OnLoadEventCompleted — 모든 client 가 새 씬 로드 완료 후 발화. 그 시점에 fresh PlayerObject 재 spawn.
+            // local function 패턴 — delegate type 명시 없이 method group 으로 register/unregister.
+            void OnLoadCompleted(string sceneName, LoadSceneMode loadMode, System.Collections.Generic.List<ulong> clientsCompleted, System.Collections.Generic.List<ulong> clientsTimedOut)
+            {
+                nm.SceneManager.OnLoadEventCompleted -= OnLoadCompleted;
+                Debug.Log($"[PlayerHealthSync] OnLoadEventCompleted scene={sceneName} — respawning {clientsCompleted.Count} player(s).");
+
+                // ConnectedClientsIds snapshot — spawn 중 변경 대비.
+                ulong[] clientIds = new ulong[nm.ConnectedClientsIds.Count];
+                int idx = 0;
+                foreach (ulong id in nm.ConnectedClientsIds) clientIds[idx++] = id;
+
+                for (int i = 0; i < clientIds.Length; i++)
+                {
+                    ulong clientId = clientIds[i];
+                    GameObject inst = GameObject.Instantiate(playerPrefab);
+                    NetworkObject no = inst.GetComponent<NetworkObject>();
+                    if (no == null)
+                    {
+                        Debug.LogWarning($"[PlayerHealthSync] PlayerPrefab missing NetworkObject. clientId={clientId}");
+                        GameObject.Destroy(inst);
+                        continue;
+                    }
+                    no.SpawnAsPlayerObject(clientId, destroyWithScene: false);
+                    Debug.Log($"[PlayerHealthSync] Respawned PlayerObject for clientId={clientId}");
+                }
+            }
+            nm.SceneManager.OnLoadEventCompleted += OnLoadCompleted;
+
+            // 기존 PlayerObject Despawn — destroy=true 로 GameObject 자체 destroy + NGO sync 로 모든 client 도 destroy.
+            ulong[] existingClientIds = new ulong[nm.ConnectedClientsIds.Count];
+            int j = 0;
+            foreach (ulong id in nm.ConnectedClientsIds) existingClientIds[j++] = id;
+
+            for (int i = 0; i < existingClientIds.Length; i++)
+            {
+                ulong clientId = existingClientIds[i];
+                if (nm.ConnectedClients.TryGetValue(clientId, out NetworkClient client) && client.PlayerObject != null)
+                {
+                    Debug.Log($"[PlayerHealthSync] Despawn old PlayerObject clientId={clientId}");
+                    client.PlayerObject.Despawn(destroy: true);
+                }
+            }
+        }
+
         public static void BroadcastResetDeathStateForAll()
         {
             foreach (PlayerHealthSync p in _serverInstances)
             {
                 if (p == null) continue;
+                // server 측 player GameObject 가 TDE Health 의 DelayBeforeDestruction 처리로 inactive 됐을 수 있음.
+                // RPC 발화 전 active 화 (NetworkBehaviour 가 inactive 면 ClientRpc 안 보내짐).
+                if (!p.gameObject.activeSelf)
+                {
+                    p.gameObject.SetActive(true);
+                }
+
+                // KhiDownController._state 가 Defeated 면 Normal 로 복귀 — DebugRespawn 활용 (Health.Revive + _state=Normal).
+                // 이걸 안 하면 server 측 LateUpdate 가 _state=Defeated 매 프레임 추적 → _syncedDownState=Defeated 유지
+                // → 모든 client 에서 Dead state 강제 → 도착 후 즉사 모션.
+                if (p._downController != null && p._downController.IsDefeated)
+                {
+                    p._downController.DebugRespawn();
+                }
+
                 if (!p.IsSpawned) continue;
                 p.ResetDeathStateClientRpc();
             }
@@ -138,10 +249,22 @@ namespace LostMemory.Networking.Player
         [ClientRpc]
         private void ResetDeathStateClientRpc()
         {
-            // 가드 — 이미 사망 잔재가 없으면 noop. (Visual hidden 도 reset 대상이라 포함.)
-            if (!_deathTriggered && !_showDeathOverlayOnGui && !_visualHiddenAfterDefeat) return;
-
             if (verboseLog) Debug.Log($"[PlayerHealthSync] Reset death state broadcast received. IsServer={IsServer} IsOwner={IsOwner} {gameObject.name}", this);
+            ApplyLocalDeathReset();
+        }
+
+        /// <summary>
+        /// Local 측 사망 잔재 reset — RPC 본문 + SceneManager.activeSceneChanged fallback 공용.
+        /// LoadScene 시 RPC 가 NetworkObject destroy/recreate 와 race 일으킬 수 있어 scene change hook 으로 safety net.
+        /// </summary>
+        private void ApplyLocalDeathReset()
+        {
+
+            // 0. GameObject 자체 active 화 — TDE Health 가 inactive 처리한 경우 복구.
+            if (!gameObject.activeSelf)
+            {
+                gameObject.SetActive(true);
+            }
 
             // 1. 상태 flag reset.
             _deathTriggered = false;
@@ -180,15 +303,53 @@ namespace LostMemory.Networking.Player
                 ReenableComponentsByName(new[] { "KhiAnimatorMovementBinder", "KhiSpriteFlipBinder" });
             }
 
-            // 7. Health re-enable damage + 최대 체력 복구 (게스트 측은 server sync 받아 자동, 호스트 측은 자체 처리).
+            // 7. Health 부활 + 최대 체력 복구.
+            // server: Revive + SetHealth(Max) → _syncedHealth NetworkVariable 갱신 → 게스트도 sync.
+            // 게스트: DamageEnabled 만 (server sync 받아 health 자동 복구). 명시적 SetHealth 도 호출 — sync 도착 전 즉시 visual.
             if (health != null)
             {
                 health.DamageEnabled();
-                if (IsServer && health.CurrentHealth <= 0f)
+                if (IsServer)
                 {
+                    health.Revive();
+                    health.SetHealth(health.MaximumHealth);
+                }
+                else
+                {
+                    // 게스트: server sync 보장 전 자기 측 즉시 복구 — 시각적 일관성.
                     health.SetHealth(health.MaximumHealth);
                 }
             }
+
+            // 8. Animator state 강제 reset — Dead/Down state 머물러 있는 경우 default state 복귀.
+            // Rebind + Play(0) 명시적 default state 호출 두 단계 모두 시도.
+            ForceAnimatorToDefaultState();
+
+            // 9. 다음 프레임에 한 번 더 Animator reset — LoadScene/OnEnable 등으로 인한 state 변화 대응.
+            if (isActiveAndEnabled)
+            {
+                StartCoroutine(DelayedAnimatorResetCoroutine());
+            }
+        }
+
+        private void ForceAnimatorToDefaultState()
+        {
+            Animator a = ResolveTargetAnimator();
+            if (a == null || !a.isActiveAndEnabled) return;
+
+            if (!string.IsNullOrWhiteSpace(downAnimatorTrigger)) a.ResetTrigger(downAnimatorTrigger);
+            if (!string.IsNullOrWhiteSpace(deathAnimatorTrigger)) a.ResetTrigger(deathAnimatorTrigger);
+            a.Rebind();
+            a.Update(0f);
+            // Rebind 후에도 default state 진입 안 한 케이스 대비 — Play(0) 가 hash 0 = default state 명시.
+            a.Play(0, 0, 0f);
+            a.Update(0f);
+        }
+
+        private IEnumerator DelayedAnimatorResetCoroutine()
+        {
+            yield return null; // 다음 프레임
+            ForceAnimatorToDefaultState();
         }
 
         private void ReenableComponentsByName(string[] names)

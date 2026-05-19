@@ -68,6 +68,13 @@ namespace LostMemory.Stage
         [SerializeField, Tooltip("Editor Play Mode에서 Build Settings 이름 로드가 막힐 때 사용할 Town 씬 경로.")]
         private string townScenePath = "Assets/_Project/Scenes/Town/Town.unity";
 
+        [SerializeField, Tooltip("멀티 세션 활성 시 결과창 마을로 버튼을 눌렀을 때 로드할 로비 씬 이름. " +
+            "비워두면 기존 townSceneName 흐름 (솔로 경로) 유지. NGO SceneManager.LoadScene 으로 호스트가 트리거 → 모든 클라 sync, 세션 유지.")]
+        private string lobbySceneName = string.Empty;
+
+        [SerializeField, Tooltip("Editor Play Mode 또는 build 안 등록 시 fallback 으로 사용할 로비 씬 경로.")]
+        private string lobbyScenePath = string.Empty;
+
         [SerializeField, Tooltip("Result Restart button target dungeon start scene name.")]
         private string restartDungeonSceneName = "Dungeon_1F_1R";
 
@@ -561,12 +568,6 @@ namespace LostMemory.Stage
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(townSceneName))
-            {
-                Debug.LogWarning("[RunManager] Town scene name is empty.", this);
-                return;
-            }
-
             NetworkManager networkManager = NetworkManager.Singleton;
             bool networkSessionActive = networkManager != null && networkManager.IsListening;
             if (networkSessionActive && !networkManager.IsServer)
@@ -575,60 +576,83 @@ namespace LostMemory.Stage
                 return;
             }
 
-            bool canLoadSceneName = Application.CanStreamedLevelBeLoaded(townSceneName);
-            if (!canLoadSceneName && !CanUseEditorTownScenePath(networkSessionActive))
+            // 멀티 분기 — lobbySceneName 이 set 된 경우만 lobby 경로. 솔로 또는 lobby 미지정 시 기존 town 흐름 그대로.
+            bool useLobbyScene = networkSessionActive && !string.IsNullOrWhiteSpace(lobbySceneName);
+            string targetSceneName = useLobbyScene ? lobbySceneName : townSceneName;
+            string targetScenePath = useLobbyScene ? lobbyScenePath : townScenePath;
+
+            if (string.IsNullOrWhiteSpace(targetSceneName))
             {
-                Debug.LogWarning($"[RunManager] Town scene '{townSceneName}' is not available. Add it to Build Settings or set a valid Town scene path.", this);
+                Debug.LogWarning($"[RunManager] Return scene name is empty. (useLobbyScene={useLobbyScene})", this);
+                return;
+            }
+
+            bool canLoadSceneName = Application.CanStreamedLevelBeLoaded(targetSceneName);
+            if (!canLoadSceneName && !CanUseEditorScenePath(networkSessionActive, targetScenePath))
+            {
+                Debug.LogWarning($"[RunManager] Scene '{targetSceneName}' is not available. Add it to Build Settings or set a valid scene path.", this);
                 return;
             }
 
             townReturnInProgress = true;
-            TownSpawnRouter.RequestTownReturn(townSceneName);
+            // TownSpawnRouter 는 town 씬 spawn 전용 — lobby 분기 시 skip (lobby 씬 자체 spawn 로직 사용).
+            if (!useLobbyScene)
+            {
+                TownSpawnRouter.RequestTownReturn(targetSceneName);
+            }
             if (!TryCloseResulting(saveRunRewards))
             {
                 CleanupRunResultingState(saveRunRewards);
             }
             Time.timeScale = 1f;
 
-            // 멀티 환경: 마을 LoadScene 전에 모든 클라(호스트 포함) 의 player 사망 잔재 reset broadcast.
-            // 게스트 측에서 SceneManager.activeSceneChanged 발화 타이밍/DontDestroyOnLoad 변수 등으로
-            // 자동 reset 신뢰 불가 — server-authoritative 단일 트리거로 명시.
+            // 멀티 환경:
+            //   lobby 분기 (마을→로비 복귀) → 정공법으로 PlayerObject Despawn + 새 씬에서 fresh 재 spawn.
+            //     DontDestroyOnLoad 인 player 의 사망 잔재 문제 근본 해결.
+            //   townScene 분기 (기존 솔로 town 로 복귀) → 기존 reset broadcast 유지 (회귀 차단).
             if (networkSessionActive)
             {
-                PlayerHealthSync.BroadcastResetDeathStateForAll();
+                if (useLobbyScene)
+                {
+                    PlayerHealthSync.RespawnPlayersAfterSceneLoad();
+                }
+                else
+                {
+                    PlayerHealthSync.BroadcastResetDeathStateForAll();
+                }
             }
 
             if (networkSessionActive)
             {
-                networkManager.SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
+                networkManager.SceneManager.LoadScene(targetSceneName, LoadSceneMode.Single);
             }
             else if (canLoadSceneName)
             {
-                SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
+                SceneManager.LoadScene(targetSceneName, LoadSceneMode.Single);
             }
             else
             {
-                LoadTownSceneInEditorPlayMode();
+                LoadSceneInEditorPlayMode(targetScenePath, targetSceneName);
             }
 
             Destroy(gameObject);
         }
 
-        private bool CanUseEditorTownScenePath(bool networkSessionActive)
+        private static bool CanUseEditorScenePath(bool networkSessionActive, string scenePath)
         {
 #if UNITY_EDITOR
-            return !networkSessionActive && !string.IsNullOrWhiteSpace(townScenePath);
+            return !networkSessionActive && !string.IsNullOrWhiteSpace(scenePath);
 #else
             return false;
 #endif
         }
 
-        private void LoadTownSceneInEditorPlayMode()
+        private static void LoadSceneInEditorPlayMode(string scenePath, string sceneName)
         {
 #if UNITY_EDITOR
-            EditorSceneManager.LoadSceneInPlayMode(townScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            EditorSceneManager.LoadSceneInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
 #else
-            Debug.LogWarning($"[RunManager] Town scene '{townSceneName}' is not available in this build.", this);
+            Debug.LogWarning($"[RunManager] Scene '{sceneName}' is not available in this build.");
 #endif
         }
 

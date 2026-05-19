@@ -2729,7 +2729,7 @@ PrefabInstance:
     - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
       propertyPath: m_AnimatedTiles.Array.data[20].second.m_AnimationSpeed
-      value: 10.000001
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
@@ -2739,7 +2739,7 @@ PrefabInstance:
     - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
       propertyPath: m_AnimatedTiles.Array.data[33].second.m_AnimationSpeed
-      value: 10.000001
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
@@ -2749,11 +2749,16 @@ PrefabInstance:
     - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
       propertyPath: m_AnimatedTiles.Array.data[40].second.m_AnimationSpeed
-      value: 10.000001
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
       propertyPath: m_AnimatedTiles.Array.data[56].second.m_AnimationSpeed
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
+        type: 3}
+      propertyPath: m_AnimatedTiles.Array.data[95].second.m_AnimationSpeed
       value: 10.000001
       objectReference: {fileID: 0}
     - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
@@ -2773,8 +2778,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
-      propertyPath: m_AnimatedTiles.Array.data[134].second.m_AnimationSpeed
+      propertyPath: m_AnimatedTiles.Array.data[127].second.m_AnimationSpeed
       value: 10.000001
+      objectReference: {fileID: 0}
+    - target: {fileID: 5710848791995436374, guid: 56442276cc620cc4d9a1709452053652,
+        type: 3}
+      propertyPath: m_AnimatedTiles.Array.data[134].second.m_AnimationSpeed
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6418301402336183476, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
@@ -7661,6 +7671,8 @@ MonoBehaviour:
   failureResultingDelaySeconds: 5
   townSceneName: Town
   townScenePath: Assets/_Project/Scenes/Town/Town.unity
+  lobbySceneName: Test_MultiLobby
+  lobbyScenePath: Assets/_Project/Scenes/Test/Multi_Test/Test_MultiLobby.unity
   restartDungeonSceneName: Dungeon_1F_1R
   restartDungeonScenePath: Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity
   totalStageCount: 1
