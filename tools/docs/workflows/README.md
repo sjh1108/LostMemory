@@ -16,7 +16,9 @@
 | 파일 | 용도 | 입력 | 출력 |
 |---|---|---|---|
 | `LostMemory_Illust_To_Pixel.json` | 단순 다운스케일 (KSampler 없음) | 일러스트 1장 | 16×16 도트 + RGBA 배경 투명 |
-| `LostMemory_Illust_To_PixelArt.json` | 일러스트 → 픽셀 아트 그림체 변환 (LoRA 스타일 트랜스퍼, denoise 0.55) | 일러스트 1장 | PNG 3장 (원본 / 16×16 / RGBA) |
+| `LostMemory_Illust_To_PixelArt.json` | 일러스트 → 일반 픽셀 아트 그림체 (LoRA 스타일 트랜스퍼, denoise 0.55) | 일러스트 1장 | PNG 3장 (원본 / 16×16 / RGBA) |
+| `LostMemory_Illust_To_OurPixelTone.json` | 일러스트 → **LostMemory 톤** 픽셀 (prompt+LoRA로 우리 sprite 톤 강제, denoise 0.55, LoRA 1.0) | 일러스트 1장 | PNG 3장 |
+| `LostMemory_PixelArt_To_OurPixelTone.json` | 임의 픽셀 아트 → **LostMemory 톤** 픽셀 (denoise 0.4, LoRA 0.8 — 톤 조정 위주) | 픽셀 아트 1장 | PNG 3장 |
 | `LostMemory_PixelArt_To_FrontView.json` | 임의 view/pose 픽셀 아트 → 정면 전신 sprite 재구성 (denoise 0.7) | 픽셀 아트 1장 | PNG 3장 (원본 / 16×16 / RGBA) |
 
 ### 후처리
