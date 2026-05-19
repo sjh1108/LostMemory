@@ -1,8 +1,8 @@
 {
-  "id": "lostmemory-illust-to-our-pixel-tone",
+  "id": "lostmemory-our-pixel-tone-dual",
   "revision": 0,
-  "last_node_id": 33,
-  "last_link_id": 20,
+  "last_node_id": 56,
+  "last_link_id": 32,
   "nodes": [
     {
       "id": 1,
@@ -151,7 +151,8 @@
           "type": "VAE",
           "links": [
             6,
-            12
+            12,
+            32
           ]
         }
       ],
@@ -223,7 +224,8 @@
           "name": "MODEL",
           "type": "MODEL",
           "links": [
-            2
+            2,
+            28
           ]
         },
         {
@@ -415,7 +417,8 @@
           "name": "LATENT",
           "type": "LATENT",
           "links": [
-            3
+            3,
+            31
           ]
         }
       ],
@@ -461,7 +464,8 @@
           "name": "CONDITIONING",
           "type": "CONDITIONING",
           "links": [
-            9
+            9,
+            29
           ]
         }
       ],
@@ -509,7 +513,8 @@
           "name": "CONDITIONING",
           "type": "CONDITIONING",
           "links": [
-            11
+            11,
+            30
           ]
         }
       ],
@@ -716,7 +721,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "LostMemory_OurTone"
+        "LostMemory_OurTone_illust"
       ]
     },
     {
@@ -737,7 +742,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "## LostMemory 톤 변환 - 일러스트 입력\n\n용도: 외부에서 그린 매끄러운 anime/chibi 일러스트를 LostMemory 5명 reference 톤\n(chibi 비율 + 16색 retro palette + RPG maker sprite 느낌) 으로 변환.\n\n흐름:\n  LoadImage(일러스트) -> ImageScale -> VAEEncode\n    -> KSampler(LoRA 1.0, denoise 0.55, LostMemory 톤 prompt) -> VAEDecode\n    -> 3 갈래 (원본 / 16x16 픽셀 / RGBA)\n\n사용:\n1. 일러스트 PNG 를 tools/ComfyUI/input/ 에 저장 (ComfyUI 새로고침)\n2. 노드 20 (LoadImage) 에서 일러스트 선택\n3. 노드 4 (positive prompt) < CHARACTER MODIFIER HERE > 자리에 특성 추가\n   예: 'long pink hair twin tails, magical girl outfit'\n4. 노드 6 (KSampler) denoise 조정:\n   - 0.5~0.6 (기본 0.55): 톤+비율 변환 + 윤곽 유지 권장\n   - 0.4 이하: 원본 일러스트 윤곽 너무 보존 (LostMemory 톤 부족)\n   - 0.7+: 거의 새로 그림 (윤곽 흐려질 위험)\n5. Queue Prompt\n\n결과 3장:\n  - LostMemory_OurTone_*.png             LostMemory 톤 픽셀 일러스트 (원본 해상도)\n  - LostMemory_OurTone_pixel16_*.png     16x16 도트 sprite\n  - LostMemory_OurTone_bgremove_*.png    RGBA 배경 투명\n\n비고:\n  - LostMemory 톤은 prompt + LoRA 로만 추출 (5명 reference 이미지 직접 사용 불가)\n  - 결과 톤이 reference 와 다르면 prompt 의 'RPG maker chibi sprite, retro game character'\n    부분을 강화하거나 reference 묘사 키워드 추가\n  - 단순 다운스케일만 필요 시: LostMemory_Illust_To_Pixel\n  - 일반 pixel art 변환(LostMemory 톤 무관): LostMemory_Illust_To_PixelArt"
+        "## LostMemory 톤 변환 (단일 입력 / 두 갈래 동시 출력)\n\n용도: 한 입력 이미지를 두 가지 denoise 설정으로 동시 변환해 결과 비교.\n\n흐름:\n  LoadImage -> ImageScale -> VAEEncode -> latent\n    -> KSampler1 (denoise 0.55, 일러스트 가정 — 강한 변환) -> VAEDecode -> 3 갈래\n    -> KSampler2 (denoise 0.4,  픽셀 아트 가정 — 약한 변환) -> VAEDecode -> 3 갈래\n\n출력 6장:\n  - LostMemory_OurTone_illust_*.png            denoise 0.55 결과 (원본 512x512)\n  - LostMemory_OurTone_illust_pixel16_*.png    16x16 도트\n  - LostMemory_OurTone_illust_bgremove_*.png   RGBA\n  - LostMemory_OurTone_pixel_*.png             denoise 0.4 결과 (원본)\n  - LostMemory_OurTone_pixel_pixel16_*.png     16x16 도트\n  - LostMemory_OurTone_pixel_bgremove_*.png    RGBA\n\n사용:\n1. 일러스트 또는 픽셀 아트 PNG 를 tools/ComfyUI/input/ 에 저장\n2. 노드 20 (LoadImage) 에서 선택\n3. 노드 4 (positive prompt) < CHARACTER MODIFIER HERE > 채우기\n4. Queue Prompt (한 번에 6장 동시 생성)\n5. 결과 비교 후 마음에 드는 갈래 사용\n\n튜닝:\n  - 일러스트 가정 갈래 변환이 너무 약함 → 노드 6 KSampler1 denoise 0.55 → 0.65\n  - 픽셀 가정 갈래 변환이 너무 강함 → 노드 50 KSampler2 denoise 0.4 → 0.3\n  - 톤 부족 → 노드 3 LoraLoader strength 1.0 → 1.2\n  - 한쪽 갈래만 필요 → 해당 KSampler+VAEDecode+3 출력 노드 Bypass(Ctrl+B)"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -871,7 +876,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "LostMemory_OurTone_pixel16"
+        "LostMemory_OurTone_illust_pixel16"
       ]
     },
     {
@@ -1012,7 +1017,501 @@
         "Node name for S&R": "LostMemorySaveImageRGBA"
       },
       "widgets_values": [
-        "LostMemory_OurTone_bgremove"
+        "LostMemory_OurTone_illust_bgremove"
+      ]
+    },
+    {
+      "id": 50,
+      "type": "KSampler",
+      "pos": [
+        1125,
+        334
+      ],
+      "size": [
+        320,
+        270
+      ],
+      "flags": {},
+      "order": 50,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "모델",
+          "name": "model",
+          "type": "MODEL",
+          "link": 28
+        },
+        {
+          "localized_name": "긍정",
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 29
+        },
+        {
+          "localized_name": "부정",
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 30
+        },
+        {
+          "localized_name": "잠재 이미지",
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 31
+        },
+        {
+          "localized_name": "시드",
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "이후 제어",
+          "name": "control_after_generate",
+          "type": "COMBO",
+          "widget": {
+            "name": "control_after_generate"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "단계",
+          "name": "steps",
+          "type": "INT",
+          "widget": {
+            "name": "steps"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "cfg",
+          "name": "cfg",
+          "type": "FLOAT",
+          "widget": {
+            "name": "cfg"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "샘플러 이름",
+          "name": "sampler_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "sampler_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "스케줄러",
+          "name": "scheduler",
+          "type": "COMBO",
+          "widget": {
+            "name": "scheduler"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "노이즈 제거",
+          "name": "denoise",
+          "type": "FLOAT",
+          "widget": {
+            "name": "denoise"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "잠재",
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            21
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        201,
+        "randomize",
+        10,
+        1.8,
+        "euler",
+        "simple",
+        0.4
+      ]
+    },
+    {
+      "id": 51,
+      "type": "VAEDecode",
+      "pos": [
+        1505,
+        334
+      ],
+      "size": [
+        220,
+        60
+      ],
+      "flags": {},
+      "order": 51,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "샘플",
+          "name": "samples",
+          "type": "LATENT",
+          "link": 21
+        },
+        {
+          "localized_name": "VAE",
+          "name": "vae",
+          "type": "VAE",
+          "link": 32
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "이미지",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            22,
+            23,
+            24
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 52,
+      "type": "SaveImage",
+      "pos": [
+        1755,
+        331
+      ],
+      "size": [
+        320,
+        270
+      ],
+      "flags": {},
+      "order": 52,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 22
+        },
+        {
+          "localized_name": "파일명 접두어",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "LostMemory_OurTone_pixel"
+      ]
+    },
+    {
+      "id": 53,
+      "type": "LostMemoryPixelize",
+      "pos": [
+        1755,
+        700
+      ],
+      "size": [
+        340,
+        230
+      ],
+      "flags": {},
+      "order": 53,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 23
+        },
+        {
+          "localized_name": "preset",
+          "name": "preset",
+          "type": "COMBO",
+          "widget": {
+            "name": "preset"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "size_override",
+          "name": "size_override",
+          "type": "INT",
+          "widget": {
+            "name": "size_override"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "palette_override",
+          "name": "palette_override",
+          "type": "COMBO",
+          "widget": {
+            "name": "palette_override"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "adaptive_colors",
+          "name": "adaptive_colors",
+          "type": "INT",
+          "widget": {
+            "name": "adaptive_colors"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "transparent_bg",
+          "name": "transparent_bg",
+          "type": "COMBO",
+          "widget": {
+            "name": "transparent_bg"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "bg_threshold",
+          "name": "bg_threshold",
+          "type": "INT",
+          "widget": {
+            "name": "bg_threshold"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            25
+          ]
+        },
+        {
+          "localized_name": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LostMemoryPixelize"
+      },
+      "widgets_values": [
+        "game-item16",
+        0,
+        "adaptive",
+        16,
+        "preset",
+        30
+      ]
+    },
+    {
+      "id": 54,
+      "type": "SaveImage",
+      "pos": [
+        2135,
+        700
+      ],
+      "size": [
+        320,
+        270
+      ],
+      "flags": {},
+      "order": 54,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 25
+        },
+        {
+          "localized_name": "파일명 접두어",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "LostMemory_OurTone_pixel_pixel16"
+      ]
+    },
+    {
+      "id": 55,
+      "type": "LostMemoryBgRemove",
+      "pos": [
+        1755,
+        1070
+      ],
+      "size": [
+        340,
+        230
+      ],
+      "flags": {},
+      "order": 55,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 24
+        },
+        {
+          "localized_name": "model",
+          "name": "model",
+          "type": "COMBO",
+          "widget": {
+            "name": "model"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "alpha_matting",
+          "name": "alpha_matting",
+          "type": "COMBO",
+          "widget": {
+            "name": "alpha_matting"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "alpha_threshold_fg",
+          "name": "alpha_threshold_fg",
+          "type": "INT",
+          "widget": {
+            "name": "alpha_threshold_fg"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "alpha_threshold_bg",
+          "name": "alpha_threshold_bg",
+          "type": "INT",
+          "widget": {
+            "name": "alpha_threshold_bg"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "erode_size",
+          "name": "erode_size",
+          "type": "INT",
+          "widget": {
+            "name": "erode_size"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            26
+          ]
+        },
+        {
+          "localized_name": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "links": [
+            27
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LostMemoryBgRemove"
+      },
+      "widgets_values": [
+        "isnet-anime",
+        "no",
+        240,
+        10,
+        10
+      ]
+    },
+    {
+      "id": 56,
+      "type": "LostMemorySaveImageRGBA",
+      "pos": [
+        2120,
+        1070
+      ],
+      "size": [
+        320,
+        110
+      ],
+      "flags": {},
+      "order": 56,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 26
+        },
+        {
+          "localized_name": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "link": 27
+        },
+        {
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "LostMemorySaveImageRGBA"
+      },
+      "widgets_values": [
+        "LostMemory_OurTone_pixel_bgremove"
       ]
     }
   ],
@@ -1168,6 +1667,102 @@
       33,
       1,
       "MASK"
+    ],
+    [
+      21,
+      50,
+      0,
+      51,
+      0,
+      "LATENT"
+    ],
+    [
+      22,
+      51,
+      0,
+      52,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      51,
+      0,
+      53,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      51,
+      0,
+      55,
+      0,
+      "IMAGE"
+    ],
+    [
+      25,
+      53,
+      0,
+      54,
+      0,
+      "IMAGE"
+    ],
+    [
+      26,
+      55,
+      0,
+      56,
+      0,
+      "IMAGE"
+    ],
+    [
+      27,
+      55,
+      1,
+      56,
+      1,
+      "MASK"
+    ],
+    [
+      28,
+      3,
+      0,
+      50,
+      0,
+      "MODEL"
+    ],
+    [
+      29,
+      4,
+      0,
+      50,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      30,
+      11,
+      0,
+      50,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      31,
+      21,
+      0,
+      50,
+      3,
+      "LATENT"
+    ],
+    [
+      32,
+      9,
+      0,
+      51,
+      1,
+      "VAE"
     ]
   ],
   "groups": [],
