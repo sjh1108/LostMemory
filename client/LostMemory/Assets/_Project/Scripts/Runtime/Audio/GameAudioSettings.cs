@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using MoreMountains.Tools;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -132,6 +133,11 @@ namespace LostMemory.Audio
 
             LoadFromPlayerPrefs();
             ApplyAllToMixer();
+
+            // CL-234: MMSoundManager 가 BeforeSceneLoad 시점엔 아직 초기화 안 됐을 가능성.
+            // 초기화 완료를 기다린 후 PlayerPrefs 값을 MM 트랙에도 강제 재적용.
+            // (MMSoundManager 가 자체 PlayerPrefs 로 트랙 볼륨 관리 → 우리 값이 게임 시작 시 덮어쓰여지는 문제 fix)
+            StartCoroutine(EnsureMMSoundManagerSynced());
         }
 
         private void OnEnable()
@@ -152,6 +158,41 @@ namespace LostMemory.Audio
             // 매 씬 전환마다 mixer + MMSoundManager 양쪽에 우리 값 재적용.
             // 안전망 — audition mute leak / 외부에서 mixer 값 변경 등이 있어도 복원됨.
             ApplyAllToMixer();
+
+            // CL-234: 씬 로드 후 MMSoundManager 가 자체 PlayerPrefs 로 트랙 볼륨을 복원하며
+            // 우리 값을 덮어쓰는 케이스 대응. 다음 프레임에 강제 재적용.
+            StartCoroutine(EnsureMMSoundManagerSynced());
+        }
+
+        /// <summary>
+        /// CL-234: MMSoundManager 가 초기화 + 자체 PlayerPrefs 로드를 끝낸 뒤에 우리 PlayerPrefs 값을
+        /// MM 트랙에 강제 재적용. 사용자가 옵션 메뉴 열기 전부터 저장된 사운드 값이 반영되도록.
+        ///
+        /// 흐름: 부팅·씬 로드 직후엔 MM 인스턴스가 없거나 직후에 자체 PlayerPrefs 로 트랙 볼륨 복원 →
+        /// 우리 ApplyAllToMixer 의 MM sync 가 무시 또는 덮어쓰여짐. 본 코루틴이 MM 준비 + 추가 1프레임
+        /// 대기 후 재적용으로 마지막 값을 보장.
+        /// </summary>
+        private IEnumerator EnsureMMSoundManagerSynced()
+        {
+            // MMSoundManager.Current 가 살아날 때까지 (최대 30프레임 ≈ 0.5초) wait.
+            int safetyFrames = 30;
+            while (safetyFrames-- > 0)
+            {
+                if (MMSoundManager.HasInstance && MMSoundManager.Current != null) break;
+                yield return null;
+            }
+
+            // MM 자체 초기화가 마무리되도록 추가 프레임 wait — Initialization 코루틴이 같은 프레임에 끝난다는 보장이 없음.
+            yield return null;
+            yield return null;
+
+            // 우리 PlayerPrefs 값을 mixer + MM 양쪽에 다시 강제 적용.
+            ApplyAllToMixer();
+
+            if (logVolumeChanges)
+            {
+                Debug.Log($"[GameAudioSettings] EnsureMMSoundManagerSynced 완료 — Master={_master:F2} Sfx={_sfx:F2} Music={_music:F2}", this);
+            }
         }
 
         private void OnDestroy()

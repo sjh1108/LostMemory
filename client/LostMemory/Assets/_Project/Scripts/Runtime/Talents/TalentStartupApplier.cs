@@ -144,8 +144,10 @@ namespace LostMemory.Talents
                 _container.AddPermanent(StatId.AttackSpeed, stats.AttackSpeed, Source);
             if (stats.Defense != 0f)
                 _container.AddPermanent(StatId.Defense, stats.Defense, Source);
+            // CL-234: 재능 MaxHealth 는 flat track 으로 등록 (multiplier 합산 폭주 방지).
+            //         IncreasePerPoint=1 + 10포인트 = +10 HP. PlayerHealthStatApplier 가 (base+flat)*mul 로 합성.
             if (stats.MaxHealth != 0f)
-                _container.AddPermanent(StatId.MaxHealth, stats.MaxHealth, Source);
+                _container.AddPermanent(StatId.MaxHealthFlat, stats.MaxHealth, Source);
             if (stats.MoveSpeed != 0f)
                 _container.AddPermanent(StatId.MoveSpeed, stats.MoveSpeed, Source);
 

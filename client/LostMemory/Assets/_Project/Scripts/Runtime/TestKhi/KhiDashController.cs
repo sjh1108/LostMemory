@@ -72,6 +72,18 @@ namespace LostMemory.TestKhi
                 return;
             }
 
+            // CL-234 (A-1/A-2): 대시는 Space 키가 주 입력이라 키보드/마우스 모두 차단 필요.
+            // UIInputBlocker = 인벤토리 등 패널 열린 상태(키보드 입력 포함) / EventSystem = 마우스 위 UI.
+            if (LostMemory.UI.UIInputBlocker.IsBlocked)
+            {
+                return;
+            }
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null && es.IsPointerOverGameObject())
+            {
+                return;
+            }
+
             if (ShouldBlockDash())
             {
                 if (logBlockedDashToConsole)

@@ -1,4 +1,5 @@
 using LostMemory.Data;
+using LostMemory.UI;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -21,6 +22,8 @@ namespace LostMemory.TestKhi
         [Header("Feedback Systems")]
         [SerializeField] private KhiHitFlashPresenter flashPresenter;
         [SerializeField] private KhiPlayerCamera playerCamera;
+        [Tooltip("CL-234 (A-10): 피격 시 화면 가장자리 선혈 vignette. null 이면 비활성.")]
+        [SerializeField] private HitVignetteOverlay hitVignette;
 
         [Header("HitStunStarted (player 피격)")]
         [SerializeField, Min(0f)] private float hitStopOnHit = 0.06f;
@@ -112,6 +115,7 @@ namespace LostMemory.TestKhi
             RequestFreeze(hitStopOnHit);
             flashPresenter?.Flash(hitFlashColor, hitFlashDuration);
             playerCamera?.ApplyImpulse(hitShakeIntensity, hitShakeDuration);
+            hitVignette?.Pulse();   // CL-234 (A-10): 화면 가장자리 선혈 펄스.
             Log("HitStun feedback");
         }
 

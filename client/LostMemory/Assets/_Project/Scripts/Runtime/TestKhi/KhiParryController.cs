@@ -277,6 +277,19 @@ namespace LostMemory.TestKhi
 
         private bool WasParryPressedThisFrame()
         {
+            // CL-234 (A-1/A-2): UI 패널 열린 동안 패리 입력 차단 (키보드 단축키 포함).
+            if (LostMemory.UI.UIInputBlocker.IsBlocked)
+            {
+                return false;
+            }
+
+            // UI 위 마우스 클릭 보조 가드.
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null && es.IsPointerOverGameObject())
+            {
+                return false;
+            }
+
             if (parryAction != null && parryAction.action != null)
             {
                 if (!parryAction.action.enabled)

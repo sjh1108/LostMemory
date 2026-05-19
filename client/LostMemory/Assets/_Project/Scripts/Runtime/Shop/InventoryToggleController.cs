@@ -101,6 +101,14 @@ namespace LostMemory.Shop
                 return;
             }
             int gold = goldWallet != null ? goldWallet.Current : 0;
+            // CL-234 (A-1/A-2): 인벤토리 열린 동안 모든 게임플레이 입력 차단 (Space 대시 등 키보드 포함).
+            // UIInputBlockerSource 가 prefab 에 부착되어 있다면 OnEnable 로도 잡히지만, prefab 변경이
+            // 미반영된 환경 안전망으로 코드 흐름에서도 Acquire/Release.
+            if (!_uiBlockerAcquired)
+            {
+                LostMemory.UI.UIInputBlocker.Acquire();
+                _uiBlockerAcquired = true;
+            }
             panel.gameObject.SetActive(true);
             panel.Init(playerRelicInventory, gold);
 
@@ -124,7 +132,25 @@ namespace LostMemory.Shop
         {
             if (panel != null) panel.gameObject.SetActive(false);
             if (setEffectPanel != null) setEffectPanel.gameObject.SetActive(false);
+            // CL-234 (A-1/A-2): Open 에서 Acquire 한 카운터 해제.
+            if (_uiBlockerAcquired)
+            {
+                LostMemory.UI.UIInputBlocker.Release();
+                _uiBlockerAcquired = false;
+            }
             if (logToggle) Debug.Log("[InventoryToggleController] Closed.");
+        }
+
+        private bool _uiBlockerAcquired;
+
+        private void OnDisable()
+        {
+            // 컨트롤러가 비활성되면 (씬 전환 등) 카운터 잔재 방지.
+            if (_uiBlockerAcquired)
+            {
+                LostMemory.UI.UIInputBlocker.Release();
+                _uiBlockerAcquired = false;
+            }
         }
 
         private bool IsPlayerActionBlocked()
