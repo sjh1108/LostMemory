@@ -37,6 +37,15 @@ namespace LostMemory.Dialogue
         public bool IsBuilt => _built;
         public TextAsset CsvAsset => csvAsset;
 
+        // SO 가 로드될 때마다 캐시 상태 초기화.
+        // (Unity 의 Domain Reload 옵션에 따라 _groups 만 비고 _built=true 가 남는
+        //  어중간한 상태에 빠지는 것을 방지)
+        private void OnEnable()
+        {
+            _built = false;
+            _groups.Clear();
+        }
+
         /// <summary>
         /// 최초 1회 또는 ForceRebuild 호출 시 csv 파싱.
         /// </summary>
@@ -59,7 +68,8 @@ namespace LostMemory.Dialogue
             if (csvAsset == null)
             {
                 Debug.LogError("[DialogueDatabase] csvAsset 가 null. inspector 에서 dialogues.csv 를 할당하세요.", this);
-                _built = true;
+                // 실패 시 _built 를 false 로 두어 다음 호출에서 재시도하도록 한다.
+                // (이전에는 true 로 마킹하여 영구 고장 상태로 빠지는 버그가 있었음)
                 return;
             }
 
