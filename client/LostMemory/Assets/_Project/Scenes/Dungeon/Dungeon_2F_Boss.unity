@@ -275,6 +275,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &257703134 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7286418166411960798, guid: 6dc9bbd163da1a1458320a446a4bbf81,
+    type: 3}
+  m_PrefabInstance: {fileID: 1477156555}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21e060e169ab80b4db8432a946bf50c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossRoomEntryPoint
 --- !u!1001 &432374386
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1099,6 +1111,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33dad3eacfaf13e4fbbb7067c41f1d90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiWeaponPresenter
+--- !u!21 &604557840
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Sprites/Default
+  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - PixelSnap: 0
+    - _EnableExternalAlpha: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Flip: {r: 1, g: 1, b: 1, a: 1}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1635,6 +1688,49 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 842408464}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &848292678 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6418301402336183476, guid: 6dc9bbd163da1a1458320a446a4bbf81,
+    type: 3}
+  m_PrefabInstance: {fileID: 1477156555}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &848292684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 848292678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3549862019
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &848292688 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1064848046441803028, guid: 6dc9bbd163da1a1458320a446a4bbf81,
+    type: 3}
+  m_PrefabInstance: {fileID: 1477156555}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 848292678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5f1b47db33bcc5409105e8ded726822, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
 --- !u!1 &927221814
 GameObject:
   m_ObjectHideFlags: 0
@@ -1680,6 +1776,8 @@ MonoBehaviour:
   failureResultingDelaySeconds: 5
   townSceneName: Town
   townScenePath: Assets/_Project/Scenes/Town/Town.unity
+  lobbySceneName: 
+  lobbyScenePath: 
   restartDungeonSceneName: Dungeon_1F_1R
   restartDungeonScenePath: Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity
   totalStageCount: 1
@@ -1753,47 +1851,6 @@ MonoBehaviour:
   _shardPerLargeRoom: 1
   _shardPerBossRoom: 3
   _logChanges: 1
---- !u!21 &972808522
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Sprites/Default
-  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _AlphaTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - PixelSnap: 0
-    - _EnableExternalAlpha: 0
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Flip: {r: 1, g: 1, b: 1, a: 1}
-    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1001 &1070829490
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2096,6 +2153,47 @@ MonoBehaviour:
   _goldWallet: {fileID: 927221818}
   _memoryShardWallet: {fileID: 0}
   _resolveRetryInterval: 0.5
+--- !u!21 &1317764582
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Sprites/Default
+  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - PixelSnap: 0
+    - _EnableExternalAlpha: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Flip: {r: 1, g: 1, b: 1, a: 1}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &1321927964
 GameObject:
   m_ObjectHideFlags: 0
@@ -2283,42 +2381,62 @@ PrefabInstance:
     - target: {fileID: 967818520663606758, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
       propertyPath: m_Positions.Array.data[0].x
-      value: 2.6116662
+      value: 2.6116664
       objectReference: {fileID: 0}
     - target: {fileID: 967818520663606758, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
       propertyPath: m_Positions.Array.data[0].y
-      value: 1.945
+      value: 1.9449997
       objectReference: {fileID: 0}
     - target: {fileID: 967818520663606758, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
       propertyPath: m_Positions.Array.data[1].x
-      value: 2.6116662
+      value: 2.6116664
       objectReference: {fileID: 0}
     - target: {fileID: 967818520663606758, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
       propertyPath: m_Positions.Array.data[1].y
-      value: 2.7216668
+      value: 2.721667
       objectReference: {fileID: 0}
     - target: {fileID: 967818520663606758, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
       propertyPath: m_Positions.Array.data[2].x
-      value: 3.3883336
+      value: 3.388333
       objectReference: {fileID: 0}
     - target: {fileID: 967818520663606758, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
       propertyPath: m_Positions.Array.data[2].y
-      value: 2.7216668
+      value: 2.721667
       objectReference: {fileID: 0}
     - target: {fileID: 967818520663606758, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
       propertyPath: m_Positions.Array.data[3].x
-      value: 3.3883336
+      value: 3.388333
       objectReference: {fileID: 0}
     - target: {fileID: 967818520663606758, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
       propertyPath: m_Positions.Array.data[3].y
-      value: 1.945
+      value: 1.9449997
+      objectReference: {fileID: 0}
+    - target: {fileID: 2941819232469239209, guid: 6dc9bbd163da1a1458320a446a4bbf81,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2941819232469239209, guid: 6dc9bbd163da1a1458320a446a4bbf81,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -4.44
+      objectReference: {fileID: 0}
+    - target: {fileID: 3284886842764160662, guid: 6dc9bbd163da1a1458320a446a4bbf81,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 3284886842764160662, guid: 6dc9bbd163da1a1458320a446a4bbf81,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 15.5
       objectReference: {fileID: 0}
     - target: {fileID: 5710848791995436374, guid: 6dc9bbd163da1a1458320a446a4bbf81,
         type: 3}
@@ -2534,8 +2652,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6418301402336183476, guid: 6dc9bbd163da1a1458320a446a4bbf81,
+        type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 848292684}
   m_SourcePrefab: {fileID: 100100000, guid: 6dc9bbd163da1a1458320a446a4bbf81, type: 3}
+--- !u!1 &1602824121 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4383979573215819367, guid: fb129ca13279c41f490e5c46f9cad722,
+    type: 3}
+  m_PrefabInstance: {fileID: 1957055947}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1602824129 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3544366707875920273, guid: fb129ca13279c41f490e5c46f9cad722,
+    type: 3}
+  m_PrefabInstance: {fileID: 1957055947}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1602824121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9db907e78fe22d40bd5ec13bc262b79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.BossIntroSequenceController
 --- !u!1001 &1685934583
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3132,47 +3272,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 87528d944c1db91408e8f1aaaec33328, type: 3}
---- !u!21 &1743647381
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Sprites/Default
-  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _AlphaTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - PixelSnap: 0
-    - _EnableExternalAlpha: 0
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Flip: {r: 1, g: 1, b: 1, a: 1}
-    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1001 &1779184972
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3386,17 +3485,17 @@ PrefabInstance:
         type: 3}
       propertyPath: introSequenceController
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1602824129}
     - target: {fileID: 3580460836584733561, guid: 2c07f7574de32544bad860ce91fa84f1,
         type: 3}
       propertyPath: encounterControllerOwner
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1602824121}
     - target: {fileID: 3761658659831790983, guid: 2c07f7574de32544bad860ce91fa84f1,
         type: 3}
       propertyPath: 'entryPoints.Array.data[0]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 257703134}
     - target: {fileID: 4521685824578191670, guid: 2c07f7574de32544bad860ce91fa84f1,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -4002,6 +4101,79 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 86eea663c3da48842820549051b45374, type: 3}
+--- !u!1001 &1957055947
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3299514422427016927, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: roomController
+      value: 
+      objectReference: {fileID: 848292688}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.32
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3581833349180484320, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4383979573215819367, guid: fb129ca13279c41f490e5c46f9cad722,
+        type: 3}
+      propertyPath: m_Name
+      value: RenaRoot
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fb129ca13279c41f490e5c46f9cad722, type: 3}
 --- !u!1001 &1958804350
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5256,3 +5428,4 @@ SceneRoots:
   - {fileID: 4040627}
   - {fileID: 1726627426}
   - {fileID: 1477156555}
+  - {fileID: 1957055947}

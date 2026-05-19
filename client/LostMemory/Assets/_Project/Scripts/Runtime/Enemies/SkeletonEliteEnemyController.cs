@@ -182,6 +182,8 @@ namespace LostMemory.Enemies
         private float _nextShieldDamageAllowedAt;
         private float _shieldBlockUntil;
         private float _shieldBreakUntil;
+        private bool _prefabShieldHealthCaptured;
+        private float _prefabShieldHealth;
 
         private void Reset()
         {
@@ -195,6 +197,7 @@ namespace LostMemory.Enemies
             CaptureVisualBaseScale();
             CacheAttackHitboxDefaultLocalRotation();
             EnsureAttackOverlapBuffer();
+            CapturePrefabShieldHealth();
             ResetShieldHealth();
             ConfigureHealth();
             SetAttackHitboxActive(false);
@@ -376,11 +379,37 @@ namespace LostMemory.Enemies
                 heavyAttackDamage = Mathf.Max(0f, meleeDamage * 1.55f);
             }
 
+            ApplyShieldHealthFromData(data);
+
             ConfigureHealth();
             if (health != null)
             {
                 health.SetHealth(maxHealth);
             }
+        }
+
+        private void ApplyShieldHealthFromData(EnemyData data)
+        {
+            CapturePrefabShieldHealth();
+            shieldHealth = data is SkeletonEliteData skeletonEliteData
+                ? skeletonEliteData.ShieldHealth
+                : _prefabShieldHealth;
+
+            if (!_shieldBroken)
+            {
+                ResetShieldHealth();
+            }
+        }
+
+        private void CapturePrefabShieldHealth()
+        {
+            if (_prefabShieldHealthCaptured)
+            {
+                return;
+            }
+
+            _prefabShieldHealth = Mathf.Max(0.01f, shieldHealth);
+            _prefabShieldHealthCaptured = true;
         }
 
         public bool CanAbsorbShieldDamage

@@ -594,7 +594,8 @@ namespace LostMemory.Stage
         }
 
         /// <summary>
-        /// 보스 클리어 포탈 진입 시 호출. 다음 스테이지가 있으면 새 스테이지를 빌드하고, 없으면 결과 화면으로 진입한다.
+        /// 보스 클리어 포탈 진입 시 호출. 활성 라우트의 다음 노드가 있으면 라우트 씬으로 이동하고,
+        /// 없으면 기존 스테이지 진행 또는 결과 화면 흐름으로 진입한다.
         /// </summary>
         public bool NotifyBossClearPortalEntered()
         {
@@ -602,7 +603,7 @@ namespace LostMemory.Stage
             {
                 return false;
             }
-            if (StateMachine.Current != RunState.InRun)
+            if (!EnsureRunActiveForSceneEvent())
             {
                 Debug.LogWarning($"[RunManager] Boss clear portal ignored. Current state is {StateMachine.Current}.", this);
                 return false;
@@ -615,15 +616,36 @@ namespace LostMemory.Stage
 
             bossClearPortalReady = false;
 
-            bool handled = allowBossPortalStageAdvance && HasNextStage
-                ? AdvanceToNextStage()
-                : CompleteRunFromBossPortal();
+            bool handled = TryAdvanceActiveRouteFromBossPortal();
+            if (!handled)
+            {
+                handled = allowBossPortalStageAdvance && HasNextStage
+                    ? AdvanceToNextStage()
+                    : CompleteRunFromBossPortal();
+            }
+
             if (!handled)
             {
                 bossClearPortalReady = true;
             }
 
             return handled;
+        }
+
+        private bool TryAdvanceActiveRouteFromBossPortal()
+        {
+            StageRouteManager routeManager = StageRouteManager.Instance;
+            if (routeManager == null || !routeManager.CanAdvanceCurrentRouteNode())
+            {
+                return false;
+            }
+
+            if (logStageProgression)
+            {
+                Debug.Log("[RunManager] Boss clear portal advancing active stage route.", this);
+            }
+
+            return routeManager.RequestAdvanceCurrentRouteNode(null);
         }
 
         private void BuildCurrentStage()
@@ -1014,6 +1036,11 @@ namespace LostMemory.Stage
         }
 
         private bool EnsureRunActiveForDefeat()
+        {
+            return EnsureRunActiveForSceneEvent();
+        }
+
+        private bool EnsureRunActiveForSceneEvent()
         {
             if (StateMachine.Current == RunState.InRun)
             {
