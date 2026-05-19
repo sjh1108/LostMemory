@@ -1,5 +1,5 @@
 {
-  "id": "lostmemory-lineart-to-variations",
+  "id": "lineart-to-variations",
   "revision": 0,
   "last_node_id": 85,
   "last_link_id": 52,
@@ -485,7 +485,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, neutral expression, T-pose standing, default pose, calm face"
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, high contrast line drawing, SAME CHARACTER as reference, identical outfit, identical hairstyle, identical hair color, identical clothing details, identical accessories, only facial expression and body pose change, neutral expression, T-pose standing, default pose, calm face"
       ]
     },
     {
@@ -537,7 +537,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "realistic shading, photorealistic, photo, 3d render, hdr, full color rendering, complex shading, painterly, watercolor, oil painting, smooth gradient, soft shadows, ambient occlusion, blurry, jpeg artifacts, detailed background, noisy background, complex background, text, watermark, low quality, multiple characters, group, crowd, deformed face, malformed limbs, extra limbs, nsfw, suggestive, side view, back view, bust shot, head only, half body crop"
+        "different character, different person, alternate costume, changed outfit, different hairstyle, alternate hairstyle, changed hair color, recolored hair, different clothes, modified clothing details, additional accessories, removed accessories, realistic shading, photorealistic, photo, 3d render, hdr, full color rendering, complex shading, painterly, watercolor, oil painting, smooth gradient, soft shadows, ambient occlusion, blurry, jpeg artifacts, detailed background, noisy background, complex background, text, watermark, low quality, multiple characters, group, crowd, deformed face, malformed limbs, extra limbs, nsfw, suggestive, side view, back view, bust shot, head only, half body crop"
       ]
     },
     {
@@ -654,7 +654,7 @@
         1.8,
         "euler",
         "simple",
-        0.55
+        0.4
       ]
     },
     {
@@ -734,7 +734,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "LostMemory_Variation_neutral"
+        "Variation_neutral"
       ]
     },
     {
@@ -755,7 +755,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "## LostMemory 선화 일러스트 -> 표정/포즈 5가지 변화 (S14P31C201-624)\n\n용도: 선화(lineart) 캐릭터 일러스트 1장을 입력 받아 5가지 표정/포즈 변화 동시 생성.\n캐릭터 정체성(얼굴/의상)은 유지하면서 표정과 포즈만 변형.\n\n흐름:\n  LoadImage(20) -> ImageScale(22) -> VAEEncode(23) -> latent(공유)\n  -> 5 KSampler 갈래 (각 다른 positive prompt + 다른 seed, LoRA 0, denoise 0.55):\n       neutral   - T-pose standing, calm face\n       smile     - cheerful smile, waving hand\n       surprised - wide eyes, mouth open, hands raised\n       angry     - frowning, fighting stance\n       sad       - downcast eyes, head tilted down\n  -> 각 VAEDecode -> SaveImage:\n     LostMemory_Variation_neutral_*.png\n     LostMemory_Variation_smile_*.png\n     LostMemory_Variation_surprised_*.png\n     LostMemory_Variation_angry_*.png\n     LostMemory_Variation_sad_*.png\n\n사용:\n1. 선화 일러스트 PNG 를 tools/ComfyUI/input/ 에 저장\n2. 노드 20 (LoadImage) 에서 선택\n3. Queue Prompt -> 5장 동시 생성 (캐릭터 동일, 표정/포즈만 변경)\n\n튜닝:\n  - 표정/포즈 변화 약함 (원본과 거의 같음) -> KSampler denoise 0.55 -> 0.65/0.7\n  - 캐릭터 정체성 잃음 (얼굴 너무 변함) -> denoise 0.55 -> 0.4\n  - 특정 변화만 마음에 듦 -> 다른 KSampler 노드 우클릭 Bypass(Ctrl+B)\n  - 더 다양한 표정 원하면 -> 해당 KSampler 의 positive prompt 노드에서 표정 키워드 직접 변경\n\n비고:\n  - 픽셀화/배경제거 갈래 없음 (선화 변화만 출력). 픽셀화 필요 시 결과를\n    LostMemory_Illust_To_Pixel 또는 LostMemory_Illust_To_PixelArt 에 다시 input.\n  - 5가지 표정/포즈 기본값은 prompt 텍스트로 수정 가능."
+        "## 선화 일러스트 -> 표정/포즈 5가지 변화 (캐릭터 정체성 유지판) (S14P31C201-624)\n\n용도: 선화 캐릭터 일러스트 1장 -> 5가지 표정/포즈 변화. **옷/머리/색 등 디테일 변화 없음.**\n\n튜닝 핵심:\n  - denoise 0.55 -> 0.4 (원본 윤곽/디테일 더 강하게 보존)\n  - positive prompt 에 'SAME CHARACTER as reference, identical outfit,\n    identical hairstyle, identical hair color, identical clothing details,\n    only facial expression and body pose change' 명시\n  - negative prompt 에 'different character, alternate costume, changed hairstyle,\n    changed hair color, different clothes, additional accessories' 차단\n\n5가지 변화:\n  neutral   - T-pose standing, calm face\n  smile     - cheerful smile, waving hand\n  surprised - wide eyes, mouth open, hands raised\n  angry     - frowning, fighting stance\n  sad       - downcast eyes, head tilted down\n\n사용:\n1. 선화 일러스트 PNG -> tools/ComfyUI/input/\n2. 노드 20 (LoadImage) 에서 선택\n3. Queue Prompt -> 5장 동시 생성\n\n튜닝 추가:\n  - 여전히 디테일 변함 -> KSampler denoise 0.4 -> 0.3 (단 표정/포즈 변화 약해짐)\n  - 표정/포즈 변화 약함 -> denoise 0.4 -> 0.5 (단 디테일 변경 위험)\n  - 특정 변화만 -> 다른 KSampler 노드 우클릭 Bypass(Ctrl+B)\n  - 표정 키워드 직접 변경 -> 해당 KSampler 의 positive prompt 노드 widget 수정\n\n출력: Variation_neutral_*.png / _smile_*.png / _surprised_*.png / _angry_*.png / _sad_*.png\n(파일명에 LostMemory_ 접두사 제거됨)"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -805,7 +805,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, cheerful smile, happy expression, waving one hand, friendly pose"
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, high contrast line drawing, SAME CHARACTER as reference, identical outfit, identical hairstyle, identical hair color, identical clothing details, identical accessories, only facial expression and body pose change, cheerful smile, happy expression, waving one hand, friendly pose"
       ],
       "color": "#232",
       "bgcolor": "#353"
@@ -933,7 +933,7 @@
         1.8,
         "euler",
         "simple",
-        0.55
+        0.4
       ]
     },
     {
@@ -1015,7 +1015,7 @@
         "Node name for S&R": "SaveImage"
       },
       "widgets_values": [
-        "LostMemory_Variation_smile"
+        "Variation_smile"
       ]
     },
     {
@@ -1063,7 +1063,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, surprised expression, wide open eyes, mouth open, hands raised in shock"
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, high contrast line drawing, SAME CHARACTER as reference, identical outfit, identical hairstyle, identical hair color, identical clothing details, identical accessories, only facial expression and body pose change, surprised expression, wide open eyes, mouth open, hands raised in shock"
       ],
       "color": "#232",
       "bgcolor": "#353"
@@ -1191,7 +1191,7 @@
         1.8,
         "euler",
         "simple",
-        0.55
+        0.4
       ]
     },
     {
@@ -1273,7 +1273,7 @@
         "Node name for S&R": "SaveImage"
       },
       "widgets_values": [
-        "LostMemory_Variation_surprised"
+        "Variation_surprised"
       ]
     },
     {
@@ -1321,7 +1321,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, angry expression, frowning eyebrows, fighting stance, clenched fist"
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, high contrast line drawing, SAME CHARACTER as reference, identical outfit, identical hairstyle, identical hair color, identical clothing details, identical accessories, only facial expression and body pose change, angry expression, frowning eyebrows, fighting stance, clenched fist"
       ],
       "color": "#232",
       "bgcolor": "#353"
@@ -1449,7 +1449,7 @@
         1.8,
         "euler",
         "simple",
-        0.55
+        0.4
       ]
     },
     {
@@ -1531,7 +1531,7 @@
         "Node name for S&R": "SaveImage"
       },
       "widgets_values": [
-        "LostMemory_Variation_angry"
+        "Variation_angry"
       ]
     },
     {
@@ -1579,7 +1579,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, sad expression, downcast eyes, head slightly tilted down, hands clasped"
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, high contrast line drawing, SAME CHARACTER as reference, identical outfit, identical hairstyle, identical hair color, identical clothing details, identical accessories, only facial expression and body pose change, sad expression, downcast eyes, head slightly tilted down, hands clasped"
       ],
       "color": "#232",
       "bgcolor": "#353"
@@ -1707,7 +1707,7 @@
         1.8,
         "euler",
         "simple",
-        0.55
+        0.4
       ]
     },
     {
@@ -1789,7 +1789,7 @@
         "Node name for S&R": "SaveImage"
       },
       "widgets_values": [
-        "LostMemory_Variation_sad"
+        "Variation_sad"
       ]
     }
   ],
