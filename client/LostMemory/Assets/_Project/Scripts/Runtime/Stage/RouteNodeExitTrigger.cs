@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using LostMemory.TestKhi;
 using MoreMountains.Tools;
@@ -28,6 +29,17 @@ namespace LostMemory.Stage
         [SerializeField] private string localTeleportTargetRootName = string.Empty;
         [SerializeField] private string localTeleportAnchorTag = "default";
         [SerializeField] private Vector3 localTeleportOffset;
+
+        [Header("Portal Animation (optional)")]
+        [Tooltip("재생할 게이트/포탈 Animator. 비어있으면 즉시 전환.")]
+        [SerializeField] private Animator portalAnimator;
+        [Tooltip("0 이면 컨트롤러 내 클립 중 가장 긴 길이를 자동 사용. >0 이면 그 값을 사용.")]
+        [SerializeField, Min(0f)] private float portalAnimationDurationOverride;
+        [Tooltip("애니메이션 끝난 뒤 추가 대기 시간.")]
+        [SerializeField, Min(0f)] private float postAnimationDelay = 0.5f;
+        [Tooltip("애니메이션 + 대기 동안 플레이어 입력/이동을 잠금.")]
+        [SerializeField] private bool freezePlayerDuringPortalAnimation = true;
+
         [SerializeField] private bool debugLogging;
 
         private readonly HashSet<Character> candidates = new HashSet<Character>();
@@ -312,22 +324,73 @@ namespace LostMemory.Stage
             }
 
             RefreshReferences();
+
+            if (portalAnimator != null)
+            {
+                requestInProgress = true;
+                ApplyCurrentViewState();
+                StartCoroutine(PlayPortalAnimationAndAdvance(character));
+                return;
+            }
+
+            RequestAdvanceImmediate(character);
+        }
+
+        private IEnumerator PlayPortalAnimationAndAdvance(Character character)
+        {
+            if (freezePlayerDuringPortalAnimation && character != null)
+            {
+                character.Freeze();
+            }
+
+            portalAnimator.enabled = true;
+
+            float duration = portalAnimationDurationOverride > 0f
+                ? portalAnimationDurationOverride
+                : ResolveAnimatorClipDuration(portalAnimator);
+
+            if (duration > 0f)
+            {
+                yield return new WaitForSeconds(duration);
+            }
+
+            if (postAnimationDelay > 0f)
+            {
+                yield return new WaitForSeconds(postAnimationDelay);
+            }
+
+            // 애니메이션이 끝났으니 freeze 유지할 이유 없음.
+            // 플레이어는 DontDestroyOnLoad 로 다음 씬까지 살아남고 Freeze 상태도 그대로 이어지므로
+            // 씬 전환 성공 여부와 무관하게 여기서 무조건 풀어줘야 다음 방에서 입력이 막히지 않는다.
+            if (freezePlayerDuringPortalAnimation && character != null)
+            {
+                character.UnFreeze();
+            }
+
+            // 코루틴이 잡고 있던 in-progress 플래그를 비우고 실제 advance 로 넘긴다.
+            // RequestAdvanceImmediate 가 내부에서 다시 set/clear 한다.
+            requestInProgress = false;
+            RequestAdvanceImmediate(character);
+        }
+
+        private bool RequestAdvanceImmediate(Character character)
+        {
             if (useLocalTeleport)
             {
                 RequestLocalTeleport(character);
-                return;
+                return true;
             }
 
             if (completeRunInsteadOfAdvancingRoute)
             {
                 RequestRunCompletion(character);
-                return;
+                return true;
             }
 
             if (routeManager == null)
             {
                 Debug.LogWarning($"[RouteNodeExitTrigger] No StageRouteManager found for trigger '{triggerId}'.", this);
-                return;
+                return false;
             }
 
             requestInProgress = true;
@@ -337,7 +400,40 @@ namespace LostMemory.Stage
             {
                 requestInProgress = false;
                 ApplyCurrentViewState();
+                return false;
             }
+            return true;
+        }
+
+        private static float ResolveAnimatorClipDuration(Animator animator)
+        {
+            if (animator == null)
+            {
+                return 0f;
+            }
+
+            RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+            if (controller == null)
+            {
+                return 0f;
+            }
+
+            AnimationClip[] clips = controller.animationClips;
+            if (clips == null)
+            {
+                return 0f;
+            }
+
+            float max = 0f;
+            for (int i = 0; i < clips.Length; i++)
+            {
+                AnimationClip clip = clips[i];
+                if (clip != null && clip.length > max)
+                {
+                    max = clip.length;
+                }
+            }
+            return max;
         }
 
         private void RequestRunCompletion(Character character)

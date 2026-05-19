@@ -403,7 +403,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 61dcfa4e68f9d604aa9e366887857709, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.CurrencyHUDView
 --- !u!114 &357414
 MonoBehaviour:
@@ -415,7 +415,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b0fc1a8d82f14dd0b3217d910048861, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.DungeonCurrencyHUDPresenter
   _view: {fileID: 357413}
   _goldWallet: {fileID: 0}
@@ -448,8 +448,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7adef078076544c6abbdc7344d8a0a7d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100,
     type: 3}
   inputActionsAssetPath: Assets/InputSystem_Actions.inputactions
@@ -1167,7 +1167,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19fe98f618cd9974e9318408f58bead1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.DungeonRunBootstrap
 --- !u!1001 &127387768
 PrefabInstance:
@@ -1939,12 +1939,12 @@ PrefabInstance:
     - target: {fileID: 991419833529488825, guid: 81d70782bee1d8b4186faea82636d865,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.01
+      value: 31.99
       objectReference: {fileID: 0}
     - target: {fileID: 991419833529488825, guid: 81d70782bee1d8b4186faea82636d865,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 18.57
+      value: -72.43
       objectReference: {fileID: 0}
     - target: {fileID: 991419833529488825, guid: 81d70782bee1d8b4186faea82636d865,
         type: 3}
@@ -1996,6 +1996,16 @@ PrefabInstance:
       propertyPath: triggerId
       value: to_2f_0r
       objectReference: {fileID: 0}
+    - target: {fileID: 3659484702076297871, guid: 81d70782bee1d8b4186faea82636d865,
+        type: 3}
+      propertyPath: routeManager
+      value: 
+      objectReference: {fileID: 349145894}
+    - target: {fileID: 3659484702076297871, guid: 81d70782bee1d8b4186faea82636d865,
+        type: 3}
+      propertyPath: portalAnimator
+      value: 
+      objectReference: {fileID: 2075359478}
     - target: {fileID: 3659484702076297871, guid: 81d70782bee1d8b4186faea82636d865,
         type: 3}
       propertyPath: unlockedOnStart
@@ -2084,7 +2094,15 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2230140976905920551, guid: 81d70782bee1d8b4186faea82636d865,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 7218144275895893454, guid: 81d70782bee1d8b4186faea82636d865,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 81d70782bee1d8b4186faea82636d865, type: 3}
 --- !u!1001 &298700294
 PrefabInstance:
@@ -2770,7 +2788,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48985f1e1fa67034687e50bf854bc951, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.RunResultPanelView
 --- !u!1001 &326880969
 PrefabInstance:
@@ -2805,6 +2823,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Tiles.Array.data[0].second.m_TileSpriteIndex
       value: 37
+      objectReference: {fileID: 0}
+    - target: {fileID: 3025071002374193071, guid: d0ce881edd921194eb90bc1b8f12d0c0,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 2927221056
       objectReference: {fileID: 0}
     - target: {fileID: 6418301402336183476, guid: d0ce881edd921194eb90bc1b8f12d0c0,
         type: 3}
@@ -2894,7 +2917,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 1913153140
   InScenePlacedSourceGlobalObjectIdHash: 0
@@ -2934,7 +2957,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 287bbef5252039a4097ce051ea2ecd43, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.StageRouteManager
   ShowTopMostFoldoutHeaderGroup: 1
   routeNodes:
@@ -2966,7 +2989,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5c0effd19d654d8281cb59e488b36, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RewardController
 --- !u!114 &384745938 stripped
 MonoBehaviour:
@@ -2978,7 +3001,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 692f3b727a0c07f4b8679bfa23474589, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.GoldWallet
 --- !u!1 &437836595
 GameObject:
@@ -3007,7 +3030,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1590200bf99b7cd4ab4737309034a3f2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Player.PlayerRunState
 --- !u!4 &437836597
 Transform:
@@ -3034,7 +3057,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a23bd0a9071f7fb48958dbc9cea6ca0f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RouteNodeExitTrigger
 --- !u!1001 &657488467
 PrefabInstance:
@@ -3283,7 +3306,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b1a8250a1dd9904d9ddb2be32656c9c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.InventoryToggleController
   panel: {fileID: 1617425738}
   playerRelicInventory: {fileID: 2006321053}
@@ -3562,8 +3585,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 073797afb82c5a1438f328866b10b3f0, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_ComponentVersion: 2
   m_LightType: 4
   m_BlendStyleIndex: 0
@@ -3613,7 +3636,7 @@ Transform:
   m_GameObject: {fileID: 870497414}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: 32, y: -88, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3752,7 +3775,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a1f8c3d4e5b6a4781234567890abcde, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Town.TutorialPanelView
 --- !u!224 &909544709 stripped
 RectTransform:
@@ -3787,7 +3810,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ac6158c92a641c745b8a9d513f9c7159, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.LargeNodeClearTracker
   clearPolicy: 3
   requiredRoomIds: []
@@ -3824,12 +3847,12 @@ PrefabInstance:
     - target: {fileID: 1729120206740110976, guid: ad4388482d0fa414bbfd5fab4aedd80d,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 17.81024
+      value: 49.81024
       objectReference: {fileID: 0}
     - target: {fileID: 1729120206740110976, guid: ad4388482d0fa414bbfd5fab4aedd80d,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -22.8982
+      value: -113.8982
       objectReference: {fileID: 0}
     - target: {fileID: 1729120206740110976, guid: ad4388482d0fa414bbfd5fab4aedd80d,
         type: 3}
@@ -4389,7 +4412,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f4ce3576440b914687d9906b97f17a0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Rewards.RewardPanelView
 --- !u!224 &1220081270 stripped
 RectTransform:
@@ -4849,7 +4872,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5fca329b356dbe4cb18aafc9cd3c73c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.HealthBarView
 --- !u!114 &1236297960
 MonoBehaviour:
@@ -4861,7 +4884,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 867ea7251f3974860be5bfd12b7976c7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.PlayerHUDPresenter
   _healthBarView: {fileID: 1236297959}
   _targetHealth: {fileID: 0}
@@ -4895,7 +4918,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d8a28f0fabf54c498b5c4908c3987436, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.TestKhiInputManager
   InputDetectionActive: 1
   ResetButtonStatesOnFocusLoss: 1
@@ -5088,7 +5111,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f7e2f9d27b8efef4e9688b546527dc76, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.SetEffectPanelView
 --- !u!1001 &1524674113
 PrefabInstance:
@@ -5382,7 +5405,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d56d0386e5b24fd41ae6f83e918819f3, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.ShortcutBarView
 --- !u!114 &1603998375
 MonoBehaviour:
@@ -5394,7 +5417,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7693597e0fcbc4bc59017fa5509c908e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.ShortcutBarPresenter
   _view: {fileID: 1603998374}
   _inventory: {fileID: 0}
@@ -5412,7 +5435,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 31ca8cc7c90364d448150f8e3e03cdca, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.InventoryPanelView
 --- !u!1001 &1622169156
 PrefabInstance:
@@ -6363,12 +6386,12 @@ PrefabInstance:
     - target: {fileID: 2349436938613031475, guid: 5b1281f4582790746bcf292c3e78f799,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 32
       objectReference: {fileID: 0}
     - target: {fileID: 2349436938613031475, guid: 5b1281f4582790746bcf292c3e78f799,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3
+      value: -88
       objectReference: {fileID: 0}
     - target: {fileID: 2349436938613031475, guid: 5b1281f4582790746bcf292c3e78f799,
         type: 3}
@@ -6423,7 +6446,7 @@ PrefabInstance:
     - target: {fileID: 7234946648358785153, guid: 5b1281f4582790746bcf292c3e78f799,
         type: 3}
       propertyPath: Modules.Array.size
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7234946648358785153, guid: 5b1281f4582790746bcf292c3e78f799,
         type: 3}
@@ -6498,7 +6521,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
   m_SendPointerHoverToParent: 1
   m_MoveRepeatDelay: 0.5
@@ -6540,7 +6563,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
@@ -6554,7 +6577,7 @@ Transform:
   m_GameObject: {fileID: 1667419641}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: 32, y: -88, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6574,11 +6597,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 32
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.5
+      value: -88.5
       objectReference: {fileID: 0}
     - target: {fileID: 4319614708212260, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
       propertyPath: m_LocalPosition.z
@@ -6632,7 +6655,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de088c31fad134e4ca9c7b7d65df81cb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildManager
 --- !u!114 &1683277797 stripped
 MonoBehaviour:
@@ -6644,7 +6667,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33dad3eacfaf13e4fbbb7067c41f1d90, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiWeaponPresenter
 --- !u!114 &1683277798 stripped
 MonoBehaviour:
@@ -6656,7 +6679,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e91b5caa1ec5f7a428fe2e32f2b348d2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiParryController
 --- !u!114 &1683277799 stripped
 MonoBehaviour:
@@ -6668,7 +6691,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce4d96451ada47fd91066a50793a9f2f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiMeleeComboController
 --- !u!114 &1683277800 stripped
 MonoBehaviour:
@@ -6680,7 +6703,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7ac875443dcb4ae0b3958b7545375b92, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerAim
 --- !u!114 &1683277801 stripped
 MonoBehaviour:
@@ -6692,8 +6715,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f47b34d4ea84fbfba2cb67c6db59740, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1699362051
 GameObject:
   m_ObjectHideFlags: 0
@@ -6758,7 +6781,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60673e2cfaf9f354fbcbb7a4c541d23a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RouteNodeSpawnPoint
   spawnId: default
   facing: {x: 0, y: -1}
@@ -7055,7 +7078,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5eb726ca15e1c844fb33e9a5c317e7bf, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerCamera
   followTarget: {fileID: 0}
   offset: {x: 0, y: 0, z: -10}
@@ -7077,8 +7100,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
@@ -7128,7 +7151,7 @@ Transform:
   m_GameObject: {fileID: 1891704496}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 32, y: -91, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7234,7 +7257,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
@@ -7251,7 +7274,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
   m_UiScaleMode: 0
   m_ReferencePixelsPerUnit: 100
@@ -7297,7 +7320,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
 --- !u!114 &2006321064 stripped
 MonoBehaviour:
@@ -7309,7 +7332,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ce249ab02704ff4ab08dddf7901fad5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiPlayerStateAggregator
 --- !u!114 &2006321065 stripped
 MonoBehaviour:
@@ -7321,7 +7344,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33c724ba75b7ffe42af7580044857e52, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiDownController
 --- !u!1 &2018324244
 GameObject:
@@ -7369,7 +7392,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 207a0d5b48059cb4a95a8ae3242492b7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.DungeonTutorialController
   _pages:
   - Step: 0
@@ -7666,15 +7689,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: Map_2F_1R_1_NS_EP
       objectReference: {fileID: 0}
+    - target: {fileID: 7254693828451009520, guid: 4694b50e3d300a947a4d339e64d92b2b,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 2938071630
+      objectReference: {fileID: 0}
     - target: {fileID: 7567602114999337482, guid: 4694b50e3d300a947a4d339e64d92b2b,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.5
+      value: 32.5
       objectReference: {fileID: 0}
     - target: {fileID: 7567602114999337482, guid: 4694b50e3d300a947a4d339e64d92b2b,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 15
+      value: -76
       objectReference: {fileID: 0}
     - target: {fileID: 7567602114999337482, guid: 4694b50e3d300a947a4d339e64d92b2b,
         type: 3}
@@ -7721,6 +7749,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4694b50e3d300a947a4d339e64d92b2b, type: 3}
+--- !u!95 &2075359478 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 6796196786005851361, guid: 4694b50e3d300a947a4d339e64d92b2b,
+    type: 3}
+  m_PrefabInstance: {fileID: 2075359477}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &2113634227 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1496170365699431617, guid: 4d290d1fc0f84526999c421c61df5d8f,
@@ -7731,7 +7765,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
 --- !u!1 &2147510001
 GameObject:
@@ -7775,7 +7809,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 614edb33c38bcf949846d5675f29f9fb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MoreMountains.Tools::MoreMountains.Tools.MMSoundManager
   AutomaticallyUnparentOnAwake: 1
   settingsSo: {fileID: 11400000, guid: 07ea3ff88e1ecb84d91f58aa804badc6, type: 2}
@@ -7823,7 +7857,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c4f04d9a80d4c9aa4bc8072f621e193, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Stage1BgmController
   _stage1DungeonClip: {fileID: 8300000, guid: ed2c2dbd74dbf164c8bad610aa7e2bf3, type: 3}
   _stage1BossClip: {fileID: 8300000, guid: 2c4233a7b1b2cf14eab10c1df9035406, type: 3}
@@ -8054,7 +8088,15 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2230140976905920551, guid: 81d70782bee1d8b4186faea82636d865,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 7218144275895893454, guid: 81d70782bee1d8b4186faea82636d865,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 81d70782bee1d8b4186faea82636d865, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
