@@ -205,3 +205,44 @@ input[type=checkbox] { accent-color: var(--accent); }
   line-height: 1.5;
 }
 .markdown-hint code { background: transparent; color: var(--accent); padding: 0 0.15em; }
+
+/* admin form 의 일반 hint (예: 다운로드 URL 가이드) */
+.field-hint {
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  border-left: 2px solid var(--muted);
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.field-hint code { background: transparent; color: var(--accent); padding: 0 0.15em; }
+
+/* 헤더 nav 의 다운로드 link + patchnote detail 의 "이 버전 다운로드" 버튼 */
+.header-download {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--accent);
+  color: var(--bg, #000);
+  border-radius: 2px;
+  font-weight: bold;
+  text-decoration: none;
+}
+.header-download:hover {
+  background: var(--fg);
+  color: var(--accent);
+}
+
+/* 메인 home 의 "최신 패치노트" 섹션 */
+.patch-summary {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: var(--panel);
+  border-left: 3px solid var(--accent);
+}
+.patch-summary h3 { margin-top: 0; }
+.patch-summary .patch-excerpt {
+  margin: 0.75rem 0;
+  color: var(--fg);
+}

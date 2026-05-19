@@ -9,6 +9,11 @@
   <div class="entry-meta">
     Release date: <span th:text="${#temporals.format(patchNote.releaseDate, 'yyyy-MM-dd')}">날짜</span>
   </div>
+  <p th:if="${patchNote.downloadUrl != null and !patchNote.downloadUrl.isBlank()}" style="margin-top:1rem">
+    <a class="header-download" th:href="${patchNote.downloadUrl}" target="_blank" rel="noopener noreferrer">
+      이 버전 다운로드 (Windows) ↓
+    </a>
+  </p>
   <div class="markdown-body" th:utext="${bodyHtml}">본문</div>
 
   <p style="margin-top:2rem"><a th:href="@{/patch-notes}">← 목록으로</a></p>

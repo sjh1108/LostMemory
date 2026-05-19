@@ -21,6 +21,10 @@
     <span sec:authorize="!isAuthenticated()">
       <a th:href="@{/admin/login}">로그인</a>
     </span>
+    <a th:if="${latestDownloadUrl != null and !latestDownloadUrl.isBlank()}"
+       class="header-download"
+       th:href="${latestDownloadUrl}"
+       target="_blank" rel="noopener noreferrer">최신 버전 다운로드 ↓</a>
   </nav>
 </header>
 
