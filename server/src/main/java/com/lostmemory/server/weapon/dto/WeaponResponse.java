@@ -21,9 +21,6 @@ public record WeaponResponse(
                 example = "null", nullable = true)
         Long parentWeaponId,
 
-        @Schema(description = "해금 비용 (기억의 파편)", example = "50")
-        Integer costMemoryShards,
-
         @Schema(description = "정렬 순서 (오름차순 — 응답이 이 기준으로 정렬됨)", example = "1")
         Integer displayOrder
 ) {
@@ -33,7 +30,6 @@ public record WeaponResponse(
                 weapon.getWeaponName(),
                 weapon.getWeaponType(),
                 weapon.getParentWeaponId(),
-                weapon.getCostMemoryShards(),
                 weapon.getDisplayOrder()
         );
     }

@@ -33,7 +33,8 @@ public class WeaponController {
                     트리 구조: `parentWeaponId` 가 null 이면 루트, 값 있으면 해당 weaponId 의 자식.
                     클라는 응답 받은 평면 리스트를 `parentWeaponId` 로 트리 재구성.
 
-                    `costMemoryShards` 는 해금에 필요한 파편 수량. 무기 해금 endpoint 는 별도 (MVP 범위 외).
+                    해금에 필요한 파편 수량(cost)은 클라가 관리. 백엔드는 트리 구조 + 식별자만.
+                    무기 해금 endpoint 는 별도 (MVP 범위 외).
                     """
     )
     @ApiResponses({
@@ -45,18 +46,16 @@ public class WeaponController {
                               "data": [
                                 {
                                   "weaponId": 1,
-                                  "weaponName": "기본 검",
-                                  "weaponType": "MELEE",
+                                  "weaponName": "검",
+                                  "weaponType": "Sword",
                                   "parentWeaponId": null,
-                                  "costMemoryShards": 0,
                                   "displayOrder": 1
                                 },
                                 {
                                   "weaponId": 2,
-                                  "weaponName": "강화 검",
-                                  "weaponType": "MELEE",
+                                  "weaponName": "단검",
+                                  "weaponType": "Dagger",
                                   "parentWeaponId": 1,
-                                  "costMemoryShards": 50,
                                   "displayOrder": 2
                                 }
                               ]

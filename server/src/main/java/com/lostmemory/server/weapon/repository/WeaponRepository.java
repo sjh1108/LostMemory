@@ -11,4 +11,7 @@ public interface WeaponRepository extends JpaRepository<Weapon, Long> {
 
     /** 무기 마스터 — display_order 오름차순으로 전체 조회. 클라가 트리 재구성에 사용 */
     List<Weapon> findAllByOrderByDisplayOrderAsc();
+
+    /** 트리 루트 무기 — parent_weapon_id IS NULL. 회원가입 시 기본 무기 자동 해금에 사용. */
+    List<Weapon> findAllByParentWeaponIdIsNull();
 }

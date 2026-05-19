@@ -57,13 +57,19 @@ public class UserRecord {
         return new UserRecord(user, clearedChapter, clearedStage);
     }
 
-    /** 새 chapter/stage 가 기존보다 높으면 갱신. 동일·이하면 no-op. */
-    public void updateMaxIfHigher(int newChapter, int newStage) {
-        if (newChapter > this.clearedChapter) {
-            this.clearedChapter = newChapter;
+    /**
+     * 더 깊이 클리어한 경우만 갱신. chapter 우선, 동일 chapter 면 stage 비교.
+     * (2,3) 상태에서 (1,5) 들어와도 chapter 1 < 2 라 갱신 X — 기존 record 보존.
+     *
+     * @return true 면 갱신됨, false 면 기존 record 가 더 깊거나 동일 — 변화 없음
+     */
+    public boolean upgradeIfDeeper(int chapter, int stage) {
+        if (chapter > this.clearedChapter
+                || (chapter == this.clearedChapter && stage > this.clearedStage)) {
+            this.clearedChapter = chapter;
+            this.clearedStage = stage;
+            return true;
         }
-        if (newStage > this.clearedStage) {
-            this.clearedStage = newStage;
-        }
+        return false;
     }
 }
