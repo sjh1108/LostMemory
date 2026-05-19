@@ -1,5 +1,5 @@
 {
-  "id": "lostmemory-bishoujo-img2img",
+  "id": "lostmemory-pixelart-to-frontview",
   "revision": 0,
   "last_node_id": 33,
   "last_link_id": 20,
@@ -241,8 +241,8 @@
       },
       "widgets_values": [
         "pixel_art_style_z_image_turbo.safetensors",
-        0.85,
-        0.85
+        1.0,
+        1.0
       ]
     },
     {
@@ -469,7 +469,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Pixel art game character sprite. anime girl character, < CHARACTER MODIFIER HERE >, isolated, centered, full body view, plain white background, clean black outline, simple flat shading, muted vintage colors with subtle pink and pastel accents, no gradient, no anti-aliasing, sharp pixel edges"
+        "Pixel art game character sprite, LostMemory chibi anime girl style, front view, fully facing viewer, full body shown from head to feet, standing T-pose character reference sheet pose, < CHARACTER MODIFIER HERE >, isolated, centered, plain white background, clean black outline, simple flat shading, blocky pixels visible, sharp pixel edges, limited color palette, 16-bit retro RPG sprite aesthetic, symmetric pose, feet visible at bottom"
       ]
     },
     {
@@ -517,7 +517,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "realistic, 3d render, photo, smooth shading, anti-aliased, blurry, gradient, detailed background, noisy background, text, watermark, low quality, multiple characters, group, crowd, deformed, malformed, lowres, jpeg artifacts, nsfw, suggestive, side view, back view"
+        "side view, back view, three-quarter view, profile view, angled view, looking away, action pose, dynamic pose, running, jumping, fighting pose, sitting, close-up, headshot, bust shot, portrait crop, cropped body, partial body, feet cut off, hands behind back, realistic, photorealistic, 3d render, photo, hdr, smooth shading, anti-aliased, smooth pixel transitions, illustration with smooth lines, painterly, photographic, watercolor, blurry, gradient artifacts, soft shadows, detailed background, noisy background, complex background, text, watermark, low quality, multiple characters, group, crowd, deformed face, malformed limbs, jpeg artifacts, nsfw, suggestive"
       ]
     },
     {
@@ -634,7 +634,7 @@
         1.8,
         "euler",
         "simple",
-        0.6
+        0.7
       ]
     },
     {
@@ -716,7 +716,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "LostMemory_Bishoujo_img2img"
+        "LostMemory_FrontView"
       ]
     },
     {
@@ -737,7 +737,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "## LostMemory 미소녀 img2img (양자화 + 배경 투명화)\n\n순서:\n1. 노드 20 (LoadImage) Upload 또는 input/ 폴더의 이미지 선택\n2. 노드 4 (positive prompt) 의 < CHARACTER MODIFIER HERE > 자리에 변형 방향 명시\n   예시:\n     - \"same girl but in magical girl outfit\"\n     - \"redraw as pixel art with twin tails\"\n     - \"convert to game sprite, school uniform variant\"\n3. 노드 6 (KSampler) denoise 조정:\n   - 0.3~0.5: 원본 윤곽 그대로, 톤 일부만 변경\n   - 0.5~0.7: 톤 변경하면서 윤곽 유지 (기본 0.6)\n   - 0.8~0.95: 거의 새로 그림, 레퍼런스는 약하게만 반영\n4. Queue Prompt\n\n결과는 세 가지 동시 생성:\n  - LostMemory_Bishoujo_img2img_*.png             원본 512x512\n  - LostMemory_Bishoujo_img2img_pixel_*.png       게임 톤 64x64\n  - LostMemory_Bishoujo_img2img_bgremove_*.png    RGBA 512x512 (isnet-anime)\n\n캐릭터 sprite 사이즈 조정: 노드 30 LostMemoryPixelize preset\n  - game-item64 (기본) — 캐릭터 sprite 적정\n  - game-item48        — 작은 NPC\n\n배경 투명화 윤곽 거칠면 노드 32 LostMemoryBgRemove 의 alpha_matting=yes 로 보완.\n필요 없을 때는 노드 32+33 우클릭 → Bypass(Ctrl+B)."
+        "## LostMemory 픽셀 아트 -> 정면 전신 sprite 변환\n\n용도: 임의의 view/pose 픽셀 아트(또는 일러스트) 를 우리 캐릭터 톤의\n'정면 + 전신 + T-pose' character reference sheet sprite 로 재구성.\n\n흐름:\n  1단계: LoadImage 입력을 latent 화 (denoise 0.7 로 강한 변형 허용)\n  2단계: KSampler 가 pixel_art LoRA + '정면/전신' prompt 강제로 재생성\n  3단계: VAEDecode 세 갈래 (원본 / 16x16 도트 / RGBA 배경 투명)\n\n사용:\n1. 입력 PNG 를 tools/ComfyUI/input/ 에 저장 (ComfyUI 새로고침)\n2. 노드 20 (LoadImage) 에서 입력 선택\n3. 노드 4 (positive prompt) < CHARACTER MODIFIER HERE > 자리\n   예시:\n     - same girl from input, pink magical girl outfit, twin tails\n     - similar character, convert to RPG knight, full armor\n     - keep face and hair, change pose to standing T-pose\n4. 노드 6 (KSampler) denoise:\n   - 0.5 이하: 원본 윤곽 살림 (정면 전신 잘 안 잡힘)\n   - 0.7 (기본): 정면/전신 prompt 잘 반영 + 캐릭터 정체성 약간 유지\n   - 0.8+: 거의 새로 그림 (입력은 색/스타일 힌트만)\n5. Queue Prompt\n\n결과 3장:\n  - LostMemory_FrontView_*.png             원본 해상도 (정면 전신 픽셀 아트)\n  - LostMemory_FrontView_pixel16_*.png     16x16 도트 sprite\n  - LostMemory_FrontView_bgremove_*.png    RGBA 배경 투명\n\n주의:\n  - z_image_turbo 가 'character reference sheet' 컨셉 학습량이 적어 한 번에 안 나올 수 있음.\n    seed 변경하며 3~5회 시도하는 게 일반적.\n  - 정면 전신이 계속 안 나오면 입력을 정면 전신 reference 로 바꾸는 게 가장 확실.\n  - 비율 (chibi 등) 은 LostMemory 톤 prompt 가 잡지만, 입력 reference 가 다른 비율이면\n    denoise 0.7+ 로 새로 그리도록 강제."
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -829,10 +829,10 @@
         "Node name for S&R": "LostMemoryPixelize"
       },
       "widgets_values": [
-        "game-item64",
+        "game-item16",
         0,
-        "preset",
-        32,
+        "adaptive",
+        16,
         "preset",
         30
       ]
@@ -871,7 +871,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "LostMemory_Bishoujo_img2img_pixel"
+        "LostMemory_FrontView_pixel16"
       ]
     },
     {
@@ -1012,7 +1012,7 @@
         "Node name for S&R": "LostMemorySaveImageRGBA"
       },
       "widgets_values": [
-        "LostMemory_Bishoujo_img2img_bgremove"
+        "LostMemory_FrontView_bgremove"
       ]
     }
   ],

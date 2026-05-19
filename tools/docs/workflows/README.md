@@ -4,14 +4,25 @@
 
 ## 파일
 
+### 아이템 생성 (KSampler prompt 기반)
+
 | 파일 | 용도 | 입력 | 출력 |
 |---|---|---|---|
 | `LostMemory_Item_TXT2IMG.json` | 텍스트만으로 아이템 생성 + 픽셀 양자화 + **배경 투명화** 한 번에 | 프롬프트 | PNG 3장 (원본 / 픽셀 48×48 / RGBA) |
 | `LostMemory_Item_IMG2IMG.json` | 레퍼런스 이미지 변형 + 픽셀 양자화 + **배경 투명화** | 이미지 + 프롬프트 | PNG 3장 (원본 / 픽셀 48×48 / RGBA) |
-| `LostMemory_Bishoujo_TXT2IMG.json` | 미소녀 캐릭터 sprite 생성 (`isnet-anime`, `game-item64`) | 프롬프트 | PNG 3장 (원본 / 픽셀 64×64 / RGBA) |
-| `LostMemory_Bishoujo_IMG2IMG.json` | 레퍼런스 이미지 → 미소녀 sprite 변형 | 이미지 + 프롬프트 | PNG 3장 |
-| `LostMemory_Character_TXT2IMG.json` | 일반 캐릭터(플레이어/적/NPC) sprite 생성 — Bishoujo 패턴 답습 | 프롬프트 | PNG 3장 |
-| `LostMemory_Character_IMG2IMG.json` | 레퍼런스 이미지 → 일반 캐릭터 sprite 변형 | 이미지 + 프롬프트 | PNG 3장 |
+
+### 외부 일러스트 → 픽셀 아트 변환 (캐릭터/미소녀는 직접 그린 일러스트 입력)
+
+| 파일 | 용도 | 입력 | 출력 |
+|---|---|---|---|
+| `LostMemory_Illust_To_Pixel.json` | 단순 다운스케일 (KSampler 없음) | 일러스트 1장 | 16×16 도트 + RGBA 배경 투명 |
+| `LostMemory_Illust_To_PixelArt.json` | 일러스트 → 픽셀 아트 그림체 변환 (LoRA 스타일 트랜스퍼, denoise 0.55) | 일러스트 1장 | PNG 3장 (원본 / 16×16 / RGBA) |
+| `LostMemory_PixelArt_To_FrontView.json` | 임의 view/pose 픽셀 아트 → 정면 전신 sprite 재구성 (denoise 0.7) | 픽셀 아트 1장 | PNG 3장 (원본 / 16×16 / RGBA) |
+
+### 후처리
+
+| 파일 | 용도 | 입력 | 출력 |
+|---|---|---|---|
 | `LostMemory_BgRemove_Standalone.json` | 기존 PNG 한 장을 배경 투명화 (단독) | 이미지 1장 | RGBA PNG |
 
 ## 사용법
@@ -135,11 +146,41 @@ VAEDecode → SaveImage                  → output/LostMemory_Item_*.png       
 
 배경 투명화가 필요 없는 경우 노드 32 (BgRemove)와 33 (SaveImageRGBA)을 우클릭 → Bypass(`Ctrl+B`)로 해당 갈래만 끔.
 
-### AI-311/312 워크플로 신규 작성 시
+## 외부 일러스트 → 픽셀 아트 변환 3종 ([S14P31C201-624](https://ssafy.atlassian.net/browse/S14P31C201-624))
 
-미소녀/캐릭터 워크플로를 같은 패턴(VAEDecode 세 갈래)으로 만들면 됩니다. BgRemove 노드의 `model`은 `isnet-anime` 권장.
+미소녀/캐릭터 일러스트는 외부에서 직접 그려 입력하는 흐름이라 ComfyUI 측은 **순수 변환 파이프라인**만 담당합니다. 용도별 3종:
+
+### 1. `LostMemory_Illust_To_Pixel.json` — 단순 다운스케일
+
+```
+LoadImage → LostMemoryPixelize(16×16, adaptive 16색) → SaveImage
+         → LostMemoryBgRemove(isnet-anime)            → SaveImageRGBA
+```
+
+KSampler 없음. 원본 일러스트가 변형 없이 그대로 16×16 도트로 다운스케일됩니다. 일러스트가 이미 픽셀 아트 톤일 때 사용.
+
+### 2. `LostMemory_Illust_To_PixelArt.json` — 스타일 트랜스퍼
+
+```
+LoadImage → ImageScale → VAEEncode
+   → KSampler (pixel_art LoRA 1.0, denoise 0.55, pixel art prompt) → VAEDecode
+   ├─ SaveImage                                          → 픽셀 아트 일러스트 512×512
+   ├─ LostMemoryPixelize(16, adaptive 16) → SaveImage    → 16×16 도트 sprite
+   └─ LostMemoryBgRemove(isnet-anime)     → SaveImageRGBA → RGBA 배경 투명
+```
+
+매끄러운 anime 일러스트를 픽셀 아트 그림체로 재생성. denoise 0.55에서 원본 윤곽은 유지되면서 톤만 픽셀화. 0.4~0.6 사이로 조정.
+
+### 3. `LostMemory_PixelArt_To_FrontView.json` — 정면 전신 재구성
+
+PixelArt 워크플로와 동일 구조 + denoise 0.7 + 정면/전신/T-pose prompt 강제. 임의 view/pose 픽셀 아트를 LostMemory 톤 정면 전신 sprite로 변환. character reference sheet 컨셉 학습량이 적어 seed 변경하며 3~5회 시도 권장.
+
+### 폐기 (MR !303 → 본 MR로 정리)
+
+`LostMemory_Bishoujo_TXT2IMG/IMG2IMG`, `LostMemory_Character_TXT2IMG/IMG2IMG` (총 4종) 폐기. 캐릭터/미소녀 KSampler prompt 생성은 외부 일러스트 흐름과 맞지 않음. 추가로 시도했던 `LostMemory_Bishoujo_Chibi_TXT2IMG/IMG2IMG` 2종도 chibi prompt 한계(거대 얼굴 결과 등)로 폐기.
 
 ## 변경 기록
 
+- 2026-05-18: `[AI]` 외부 일러스트 → 픽셀 아트 변환 3종 추가, 미소녀/캐릭터 KSampler 생성 4종 폐기. ([S14P31C201-624](https://ssafy.atlassian.net/browse/S14P31C201-624))
 - 2026-05-18: `[AI][313]` BgRemove standalone 워크플로 + `lostmemory_bgremove` 커스텀 노드 (rembg 백엔드) 추가. ([S14P31C201-595](https://ssafy.atlassian.net/browse/S14P31C201-595))
 - 2026-05-17: 초기 작성. AI-202 워크플로 베이스로 게임 아이템 용도 분기.
