@@ -15,9 +15,14 @@
     <a th:href="@{/notices}">공지사항</a>
     <a th:href="@{/patch-notes}">패치노트</a>
     <a th:href="@{/faq}">FAQ</a>
+    <a th:href="@{/feedback}">건의/버그</a>
     <span sec:authorize="isAuthenticated()">
-      <a th:href="@{/admin/dashboard}">관리자</a>
+      <a th:href="@{__${adminBase}__/dashboard}">관리자</a>
     </span>
+    <a th:if="${latestDownloadUrl != null and !latestDownloadUrl.isBlank()}"
+       class="header-download"
+       th:href="${latestDownloadUrl}"
+       target="_blank" rel="noopener noreferrer">최신 버전 다운로드 ↓</a>
   </nav>
 </header>
 
@@ -26,13 +31,15 @@
 </footer>
 
 <div th:fragment="admin-bar" class="admin-bar" sec:authorize="isAuthenticated()">
-  <a th:href="@{/admin/dashboard}">대시보드</a>
-  <a th:href="@{/admin/notices}">공지 관리</a>
-  <a th:href="@{/admin/patch-notes}">패치노트 관리</a>
-  <a th:href="@{/admin/faqs}">FAQ 관리</a>
+  <a th:href="@{__${adminBase}__/dashboard}">대시보드</a>
+  <a th:href="@{__${adminBase}__/notices}">공지 관리</a>
+  <a th:href="@{__${adminBase}__/patch-notes}">패치노트 관리</a>
+  <a th:href="@{__${adminBase}__/faqs}">FAQ 관리</a>
+  <a th:href="@{__${adminBase}__/faq-categories}">FAQ 카테고리</a>
+  <a th:href="@{__${adminBase}__/feedbacks}">건의/버그</a>
   <span class="admin-user">
     <span sec:authentication="name">user</span> ·
-    <form th:action="@{/admin/logout}" method="post" style="display:inline">
+    <form th:action="@{__${adminBase}__/logout}" method="post" style="display:inline">
       <button type="submit" style="background:transparent;color:#fff;padding:0;border:0;cursor:pointer">로그아웃</button>
     </form>
   </span>

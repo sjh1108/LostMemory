@@ -8,7 +8,7 @@
 <main class="site-main">
   <h2 th:text="${patchNoteId == null ? '새 패치노트 작성' : '패치노트 편집'}">패치노트</h2>
 
-  <form th:action="${patchNoteId == null} ? @{/admin/patch-notes} : @{/admin/patch-notes/{id}(id=${patchNoteId})}"
+  <form th:action="${patchNoteId == null} ? @{__${adminBase}__/patch-notes} : @{__${adminBase}__/patch-notes/{id}(id=${patchNoteId})}"
         method="post" th:object="${form}" class="admin-form">
     <div>
       <label for="version">버전 (예: v1.0.0)</label>
@@ -27,13 +27,25 @@
       <div class="field-error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
     </div>
     <div>
+      <label for="downloadUrl">다운로드 URL (Windows 한정, 비워두면 미노출)</label>
+      <input type="url" id="downloadUrl" th:field="*{downloadUrl}" maxlength="1024"
+             placeholder="https://drive.google.com/uc?export=download&id={FILE_ID}">
+      <div class="field-hint">
+        구글 드라이브 직접 다운로드 형식 권장 (<code>uc?export=download&amp;id={FILE_ID}</code>). 100MB+ 큰 파일은
+        사용자 클릭 시 "바이러스 스캔 불가" 경고 1회 거침 (Google 정책). 공유 URL
+        (<code>.../file/d/.../view</code>) 그대로 넣으면 viewer 페이지로 이동. <strong>가장 최근 published 패치노트</strong>의
+        downloadUrl 이 메인 헤더의 "최신 버전 다운로드 ↓" link 로 자동 노출.
+      </div>
+      <div class="field-error" th:if="${#fields.hasErrors('downloadUrl')}" th:errors="*{downloadUrl}"></div>
+    </div>
+    <div>
       <label>
         <input type="checkbox" th:field="*{published}"> 공개
       </label>
     </div>
     <div>
       <input type="submit" value="저장">
-      <a th:href="@{/admin/patch-notes}" style="margin-left:1rem">취소</a>
+      <a th:href="@{__${adminBase}__/patch-notes}" style="margin-left:1rem">취소</a>
     </div>
   </form>
 </main>

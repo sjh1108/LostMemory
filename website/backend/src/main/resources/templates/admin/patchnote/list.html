@@ -10,7 +10,7 @@
 
   <div th:if="${message}" class="flash" th:text="${message}"></div>
 
-  <p><a th:href="@{/admin/patch-notes/new}">+ 새 패치노트 작성</a></p>
+  <p><a th:href="@{__${adminBase}__/patch-notes/new}">+ 새 패치노트 작성</a></p>
 
   <table class="admin-table">
     <thead>
@@ -19,12 +19,12 @@
     <tbody>
       <tr th:each="p : ${patchNotes}">
         <td th:text="${p.id}">1</td>
-        <td><a th:href="@{/admin/patch-notes/{id}/edit(id=${p.id})}" th:text="${p.version}">v0.0</a></td>
+        <td><a th:href="@{__${adminBase}__/patch-notes/{id}/edit(id=${p.id})}" th:text="${p.version}">v0.0</a></td>
         <td th:text="${#temporals.format(p.releaseDate, 'yyyy-MM-dd')}">날짜</td>
         <td th:text="${p.published} ? '공개' : '비공개'">공개</td>
         <td th:text="${#temporals.format(p.updatedAt, 'yyyy-MM-dd HH:mm')}">날짜</td>
         <td>
-          <form th:action="@{/admin/patch-notes/{id}/delete(id=${p.id})}" method="post" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?')">
+          <form th:action="@{__${adminBase}__/patch-notes/{id}/delete(id=${p.id})}" method="post" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?')">
             <button type="submit" class="btn-danger">삭제</button>
           </form>
         </td>

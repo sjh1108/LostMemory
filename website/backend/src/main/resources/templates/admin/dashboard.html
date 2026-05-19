@@ -20,26 +20,38 @@
       <tr>
         <td>공지사항</td>
         <td th:text="${noticeCount}">0</td>
-        <td><a th:href="@{/admin/notices}">관리 →</a></td>
+        <td><a th:href="@{__${adminBase}__/notices}">관리 →</a></td>
       </tr>
       <tr>
         <td>패치노트</td>
         <td th:text="${patchNoteCount}">0</td>
-        <td><a th:href="@{/admin/patch-notes}">관리 →</a></td>
+        <td><a th:href="@{__${adminBase}__/patch-notes}">관리 →</a></td>
       </tr>
       <tr>
         <td>FAQ</td>
         <td th:text="${faqCount}">0</td>
-        <td><a th:href="@{/admin/faqs}">관리 →</a></td>
+        <td><a th:href="@{__${adminBase}__/faqs}">관리 →</a></td>
+      </tr>
+      <tr>
+        <td>FAQ 카테고리</td>
+        <td th:text="${faqCategoryCount}">0</td>
+        <td><a th:href="@{__${adminBase}__/faq-categories}">관리 →</a></td>
+      </tr>
+      <tr>
+        <td>건의/버그 (미처리)</td>
+        <td th:text="${feedbackUnhandledCount}">0</td>
+        <td><a th:href="@{__${adminBase}__/feedbacks}">관리 →</a></td>
       </tr>
     </tbody>
   </table>
 
   <h3 style="margin-top:2rem">빠른 시작</h3>
   <ul>
-    <li><a th:href="@{/admin/notices/new}">새 공지 작성</a></li>
-    <li><a th:href="@{/admin/patch-notes/new}">새 패치노트 작성</a></li>
-    <li><a th:href="@{/admin/faqs/new}">새 FAQ 추가</a></li>
+    <li><a th:href="@{__${adminBase}__/notices/new}">새 공지 작성</a></li>
+    <li><a th:href="@{__${adminBase}__/patch-notes/new}">새 패치노트 작성</a></li>
+    <li><a th:href="@{__${adminBase}__/faqs/new}">새 FAQ 추가</a></li>
+    <li><a th:href="@{__${adminBase}__/faq-categories/new}">새 FAQ 카테고리 추가</a></li>
+    <li><a th:href="@{__${adminBase}__/feedbacks}">건의/버그 확인</a></li>
   </ul>
 </main>
 

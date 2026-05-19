@@ -5,6 +5,7 @@ import com.lostmemory.website.patchnote.entity.PatchNote;
 import com.lostmemory.website.patchnote.service.PatchNoteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,11 +17,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/admin/patch-notes")
+@RequestMapping("${app.admin.base-path}/patch-notes")
 @RequiredArgsConstructor
 public class PatchNoteAdminController {
 
     private final PatchNoteService service;
+
+    @Value("${app.admin.base-path}")
+    private String adminBase;
 
     @GetMapping
     public String list(Model model) {
@@ -44,7 +48,7 @@ public class PatchNoteAdminController {
         }
         service.create(form, null);
         ra.addFlashAttribute("message", "패치노트 저장 완료");
-        return "redirect:/admin/patch-notes";
+        return "redirect:" + adminBase + "/patch-notes";
     }
 
     @GetMapping("/{id}/edit")
@@ -67,13 +71,13 @@ public class PatchNoteAdminController {
         }
         service.update(id, form);
         ra.addFlashAttribute("message", "패치노트 갱신 완료");
-        return "redirect:/admin/patch-notes";
+        return "redirect:" + adminBase + "/patch-notes";
     }
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         service.delete(id);
         ra.addFlashAttribute("message", "패치노트 삭제 완료");
-        return "redirect:/admin/patch-notes";
+        return "redirect:" + adminBase + "/patch-notes";
     }
 }

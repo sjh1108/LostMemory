@@ -28,12 +28,16 @@ public class PatchNoteForm {
 
     private boolean published;
 
+    @Size(max = 1024)
+    private String downloadUrl;
+
     public static PatchNoteForm from(PatchNote pn) {
         PatchNoteForm form = new PatchNoteForm();
         form.setVersion(pn.getVersion());
         form.setReleaseDate(pn.getReleaseDate());
         form.setBody(pn.getBody());
         form.setPublished(pn.isPublished());
+        form.setDownloadUrl(pn.getDownloadUrl());
         return form;
     }
 }

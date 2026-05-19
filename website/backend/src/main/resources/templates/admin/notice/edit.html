@@ -8,7 +8,7 @@
 <main class="site-main">
   <h2 th:text="${noticeId == null ? '새 공지 작성' : '공지 편집'}">공지</h2>
 
-  <form th:action="${noticeId == null} ? @{/admin/notices} : @{/admin/notices/{id}(id=${noticeId})}"
+  <form th:action="${noticeId == null} ? @{__${adminBase}__/notices} : @{__${adminBase}__/notices/{id}(id=${noticeId})}"
         method="post" th:object="${form}" class="admin-form">
     <div>
       <label for="title">제목</label>
@@ -28,7 +28,7 @@
     </div>
     <div>
       <input type="submit" value="저장">
-      <a th:href="@{/admin/notices}" style="margin-left:1rem">취소</a>
+      <a th:href="@{__${adminBase}__/notices}" style="margin-left:1rem">취소</a>
     </div>
   </form>
 </main>

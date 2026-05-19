@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('건의/버그 관리')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<div th:replace="~{fragments/layout :: admin-bar}"></div>
+
+<main class="site-main">
+  <h2>건의/버그 관리</h2>
+
+  <div th:if="${message}" class="flash" th:text="${message}"></div>
+
+  <table class="admin-table">
+    <thead>
+      <tr><th>ID</th><th>카테고리</th><th>제목</th><th>연락처</th><th>처리</th><th>생성일</th></tr>
+    </thead>
+    <tbody>
+      <tr th:each="f : ${feedbacks}">
+        <td th:text="${f.id}">1</td>
+        <td th:text="${f.category.displayName}">카테고리</td>
+        <td><a th:href="@{__${adminBase}__/feedbacks/{id}(id=${f.id})}" th:text="${f.title}">제목</a></td>
+        <td th:text="${f.contact != null and !f.contact.isBlank()} ? ${f.contact} : '(없음)'">(없음)</td>
+        <td th:text="${f.handled} ? '처리 완료' : '미처리'">미처리</td>
+        <td th:text="${#temporals.format(f.createdAt, 'yyyy-MM-dd HH:mm')}">날짜</td>
+      </tr>
+      <tr th:if="${feedbacks.isEmpty()}">
+        <td colspan="6" class="entry-meta" style="text-align:center">접수된 건의/버그가 없습니다.</td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
