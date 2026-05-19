@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using LostMemory.Enemies.Boss.Bertha;
 using LostMemory.Stage;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
@@ -365,20 +364,20 @@ namespace LostMemory.UI
                 introSequenceController = null;
             }
 
-            if (TryAssignBossController(GetComponentInParent<BerthaBossEncounterController>(includeInactive: true)))
+            if (TryAssignBossIntro(GetComponentInParent<BossIntroSequenceController>(includeInactive: true)))
             {
                 return;
             }
 
-            BerthaBossEncounterController[] controllers =
-                Resources.FindObjectsOfTypeAll<BerthaBossEncounterController>();
+            BossIntroSequenceController[] controllers =
+                Resources.FindObjectsOfTypeAll<BossIntroSequenceController>();
 
             for (int i = 0; i < controllers.Length; i++)
             {
-                BerthaBossEncounterController controller = controllers[i];
+                BossIntroSequenceController controller = controllers[i];
                 if (controller != null &&
                     controller.gameObject.scene == gameObject.scene &&
-                    TryAssignBossController(controller))
+                    TryAssignBossIntro(controller))
                 {
                     return;
                 }
@@ -386,14 +385,14 @@ namespace LostMemory.UI
 
             for (int i = 0; i < controllers.Length; i++)
             {
-                if (TryAssignBossController(controllers[i]))
+                if (TryAssignBossIntro(controllers[i]))
                 {
                     return;
                 }
             }
         }
 
-        private bool TryAssignBossController(BerthaBossEncounterController controller)
+        private bool TryAssignBossIntro(BossIntroSequenceController controller)
         {
             if (!IsActiveSceneObject(controller))
             {
@@ -407,7 +406,7 @@ namespace LostMemory.UI
             }
 
             targetHealth = health;
-            introSequenceController = controller.GetComponent<BossIntroSequenceController>();
+            introSequenceController = controller;
             SubscribeTarget();
             SubscribeIntro();
             return true;

@@ -5,6 +5,7 @@ namespace LostMemory.Rendering
     internal static class RuntimeSpriteMaterialUtility
     {
         private static Material _spriteMaterial;
+        private static Material _additiveSpriteMaterial;
 
         public static void ApplySpriteMaterial(SpriteRenderer renderer)
         {
@@ -45,6 +46,47 @@ namespace LostMemory.Rendering
             };
 
             return _spriteMaterial;
+        }
+
+        public static void ApplyAdditiveSpriteMaterial(SpriteRenderer renderer)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            Material material = GetAdditiveSpriteMaterial();
+            if (material != null)
+            {
+                renderer.sharedMaterial = material;
+            }
+        }
+
+        public static Material GetAdditiveSpriteMaterial()
+        {
+            if (_additiveSpriteMaterial != null)
+            {
+                return _additiveSpriteMaterial;
+            }
+
+            Shader shader = Shader.Find("LostMemory/Sprites/Additive Glow");
+            if (shader == null)
+            {
+                shader = Shader.Find("Sprites/Default");
+            }
+
+            if (shader == null)
+            {
+                return null;
+            }
+
+            _additiveSpriteMaterial = new Material(shader)
+            {
+                name = "RuntimeSprite_AdditiveGlow",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            return _additiveSpriteMaterial;
         }
     }
 }
