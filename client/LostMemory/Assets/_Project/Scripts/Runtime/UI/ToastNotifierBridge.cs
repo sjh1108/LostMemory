@@ -36,6 +36,9 @@ namespace LostMemory.UI
 
         private void HandleRejected(RelicData relic, string reason)
         {
+            // "공간 부족" 은 InventoryFullModal 이 모달로 직접 응대하므로 토스트는 생략.
+            if (reason == "공간 부족") return;
+
             string name = relic != null ? relic.DisplayName : "(null)";
             ToastNotifier.Show($"인벤토리 추가 실패: {name} ({reason})");
         }

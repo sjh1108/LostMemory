@@ -43,7 +43,6 @@ namespace LostMemory.Shop
         // ── 호버 하이라이트 ──────────────────────────────────────────
         private Image _bgImage;
         private Color _normalColor;
-        private static readonly Color HoverColor = new(0.40f, 0.40f, 0.55f);
 
         private void Reset()
         {
@@ -56,7 +55,8 @@ namespace LostMemory.Shop
         private void Awake()
         {
             _bgImage     = GetComponent<Image>();
-            _normalColor = _bgImage != null ? _bgImage.color : Color.clear;
+            _normalColor = RelicRarityColors.Empty;
+            if (_bgImage != null) _bgImage.color = _normalColor;
         }
 
         // ── 슬롯 표시 API ────────────────────────────────────────────
@@ -68,6 +68,12 @@ namespace LostMemory.Shop
             _iconImage.color   = Color.white;
             _iconImage.enabled = relic.Icon != null;
             if (_emptyIndicator != null) _emptyIndicator.SetActive(false);
+
+            if (_bgImage != null)
+            {
+                _normalColor   = RelicRarityColors.Slot(relic);
+                _bgImage.color = _normalColor;
+            }
         }
 
         public void Clear()
@@ -76,6 +82,12 @@ namespace LostMemory.Shop
             _iconImage.sprite  = null;
             _iconImage.enabled = false;
             if (_emptyIndicator != null) _emptyIndicator.SetActive(true);
+
+            if (_bgImage != null)
+            {
+                _normalColor   = RelicRarityColors.Empty;
+                _bgImage.color = _normalColor;
+            }
         }
 
         // ── IBeginDragHandler ────────────────────────────────────────
@@ -160,18 +172,22 @@ namespace LostMemory.Shop
         {
             if (eventData.dragging)
             {
-                if (_bgImage != null) _bgImage.color = HoverColor;
+                if (_bgImage != null)
+                    _bgImage.color = CurrentRelic != null
+                        ? RelicRarityColors.SlotHover(CurrentRelic)
+                        : new Color(0.40f, 0.40f, 0.55f);
             }
             else if (CurrentRelic != null)
             {
-                TooltipView.Instance?.Show(CurrentRelic, eventData.position);
+                TooltipView tip = TooltipView.Instance ?? TooltipView.EnsureInstance();
+                tip?.Show(CurrentRelic, eventData.position);
             }
         }
 
         public void OnPointerMove(PointerEventData eventData)
         {
-            if (!eventData.dragging && CurrentRelic != null)
-                TooltipView.Instance?.UpdatePosition(eventData.position);
+            if (!eventData.dragging && CurrentRelic != null && TooltipView.Instance != null)
+                TooltipView.Instance.UpdatePosition(eventData.position);
         }
 
         public void OnPointerExit(PointerEventData eventData)

@@ -1,6 +1,7 @@
 using LostMemory.Relics;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace LostMemory.Shop
@@ -9,8 +10,10 @@ namespace LostMemory.Shop
     /// 세트효과 패널의 1행 — 한 BuildSetData 의 이름/카운트/효과를 표시한다.
     /// 활성/비활성 시각 강조는 배경 알파 + 텍스트 색으로 구분.
     /// 데이터 바인딩은 SetEffectPanelView 가 매 Refresh 마다 Bind() 호출로 갱신.
+    /// 마우스 호버 시 TooltipView 가 세트 상세 정보를 표시한다.
     /// </summary>
-    public class SetEffectRowView : MonoBehaviour
+    public class SetEffectRowView : MonoBehaviour,
+        IPointerEnterHandler, IPointerExitHandler, IPointerMoveHandler
     {
         [Header("Texts")]
         [SerializeField] private TextMeshProUGUI _nameText;
@@ -26,6 +29,18 @@ namespace LostMemory.Shop
         [Tooltip("미발동 세트의 배경/텍스트 알파.")]
         [SerializeField] private float _inactiveAlpha = 0.4f;
 
+        // 호버용 캐시
+        private BuildSetData _cachedSet;
+        private int _cachedCount;
+        private int _cachedActiveTier;
+
+        private void Awake()
+        {
+            // 호버 이벤트가 빈 영역에서도 잡히도록 배경 Image 의 raycastTarget 보장.
+            if (_backgroundImage != null && !_backgroundImage.raycastTarget)
+                _backgroundImage.raycastTarget = true;
+        }
+
         /// <summary>
         /// 1세트 정보 바인딩.
         /// </summary>
@@ -34,6 +49,10 @@ namespace LostMemory.Shop
         /// <param name="activeTier">현재 활성 티어 인덱스. -1 = 미발동.</param>
         public void Bind(BuildSetData set, int count, int activeTier)
         {
+            _cachedSet        = set;
+            _cachedCount      = count;
+            _cachedActiveTier = activeTier;
+
             if (set == null)
             {
                 gameObject.SetActive(false);
@@ -75,6 +94,27 @@ namespace LostMemory.Shop
             Color c = text.color;
             c.a = alpha;
             text.color = c;
+        }
+
+        // ── 호버 (툴팁) ────────────────────────────────────────────
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (_cachedSet == null) return;
+            TooltipView tip = TooltipView.Instance ?? TooltipView.EnsureInstance();
+            tip?.ShowSet(_cachedSet, _cachedCount, _cachedActiveTier, eventData.position);
+        }
+
+        public void OnPointerMove(PointerEventData eventData)
+        {
+            if (_cachedSet == null) return;
+            if (TooltipView.Instance != null)
+                TooltipView.Instance.UpdatePosition(eventData.position);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            TooltipView.Instance?.Hide();
         }
 
         // ── 라벨 빌더 ──────────────────────────────────────────────
