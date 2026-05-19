@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Memory;
 using LostMemory.Networking.Common;
+using LostMemory.Networking.Player;
 using LostMemory.Player;
 using LostMemory.Relics;
 using LostMemory.SceneFlow;
@@ -100,6 +101,9 @@ namespace LostMemory.Stage
         private bool bossClearPortalReady;
         private bool townReturnInProgress;
         private bool restartSceneLoadPending;
+        // 멀티 환경에서 ShowResultingUI 가 두 경로(호스트 측 DelayedTransitionToResulting 코루틴 + 게스트 측 ClientRpc)
+        // 에서 호출될 수 있어 idempotent guard 필요. CleanupRunResultingState 에서 reset.
+        private bool _resultingUiShown;
         private Coroutine refreshSceneSubscriptionsRoutine;
         private DungeonRunBootstrap subscribedDungeonRunBootstrap;
         private KhiPlayerStateAggregator subscribedPlayerStateAggregator;
@@ -586,6 +590,14 @@ namespace LostMemory.Stage
             }
             Time.timeScale = 1f;
 
+            // 멀티 환경: 마을 LoadScene 전에 모든 클라(호스트 포함) 의 player 사망 잔재 reset broadcast.
+            // 게스트 측에서 SceneManager.activeSceneChanged 발화 타이밍/DontDestroyOnLoad 변수 등으로
+            // 자동 reset 신뢰 불가 — server-authoritative 단일 트리거로 명시.
+            if (networkSessionActive)
+            {
+                PlayerHealthSync.BroadcastResetDeathStateForAll();
+            }
+
             if (networkSessionActive)
             {
                 networkManager.SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
@@ -658,6 +670,7 @@ namespace LostMemory.Stage
         {
             ResolveEconomyRefs();
             bossClearPortalReady = false;
+            _resultingUiShown = false;
             RunResultPanelView resultPanelView = ResolveRunResultPanelView();
             if (resultPanelView != null)
             {
@@ -859,6 +872,13 @@ namespace LostMemory.Stage
             {
                 return;
             }
+
+            // 멀티 — 다른 player 가 살아있으면 RunFailed 차단. 팀 전체 사망 시에만 진행.
+            if (PlayerHealthSync.AnyPlayerAlive())
+            {
+                return;
+            }
+
             if (StateMachine.TryTransition(RunState.RunFailed))
             {
                 bossClearPortalReady = false;
@@ -870,13 +890,25 @@ namespace LostMemory.Stage
         // Update 폴링이 StateChanged(Defeated) 를 발행하지 못한다.
         // KhiDownController 의 DefeatedByTimeout / DefeatedSolo 는 GameObject 비활성화 *직전* 에 발행되므로
         // RunFailed 트리거의 신뢰 경로. Aggregator 구독은 잔존시켜 비치명 경로(있을 시) 보호.
-        private void HandlePlayerDefeatedDirect()
+        //
+        // public 변경: 멀티 환경에서 PlayerHealthSync 가 "팀 전체 사망" 감지 시 직접 호출.
+        // RunManager 는 local player 한 명의 KhiDownController 만 hook 하므로,
+        // 다른 player 가 죽는 경로는 외부 트리거가 필요함.
+        public void HandlePlayerDefeatedDirect()
         {
             // TODO(CL-014): 부활 deadline 도입 시 즉시가 아닌 deadline 만료 후로 변경.
             if (!EnsureRunActiveForDefeat())
             {
                 return;
             }
+
+            // 멀티 — 다른 player 가 살아있으면 RunFailed 차단. 팀 전체 사망 시에만 진행.
+            // 솔로 (server 인스턴스 0개) 면 false 반환 → 기존 흐름 그대로.
+            if (PlayerHealthSync.AnyPlayerAlive())
+            {
+                return;
+            }
+
             if (StateMachine.TryTransition(RunState.RunFailed))
             {
                 bossClearPortalReady = false;
@@ -921,8 +953,16 @@ namespace LostMemory.Stage
             ShowResultingUI();
         }
 
-        private void ShowResultingUI()
+        // public 변경: 멀티 환경에서 PlayerHealthSync 의 ClientRpc 가 게스트 화면에도 결과 패널 표시하도록 외부 호출.
+        // _resultingUiShown idempotent guard — 호스트 측은 DelayedTransitionToResulting 코루틴 + ClientRpc 양쪽에서 호출될 수 있음.
+        public void ShowResultingUI()
         {
+            if (_resultingUiShown)
+            {
+                return;
+            }
+            _resultingUiShown = true;
+
             RunResultPanelView resultPanelView = ResolveRunResultPanelView();
             if (resultPanelView == null)
             {

@@ -1,7 +1,10 @@
+using System.Collections;
+using System.Collections.Generic;
 using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LostMemory.Networking.Player
 {
@@ -70,16 +73,142 @@ namespace LostMemory.Networking.Player
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
 
+        // KhiDownState 를 int 로 sync. server 가 매 프레임 _downController.CurrentState 추적 + write.
+        // client 는 OnValueChanged 받아 명시적 Down/Defeated/Normal visual 처리 (event-based RPC 보조).
+        private readonly NetworkVariable<int> _syncedDownState = new(
+            (int)KhiDownState.Normal,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
         private bool _deathTriggered;
         private bool _hasBeenAlive;
         private bool _showDeathOverlayOnGui;
+        private bool _ownerComponentsDisabledForDown;
+        private bool _visualHiddenAfterDefeat;
         private KhiDownController _downController;
         private bool _downSubscribed;
+        private bool _defeatSubscribed;
+
+        [SerializeField, Tooltip("DefeatedByTimeout/DefeatedSolo 발화 후 모든 클라에서 player visual hide 까지 대기. " +
+            "KhiDownController.defeatObjectDisableDelay (=5f) 와 일치시켜 호스트의 TDE Health destroy timing 과 sync.")]
+        private float defeatHideDelaySeconds = 5f;
+
+        // server 측 모든 PlayerHealthSync 추적 (host 만 등록). 멀티 환경 RunFailed 가드 (AnyPlayerAlive) 용도.
+        private static readonly HashSet<PlayerHealthSync> _serverInstances = new HashSet<PlayerHealthSync>();
+
+        /// <summary>
+        /// server 측 등록된 player 중 하나라도 살아있으면 true.
+        /// 솔로 (NGO 미시작) 또는 server 인스턴스 0개면 false.
+        /// RunManager.HandlePlayerDefeatedDirect 가드용 — 멀티에서 한 명만 죽었을 때 RunFailed 차단.
+        /// </summary>
+        public static bool AnyPlayerAlive()
+        {
+            int aliveCount = 0;
+            int totalCount = 0;
+            foreach (PlayerHealthSync p in _serverInstances)
+            {
+                if (p == null) continue;
+                totalCount++;
+                if (!p._deathTriggered) aliveCount++;
+            }
+            Debug.Log($"[PlayerHealthSync.AnyPlayerAlive] alive={aliveCount}/{totalCount}");
+            return aliveCount > 0;
+        }
 
         private void Awake()
         {
             if (health == null) health = GetComponent<Health>();
             _downController = GetComponent<KhiDownController>();
+        }
+
+        /// <summary>
+        /// server 가 호출 — 모든 PlayerHealthSync server 인스턴스에 대해 사망 상태 reset ClientRpc 발화.
+        /// 마을 복귀 / 다음 던전 진입 등 게스트 사망 잔재 정리용. 씬 전환 이벤트 의존성 제거 (server-authoritative 단일 트리거).
+        /// </summary>
+        public static void BroadcastResetDeathStateForAll()
+        {
+            foreach (PlayerHealthSync p in _serverInstances)
+            {
+                if (p == null) continue;
+                if (!p.IsSpawned) continue;
+                p.ResetDeathStateClientRpc();
+            }
+        }
+
+        [ClientRpc]
+        private void ResetDeathStateClientRpc()
+        {
+            // 가드 — 이미 사망 잔재가 없으면 noop. (Visual hidden 도 reset 대상이라 포함.)
+            if (!_deathTriggered && !_showDeathOverlayOnGui && !_visualHiddenAfterDefeat) return;
+
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] Reset death state broadcast received. IsServer={IsServer} IsOwner={IsOwner} {gameObject.name}", this);
+
+            // 1. 상태 flag reset.
+            _deathTriggered = false;
+            _hasBeenAlive = false;
+            _showDeathOverlayOnGui = false;
+            _ownerComponentsDisabledForDown = false;
+            _visualHiddenAfterDefeat = false;
+
+            // 2. owner 측 사망 UI hide (deathOverlayObject wireup 된 경우).
+            if (IsOwner && deathOverlayObject != null && deathOverlayObject.scene.IsValid())
+            {
+                deathOverlayObject.SetActive(false);
+            }
+
+            // 3. Renderer 복구 — HidePlayerVisualClientRpc 가 disable 한 것 reenable.
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null) renderers[i].enabled = true;
+            }
+
+            // 4. Collider2D 복구.
+            Collider2D[] colliders = GetComponentsInChildren<Collider2D>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null) colliders[i].enabled = true;
+            }
+
+            // 5. 입력 컴포넌트 reenable (사망 시 disable 한 것들).
+            ReenableComponentsByName(inputComponentNamesToDisableOnDeath);
+            // 6. owner CharacterMovement / KhiAnimatorMovementBinder / KhiSpriteFlipBinder reenable.
+            if (IsOwner)
+            {
+                CharacterMovement cm = GetComponent<CharacterMovement>();
+                if (cm != null) cm.enabled = true;
+                ReenableComponentsByName(new[] { "KhiAnimatorMovementBinder", "KhiSpriteFlipBinder" });
+            }
+
+            // 7. Health re-enable damage + 최대 체력 복구 (게스트 측은 server sync 받아 자동, 호스트 측은 자체 처리).
+            if (health != null)
+            {
+                health.DamageEnabled();
+                if (IsServer && health.CurrentHealth <= 0f)
+                {
+                    health.SetHealth(health.MaximumHealth);
+                }
+            }
+        }
+
+        private void ReenableComponentsByName(string[] names)
+        {
+            if (names == null) return;
+            MonoBehaviour[] all = GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < names.Length; i++)
+            {
+                string typeName = names[i];
+                if (string.IsNullOrWhiteSpace(typeName)) continue;
+                for (int j = 0; j < all.Length; j++)
+                {
+                    MonoBehaviour mb = all[j];
+                    if (mb == null) continue;
+                    if (mb.GetType().Name == typeName)
+                    {
+                        mb.enabled = true;
+                    }
+                }
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -93,11 +222,13 @@ namespace LostMemory.Networking.Player
             }
 
             _syncedHealth.OnValueChanged += HandleSyncedHealthChanged;
+            _syncedDownState.OnValueChanged += HandleDownStateChanged;
 
             if (IsServer)
             {
                 _syncedHealth.Value = health.CurrentHealth;
-                if (verboseLog) Debug.Log($"[PlayerHealthSync] OnNetworkSpawn SERVER {gameObject.name} initial={health.CurrentHealth}", this);
+                _syncedDownState.Value = _downController != null ? (int)_downController.CurrentState : (int)KhiDownState.Normal;
+                if (verboseLog) Debug.Log($"[PlayerHealthSync] OnNetworkSpawn SERVER {gameObject.name} initial={health.CurrentHealth} downState={(KhiDownState)_syncedDownState.Value}", this);
 
                 // server 만 KhiDownController.DownEntered 구독 → 발화 시 ClientRpc 로 모든 클라에 down 시각 sync.
                 if (syncDown && _downController != null)
@@ -105,6 +236,17 @@ namespace LostMemory.Networking.Player
                     _downController.DownEntered += HandleDownEntered;
                     _downSubscribed = true;
                 }
+
+                // server 만 DefeatedByTimeout/DefeatedSolo 구독 → defeatHideDelaySeconds 후 모든 클라에 hide RPC.
+                // 호스트의 TDE Health destroy/hide 타이밍과 sync.
+                if (_downController != null)
+                {
+                    _downController.DefeatedByTimeout += HandleDefeatedServer;
+                    _downController.DefeatedSolo += HandleDefeatedServer;
+                    _defeatSubscribed = true;
+                }
+
+                _serverInstances.Add(this);
             }
             else
             {
@@ -113,19 +255,86 @@ namespace LostMemory.Networking.Player
                 {
                     health.SetHealth(_syncedHealth.Value);
                 }
-                if (verboseLog) Debug.Log($"[PlayerHealthSync] OnNetworkSpawn CLIENT {gameObject.name} synced={_syncedHealth.Value}", this);
+                if (verboseLog) Debug.Log($"[PlayerHealthSync] OnNetworkSpawn CLIENT {gameObject.name} synced={_syncedHealth.Value} downState={(KhiDownState)_syncedDownState.Value}", this);
+
+                // 늦게 join 한 client 가 초기 state 가 Down/Defeated 면 즉시 적용.
+                KhiDownState initial = (KhiDownState)_syncedDownState.Value;
+                if (initial == KhiDownState.Down) ApplyDownVisualsOnClient();
+                else if (initial == KhiDownState.Defeated) ApplyDefeatedVisualsOnClient();
             }
         }
 
         public override void OnNetworkDespawn()
         {
             _syncedHealth.OnValueChanged -= HandleSyncedHealthChanged;
+            _syncedDownState.OnValueChanged -= HandleDownStateChanged;
             if (_downSubscribed && _downController != null)
             {
                 _downController.DownEntered -= HandleDownEntered;
                 _downSubscribed = false;
             }
+            if (_defeatSubscribed && _downController != null)
+            {
+                _downController.DefeatedByTimeout -= HandleDefeatedServer;
+                _downController.DefeatedSolo -= HandleDefeatedServer;
+                _defeatSubscribed = false;
+            }
+            _serverInstances.Remove(this);
             base.OnNetworkDespawn();
+        }
+
+        private void LateUpdate()
+        {
+            if (!IsSpawned) return;
+            if (health == null) return;
+
+            // Down / Defeated state 매 프레임 강제. 매 프레임 컴포넌트 disable 재강제 + Animator.Play(target) 강제.
+            KhiDownState state = (KhiDownState)_syncedDownState.Value;
+            if (state == KhiDownState.Normal) return;
+
+            // 매 프레임 컴포넌트 disable 재강제 — 어떤 코드가 enable=true 되돌려도 즉시 reset.
+            CharacterMovement cm = GetComponent<CharacterMovement>();
+            if (cm != null && cm.enabled) cm.enabled = false;
+            ForceDisableMovementBinders();
+
+            // health.TargetAnimator (KhiDownController 와 동일) 우선 — health.GetComponentInChildren 은 잘못된 Animator (무기 등) 잡을 가능성.
+            Animator animator = ResolveTargetAnimator();
+            if (animator == null || !animator.isActiveAndEnabled) return;
+
+            string targetState = state == KhiDownState.Defeated ? "Dead" : "Down";
+
+            // HasState 체크 — state 없으면 Play noop (error log 차단 + SetTrigger transition 만 의존).
+            int targetHash = Animator.StringToHash(targetState);
+            if (!animator.HasState(0, targetHash)) return;
+
+            bool nextIsTarget = animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsName(targetState);
+            bool currentIsTarget = !animator.IsInTransition(0) && animator.GetCurrentAnimatorStateInfo(0).IsName(targetState);
+            if (!nextIsTarget && !currentIsTarget)
+            {
+                animator.Play(targetState, 0, 0f);
+            }
+        }
+
+        private Animator ResolveTargetAnimator()
+        {
+            if (health == null) return null;
+            if (health.TargetAnimator != null) return health.TargetAnimator;
+            return health.GetComponentInChildren<Animator>();
+        }
+
+        private void ForceDisableMovementBinders()
+        {
+            MonoBehaviour[] all = GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                MonoBehaviour mb = all[i];
+                if (mb == null || !mb.enabled) continue;
+                string typeName = mb.GetType().Name;
+                if (typeName == "KhiAnimatorMovementBinder" || typeName == "KhiSpriteFlipBinder")
+                {
+                    mb.enabled = false;
+                }
+            }
         }
 
         private void Update()
@@ -150,12 +359,59 @@ namespace LostMemory.Networking.Player
             // 한 번이라도 살아있었음을 확인 — TDE Health 의 Initialization 전 일시적 0 으로 인한 false positive 사망 감지 차단.
             if (current > 0f) _hasBeenAlive = true;
 
+            // KhiDownController 의 state 를 매 프레임 NetworkVariable 로 sync. event-based RPC 와 함께 state-based
+            // backup 으로 동작 — late-join client 도 OnNetworkSpawn 의 initial 적용으로 정상 visual.
+            if (_downController != null)
+            {
+                int currentDownState = (int)_downController.CurrentState;
+                if (currentDownState != _syncedDownState.Value)
+                {
+                    if (verboseLog) Debug.Log($"[PlayerHealthSync] SERVER downState {(KhiDownState)_syncedDownState.Value} -> {(KhiDownState)currentDownState} {gameObject.name}", this);
+                    _syncedDownState.Value = currentDownState;
+                }
+            }
+
             // 사망 감지 — 살아있던 적이 있고 현재 0 이하 → 모든 클라에 시각 + 입력 차단 sync.
             if (syncDeath && !_deathTriggered && _hasBeenAlive && current <= 0f)
             {
                 _deathTriggered = true;
                 if (verboseLog) Debug.Log($"[PlayerHealthSync] SERVER death detected. Broadcast: {gameObject.name}", this);
                 TriggerDeathClientRpc();
+
+                // 팀 전체 사망 검사 — RunManager 는 local player 한 명만 hook 이라 다른 player 사망 경로가 직접 트리거되지 않음.
+                // 본 인스턴스가 막 _deathTriggered=true 가 됐으므로 다른 모든 인스턴스도 dead 면 팀 전멸.
+                if (!AnyPlayerAlive() && LostMemory.Stage.RunManager.Instance != null)
+                {
+                    if (verboseLog) Debug.Log($"[PlayerHealthSync] SERVER team defeated — RunManager.HandlePlayerDefeatedDirect 직접 호출 + broadcast RPC delay={runFailedUiDelaySeconds}", this);
+                    LostMemory.Stage.RunManager.Instance.HandlePlayerDefeatedDirect();
+                    // 즉시 RPC 발화 + delay 인자 — server 측 GameObject 가 그 사이 TDE 가 inactive 시켜도 RPC 는 이미 전송됨.
+                    // client 측 (호스트 자기 포함) 이 자체 coroutine 으로 delay 후 ShowResultingUI 호출.
+                    BroadcastRunFailedUiClientRpc(runFailedUiDelaySeconds);
+                }
+            }
+        }
+
+        [SerializeField, Tooltip("팀 전멸 시 결과 UI 표시까지 대기. RunManager.failureResultingDelaySeconds (=5f) 와 동일하게 둬서 호스트/게스트 동시에 뜨도록.")]
+        private float runFailedUiDelaySeconds = 5f;
+
+        [ClientRpc]
+        private void BroadcastRunFailedUiClientRpc(float delaySeconds)
+        {
+            // 호스트도 게스트도 같은 RPC 받음 — 단일 시간 출처 (호스트 측 코루틴 vs RPC 의 frame skew 제거).
+            // server 측에서 코루틴을 돌리지 않고 즉시 RPC 발화 → client 측이 자체 coroutine 으로 delay 후 ShowResultingUI 호출.
+            // 호스트 자기 player GameObject 가 TDE 의 defeatObjectDisableDelay 로 inactive 되어도 RPC 는 이미 전송됨.
+            // 게스트 측 player GameObject 는 active 유지 (NGO 가 SetActive sync 안 함) — coroutine 정상 작동.
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] RunFailed UI RPC received delay={delaySeconds}s. IsServer={IsServer} IsOwner={IsOwner} {gameObject.name}", this);
+            StartCoroutine(ShowRunFailedUiAfterDelayCoroutine(delaySeconds));
+        }
+
+        private IEnumerator ShowRunFailedUiAfterDelayCoroutine(float delay)
+        {
+            if (delay > 0f) yield return new WaitForSeconds(delay);
+            if (LostMemory.Stage.RunManager.Instance != null)
+            {
+                if (verboseLog) Debug.Log($"[PlayerHealthSync] ShowRunFailedUi after delay — RunManager.ShowResultingUI 호출. IsServer={IsServer} {gameObject.name}", this);
+                LostMemory.Stage.RunManager.Instance.ShowResultingUI();
             }
         }
 
@@ -277,6 +533,173 @@ namespace LostMemory.Networking.Player
                 {
                     _showDeathOverlayOnGui = true;
                 }
+            }
+        }
+
+        // NetworkVariable<int> _syncedDownState 의 OnValueChanged 핸들러.
+        // 모든 인스턴스 (server 측 자기/타인 + client 측 자기/타인) 에서 visual sync 적용 —
+        // KhiAnimatorMovementBinder 등 parameter override 컴포넌트가 owner/비-owner 양쪽에서 enable 가능하기 때문.
+        private void HandleDownStateChanged(int previous, int current)
+        {
+            KhiDownState prevState = (KhiDownState)previous;
+            KhiDownState newState = (KhiDownState)current;
+
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] DownState changed {prevState} -> {newState}. IsServer={IsServer} IsOwner={IsOwner} {gameObject.name}", this);
+
+            if (newState == KhiDownState.Down)
+            {
+                ApplyDownVisualsOnClient();
+            }
+            else if (newState == KhiDownState.Defeated)
+            {
+                ApplyDefeatedVisualsOnClient();
+            }
+            else if (newState == KhiDownState.Normal)
+            {
+                ClearDownVisualsOnClient();
+            }
+        }
+
+        private void ApplyDownVisualsOnClient()
+        {
+            if (health != null)
+            {
+                Animator animator = health.GetComponentInChildren<Animator>();
+                if (animator != null && !string.IsNullOrWhiteSpace(downAnimatorTrigger))
+                {
+                    animator.SetTrigger(downAnimatorTrigger);
+                }
+            }
+
+            // 모든 인스턴스 — Animator parameter override 컴포넌트 비활성. Down state transition 안 빠져나가게.
+            // 호스트 측 자기 인스턴스는 KhiDownController 가 자체 처리하지만 추가 disable 도 idempotent (부작용 X, MovementForbidden 과 함께 동작).
+            if (!_ownerComponentsDisabledForDown)
+            {
+                CharacterMovement cm = GetComponent<CharacterMovement>();
+                if (cm != null) cm.enabled = false;
+                DisableComponentsByName(new[] { "KhiAnimatorMovementBinder", "KhiSpriteFlipBinder" });
+                _ownerComponentsDisabledForDown = true;
+            }
+        }
+
+        private void ApplyDefeatedVisualsOnClient()
+        {
+            if (health != null)
+            {
+                Animator animator = health.GetComponentInChildren<Animator>();
+                if (animator != null && animator.isActiveAndEnabled)
+                {
+                    if (!string.IsNullOrWhiteSpace(downAnimatorTrigger))
+                    {
+                        animator.ResetTrigger(downAnimatorTrigger);
+                    }
+                    // outgoing transition 없는 Dead state 로 강제 — KhiAnimatorMovementBinder 가 disable 된 상태라
+                    // parameter override 없음 → Dead state 유지.
+                    animator.Play("Dead", 0, 0f);
+                    animator.Update(0f);
+                }
+                foreach (Collider2D col in health.GetComponentsInChildren<Collider2D>(true))
+                {
+                    col.enabled = false;
+                }
+            }
+
+            DisableInputComponentsOnDeath();
+
+            // 모든 인스턴스 — Down state 에서 disable 한 컴포넌트들 유지 (parameter override 차단).
+            if (!_ownerComponentsDisabledForDown)
+            {
+                CharacterMovement cm = GetComponent<CharacterMovement>();
+                if (cm != null) cm.enabled = false;
+                DisableComponentsByName(new[] { "KhiAnimatorMovementBinder", "KhiSpriteFlipBinder" });
+                _ownerComponentsDisabledForDown = true;
+            }
+
+            // 사망 UI 는 IsOwner 자기 화면에만.
+            if (IsOwner)
+            {
+                if (deathOverlayObject != null)
+                {
+                    if (deathOverlayObject.scene.IsValid())
+                    {
+                        deathOverlayObject.SetActive(true);
+                    }
+                    else
+                    {
+                        _showDeathOverlayOnGui = true;
+                    }
+                }
+                else
+                {
+                    _showDeathOverlayOnGui = true;
+                }
+            }
+        }
+
+        private void ClearDownVisualsOnClient()
+        {
+            // 부활 케이스 — 모든 인스턴스에서 컴포넌트 reenable.
+            if (_ownerComponentsDisabledForDown)
+            {
+                CharacterMovement cm = GetComponent<CharacterMovement>();
+                if (cm != null) cm.enabled = true;
+                ReenableComponentsByName(new[] { "KhiAnimatorMovementBinder", "KhiSpriteFlipBinder" });
+                _ownerComponentsDisabledForDown = false;
+            }
+        }
+
+        // KhiDownController.DefeatedByTimeout / DefeatedSolo event 핸들러 (server only).
+        // 호스트의 TDE Health 가 defeatObjectDisableDelay 후 destroy/hide 처리 → 게스트 sync 안 됨 (NGO Despawn 미발화 등).
+        // 즉시 RPC 발화 + delay 인자 — server 측 GameObject 가 그 사이 destroy 되어도 RPC 는 이미 전송됨.
+        // client 측이 자체 coroutine 으로 delay 후 hide.
+        private void HandleDefeatedServer()
+        {
+            if (!IsServer) return;
+            if (_visualHiddenAfterDefeat) return;
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] SERVER Defeated event — broadcast hide RPC delay={defeatHideDelaySeconds}s. {gameObject.name}", this);
+            HidePlayerVisualWithDelayClientRpc(defeatHideDelaySeconds);
+        }
+
+        [ClientRpc]
+        private void HidePlayerVisualWithDelayClientRpc(float delaySeconds)
+        {
+            if (_visualHiddenAfterDefeat) return;
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] HidePlayerVisual RPC received delay={delaySeconds}s. IsServer={IsServer} IsOwner={IsOwner} {gameObject.name}", this);
+            StartCoroutine(HidePlayerVisualAfterDelayCoroutine(delaySeconds));
+        }
+
+        private IEnumerator HidePlayerVisualAfterDelayCoroutine(float delay)
+        {
+            if (delay > 0f) yield return new WaitForSeconds(delay);
+            ApplyHidePlayerVisual();
+        }
+
+        private void ApplyHidePlayerVisual()
+        {
+            if (_visualHiddenAfterDefeat) return;
+            _visualHiddenAfterDefeat = true;
+
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] ApplyHidePlayerVisual. IsServer={IsServer} IsOwner={IsOwner} {gameObject.name}", this);
+
+            // 모든 Renderer 비활성 — model GameObject 자체는 살려두되 그리기만 멈춤 (NetworkObject 유지 → NGO 안전).
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null) renderers[i].enabled = false;
+            }
+
+            // Collider 비활성 — 시체와 충돌 X.
+            Collider2D[] colliders = GetComponentsInChildren<Collider2D>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null) colliders[i].enabled = false;
+            }
+
+            // 사망 UI 제거 — 시체와 동시에 사라지도록.
+            _showDeathOverlayOnGui = false;
+            if (IsOwner && deathOverlayObject != null && deathOverlayObject.scene.IsValid())
+            {
+                deathOverlayObject.SetActive(false);
             }
         }
 
