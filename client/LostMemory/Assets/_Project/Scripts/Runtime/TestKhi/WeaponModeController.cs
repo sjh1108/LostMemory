@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using LostMemory.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -84,6 +86,37 @@ namespace LostMemory.TestKhi
         private void Awake()
         {
             ApplyMode(initialMode, fireEvent: false);
+        }
+
+        private void Start()
+        {
+            // 씬 전환 직후 스냅샷 복구 — PlayerHealthSnapshotter 와 동일 패턴.
+            // 다음 프레임까지 대기해서 다른 컴포넌트 Start 가 끝난 뒤 안전하게 모드 교체.
+            StartCoroutine(RestoreSnapshotNextFrame());
+        }
+
+        private IEnumerator RestoreSnapshotNextFrame()
+        {
+            yield return null;
+
+            PlayerRunState runState = PlayerRunState.Instance;
+            if (runState == null || !runState.HasSnapshot) yield break;
+
+            PlayerSnapshot snap = runState.Snapshot;
+            if (!snap.HasWeaponMode) yield break;
+
+            WeaponMode targetMode = (WeaponMode)snap.WeaponMode;
+            if (targetMode == _currentMode) yield break;
+
+            // ApplyMode 가 WeaponUpgradeService.UpgradeToDagger/RevertToDefault 까지 자동 호출.
+            ApplyMode(targetMode, fireEvent: true);
+        }
+
+        /// <summary>씬 전환 직전 현재 무기 모드를 스냅샷에 기록. StageRouteManager.CapturePlayerSnapshot 에서 호출.</summary>
+        public void CaptureInto(ref PlayerSnapshot snapshot)
+        {
+            snapshot.HasWeaponMode = true;
+            snapshot.WeaponMode = (int)_currentMode;
         }
 
         private void Update()

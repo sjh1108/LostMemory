@@ -93,6 +93,7 @@ GameObject:
   - component: {fileID: 7657820661878310821}
   - component: {fileID: 5949586602835016060}
   - component: {fileID: 177952739735989615}
+  - component: {fileID: 5369219013406704252}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -123,6 +124,7 @@ Transform:
   - {fileID: 6125469900217745665}
   - {fileID: 4331045524986133253}
   - {fileID: 4418140366095601934}
+  - {fileID: 2187305940741280390}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114307563035583202
@@ -635,14 +637,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1536058110
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 3650460580
+  InScenePlacedSourceGlobalObjectIdHash: 3650460580
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -1510,7 +1512,7 @@ MonoBehaviour:
   flamethrowerPresenter: {fileID: 0}
   flamethrowerZone: {fileID: 5949586602835016060}
   flamethrowerObject: {fileID: 7827784340585138236}
-  weaponUpgradeService: {fileID: 0}
+  weaponUpgradeService: {fileID: 1186589091235701340}
   switchKey: 31
   enableMouseWheelSwitch: 1
   wheelSwitchCooldown: 0.15
@@ -1658,6 +1660,23 @@ MonoBehaviour:
     swingDurationMultiplier: 1
     enableExtraSlashes: 0
   logTeleport: 0
+--- !u!114 &5369219013406704252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5d1ffca6f744e244a3881534a55f68c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerSceneTransitionReset
+  mana: {fileID: 7404419025855381829}
+  weaponUpgrade: {fileID: 1186589091235701340}
+  restoreMana: 1
+  revertWeapon: 0
+  logResets: 1
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
@@ -6763,6 +6782,100 @@ MonoBehaviour:
   flipYWhenAimLeft: 1
   recoilDistance: 0.15
   recoilDuration: 0.08
+--- !u!1 &995920850950652876
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2187305940741280390}
+  - component: {fileID: 1186589091235701340}
+  - component: {fileID: 1557705986588282112}
+  m_Layer: 0
+  m_Name: _WeaponUpgrade
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2187305940741280390
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 995920850950652876}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -3.1851702, y: -0.6954, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4319614708212260}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1186589091235701340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 995920850950652876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52d888d15d5fe7c4b9a1541ccf406130, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.WeaponUpgradeService
+  defaultSword: {fileID: 11400000, guid: be21afd1099c64146b384f8bee29eb68, type: 2}
+  daggerSword: {fileID: 11400000, guid: 6d1f3a8c7b2e451d9f4a8c2e6b1d3a5f, type: 2}
+  daggerNinjaSword: {fileID: 11400000, guid: 8a4c7f1b2d6e3914a5f8b9c0d1e2a3b4, type: 2}
+  targetController: {fileID: 114910001000000004}
+  secondaryWeaponObject: {fileID: 3468736836876036444}
+  swordParry: {fileID: 8099593820185299679}
+  finishCurrentSwingBeforeSwap: 1
+--- !u!114 &1557705986588282112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 995920850950652876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbd019788f8feba4697ae296fd2ca666, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiDaggerSpriteCycler
+  cycleKey: 100
+  allowReverseWithShift: 1
+  mainPresenter: {fileID: 7232995058303238362}
+  secondaryPresenter: {fileID: 8040876225746159604}
+  daggerSprites:
+  - {fileID: 21300000, guid: cb46719d7c6d4fa41a35bceceb755156, type: 3}
+  - {fileID: 21300000, guid: bc286010efe664c4d927ca352f88a5c2, type: 3}
+  - {fileID: 21300000, guid: 1aba46ab4779265409c0436ba3282edd, type: 3}
+  - {fileID: 21300000, guid: 821db1a26a6d0534490f3203826abc9c, type: 3}
+  - {fileID: 21300000, guid: e007d5c81ce0fc54eb9303a4be9cc657, type: 3}
+  - {fileID: 21300000, guid: 04f3035c3a5476846a29500b15161956, type: 3}
+  - {fileID: 21300000, guid: 6a634b4cc04704948a1c4aba024dc358, type: 3}
+  - {fileID: 21300000, guid: 617364b7fa4eaac449df809e0f685a84, type: 3}
+  - {fileID: 21300000, guid: 50167427ee47d7548ac2f24903d3f46f, type: 3}
+  - {fileID: 21300000, guid: 7251bd6dff90f7a48930f57ad7c9dae2, type: 3}
+  - {fileID: 21300000, guid: b209b5abd39f72e49978ee3a2e2b2adb, type: 3}
+  - {fileID: 21300000, guid: 35e223dbcfa396a43ae379f6affca9d7, type: 3}
+  - {fileID: 21300000, guid: 553e361ff2297d84389b4c46063ed921, type: 3}
+  - {fileID: 21300000, guid: 01bb5fc3a51981949b99ad4522bbc1fe, type: 3}
+  - {fileID: 21300000, guid: e60a23b800b933546b27303df635b000, type: 3}
+  - {fileID: 21300000, guid: 22cb36cd3908c6e40a0e1211d2b558b4, type: 3}
+  - {fileID: 21300000, guid: 30825d66e6a143d4280e0dce1491ce66, type: 3}
+  - {fileID: 21300000, guid: 0f44be3f38d33ee459ddde9cf60d943f, type: 3}
+  - {fileID: 21300000, guid: 4ccc3ee37349d4e488d0469ac3e53b2b, type: 3}
+  - {fileID: 21300000, guid: 8154d3bf413c9ab4385bf285c9536dce, type: 3}
+  spriteScale: 2
+  applyScaleOnCycle: 1
+  showOnGuiHint: 1
+  hintOrigin: {x: 10, y: 285}
+  fontSize: 12
 --- !u!1 &1516448916103123182
 GameObject:
   m_ObjectHideFlags: 0

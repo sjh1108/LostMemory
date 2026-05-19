@@ -337,6 +337,40 @@ MonoBehaviour:
         TrueState: Moving
         FalseState: 
         LastDecisionEvaluation: 0
+  - StateName: LightProjectileTelegraph
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: LightProjectileAttack
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: LightProjectileAttack
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 0}
+        TrueState: LightProjectileRecover
+        FalseState: 
+        LastDecisionEvaluation: 0
+  - StateName: LightProjectileRecover
+    Actions:
+      array:
+      - {fileID: 8556570244640365655}
+    Transitions:
+      array:
+      - Decision: {fileID: 960971720350858582}
+        TrueState: 
+        FalseState: Detecting
+        LastDecisionEvaluation: 0
+      - Decision: {fileID: 0}
+        TrueState: Moving
+        FalseState: 
+        LastDecisionEvaluation: 0
   - StateName: ProjectileBarrageTelegraph
     Actions:
       array:
@@ -475,6 +509,11 @@ MonoBehaviour:
   entryStateLayer: 0
   introVisibilityTargets: []
   dialoguePlayerOwner: {fileID: 1053890707461078126}
+  bossHealth: {fileID: 0}
+  makeBossInvulnerableDuringIntro: 1
+  bossTargetable: {fileID: 0}
+  makeBossUntargetableDuringIntro: 1
+  protectBossBeforeIntroStarts: 1
   debugLogging: 0
 --- !u!114 &912364736138903878
 MonoBehaviour:
@@ -565,23 +604,23 @@ MonoBehaviour:
   dashKnockbackForce: {x: 10, y: 10, z: 10}
   specialPatternHealthThresholdNormalized: 0.9
   specialPatternCooldown: 15
-  fullComboRange: 3
+  fullComboRange: 4
   fullComboTelegraphDuration: 0.75
   fullComboDuration: 3.2
   fullComboImpactTime: 3
   fullComboRecoverDuration: 0.65
   fullComboOffset: {x: 0, y: 0}
-  fullComboSize: {x: 7, y: 7}
+  fullComboSize: {x: 8, y: 8}
   fullComboDamage: 24
   fullComboInvincibilityDuration: 0.5
-  projectileBarrageMinimumRange: 2.5
-  projectileBarrageRange: 12
+  lightProjectileTelegraphDuration: 0.45
+  lightProjectileDuration: 0.45
+  lightProjectileRecoverDuration: 0.35
+  lightProjectileCooldown: 10
   projectileBarrageTelegraphDuration: 0.75
   projectileBarrageDuration: 1.6
   projectileBarrageRecoverDuration: 0.55
   projectileBarrageCooldown: 12
-  projectileStormMinimumRange: 2.5
-  projectileStormRange: 12
   projectileStormTelegraphDuration: 0.85
   projectileStormDuration: 1.9
   projectileStormRecoverDuration: 0.6
@@ -632,6 +671,20 @@ MonoBehaviour:
     maxPitch: 1.08
     minimumInterval: 0.12
     fallbackWithoutSoundManager: 1
+  lightProjectileBursts:
+  - Mode: 1
+    Delay: 0.08
+    ProjectileCount: 3
+    SpreadAngle: 34
+    Speed: 6
+    Lifetime: 6
+    Damage: 5
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.3
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 60
+    HomingDuration: 6
   heavyProjectileBursts:
   - Mode: 0
     Delay: 0.72
@@ -644,6 +697,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 1
     Delay: 0.16
     ProjectileCount: 7
@@ -655,6 +710,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   projectileBarrageBursts:
   - Mode: 0
     Delay: 0.2
@@ -667,6 +724,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.28
     ProjectileCount: 10
@@ -678,6 +737,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 3.6
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.28
     ProjectileCount: 10
@@ -689,6 +750,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 7.2
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 1
     Delay: 0.18
     ProjectileCount: 7
@@ -700,6 +763,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   projectileStormBursts:
   - Mode: 0
     Delay: 0.12
@@ -712,6 +777,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -723,6 +790,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 3.6
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -734,6 +803,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 7.2
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -745,6 +816,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 10.8
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -756,6 +829,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 14.4
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -767,6 +842,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 18
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -778,6 +855,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 21.6
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -789,6 +868,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 25.2
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -800,6 +881,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 28.8
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.14
     ProjectileCount: 10
@@ -811,6 +894,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 32.4
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   fullComboProjectileBursts:
   - Mode: 1
     Delay: 0.58
@@ -823,6 +908,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: -10
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 1
     Delay: 0.66
     ProjectileCount: 7
@@ -834,6 +921,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 10
     SpawnDistance: 0.5
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.74
     ProjectileCount: 10
@@ -845,6 +934,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 18
     SpawnDistance: 0.55
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   lightAttack1Weight: 3
   lightAttack2Weight: 3
   heavyAttackWeight: 2
@@ -1134,11 +1225,17 @@ MonoBehaviour:
   sortingReference: {fileID: 0}
   sortingOrderOffset: 1
   renderOutsideSortingGroup: 1
+  useFixedTelegraphSorting: 1
+  telegraphSortingLayerName: Foreground
+  telegraphSortingOrder: 50
   sortingGroupReference: {fileID: 0}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
   positionOffset: {x: 0, y: 0.02, z: 0}
+  timingMarkerObjectName: AttackTelegraphTimingMarker
+  timingMarkerDefaultColor: {r: 1, g: 0.92, b: 0.55, a: 0.75}
+  timingMarkerThickness: 0.055
 --- !u!114 &6782437660636743853
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1421,6 +1518,7 @@ MonoBehaviour:
   damage: 8
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: aeb67eefa66f34ffeae4fd8422461e84, type: 3}
   impactSfxVolume: 0.85
   impactSfxMinPitch: 0.96
@@ -1516,6 +1614,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBrainAnimationController
   brain: {fileID: 3462389258332619980}
+  health: {fileID: 1476706992768293698}
   animator: {fileID: 6690013029932485984}
   introSequenceController: {fileID: 3451055990007121390}
   movingStateName: Moving
@@ -1539,6 +1638,8 @@ MonoBehaviour:
   - ProjectileBarrageRecover
   - ProjectileStormTelegraph
   - ProjectileStormRecover
+  - LightProjectileTelegraph
+  - LightProjectileRecover
   idleAnimationStateName: Idle
   walkAnimationStateName: Walk
   animationLayer: 0
@@ -1577,6 +1678,7 @@ MonoBehaviour:
   damage: 10
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
   impactSfxVolume: 0.9
   impactSfxMinPitch: 0.96
@@ -1618,6 +1720,7 @@ MonoBehaviour:
   damage: 16
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: e22a6d5f894934efb88b6d9f9e0095ee, type: 3}
   impactSfxVolume: 1
   impactSfxMinPitch: 0.98
@@ -1651,7 +1754,7 @@ MonoBehaviour:
   impactTime: 3
   telegraphColor: {r: 1, g: 0.12, b: 0.05, a: 0.42}
   attackOffset: {x: 0, y: 0}
-  attackSize: {x: 7, y: 7}
+  attackSize: {x: 8, y: 8}
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 1024
@@ -1691,6 +1794,7 @@ MonoBehaviour:
   normalDashTelegraphStateName: NormalDashTelegraph
   dashTelegraphStateName: DashTelegraph
   fullComboTelegraphStateName: FullTelegraph
+  lightProjectileTelegraphStateName: LightProjectileTelegraph
   projectileBarrageTelegraphStateName: ProjectileBarrageTelegraph
   projectileStormTelegraphStateName: ProjectileStormTelegraph
   lightAttack1Range: 2.5
@@ -1700,17 +1804,15 @@ MonoBehaviour:
   normalDashMaximumRange: 20
   dashMinimumRange: 3
   dashMaximumRange: 20
-  fullComboRange: 3
-  projectileBarrageMinimumRange: 2.5
-  projectileBarrageMaximumRange: 12
-  projectileStormMinimumRange: 2.5
-  projectileStormMaximumRange: 12
+  fullComboRange: 4
   specialUnlockHealthThresholdNormalized: 0.9
   normalDashCooldown: 5
   dashCooldown: 15
   fullComboCooldown: 15
+  lightProjectileCooldown: 10
   projectileBarrageCooldown: 12
   projectileStormCooldown: 14
+  minimumTimeBetweenProjectilePatterns: 6
   lightAttack1Weight: 3
   lightAttack2Weight: 3
   heavyAttackWeight: 2
@@ -1728,6 +1830,8 @@ MonoBehaviour:
     NormalDashWeight: 1
     DashAttackWeight: 0
     FullComboWeight: 0
+    LightProjectileWeight: 1
+    LightProjectileCooldown: 10
     ProjectileBarrageWeight: 0
     ProjectileBarrageCooldown: 12
     ProjectileStormWeight: 0
@@ -1737,13 +1841,15 @@ MonoBehaviour:
     AllowFullCombo: 1
     NormalDashCooldown: 5
     DashCooldown: 8
-    FullComboCooldown: 10
+    FullComboCooldown: 8
     LightAttack1Weight: 2
     LightAttack2Weight: 3
     HeavyAttackWeight: 3
     NormalDashWeight: 2
     DashAttackWeight: 1
-    FullComboWeight: 1
+    FullComboWeight: 2
+    LightProjectileWeight: 1
+    LightProjectileCooldown: 12
     ProjectileBarrageWeight: 1
     ProjectileBarrageCooldown: 12
     ProjectileStormWeight: 0
@@ -1753,13 +1859,15 @@ MonoBehaviour:
     AllowFullCombo: 1
     NormalDashCooldown: 3.5
     DashCooldown: 6
-    FullComboCooldown: 7
+    FullComboCooldown: 6
     LightAttack1Weight: 1
     LightAttack2Weight: 2
     HeavyAttackWeight: 4
     NormalDashWeight: 3
     DashAttackWeight: 2
-    FullComboWeight: 2
+    FullComboWeight: 3
+    LightProjectileWeight: 0
+    LightProjectileCooldown: 12
     ProjectileBarrageWeight: 2
     ProjectileBarrageCooldown: 9
     ProjectileStormWeight: 2
@@ -2052,12 +2160,14 @@ MonoBehaviour:
   brain: {fileID: 3462389258332619980}
   character: {fileID: 676684734245497551}
   orientationAbility: {fileID: 4263005936322895720}
+  phaseController: {fileID: 6772711072849941599}
   animator: {fileID: 0}
   projectileOrigin: {fileID: 6163745977444960121}
   burstEmitter: {fileID: 7493932597098213808}
   attackStateName: HeavyAttack
   attackAnimationStateName: 
   attackAnimationLayer: 0
+  minimumPhase: 1
   burstSequence:
   - Mode: 0
     Delay: 0.72
@@ -2070,6 +2180,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 1
     Delay: 0.16
     ProjectileCount: 7
@@ -2081,6 +2193,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 0
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   burstSfx: {fileID: 8300000, guid: e22a6d5f894934efb88b6d9f9e0095ee, type: 3}
   burstSfxVolume: 0.9
   burstSfxMinPitch: 0.96
@@ -2104,12 +2218,14 @@ MonoBehaviour:
   brain: {fileID: 3462389258332619980}
   character: {fileID: 676684734245497551}
   orientationAbility: {fileID: 4263005936322895720}
+  phaseController: {fileID: 6772711072849941599}
   animator: {fileID: 0}
   projectileOrigin: {fileID: 6163745977444960121}
   burstEmitter: {fileID: 7493932597098213808}
   attackStateName: FullComboAttack
   attackAnimationStateName: 
   attackAnimationLayer: 0
+  minimumPhase: 2
   burstSequence:
   - Mode: 1
     Delay: 0.58
@@ -2122,6 +2238,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: -10
     SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 1
     Delay: 0.66
     ProjectileCount: 7
@@ -2133,6 +2251,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 10
     SpawnDistance: 0.5
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   - Mode: 0
     Delay: 0.74
     ProjectileCount: 10
@@ -2144,6 +2264,8 @@ MonoBehaviour:
     HitRadius: 0.35
     AngleOffsetDegrees: 18
     SpawnDistance: 0.55
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
   burstSfx: {fileID: 8300000, guid: 3bd1b135c71344b8d9231852e865a8e0, type: 3}
   burstSfxVolume: 0.95
   burstSfxMinPitch: 0.96

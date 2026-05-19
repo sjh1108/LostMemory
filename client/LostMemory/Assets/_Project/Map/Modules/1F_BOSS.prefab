@@ -733,6 +733,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: north
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &1188654100153717873
 GameObject:
   m_ObjectHideFlags: 0
@@ -23533,6 +23535,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: south
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &3238657912371398057
 GameObject:
   m_ObjectHideFlags: 0
@@ -25777,6 +25781,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: east
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &4733570981149886108
 GameObject:
   m_ObjectHideFlags: 0
@@ -30718,6 +30724,7 @@ GameObject:
   - component: {fileID: 6226433339382925121}
   - component: {fileID: 2858573164609050546}
   - component: {fileID: 642010001234567890}
+  - component: {fileID: 2994128578067591986}
   m_Layer: 0
   m_Name: 1F_BOSS
   m_TagString: Untagged
@@ -30764,6 +30771,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5f1b47db33bcc5409105e8ded726822, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
+  ShowTopMostFoldoutHeaderGroup: 1
   roomData: {fileID: 11400000, guid: c11206a1b2c3d4e5f6789012345678ab, type: 2}
   enemyCatalog: {fileID: 0}
   encounterAnchor: {fileID: 6226433339382925121}
@@ -30817,7 +30825,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ac6158c92a641c745b8a9d513f9c7159, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.LargeNodeClearTracker
   clearPolicy: 1
   requiredRoomIds: []
@@ -30828,6 +30836,31 @@ MonoBehaviour:
   unlockIfNoRequiredRooms: 0
   allowExitDuringActiveCombat: 0
   debugLogging: 0
+--- !u!114 &2994128578067591986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6418301402336183476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2377779026
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &6504961722502586497
 GameObject:
   m_ObjectHideFlags: 0
@@ -37736,7 +37769,7 @@ Tilemap:
       - {fileID: -209369834, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1625146880, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -299249553, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 44, y: 3, z: 0}
@@ -37856,7 +37889,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 32, y: 4, z: 0}
@@ -38111,7 +38144,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 41, y: 5, z: 0}
@@ -38261,7 +38294,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 33, y: 6, z: 0}
@@ -38561,7 +38594,7 @@ Tilemap:
       - {fileID: 673996628, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -781716342, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1216680377, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 34, y: 8, z: 0}
@@ -38666,7 +38699,7 @@ Tilemap:
       - {fileID: -1545489852, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1873214763, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1926847115, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 33, y: 9, z: 0}
@@ -38711,7 +38744,7 @@ Tilemap:
       - {fileID: -366532517, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1725371823, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -883727392, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 40, y: 9, z: 0}
@@ -39191,7 +39224,7 @@ Tilemap:
       - {fileID: -209369834, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1625146880, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -299249553, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 31, y: 15, z: 0}
@@ -40205,6 +40238,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: west
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &8285680205261806341
 GameObject:
   m_ObjectHideFlags: 0
@@ -45822,7 +45857,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a23bd0a9071f7fb48958dbc9cea6ca0f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RouteNodeExitTrigger
   triggerId: to_2f_1r
   routeManager: {fileID: 0}
@@ -45838,7 +45873,7 @@ MonoBehaviour:
   completeRunInsteadOfAdvancingRoute: 1
   useLocalTeleport: 0
   localTeleportTarget: {fileID: 0}
-  localTeleportTargetRootName:
+  localTeleportTargetRootName: 
   localTeleportAnchorTag: default
   localTeleportOffset: {x: 0, y: 0, z: 0}
   debugLogging: 0

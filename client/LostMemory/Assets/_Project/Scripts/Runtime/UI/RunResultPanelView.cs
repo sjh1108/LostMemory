@@ -40,6 +40,9 @@ namespace LostMemory.UI
         /// <summary>결산 창을 열고 데이터를 표시한다.</summary>
         public void Show(RunResultData data)
         {
+            // 다른 UI 패널에 가려지지 않도록 sibling 순서를 맨 뒤로 (= 최상위 렌더링).
+            transform.SetAsLastSibling();
+
             SetText(_killCountText, data.KillCount.ToString());
             SetText(_bossKillCountText, data.BossKillCount.ToString());
             SetText(_totalDamageText, data.TotalDamage.ToString("N0"));

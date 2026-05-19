@@ -434,6 +434,15 @@ namespace LostMemory.Stage
                 healthSnapshotter.CaptureInto(ref snapshot);
             }
 
+            // CL-230: 무기 모드 (Sword/Dagger/Bow/Staff/Flamethrower) 도 씬 전환 시 보존.
+            // WeaponModeController.ApplyMode 가 WeaponUpgradeService SO 교체까지 자동 호출하므로
+            // 이 한 값만 복구하면 Dagger SO 까지 자동 전파됨.
+            LostMemory.TestKhi.WeaponModeController weaponMode = player.GetComponentInChildren<LostMemory.TestKhi.WeaponModeController>(true);
+            if (weaponMode != null)
+            {
+                weaponMode.CaptureInto(ref snapshot);
+            }
+
             runState.Capture(snapshot);
         }
 

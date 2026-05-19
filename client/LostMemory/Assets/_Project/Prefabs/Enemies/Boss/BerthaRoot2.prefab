@@ -882,6 +882,11 @@ MonoBehaviour:
   entryStateLayer: 0
   introVisibilityTargets: []
   dialoguePlayerOwner: {fileID: 7691799999625441337}
+  bossHealth: {fileID: 0}
+  makeBossInvulnerableDuringIntro: 1
+  bossTargetable: {fileID: 0}
+  makeBossUntargetableDuringIntro: 1
+  protectBossBeforeIntroStarts: 1
   debugLogging: 0
 --- !u!114 &4309234456699776841
 MonoBehaviour:
@@ -1451,8 +1456,8 @@ MonoBehaviour:
   Model: {fileID: 0}
   CurrentHealth: 1000
   Invulnerable: 0
-  InitialHealth: 500
-  MaximumHealth: 500
+  InitialHealth: 800
+  MaximumHealth: 800
   ResetHealthOnEnable: 1
   OnHealFeedback: {fileID: 0}
   ImmuneToDamage: 0
@@ -1593,11 +1598,17 @@ MonoBehaviour:
   sortingReference: {fileID: 0}
   sortingOrderOffset: 1
   renderOutsideSortingGroup: 1
+  useFixedTelegraphSorting: 1
+  telegraphSortingLayerName: Foreground
+  telegraphSortingOrder: 50
   sortingGroupReference: {fileID: 0}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
   positionOffset: {x: 0, y: 0.02, z: 0}
+  timingMarkerObjectName: AttackTelegraphTimingMarker
+  timingMarkerDefaultColor: {r: 1, g: 0.92, b: 0.55, a: 0.75}
+  timingMarkerThickness: 0.055
 --- !u!114 &513448101591170185
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1880,6 +1891,7 @@ MonoBehaviour:
   damage: 8
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: aeb67eefa66f34ffeae4fd8422461e84, type: 3}
   impactSfxVolume: 0.85
   impactSfxMinPitch: 0.96
@@ -1975,6 +1987,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaBrainAnimationController
   brain: {fileID: 6457538628010552793}
+  health: {fileID: 4242752178306269673}
   animator: {fileID: 3739491042386699188}
   introSequenceController: {fileID: 1615596352621668811}
   movingStateName: Moving
@@ -2038,6 +2051,7 @@ MonoBehaviour:
   damage: 10
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
   impactSfxVolume: 0.9
   impactSfxMinPitch: 0.96
@@ -2079,6 +2093,7 @@ MonoBehaviour:
   damage: 16
   targetInvincibilityDuration: 0.5
   horizontalFacingThreshold: 0.05
+  enableImpactDamage: 1
   impactSfx: {fileID: 8300000, guid: e22a6d5f894934efb88b6d9f9e0095ee, type: 3}
   impactSfxVolume: 1
   impactSfxMinPitch: 0.98

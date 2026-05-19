@@ -57,6 +57,12 @@ namespace LostMemory.UI
                     _audioSource = gameObject.AddComponent<AudioSource>();
                     _audioSource.playOnAwake = false;
                 }
+                // SFX 카테고리 mixer group 으로 라우팅 → 사용자 UI 슬라이더 적용 받음.
+                if (LostMemory.Audio.GameAudioSettings.Instance != null
+                    && LostMemory.Audio.GameAudioSettings.Instance.SfxGroup != null)
+                {
+                    _audioSource.outputAudioMixerGroup = LostMemory.Audio.GameAudioSettings.Instance.SfxGroup;
+                }
             }
             // 시작 시 HUD 숨김 — 5인 합체 전엔 표시 안 함.
             if (view != null) view.SetVisible(false);
@@ -101,7 +107,11 @@ namespace LostMemory.UI
                     view.SetReady();
                     _wasReady = true;
                     if (readyChimeClip != null && _audioSource != null)
-                        _audioSource.PlayOneShot(readyChimeClip, readyChimeVolume);
+                    {
+                        float perClipGain = LostMemory.Audio.SfxClipVolumeBalance.GetGain(readyChimeClip);
+                        float finalVol = Mathf.Clamp(readyChimeVolume * perClipGain, 0f, LostMemory.Audio.SfxClipVolumeBalance.MaxGain);
+                        _audioSource.PlayOneShot(readyChimeClip, finalVol);
+                    }
                     if (logTransitions) Debug.Log("[UltimateCooldown] Ready", this);
                 }
                 return;

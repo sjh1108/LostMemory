@@ -42,6 +42,14 @@ namespace LostMemory.Intro.Phase0
                 audioSource.volume = 0f;
                 audioSource.loop = true;
                 audioSource.playOnAwake = false;
+
+                // Music mixer group 으로 라우팅 → 옵션 메뉴 Music 슬라이더 영향 받음.
+                if (LostMemory.Audio.GameAudioSettings.Instance != null
+                    && LostMemory.Audio.GameAudioSettings.Instance.MusicGroup != null)
+                {
+                    audioSource.outputAudioMixerGroup =
+                        LostMemory.Audio.GameAudioSettings.Instance.MusicGroup;
+                }
             }
             StartCoroutine(RunSequence());
         }

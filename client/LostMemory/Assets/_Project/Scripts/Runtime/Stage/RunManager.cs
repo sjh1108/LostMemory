@@ -120,6 +120,11 @@ namespace LostMemory.Stage
         private KhiDownController subscribedPlayerDownController;
         private RunResultPanelView subscribedRunResultPanelView;
 
+        // 파티 전원 전투불능 판정용 폴링 + 결과 전환 코루틴 중복 방지.
+        private Coroutine resultTransitionRoutine;
+        private float nextPartyDefeatCheckAt;
+        private const float PartyDefeatCheckInterval = 0.25f;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -471,6 +476,101 @@ namespace LostMemory.Stage
             {
                 StartRun();
             }
+        }
+
+        private void Update()
+        {
+            if (Instance != this || StateMachine == null)
+            {
+                return;
+            }
+            if (StateMachine.Current != RunState.InRun)
+            {
+                return;
+            }
+            if (Time.unscaledTime < nextPartyDefeatCheckAt)
+            {
+                return;
+            }
+            nextPartyDefeatCheckAt = Time.unscaledTime + PartyDefeatCheckInterval;
+
+            if (AreAllActivePlayersDownOrDefeated())
+            {
+                FailRunFromPartyDefeat();
+            }
+        }
+
+        /// <summary>
+        /// 활성 플레이어 모두가 Down 또는 Defeated 인지 검사.
+        /// 싱글: 1명이 다운/사망이면 true.
+        /// 멀티: 파티 전원 다운/사망이면 true.
+        /// 활성 플레이어가 0명이면 false (런 시작 전/씬 전환 중 등).
+        /// </summary>
+        private bool AreAllActivePlayersDownOrDefeated()
+        {
+            KhiDownController[] players = FindObjectsByType<KhiDownController>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            if (players.Length == 0)
+            {
+                return false;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            bool foundPlayer = false;
+            for (int i = 0; i < players.Length; i++)
+            {
+                KhiDownController player = players[i];
+                if (player == null || player.gameObject.scene != activeScene)
+                {
+                    continue;
+                }
+                foundPlayer = true;
+                if (!player.IsDown && !player.IsDefeated)
+                {
+                    return false;
+                }
+            }
+            return foundPlayer;
+        }
+
+        /// <summary>이벤트 핸들러용 — 즉시 파티 상태 검사 후 실패 트리거 여부 판정.</summary>
+        private void CheckPartyDefeatNow()
+        {
+            if (!EnsureRunActiveForDefeat())
+            {
+                return;
+            }
+            if (!AreAllActivePlayersDownOrDefeated())
+            {
+                return;
+            }
+            FailRunFromPartyDefeat();
+        }
+
+        /// <summary>파티 전원 전투불능 → RunFailed 전이 + 결과 패널 전환 예약. 단일 진입점.</summary>
+        private void FailRunFromPartyDefeat()
+        {
+            if (!EnsureRunActiveForDefeat())
+            {
+                return;
+            }
+            if (!StateMachine.TryTransition(RunState.RunFailed))
+            {
+                return;
+            }
+            bossClearPortalReady = false;
+            BeginDelayedTransitionToResulting(failureResultingDelaySeconds);
+        }
+
+        /// <summary>결과 전환 코루틴을 시작하며 중복을 방지.</summary>
+        private void BeginDelayedTransitionToResulting(float delaySeconds)
+        {
+            if (resultTransitionRoutine != null)
+            {
+                StopCoroutine(resultTransitionRoutine);
+            }
+            resultTransitionRoutine = StartCoroutine(DelayedTransitionToResulting(delaySeconds));
         }
 
         /// <summary>
@@ -885,34 +985,19 @@ namespace LostMemory.Stage
                 return false;
             }
 
-            StartCoroutine(DelayedTransitionToResulting(resultingDelaySeconds));
+            BeginDelayedTransitionToResulting(resultingDelaySeconds);
             return true;
         }
 
         private void HandlePlayerStateChanged(KhiPlayerState prev, KhiPlayerState current)
         {
-            // TODO(CL-014): 부활 deadline 처리. 현재는 *솔로 = Player Defeated 즉시 RunFailed* 임시 정책.
-            // 멀티 도입 시 *파티 전원 다운 + 부활 deadline 만료* 로 변경.
-            if (current != KhiPlayerState.Defeated)
+            // 정책: 파티 전원 Down/Defeated 시점에만 RunFailed.
+            // 본 이벤트는 즉시 검사 트리거. Update() 폴링이 누락 케이스도 잡음.
+            if (current != KhiPlayerState.Down && current != KhiPlayerState.Defeated)
             {
                 return;
             }
-            if (!EnsureRunActiveForDefeat())
-            {
-                return;
-            }
-
-            // 멀티 — 다른 player 가 살아있으면 RunFailed 차단. 팀 전체 사망 시에만 진행.
-            if (PlayerHealthSync.AnyPlayerAlive())
-            {
-                return;
-            }
-
-            if (StateMachine.TryTransition(RunState.RunFailed))
-            {
-                bossClearPortalReady = false;
-                StartCoroutine(DelayedTransitionToResulting(failureResultingDelaySeconds));
-            }
+            CheckPartyDefeatNow();
         }
 
         // KhiPlayerStateAggregator 는 Player GameObject 가 Defeated 와 동일 프레임에 비활성화되어
@@ -925,24 +1010,7 @@ namespace LostMemory.Stage
         // 다른 player 가 죽는 경로는 외부 트리거가 필요함.
         public void HandlePlayerDefeatedDirect()
         {
-            // TODO(CL-014): 부활 deadline 도입 시 즉시가 아닌 deadline 만료 후로 변경.
-            if (!EnsureRunActiveForDefeat())
-            {
-                return;
-            }
-
-            // 멀티 — 다른 player 가 살아있으면 RunFailed 차단. 팀 전체 사망 시에만 진행.
-            // 솔로 (server 인스턴스 0개) 면 false 반환 → 기존 흐름 그대로.
-            if (PlayerHealthSync.AnyPlayerAlive())
-            {
-                return;
-            }
-
-            if (StateMachine.TryTransition(RunState.RunFailed))
-            {
-                bossClearPortalReady = false;
-                StartCoroutine(DelayedTransitionToResulting(failureResultingDelaySeconds));
-            }
+            CheckPartyDefeatNow();
         }
 
         private bool EnsureRunActiveForDefeat()
@@ -974,7 +1042,10 @@ namespace LostMemory.Stage
 
         private IEnumerator DelayedTransitionToResulting(float delaySeconds)
         {
-            yield return new WaitForSeconds(Mathf.Max(0f, delaySeconds));
+            // 일시정지(timeScale=0) 상태에서도 결과 전환이 진행되도록 Realtime 사용.
+            yield return new WaitForSecondsRealtime(Mathf.Max(0f, delaySeconds));
+            resultTransitionRoutine = null;
+
             if (!StateMachine.TryTransition(RunState.Resulting))
             {
                 yield break;
@@ -986,16 +1057,20 @@ namespace LostMemory.Stage
         // _resultingUiShown idempotent guard — 호스트 측은 DelayedTransitionToResulting 코루틴 + ClientRpc 양쪽에서 호출될 수 있음.
         public void ShowResultingUI()
         {
+            // 호스트 측은 DelayedTransitionToResulting 코루틴 + PlayerHealthSync ClientRpc 양쪽에서 호출될 수 있음 — idempotent 가드.
             if (_resultingUiShown)
             {
                 return;
             }
             _resultingUiShown = true;
 
+            // 다시 시작 후 timeScale 이 0 으로 남아있을 가능성 대비 — 결과 패널 표시 직전 1 로 복구.
+            Time.timeScale = 1f;
+
             RunResultPanelView resultPanelView = ResolveRunResultPanelView();
             if (resultPanelView == null)
             {
-                Debug.Log("[RunManager] Resulting state — no RunResultPanelView wired (stub).");
+                Debug.LogWarning("[RunManager] Resulting state — no RunResultPanelView wired (stub).", this);
                 return;
             }
 

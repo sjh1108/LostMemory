@@ -71,6 +71,13 @@ namespace LostMemory.Player
         public float CurrentHealth;
         public float MaximumHealth;
         public bool HasHealth;
+
+        // CL-230: 씬 전환 시 무기 모드 보존 (Sword/Dagger/Bow/Staff/Flamethrower).
+        // WeaponModeController.CaptureInto / RestoreSnapshotNextFrame 에서 사용.
+        // WeaponModeController.SetMode 가 내부적으로 WeaponUpgradeService 교체도 호출하므로
+        // 이 한 값만 복구하면 Dagger SO 교체까지 자동 전파됨.
+        public bool HasWeaponMode;
+        public int WeaponMode; // (int) LostMemory.TestKhi.WeaponMode enum.
     }
 
     public struct RelicPlacementSnapshot

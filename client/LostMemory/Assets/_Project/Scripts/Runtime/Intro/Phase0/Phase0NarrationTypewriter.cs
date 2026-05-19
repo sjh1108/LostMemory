@@ -21,6 +21,18 @@ namespace LostMemory.Intro.Phase0
             sfxSource = GetComponent<AudioSource>();
         }
 
+        private void Awake()
+        {
+            // 타이핑 SFX AudioSource 를 SFX mixer group 으로 라우팅 → 옵션 메뉴 SFX 슬라이더 영향.
+            if (sfxSource != null
+                && LostMemory.Audio.GameAudioSettings.Instance != null
+                && LostMemory.Audio.GameAudioSettings.Instance.SfxGroup != null)
+            {
+                sfxSource.outputAudioMixerGroup =
+                    LostMemory.Audio.GameAudioSettings.Instance.SfxGroup;
+            }
+        }
+
         public void Clear()
         {
             if (label == null) return;

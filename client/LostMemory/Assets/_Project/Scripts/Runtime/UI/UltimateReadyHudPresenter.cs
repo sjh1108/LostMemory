@@ -44,6 +44,13 @@ namespace LostMemory.UI
                 _audioSource = gameObject.AddComponent<AudioSource>();
                 _audioSource.playOnAwake = false;
             }
+            // SFX 카테고리 mixer group 으로 라우팅 → 사용자 UI 슬라이더 적용 받음.
+            if (_audioSource != null
+                && LostMemory.Audio.GameAudioSettings.Instance != null
+                && LostMemory.Audio.GameAudioSettings.Instance.SfxGroup != null)
+            {
+                _audioSource.outputAudioMixerGroup = LostMemory.Audio.GameAudioSettings.Instance.SfxGroup;
+            }
         }
 
         private void Start()
@@ -65,7 +72,9 @@ namespace LostMemory.UI
             // ready=true 로 전환한 순간 (false→true) 만 사운드. ready 해제 시는 무음.
             if (nowReady && readyChimeClip != null && _audioSource != null)
             {
-                _audioSource.PlayOneShot(readyChimeClip, readyChimeVolume);
+                float perClipGain = LostMemory.Audio.SfxClipVolumeBalance.GetGain(readyChimeClip);
+                float finalVol = Mathf.Clamp(readyChimeVolume * perClipGain, 0f, LostMemory.Audio.SfxClipVolumeBalance.MaxGain);
+                _audioSource.PlayOneShot(readyChimeClip, finalVol);
             }
 
             if (logTransitions)

@@ -89,5 +89,15 @@ namespace LostMemory.Combat
             _currentMana = Mathf.Min(_currentMana, maxMana);
             ManaChanged?.Invoke(_currentMana, maxMana);
         }
+
+        /// <summary>현재 마나를 최대값으로 회복. 맵 전환 등 라운드 리셋 시 사용.</summary>
+        public void RestoreToMax()
+        {
+            if (_currentMana == maxMana) return;
+            _currentMana = maxMana;
+            _recoveryAccumulator = 0f;
+            ManaChanged?.Invoke(_currentMana, maxMana);
+            if (logManaEvents) Debug.Log($"[PlayerMana] RestoreToMax → {_currentMana}/{maxMana}");
+        }
     }
 }
