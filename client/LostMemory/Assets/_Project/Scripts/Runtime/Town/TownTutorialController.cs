@@ -132,7 +132,9 @@ namespace LostMemory.Town
 
         private void HandleClose()
         {
-            if (_panel.DontShowAgain)
+            bool dontShow = _panel.DontShowAgain;
+            Debug.Log($"[TownTutorialController] HandleClose dontShowAgain={dontShow} key='{_seenKey}'", this);
+            if (dontShow)
             {
                 PlayerPrefs.SetInt(_seenKey, 1);
                 PlayerPrefs.Save();

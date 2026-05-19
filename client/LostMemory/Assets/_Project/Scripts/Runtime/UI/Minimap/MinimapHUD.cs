@@ -1,3 +1,5 @@
+using LostMemory.Stage;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,6 +26,10 @@ namespace LostMemory.UI.Minimap
         [SerializeField] private GameObject bigMapRoot;
         [SerializeField] private RawImage bigMapImage;
 
+        [Header("Stage Label")]
+        [SerializeField, Tooltip("미니맵 위/아래에 표시할 'Stage N / M' 텍스트. 미니맵 prefab 자식 TMP_Text 를 드래그.")]
+        private TMP_Text stageLabel;
+
         [Header("Input")]
         [SerializeField] private KeyCode toggleBigMapKey = KeyCode.M;
         [SerializeField, Tooltip("씬 시작 시 큰 맵 표시 여부. 기본 false 권장.")]
@@ -33,6 +39,7 @@ namespace LostMemory.UI.Minimap
 
         private bool _bigMapVisible;
         private float _previousTimeScale = 1f;
+        private string _lastStageText = string.Empty;
 
         public bool IsBigMapVisible => _bigMapVisible;
         public RenderTexture MinimapRenderTexture => minimapRenderTexture;
@@ -49,6 +56,30 @@ namespace LostMemory.UI.Minimap
             {
                 ToggleBigMap();
             }
+
+            RefreshStageLabel();
+        }
+
+        private void RefreshStageLabel()
+        {
+            if (stageLabel == null) return;
+
+            // 표기: "{stage}-{room}"  예) 1-1, 1-2, 1-3 ...
+            //   stage = RunManager.CurrentStageNumber (챕터, 기본 1)
+            //   room  = StageRouteManager.CurrentNodeIndex + 1 (씬 단위 진행)
+            RunManager run = RunManager.Instance;
+            StageRouteManager route = StageRouteManager.Instance;
+
+            int stage = run != null ? run.CurrentStageNumber : 1;
+            int room  = route != null ? route.CurrentNodeIndex + 1 : 1;
+
+            string newText = $"Stage {stage}-{room}";
+
+            if (newText == _lastStageText) return;
+            _lastStageText = newText;
+            stageLabel.text = newText;
+
+            Debug.Log($"[MinimapHUD] StageLabel → '{newText}'", this);
         }
 
         private void OnDisable()

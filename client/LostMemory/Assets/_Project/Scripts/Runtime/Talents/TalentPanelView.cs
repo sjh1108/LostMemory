@@ -1,3 +1,4 @@
+using LostMemory.Combat;
 using LostMemory.Data;
 using LostMemory.Memory;
 using TMPro;
@@ -101,6 +102,41 @@ namespace LostMemory.Talents
         private void OnSave()
         {
             TalentSaveService.Save(_model);
+            ApplyStatsImmediately();
+        }
+
+        /// <summary>
+        /// 저장 직후 PlayerStatModifierContainer 를 직접 갱신해 마을 HUD 도 즉시 반영.
+        /// 던전 진입 시 TalentStartupApplier 가 같은 Source 로 RemoveBySource + 재등록하므로 중복 누적 없음.
+        /// </summary>
+        private void ApplyStatsImmediately()
+        {
+            PlayerStatModifierContainer container = FindAnyObjectByType<PlayerStatModifierContainer>(FindObjectsInactive.Include);
+            if (container == null)
+            {
+                Debug.LogWarning("[TalentPanelView] PlayerStatModifierContainer 가 씬에 없음 — 즉시 적용 불가.", this);
+                return;
+            }
+
+            RunStartStats stats = TalentCalculator.Calculate(_model);
+
+            // 이전에 같은 Source 로 등록한 stat 제거 → 누적 방지
+            container.RemoveBySource(TalentStartupApplier.Source);
+
+            if (stats.CriticalRate != 0f)
+                container.AddPermanent(StatId.Critical, stats.CriticalRate, TalentStartupApplier.Source);
+            if (stats.AttackSpeed != 0f)
+                container.AddPermanent(StatId.AttackSpeed, stats.AttackSpeed, TalentStartupApplier.Source);
+            if (stats.Defense != 0f)
+                container.AddPermanent(StatId.Defense, stats.Defense, TalentStartupApplier.Source);
+            if (stats.MaxHealth != 0f)
+                container.AddPermanent(StatId.MaxHealth, stats.MaxHealth, TalentStartupApplier.Source);
+            if (stats.MoveSpeed != 0f)
+                container.AddPermanent(StatId.MoveSpeed, stats.MoveSpeed, TalentStartupApplier.Source);
+
+            Debug.Log($"[TalentPanelView] 즉시 적용 — Critical={stats.CriticalRate:+0.0%;-0.0%;0%} " +
+                      $"AttackSpeed={stats.AttackSpeed:+0.0%;-0.0%;0%} Defense={stats.Defense:F2} " +
+                      $"MaxHealth={stats.MaxHealth:+0.0%;-0.0%;0%} MoveSpeed={stats.MoveSpeed:+0.0%;-0.0%;0%}", this);
         }
     }
 }

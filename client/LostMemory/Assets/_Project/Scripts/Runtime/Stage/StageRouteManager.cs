@@ -75,6 +75,7 @@ namespace LostMemory.Stage
         private string pendingSpawnId = string.Empty;
 
         public int CurrentNodeIndex => currentNodeIndex;
+        public int RouteNodeCount => routeNodes?.Length ?? 0;
         public bool LoadInProgress => loadInProgress;
 
         public void ConfigureRouteNodes(RouteNode[] nodes, int nodeIndex, string overrideEntrySpawnId, bool placePlayers)

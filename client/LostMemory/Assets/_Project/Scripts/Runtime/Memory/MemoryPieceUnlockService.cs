@@ -164,6 +164,12 @@ namespace LostMemory.Memory
                             Magnitude = piece.RewardMagnitude,
                             SourcePieceId = piece.FragmentId,
                         });
+                        if (_logUnlocks)
+                            Debug.Log($"[MemoryPieceUnlockService] StatBoost 기록: {piece.RewardStat} +{piece.RewardMagnitude:F2} (총 PermanentBoosts={save.PermanentBoosts.Count})", this);
+                    }
+                    else if (_logUnlocks)
+                    {
+                        Debug.Log($"[MemoryPieceUnlockService] StatBoost 이미 기록됨: {piece.FragmentId}", this);
                     }
                     break;
 
