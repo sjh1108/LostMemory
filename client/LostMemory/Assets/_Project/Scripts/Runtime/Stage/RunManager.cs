@@ -102,6 +102,20 @@ namespace LostMemory.Stage
         public int TotalStageCount => Mathf.Max(1, totalStageCount);
         public bool HasNextStage => CurrentStageIndex + 1 < TotalStageCount;
 
+        /// <summary>CL-234 (A-12): 던전 HUD 타이머가 폴링하는 게터. 런 시작 시각(Time.time 기준).</summary>
+        public float RunStartedAt => runStartedAt;
+
+        /// <summary>CL-234 (A-12): InRun 상태에서의 경과 시간(초). InRun 이 아니면 0.</summary>
+        public float ElapsedRunTime
+        {
+            get
+            {
+                if (StateMachine == null) return 0f;
+                if (StateMachine.Current != RunState.InRun) return 0f;
+                return Mathf.Max(0f, Time.time - runStartedAt);
+            }
+        }
+
         private readonly HashSet<RoomEntryRuntimeController> _subscribedControllers = new HashSet<RoomEntryRuntimeController>();
         private float runStartedAt;
         private int killCount;

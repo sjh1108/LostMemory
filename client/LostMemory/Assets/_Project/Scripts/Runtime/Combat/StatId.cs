@@ -24,5 +24,9 @@ namespace LostMemory.Combat
         Defense,            // 방어력 (flat — magnitude 의미가 % 와 다름. CL-146 정책 결정)
         CriticalDamage,     // 치명타 피해 보너스 (% bonus, 합연산). 기본 50% 는 코드 측 상수로 합산.
         ManaRegen,          // 마나 회복량. TalentStartupApplier 에서 재능 ManaRegen 스탯 적용.
+
+        // CL-234: MaxHealth flat 가산 track. 재능(10포인트 = +10 HP) 같이 정수 가산 의도된 source 용.
+        // 유물의 % multiplier(MaxHealth) 와 별도. PlayerHealthStatApplier 가 (base + flat) * mul 로 합성.
+        MaxHealthFlat,
     }
 }

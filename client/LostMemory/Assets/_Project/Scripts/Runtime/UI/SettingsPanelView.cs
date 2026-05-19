@@ -1,3 +1,4 @@
+using System.Collections;
 using MoreMountains.Tools;
 using UnityEngine;
 using UnityEngine.UI;
@@ -51,9 +52,43 @@ namespace LostMemory.UI
             if (_closeButton != null)
                 _closeButton.onClick.AddListener(() => gameObject.SetActive(false));
 
-            // 저장값을 즉시 오디오에 반영
+            // 저장값을 즉시 오디오에 반영. MM 미준비 케이스 → 코루틴으로 wait 후 재시도.
             ApplyBGM(bgmVol);
             ApplySFX(sfxVol);
+            StartCoroutine(ReapplyWhenMMReady(bgmVol, sfxVol));
+        }
+
+        private void OnEnable()
+        {
+            // CL-234: 옵션 패널 매 활성화마다 PlayerPrefs 값 재적용. Awake 시점 MM 미준비
+            // 케이스 안전망 + 외부에서 PlayerPrefs 변경됐을 때도 sync.
+            float bgmVol = PlayerPrefs.GetFloat(BGM_KEY, 0.8f);
+            float sfxVol = PlayerPrefs.GetFloat(SFX_KEY, 0.8f);
+            ApplyBGM(bgmVol);
+            ApplySFX(sfxVol);
+        }
+
+        private IEnumerator ReapplyWhenMMReady(float bgmVol, float sfxVol)
+        {
+            // 최대 5초 동안 MMSoundManager.settingsSo 가 살아날 때까지 재시도.
+            int safetyFrames = 300;
+            while (safetyFrames-- > 0)
+            {
+                if (MMSoundManager.HasInstance
+                    && MMSoundManager.Current != null
+                    && MMSoundManager.Current.settingsSo != null
+                    && MMSoundManager.Current.settingsSo.Settings != null
+                    && MMSoundManager.Current.settingsSo.TargetAudioMixer != null)
+                {
+                    // 2프레임 더 wait — Initialization 코루틴 완료 보장.
+                    yield return null;
+                    yield return null;
+                    ApplyBGM(bgmVol);
+                    ApplySFX(sfxVol);
+                    yield break;
+                }
+                yield return null;
+            }
         }
 
         // ── 슬라이더 콜백 ─────────────────────────────────────────────
@@ -62,12 +97,14 @@ namespace LostMemory.UI
         {
             ApplyBGM(value);
             PlayerPrefs.SetFloat(BGM_KEY, value);
+            PlayerPrefs.Save();  // CL-234: 갑작스러운 게임 종료에도 저장 보장.
         }
 
         private void OnSFXChanged(float value)
         {
             ApplySFX(value);
             PlayerPrefs.SetFloat(SFX_KEY, value);
+            PlayerPrefs.Save();
         }
 
         // ── MMSoundManager 적용 ───────────────────────────────────────

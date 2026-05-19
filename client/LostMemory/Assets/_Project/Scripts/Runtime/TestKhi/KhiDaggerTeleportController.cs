@@ -111,6 +111,17 @@ namespace LostMemory.TestKhi
                 return;
             }
 
+            // CL-234 (A-1/A-2): UI 패널 열린 동안 텔레포트 차단 (UIInputBlocker + EventSystem 양쪽).
+            if (LostMemory.UI.UIInputBlocker.IsBlocked)
+            {
+                return;
+            }
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null && es.IsPointerOverGameObject())
+            {
+                return;
+            }
+
             // 4. 마나 체크
             if (mana != null && !mana.HasEnough(manaCost))
             {

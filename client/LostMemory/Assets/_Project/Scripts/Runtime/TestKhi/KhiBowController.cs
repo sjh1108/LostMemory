@@ -66,7 +66,25 @@ namespace LostMemory.TestKhi
             Mouse mouse = Mouse.current;
             if (mouse == null) return;
 
-            if (mouse.leftButton.wasPressedThisFrame && Time.time >= _nextSingleShotAllowedAt)
+            // CL-234 (A-1/A-2): UI 패널 열린 동안 활 입력 차단 (UIInputBlocker + EventSystem 양쪽).
+            if (LostMemory.UI.UIInputBlocker.IsBlocked)
+            {
+                if (logShotsToConsole && mouse.leftButton.wasPressedThisFrame)
+                    Debug.Log("[KhiBowController] LEFT click blocked by UIInputBlocker.", this);
+                return;
+            }
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null && es.IsPointerOverGameObject())
+            {
+                if (logShotsToConsole && mouse.leftButton.wasPressedThisFrame)
+                    Debug.Log("[KhiBowController] LEFT click blocked by EventSystem (pointer over UI).", this);
+                return;
+            }
+
+            // CL-234 (A-4): 검과 동일하게 홀드 자동 공격.
+            //   wasPressedThisFrame (1회) → isPressed (누르고 있는 동안 매 프레임 시도).
+            //   _nextSingleShotAllowedAt = Time.time + singleShotInterval 로 발사 빈도 자체 제한.
+            if (mouse.leftButton.isPressed && Time.time >= _nextSingleShotAllowedAt)
             {
                 FireSingleShot();
             }
