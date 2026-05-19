@@ -1,7 +1,7 @@
 # LostMemory 게임 공식 사이트 — Spring Boot 동적 CMS stack (EC2#2, lostmemory.duckdns.org).
 #
 # 외부 진입: EC2#2 의 host (systemd) nginx 가 lostmemory.duckdns.org HTTPS 종단 후
-# 127.0.0.1:${SERVER_PORT} (default 8081) 로 proxy_pass.
+# 127.0.0.1:${SERVER_PORT} (.env 의 SERVER_PORT 설정값) 로 proxy_pass.
 # 따라서 website-backend 는 127.0.0.1 만 bind — 외부 직접 노출 X.
 #
 # Postgres 는 cms-backend network 안에서만 접근 (cms-postgres hostname).

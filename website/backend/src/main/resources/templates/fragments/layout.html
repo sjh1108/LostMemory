@@ -18,9 +18,6 @@
     <span sec:authorize="isAuthenticated()">
       <a th:href="@{/admin/dashboard}">관리자</a>
     </span>
-    <span sec:authorize="!isAuthenticated()">
-      <a th:href="@{/admin/login}">로그인</a>
-    </span>
   </nav>
 </header>
 

@@ -38,8 +38,8 @@ website/
 
 ```
 host nginx (systemd, lostmemory.duckdns.org HTTPS 종단)
-  └── proxy_pass http://127.0.0.1:8081
-        └── website-backend (Spring Boot, port 8081)
+  └── proxy_pass http://127.0.0.1:${SERVER_PORT}
+        └── website-backend (Spring Boot, port ${SERVER_PORT})
               └── cms-postgres (Docker network 안)
 ```
 
@@ -63,8 +63,8 @@ docker compose up -d
 docker compose logs --tail=80 website-backend   # Flyway 4 migration 성공 + "[AdminSeed] admin 'XXX' seeded" 확인
 
 # 3. 내부 검증
-curl -fsS http://127.0.0.1:8081/actuator/health   # → {"status":"UP"}
-curl -I    http://127.0.0.1:8081/                  # → 200
+curl -fsS http://127.0.0.1:${SERVER_PORT}/actuator/health   # → {"status":"UP"}
+curl -I    http://127.0.0.1:${SERVER_PORT}/                  # → 200
 
 # 4. host nginx config swap (정적 root → backend proxy)
 sudo cp /etc/nginx/sites-enabled/lostmemory-site /home/ubuntu/lostmemory-site.bak.$(date +%Y%m%d)
@@ -73,7 +73,7 @@ server {
     server_name lostmemory.duckdns.org;
 
     location / {
-        proxy_pass http://127.0.0.1:8081;
+        proxy_pass http://127.0.0.1:${SERVER_PORT};  # 운영 .env 의 SERVER_PORT 실제 값으로 치환 (nginx envvar resolve X)
         proxy_http_version 1.1;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
