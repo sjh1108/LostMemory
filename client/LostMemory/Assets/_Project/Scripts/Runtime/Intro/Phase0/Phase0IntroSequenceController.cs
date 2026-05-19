@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LostMemory.Intro.Phase0
 {
@@ -8,6 +9,8 @@ namespace LostMemory.Intro.Phase0
     [AddComponentMenu("Lost Memory/Intro/Phase0 Intro Sequence Controller")]
     public sealed class Phase0IntroSequenceController : MonoBehaviour
     {
+        public const string IntroSeenPrefKey = "LostMemory.IntroSeen";
+
         [SerializeField] private Phase0IntroSequenceData sequenceData;
         [SerializeField] private Phase0NarrationTypewriter typewriter;
         [SerializeField] private Phase0NarrationBackdrop backdrop;
@@ -16,15 +19,36 @@ namespace LostMemory.Intro.Phase0
         [SerializeField] private bool autoStartOnEnable = true;
         [SerializeField] private bool debugLogging;
 
+        [Header("Scene Flow")]
+        [SerializeField, Tooltip("인트로 완료/스킵 후 로드할 다음 씬 이름.")]
+        private string nextSceneName = "Town";
+        [SerializeField, Tooltip("완료/스킵 시 PlayerPrefs 에 시청 기록(IntroSeen=1) 저장.")]
+        private bool markSeenOnComplete = true;
+        [SerializeField, Tooltip("완료/스킵 후 자동으로 다음 씬 로드.")]
+        private bool loadNextSceneOnComplete = true;
+
+        [Header("Skip Input")]
+        [SerializeField, Tooltip("스킵 키. 이 키를 holdDuration 동안 누르면 인트로 스킵.")]
+        private KeyCode skipKey = KeyCode.P;
+        [SerializeField, Tooltip("스킵 키를 누르고 있어야 하는 시간(초).")]
+        private float skipHoldDuration = 1.0f;
+
         private Coroutine _introRoutine;
         private Coroutine _bgmFadeRoutine;
         private Coroutine _backdropRoutine;
         private bool _isRunning;
+        private float _skipHoldTime;
 
         public event Action IntroStarted;
         public event Action IntroCompleted;
 
         public bool IsRunning => _isRunning;
+
+        public KeyCode SkipKey => skipKey;
+
+        public float SkipProgress => _isRunning
+            ? Mathf.Clamp01(_skipHoldTime / Mathf.Max(skipHoldDuration, 0.0001f))
+            : 0f;
 
         private void Reset()
         {
@@ -48,6 +72,32 @@ namespace LostMemory.Intro.Phase0
         private void OnDisable()
         {
             StopActive();
+        }
+
+        private void Update()
+        {
+            if (!_isRunning) return;
+
+            if (Input.GetKey(skipKey))
+            {
+                _skipHoldTime += Time.unscaledDeltaTime;
+                if (_skipHoldTime >= skipHoldDuration)
+                {
+                    Skip();
+                }
+            }
+            else if (_skipHoldTime > 0f)
+            {
+                _skipHoldTime = 0f;
+            }
+        }
+
+        public void Skip()
+        {
+            if (!_isRunning) return;
+            Log($"인트로 스킵 ({skipKey} {skipHoldDuration}s hold).");
+            StopActive();
+            CompleteIntro();
         }
 
         public void BeginIntro()
@@ -208,8 +258,22 @@ namespace LostMemory.Intro.Phase0
         {
             _introRoutine = null;
             _isRunning = false;
+            _skipHoldTime = 0f;
             IntroCompleted?.Invoke();
             Log("Phase0 인트로 완료.");
+
+            if (markSeenOnComplete)
+            {
+                PlayerPrefs.SetInt(IntroSeenPrefKey, 1);
+                PlayerPrefs.Save();
+                Log($"PlayerPrefs '{IntroSeenPrefKey}' = 1 저장.");
+            }
+
+            if (loadNextSceneOnComplete && !string.IsNullOrEmpty(nextSceneName))
+            {
+                Log($"다음 씬 로드: {nextSceneName}");
+                SceneManager.LoadScene(nextSceneName);
+            }
         }
 
         private void StopActive()

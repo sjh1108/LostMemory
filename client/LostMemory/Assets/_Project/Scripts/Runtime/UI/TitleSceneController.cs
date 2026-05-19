@@ -38,8 +38,14 @@ namespace LostMemory.UI
         [SerializeField] private TMP_Text statusText;
 
         [Header("Scene Transition")]
-        [SerializeField, Tooltip("로그인 성공 시 로드할 다음 씬 이름.")]
+        [SerializeField, Tooltip("로그인 성공 시 로드할 마을 씬 이름.")]
         private string townSceneName = "Town";
+        [SerializeField, Tooltip("인트로 미시청 유저에게 보여줄 인트로 씬 이름.")]
+        private string introSceneName = "Phase0_Intro";
+        [SerializeField, Tooltip("개발용: 켜면 PlayerPrefs 무시하고 항상 인트로부터 재생.")]
+        private bool forcePlayIntro = false;
+
+        private const string IntroSeenPrefKey = "LostMemory.IntroSeen";
 
         private void Awake()
         {
@@ -85,8 +91,7 @@ namespace LostMemory.UI
                 RelaySession.AutoLoginId = id;
                 RelaySession.AutoLoginPassword = pw;
 
-                SetStatus("로그인 성공. 마을로 이동합니다...");
-                SceneManager.LoadScene(townSceneName);
+                LoadNextSceneAfterAuth("로그인 성공");
             }
             catch (Exception ex)
             {
@@ -136,8 +141,7 @@ namespace LostMemory.UI
                 RelaySession.AutoLoginPassword = pw;
                 RelaySession.AutoLoginNickname = nick;
 
-                SetStatus("회원가입·로그인 성공. 마을로 이동합니다...");
-                SceneManager.LoadScene(townSceneName);
+                LoadNextSceneAfterAuth("회원가입·로그인 성공");
             }
             catch (Exception ex)
             {
@@ -145,6 +149,26 @@ namespace LostMemory.UI
                 SetStatus("회원가입 중 오류: " + ex.Message);
                 SetButtonsInteractable(true);
             }
+        }
+
+        private void LoadNextSceneAfterAuth(string authLabel)
+        {
+            bool introSeen = !forcePlayIntro && PlayerPrefs.GetInt(IntroSeenPrefKey, 0) == 1;
+            string target;
+            string statusSuffix;
+            if (introSeen)
+            {
+                target = townSceneName;
+                statusSuffix = "마을로 이동합니다...";
+            }
+            else
+            {
+                target = !string.IsNullOrEmpty(introSceneName) ? introSceneName : townSceneName;
+                statusSuffix = target == introSceneName ? "인트로를 재생합니다..." : "마을로 이동합니다...";
+            }
+
+            SetStatus($"{authLabel}. {statusSuffix}");
+            SceneManager.LoadScene(target);
         }
 
         private void SetStatus(string msg)

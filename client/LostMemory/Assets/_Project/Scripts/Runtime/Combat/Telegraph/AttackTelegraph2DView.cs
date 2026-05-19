@@ -47,6 +47,7 @@ namespace LostMemory.Combat.Telegraph
         [FormerlySerializedAs("timingOutlineDefaultColor")]
         [SerializeField] private Color timingMarkerDefaultColor = new Color(1f, 0.92f, 0.55f, 0.75f);
         [FormerlySerializedAs("timingOutlineMinScale")]
+        [Tooltip("World-space width of the timing marker.")]
         [SerializeField] [Range(0.01f, 0.25f)] private float timingMarkerThickness = 0.055f;
 
         private const int TelegraphTextureSize = 64;
@@ -182,6 +183,7 @@ namespace LostMemory.Combat.Telegraph
             _previewRenderer.sprite = GetOrCreateTelegraphSprite(AttackTelegraphShape2D.Box);
             _previewRenderer.sortingOrder = sortingOrderOffset;
             _previewRenderer.drawMode = SpriteDrawMode.Simple;
+            TelegraphSpriteRendererUtility.ApplyTelegraphMaterial(_previewRenderer);
 
             ApplySorting();
             ApplyTimingMarker();
@@ -240,6 +242,7 @@ namespace LostMemory.Combat.Telegraph
             _timingMarkerRenderer = _timingMarkerObject.AddComponent<SpriteRenderer>();
             _timingMarkerRenderer.sprite = GetOrCreateBoxTelegraphSprite();
             _timingMarkerRenderer.drawMode = SpriteDrawMode.Simple;
+            TelegraphSpriteRendererUtility.ApplyTelegraphMaterial(_timingMarkerRenderer);
 
             ApplyTimingMarkerSorting();
         }
@@ -266,17 +269,25 @@ namespace LostMemory.Combat.Telegraph
                 ? _activeRequest.TimingMarkerThickness
                 : timingMarkerThickness;
             thickness = Mathf.Clamp(thickness, 0.01f, 0.25f);
-            float localX = Mathf.Lerp(-0.5f + thickness * 0.5f, 0.5f - thickness * 0.5f, progress);
+            float localThickness = ResolveTimingMarkerLocalThickness(thickness);
+            float localX = Mathf.Lerp(-0.5f + localThickness * 0.5f, 0.5f - localThickness * 0.5f, progress);
 
             _timingMarkerRenderer.sprite = GetOrCreateBoxTelegraphSprite();
             _timingMarkerRenderer.color = color;
             _timingMarkerRenderer.enabled = true;
             _timingMarkerTransform.localPosition = new Vector3(localX, 0f, 0f);
             _timingMarkerTransform.localRotation = Quaternion.identity;
-            _timingMarkerTransform.localScale = new Vector3(thickness, 1f, 1f);
+            _timingMarkerTransform.localScale = new Vector3(localThickness, 1f, 1f);
             _timingMarkerObject.SetActive(true);
 
             ApplyTimingMarkerSorting();
+        }
+
+        private float ResolveTimingMarkerLocalThickness(float worldThickness)
+        {
+            Vector2 shapeSize = ResolveShapeSize(_activeRequest.Size, _activeRequest.Shape);
+            float markerSpan = Mathf.Max(0.0001f, Mathf.Abs(shapeSize.x));
+            return Mathf.Clamp(worldThickness / markerSpan, 0.0001f, 1f);
         }
 
         private void HideTimingMarker()

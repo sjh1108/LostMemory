@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4230b088672fd884da551aec6d2bc52a, type: 3}
+  m_Name: RoomData_Combat_2F_1R_5
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomData
+  roomId: 2F_1R_5
+  displayName: 2F_1R_5
+  roomType: 1
+  category: 0
+  bossEntryRequirementMode: 0
+  sequenceIndex: 0
+  layoutPrefab: {fileID: 613413873586368898, guid: b2ee31fd17977164cb9154bb281db06f, type: 3}
+  initContext:
+    playerSpawnAnchorTag: default
+    facing: {x: 1, y: 0}
+    bgmCueId: combat_default
+    lockExitDoors: 1
+  encounter:
+    waves:
+    - label: Wave 1
+      startDelay: 1
+      triggerNextWaveDeathRatio: 0.6
+      enemies:
+      - enemyId: enemy_assassin
+        count: 1
+        spawnGroupFilter: assassin1
+      - enemyId: enemy_bat
+        count: 1
+        spawnGroupFilter: bat1
+      - enemyId: enemy_skeleton_elite
+        count: 1
+        spawnGroupFilter: skeleton_elite1
+      - enemyId: enemy_skeleton1
+        count: 1
+        spawnGroupFilter: skeleton11
+      - enemyId: enemy_slime
+        count: 1
+        spawnGroupFilter: slime1
+    - label: Wave 2
+      startDelay: 30
+      triggerNextWaveDeathRatio: 0.5
+      enemies:
+      - enemyId: enemy_assassin
+        count: 1
+        spawnGroupFilter: assassin2
+      - enemyId: enemy_bat
+        count: 1
+        spawnGroupFilter: bat2
+      - enemyId: enemy_skeleton_elite
+        count: 1
+        spawnGroupFilter: skeleton_elite2
+      - enemyId: enemy_skeleton1
+        count: 1
+        spawnGroupFilter: skeleton12
+      - enemyId: enemy_slime
+        count: 1
+        spawnGroupFilter: slime2
+  clearCondition: 0
+  exits: []

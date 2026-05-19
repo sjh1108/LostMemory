@@ -57,6 +57,7 @@ namespace LostMemory.TestKhi
             afterimageRenderer.sortingLayerID = sourceRenderer.sortingLayerID;
             afterimageRenderer.sortingOrder = sourceRenderer.sortingOrder + sortingOrderOffset;
             afterimageRenderer.color = afterimageColor;
+            KhiRuntimeVisualMaterialUtility.ApplySpriteMaterial(afterimageRenderer);
 
             StartCoroutine(FadeAndDestroy(afterimageRenderer, afterimageObject));
         }

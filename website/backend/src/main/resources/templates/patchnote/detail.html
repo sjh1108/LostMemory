@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${patchNote.version})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="site-main">
+  <h2 th:text="${patchNote.version}">v0.0.0</h2>
+  <div class="entry-meta">
+    Release date: <span th:text="${#temporals.format(patchNote.releaseDate, 'yyyy-MM-dd')}">날짜</span>
+  </div>
+  <div class="markdown-body" th:utext="${bodyHtml}">본문</div>
+
+  <p style="margin-top:2rem"><a th:href="@{/patch-notes}">← 목록으로</a></p>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

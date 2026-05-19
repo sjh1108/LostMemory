@@ -6115,12 +6115,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c677899e963b6c47964f9a5bcc5fc78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiWeaponUpgradeDebug
-  upgradeKey: 102
-  revertKey: 103
-  ninjaKey: 101
-  showOnGuiHint: 1
-  hintOrigin: {x: 10, y: 260}
-  fontSize: 12
 --- !u!114 &1799985273
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6383,6 +6377,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1366147387271061323, guid: 69eef7b55b50b6e458d554360031ce0c,
+        type: 3}
+      propertyPath: m_SortingLayer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366147387271061323, guid: 69eef7b55b50b6e458d554360031ce0c,
+        type: 3}
+      propertyPath: m_SortingLayerID
+      value: -1998343457
+      objectReference: {fileID: 0}
     - target: {fileID: 3676956050655987511, guid: 69eef7b55b50b6e458d554360031ce0c,
         type: 3}
       propertyPath: shopController

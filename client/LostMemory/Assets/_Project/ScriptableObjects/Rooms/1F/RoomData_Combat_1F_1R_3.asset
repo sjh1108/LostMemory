@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4230b088672fd884da551aec6d2bc52a, type: 3}
+  m_Name: RoomData_Combat_1F_1R_3
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.Data.RoomData
+  roomId: 1F_1R_3
+  displayName: 1F_1R_3
+  roomType: 1
+  category: 0
+  bossEntryRequirementMode: 0
+  sequenceIndex: 0
+  layoutPrefab: {fileID: 329752108124091225, guid: 1b894869a64a71e45ba160df37204c5e, type: 3}
+  initContext:
+    playerSpawnAnchorTag: default
+    facing: {x: 1, y: 0}
+    bgmCueId: combat_default
+    lockExitDoors: 1
+  encounter:
+    waves:
+    - label: Wave 1
+      startDelay: 0
+      triggerNextWaveDeathRatio: 0.5
+      enemies:
+      - enemyId: enemy_orcrider
+        count: 2
+        spawnGroupFilter: orcrider
+      - enemyId: enemy_orc
+        count: 2
+        spawnGroupFilter: orc
+      - enemyId: enemy_skeletonarcher
+        count: 1
+        spawnGroupFilter: skeletonarcher
+  clearCondition: 0
+  exits: []

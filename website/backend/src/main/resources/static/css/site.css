@@ -1,0 +1,207 @@
+/* LostMemory 게임 톤 — 픽셀 / 다크 / 판타지 */
+
+/* Galmuri9 — 한글 픽셀 폰트 (SIL OFL, GitHub release CDN) */
+@font-face {
+  font-family: 'Galmuri9';
+  src: url('https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/Galmuri9.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #000;
+  --fg: #fff;
+  --accent: #ff0;
+  --muted: #cccccc;
+  --panel: #1a1a1a;
+  --border: #333;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Galmuri9', 'NeoDungGeunMo', monospace;
+  background: var(--bg);
+  color: var(--fg);
+  image-rendering: pixelated;
+  margin: 0;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--fg);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+button, input[type=submit] {
+  background: var(--accent);
+  color: var(--bg);
+  border: 0;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+button:hover, input[type=submit]:hover { opacity: 0.85; }
+
+.btn-danger { background: #d33; color: var(--fg); }
+
+/* layout */
+.site-header {
+  background: var(--panel);
+  border-bottom: 2px solid var(--accent);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.site-header h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+
+.site-nav { display: flex; gap: 1.5rem; }
+.site-nav a { font-size: 1rem; }
+
+.site-main { max-width: 900px; margin: 0 auto; padding: 2rem; }
+.site-footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.85rem; }
+
+/* lists */
+.entry-list { list-style: none; padding: 0; }
+.entry-list li {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+  background: var(--panel);
+}
+.entry-list .entry-meta { color: var(--muted); font-size: 0.85rem; }
+
+/* forms */
+.admin-form { display: flex; flex-direction: column; gap: 1rem; max-width: 800px; }
+.admin-form label { display: block; color: var(--accent); margin-bottom: 0.25rem; }
+.admin-form input[type=text],
+.admin-form input[type=password],
+.admin-form input[type=date],
+.admin-form input[type=number],
+.admin-form textarea {
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+  font-family: inherit;
+  width: 100%;
+}
+.admin-form input:focus,
+.admin-form textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.admin-form textarea { min-height: 12rem; resize: vertical; }
+
+.field-error { color: #f55; font-size: 0.85rem; }
+
+/* code blocks */
+code, pre {
+  background: var(--panel);
+  color: var(--accent);
+  padding: 0.1rem 0.3rem;
+  font-family: inherit;
+}
+pre { padding: 1rem; overflow-x: auto; }
+
+/* messages */
+.flash { padding: 0.75rem 1rem; margin-bottom: 1rem; border: 1px solid var(--accent); color: var(--accent); background: rgba(255,255,0,0.05); }
+
+/* admin nav */
+.admin-bar {
+  background: var(--panel);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--accent);
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+.admin-bar .admin-user { margin-left: auto; color: var(--muted); }
+
+/* table */
+table.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th, .admin-table td { border: 1px solid var(--border); padding: 0.5rem; text-align: left; }
+.admin-table th { background: var(--panel); color: var(--accent); }
+
+/* checkbox */
+input[type=checkbox] { accent-color: var(--accent); }
+
+/* markdown rendering — public 본문/답변 (.markdown-body) */
+.markdown-body { color: var(--fg); line-height: 1.6; }
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  color: var(--accent);
+  margin: 1.5em 0 0.5em;
+  line-height: 1.3;
+}
+.markdown-body h1 { font-size: 1.6rem; }
+.markdown-body h2 { font-size: 1.4rem; }
+.markdown-body h3 { font-size: 1.2rem; }
+.markdown-body h4 { font-size: 1.05rem; }
+.markdown-body p { margin: 0.75em 0; }
+.markdown-body ul,
+.markdown-body ol { margin: 0.75em 0; padding-left: 1.75em; }
+.markdown-body li { margin: 0.25em 0; }
+.markdown-body blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  color: var(--muted);
+}
+.markdown-body code {
+  background: var(--panel);
+  color: var(--accent);
+  padding: 0.1em 0.35em;
+  font-family: inherit;
+  border-radius: 2px;
+}
+.markdown-body pre {
+  background: var(--panel);
+  padding: 1em;
+  overflow-x: auto;
+  border-left: 3px solid var(--accent);
+  margin: 1em 0;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--fg);
+}
+.markdown-body a { color: var(--accent); text-decoration: underline; }
+.markdown-body a:hover { color: var(--fg); }
+.markdown-body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.5em 0;
+}
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border);
+  padding: 0.5em;
+  text-align: left;
+}
+.markdown-body th { background: var(--panel); color: var(--accent); }
+.markdown-body img { max-width: 100%; height: auto; }
+.markdown-body strong { color: var(--accent); }
+.markdown-body em { font-style: italic; }
+
+/* admin 작성 form — 마크다운 단축 안내 */
+.markdown-hint {
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  border-left: 2px solid var(--accent);
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.markdown-hint code { background: transparent; color: var(--accent); padding: 0 0.15em; }

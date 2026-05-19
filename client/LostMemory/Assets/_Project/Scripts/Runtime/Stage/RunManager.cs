@@ -85,6 +85,9 @@ namespace LostMemory.Stage
         [SerializeField, Min(1), Tooltip("이번 런에서 진행할 스테이지 수. 보스 클리어 포탈 진입 시 다음 스테이지가 없으면 결과 화면으로 간다.")]
         private int totalStageCount = 1;
 
+        [SerializeField, Tooltip("2-1 개발 전 임시 운영값. false 면 보스 클리어 포탈은 다음 스테이지 대신 결과 화면으로 간다.")]
+        private bool allowBossPortalStageAdvance;
+
         [SerializeField, Tooltip("보스 클리어 포탈/스테이지 진행 로그 출력.")]
         private bool logStageProgression = true;
 
@@ -512,7 +515,9 @@ namespace LostMemory.Stage
 
             bossClearPortalReady = false;
 
-            bool handled = HasNextStage ? AdvanceToNextStage() : CompleteRunFromBossPortal();
+            bool handled = allowBossPortalStageAdvance && HasNextStage
+                ? AdvanceToNextStage()
+                : CompleteRunFromBossPortal();
             if (!handled)
             {
                 bossClearPortalReady = true;

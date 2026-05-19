@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LostMemory.Rendering;
 using UnityEngine;
 
 namespace LostMemory.Combat
@@ -237,16 +238,7 @@ namespace LostMemory.Combat
                 return spriteDefaultMaterial;
             }
 
-            Shader spriteShader = Shader.Find("Sprites/Default");
-            if (spriteShader == null)
-            {
-                return sourceRenderer != null ? sourceRenderer.sharedMaterial : null;
-            }
-
-            spriteDefaultMaterial = new Material(spriteShader)
-            {
-                hideFlags = HideFlags.DontSave,
-            };
+            spriteDefaultMaterial = RuntimeSpriteMaterialUtility.GetSpriteMaterial();
             return spriteDefaultMaterial;
         }
 
@@ -301,7 +293,6 @@ namespace LostMemory.Combat
             RestoreSourceMaterial();
             outlineRenderers.Clear();
             DestroyRuntimeObject(runtimeRoot);
-            DestroyRuntimeObject(spriteDefaultMaterial);
             runtimeRoot = null;
             spriteDefaultMaterial = null;
         }

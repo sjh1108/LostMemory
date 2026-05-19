@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -121,6 +122,7 @@ namespace LostMemory.Combat.Telegraph
             effectTransform.position = (Vector3)center + positionOffset;
 
             SpriteRenderer spriteRenderer = effectObject.AddComponent<SpriteRenderer>();
+            RuntimeSpriteMaterialUtility.ApplySpriteMaterial(spriteRenderer);
             spriteRenderer.sprite = firstSprite;
             spriteRenderer.color = color;
 

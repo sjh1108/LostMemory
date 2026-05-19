@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('공지 관리')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<div th:replace="~{fragments/layout :: admin-bar}"></div>
+
+<main class="site-main">
+  <h2>공지 관리</h2>
+
+  <div th:if="${message}" class="flash" th:text="${message}"></div>
+
+  <p><a th:href="@{/admin/notices/new}">+ 새 공지 작성</a></p>
+
+  <table class="admin-table">
+    <thead>
+      <tr><th>ID</th><th>제목</th><th>공개</th><th>작성</th><th>수정</th><th>액션</th></tr>
+    </thead>
+    <tbody>
+      <tr th:each="n : ${notices}">
+        <td th:text="${n.id}">1</td>
+        <td><a th:href="@{/admin/notices/{id}/edit(id=${n.id})}" th:text="${n.title}">제목</a></td>
+        <td th:text="${n.published} ? '공개' : '비공개'">공개</td>
+        <td th:text="${#temporals.format(n.createdAt, 'yyyy-MM-dd HH:mm')}">날짜</td>
+        <td th:text="${#temporals.format(n.updatedAt, 'yyyy-MM-dd HH:mm')}">날짜</td>
+        <td>
+          <form th:action="@{/admin/notices/{id}/delete(id=${n.id})}" method="post" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?')">
+            <button type="submit" class="btn-danger">삭제</button>
+          </form>
+        </td>
+      </tr>
+      <tr th:if="${notices.isEmpty()}">
+        <td colspan="6" class="entry-meta" style="text-align:center">등록된 공지가 없습니다.</td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
