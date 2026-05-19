@@ -1,8 +1,8 @@
 {
-  "id": "lostmemory-our-pixel-tone-dual",
+  "id": "lostmemory-lineart-to-variations",
   "revision": 0,
-  "last_node_id": 56,
-  "last_link_id": 32,
+  "last_node_id": 85,
+  "last_link_id": 52,
   "nodes": [
     {
       "id": 1,
@@ -152,7 +152,10 @@
           "links": [
             6,
             12,
-            32
+            27,
+            35,
+            43,
+            51
           ]
         }
       ],
@@ -225,7 +228,10 @@
           "type": "MODEL",
           "links": [
             2,
-            28
+            25,
+            33,
+            41,
+            49
           ]
         },
         {
@@ -234,7 +240,11 @@
           "type": "CLIP",
           "links": [
             8,
-            10
+            10,
+            21,
+            29,
+            37,
+            45
           ]
         }
       ],
@@ -243,8 +253,8 @@
       },
       "widgets_values": [
         "pixel_art_style_z_image_turbo.safetensors",
-        1.0,
-        1.0
+        0.0,
+        0.0
       ]
     },
     {
@@ -418,7 +428,10 @@
           "type": "LATENT",
           "links": [
             3,
-            31
+            24,
+            32,
+            40,
+            48
           ]
         }
       ],
@@ -464,8 +477,7 @@
           "name": "CONDITIONING",
           "type": "CONDITIONING",
           "links": [
-            9,
-            29
+            9
           ]
         }
       ],
@@ -473,7 +485,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "LostMemory game pixel sprite, chibi anime girl character, < CHARACTER MODIFIER HERE >, oversized round head, very small chibi body, simple dot eyes, small cute mouth, isolated, centered, front view standing pose, plain white background, clean black outline, simple flat shading, blocky pixels visible, soft pastel color palette with vibrant hair color, 16-color retro game palette, no gradient, no anti-aliasing, sharp pixel edges, RPG maker chibi sprite, retro game character icon"
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, neutral expression, T-pose standing, default pose, calm face"
       ]
     },
     {
@@ -514,7 +526,10 @@
           "type": "CONDITIONING",
           "links": [
             11,
-            30
+            23,
+            31,
+            39,
+            47
           ]
         }
       ],
@@ -522,7 +537,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "realistic, photorealistic, 3d render, photo, hdr, smooth shading, anti-aliased, illustration with smooth lines, high resolution rendering, painterly, watercolor, oil painting, blurry, gradient, jpeg artifacts, soft shadows, ambient occlusion, detailed background, noisy background, complex background, text, watermark, low quality, multiple characters, group, crowd, deformed face, malformed limbs, nsfw, suggestive, side view, back view, realistic body proportions, tall body, adult body proportion"
+        "realistic shading, photorealistic, photo, 3d render, hdr, full color rendering, complex shading, painterly, watercolor, oil painting, smooth gradient, soft shadows, ambient occlusion, blurry, jpeg artifacts, detailed background, noisy background, complex background, text, watermark, low quality, multiple characters, group, crowd, deformed face, malformed limbs, extra limbs, nsfw, suggestive, side view, back view, bust shot, head only, half body crop"
       ]
     },
     {
@@ -676,9 +691,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            5,
-            16,
-            18
+            5
           ]
         }
       ],
@@ -721,7 +734,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "LostMemory_OurTone_illust"
+        "LostMemory_Variation_neutral"
       ]
     },
     {
@@ -742,322 +755,99 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "## LostMemory 톤 변환 (단일 입력 / 두 갈래 동시 출력)\n\n용도: 한 입력 이미지를 두 가지 denoise 설정으로 동시 변환해 결과 비교.\n\n흐름:\n  LoadImage -> ImageScale -> VAEEncode -> latent\n    -> KSampler1 (denoise 0.55, 일러스트 가정 — 강한 변환) -> VAEDecode -> 3 갈래\n    -> KSampler2 (denoise 0.4,  픽셀 아트 가정 — 약한 변환) -> VAEDecode -> 3 갈래\n\n출력 6장:\n  - LostMemory_OurTone_illust_*.png            denoise 0.55 결과 (원본 512x512)\n  - LostMemory_OurTone_illust_pixel16_*.png    16x16 도트\n  - LostMemory_OurTone_illust_bgremove_*.png   RGBA\n  - LostMemory_OurTone_pixel_*.png             denoise 0.4 결과 (원본)\n  - LostMemory_OurTone_pixel_pixel16_*.png     16x16 도트\n  - LostMemory_OurTone_pixel_bgremove_*.png    RGBA\n\n사용:\n1. 일러스트 또는 픽셀 아트 PNG 를 tools/ComfyUI/input/ 에 저장\n2. 노드 20 (LoadImage) 에서 선택\n3. 노드 4 (positive prompt) < CHARACTER MODIFIER HERE > 채우기\n4. Queue Prompt (한 번에 6장 동시 생성)\n5. 결과 비교 후 마음에 드는 갈래 사용\n\n튜닝:\n  - 일러스트 가정 갈래 변환이 너무 약함 → 노드 6 KSampler1 denoise 0.55 → 0.65\n  - 픽셀 가정 갈래 변환이 너무 강함 → 노드 50 KSampler2 denoise 0.4 → 0.3\n  - 톤 부족 → 노드 3 LoraLoader strength 1.0 → 1.2\n  - 한쪽 갈래만 필요 → 해당 KSampler+VAEDecode+3 출력 노드 Bypass(Ctrl+B)"
+        "## LostMemory 선화 일러스트 -> 표정/포즈 5가지 변화 (S14P31C201-624)\n\n용도: 선화(lineart) 캐릭터 일러스트 1장을 입력 받아 5가지 표정/포즈 변화 동시 생성.\n캐릭터 정체성(얼굴/의상)은 유지하면서 표정과 포즈만 변형.\n\n흐름:\n  LoadImage(20) -> ImageScale(22) -> VAEEncode(23) -> latent(공유)\n  -> 5 KSampler 갈래 (각 다른 positive prompt + 다른 seed, LoRA 0, denoise 0.55):\n       neutral   - T-pose standing, calm face\n       smile     - cheerful smile, waving hand\n       surprised - wide eyes, mouth open, hands raised\n       angry     - frowning, fighting stance\n       sad       - downcast eyes, head tilted down\n  -> 각 VAEDecode -> SaveImage:\n     LostMemory_Variation_neutral_*.png\n     LostMemory_Variation_smile_*.png\n     LostMemory_Variation_surprised_*.png\n     LostMemory_Variation_angry_*.png\n     LostMemory_Variation_sad_*.png\n\n사용:\n1. 선화 일러스트 PNG 를 tools/ComfyUI/input/ 에 저장\n2. 노드 20 (LoadImage) 에서 선택\n3. Queue Prompt -> 5장 동시 생성 (캐릭터 동일, 표정/포즈만 변경)\n\n튜닝:\n  - 표정/포즈 변화 약함 (원본과 거의 같음) -> KSampler denoise 0.55 -> 0.65/0.7\n  - 캐릭터 정체성 잃음 (얼굴 너무 변함) -> denoise 0.55 -> 0.4\n  - 특정 변화만 마음에 듦 -> 다른 KSampler 노드 우클릭 Bypass(Ctrl+B)\n  - 더 다양한 표정 원하면 -> 해당 KSampler 의 positive prompt 노드에서 표정 키워드 직접 변경\n\n비고:\n  - 픽셀화/배경제거 갈래 없음 (선화 변화만 출력). 픽셀화 필요 시 결과를\n    LostMemory_Illust_To_Pixel 또는 LostMemory_Illust_To_PixelArt 에 다시 input.\n  - 5가지 표정/포즈 기본값은 prompt 텍스트로 수정 가능."
       ],
       "color": "#223",
       "bgcolor": "#335"
     },
     {
-      "id": 30,
-      "type": "LostMemoryPixelize",
+      "id": 74,
+      "type": "CLIPTextEncode",
       "pos": [
-        1755,
-        250
+        1500,
+        380
       ],
       "size": [
-        320,
-        230
+        400,
+        200
       ],
       "flags": {},
-      "order": 13,
+      "order": 104,
       "mode": 0,
       "inputs": [
         {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 16
+          "localized_name": "clip",
+          "name": "clip",
+          "type": "CLIP",
+          "link": 21
         },
         {
-          "name": "preset",
-          "type": "COMBO",
+          "localized_name": "text",
+          "name": "text",
+          "type": "STRING",
           "widget": {
-            "name": "preset"
-          },
-          "link": null
-        },
-        {
-          "name": "size_override",
-          "type": "INT",
-          "widget": {
-            "name": "size_override"
-          },
-          "link": null
-        },
-        {
-          "name": "palette_override",
-          "type": "COMBO",
-          "widget": {
-            "name": "palette_override"
-          },
-          "link": null
-        },
-        {
-          "name": "adaptive_colors",
-          "type": "INT",
-          "widget": {
-            "name": "adaptive_colors"
-          },
-          "link": null
-        },
-        {
-          "name": "transparent_bg",
-          "type": "COMBO",
-          "widget": {
-            "name": "transparent_bg"
-          },
-          "link": null
-        },
-        {
-          "name": "bg_threshold",
-          "type": "INT",
-          "widget": {
-            "name": "bg_threshold"
+            "name": "text"
           },
           "link": null
         }
       ],
       "outputs": [
         {
-          "name": "image",
-          "type": "IMAGE",
+          "localized_name": "조건",
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
           "links": [
-            17
-          ]
-        },
-        {
-          "name": "mask",
-          "type": "MASK",
-          "links": null
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LostMemoryPixelize"
-      },
-      "widgets_values": [
-        "game-item16",
-        0,
-        "adaptive",
-        16,
-        "preset",
-        30
-      ]
-    },
-    {
-      "id": 31,
-      "type": "SaveImage",
-      "pos": [
-        2120,
-        250
-      ],
-      "size": [
-        270,
-        315
-      ],
-      "flags": {},
-      "order": 14,
-      "mode": 0,
-      "inputs": [
-        {
-          "localized_name": "이미지",
-          "name": "images",
-          "type": "IMAGE",
-          "link": 17
-        },
-        {
-          "localized_name": "파일명 접두사",
-          "name": "filename_prefix",
-          "type": "STRING",
-          "widget": {
-            "name": "filename_prefix"
-          },
-          "link": null
-        }
-      ],
-      "outputs": [],
-      "properties": {},
-      "widgets_values": [
-        "LostMemory_OurTone_illust_pixel16"
-      ]
-    },
-    {
-      "id": 32,
-      "type": "LostMemoryBgRemove",
-      "pos": [
-        1755,
-        620
-      ],
-      "size": [
-        340,
-        230
-      ],
-      "flags": {},
-      "order": 100,
-      "mode": 0,
-      "inputs": [
-        {
-          "localized_name": "image",
-          "name": "image",
-          "type": "IMAGE",
-          "link": 18
-        },
-        {
-          "localized_name": "model",
-          "name": "model",
-          "type": "COMBO",
-          "widget": {
-            "name": "model"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "alpha_matting",
-          "name": "alpha_matting",
-          "type": "COMBO",
-          "widget": {
-            "name": "alpha_matting"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "alpha_threshold_fg",
-          "name": "alpha_threshold_fg",
-          "type": "INT",
-          "widget": {
-            "name": "alpha_threshold_fg"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "alpha_threshold_bg",
-          "name": "alpha_threshold_bg",
-          "type": "INT",
-          "widget": {
-            "name": "alpha_threshold_bg"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "erode_size",
-          "name": "erode_size",
-          "type": "INT",
-          "widget": {
-            "name": "erode_size"
-          },
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "localized_name": "image",
-          "name": "image",
-          "type": "IMAGE",
-          "links": [
-            19
-          ]
-        },
-        {
-          "localized_name": "mask",
-          "name": "mask",
-          "type": "MASK",
-          "links": [
-            20
+            22
           ]
         }
       ],
       "properties": {
-        "Node name for S&R": "LostMemoryBgRemove"
+        "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "isnet-anime",
-        "no",
-        240,
-        10,
-        10
-      ]
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, cheerful smile, happy expression, waving one hand, friendly pose"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
     },
     {
-      "id": 33,
-      "type": "LostMemorySaveImageRGBA",
-      "pos": [
-        2120,
-        620
-      ],
-      "size": [
-        320,
-        110
-      ],
-      "flags": {},
-      "order": 101,
-      "mode": 0,
-      "inputs": [
-        {
-          "localized_name": "image",
-          "name": "image",
-          "type": "IMAGE",
-          "link": 19
-        },
-        {
-          "localized_name": "mask",
-          "name": "mask",
-          "type": "MASK",
-          "link": 20
-        },
-        {
-          "localized_name": "filename_prefix",
-          "name": "filename_prefix",
-          "type": "STRING",
-          "widget": {
-            "name": "filename_prefix"
-          },
-          "link": null
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "Node name for S&R": "LostMemorySaveImageRGBA"
-      },
-      "widgets_values": [
-        "LostMemory_OurTone_illust_bgremove"
-      ]
-    },
-    {
-      "id": 50,
+      "id": 75,
       "type": "KSampler",
       "pos": [
-        1125,
-        334
+        1960,
+        380
       ],
       "size": [
         320,
         270
       ],
       "flags": {},
-      "order": 50,
+      "order": 105,
       "mode": 0,
       "inputs": [
         {
           "localized_name": "모델",
           "name": "model",
           "type": "MODEL",
-          "link": 28
+          "link": 25
         },
         {
           "localized_name": "긍정",
           "name": "positive",
           "type": "CONDITIONING",
-          "link": 29
+          "link": 22
         },
         {
           "localized_name": "부정",
           "name": "negative",
           "type": "CONDITIONING",
-          "link": 30
+          "link": 23
         },
         {
           "localized_name": "잠재 이미지",
           "name": "latent_image",
           "type": "LATENT",
-          "link": 31
+          "link": 24
         },
         {
           "localized_name": "시드",
@@ -1129,7 +919,7 @@
           "name": "LATENT",
           "type": "LATENT",
           "links": [
-            21
+            26
           ]
         }
       ],
@@ -1137,41 +927,41 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        201,
+        300,
         "randomize",
         10,
         1.8,
         "euler",
         "simple",
-        0.4
+        0.55
       ]
     },
     {
-      "id": 51,
+      "id": 76,
       "type": "VAEDecode",
       "pos": [
-        1505,
-        334
+        2320,
+        380
       ],
       "size": [
         220,
         60
       ],
       "flags": {},
-      "order": 51,
+      "order": 106,
       "mode": 0,
       "inputs": [
         {
           "localized_name": "샘플",
           "name": "samples",
           "type": "LATENT",
-          "link": 21
+          "link": 26
         },
         {
           "localized_name": "VAE",
           "name": "vae",
           "type": "VAE",
-          "link": 32
+          "link": 27
         }
       ],
       "outputs": [
@@ -1180,9 +970,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            22,
-            23,
-            24
+            28
           ]
         }
       ],
@@ -1192,25 +980,25 @@
       "widgets_values": []
     },
     {
-      "id": 52,
+      "id": 77,
       "type": "SaveImage",
       "pos": [
-        1755,
-        331
+        2560,
+        380
       ],
       "size": [
         320,
         270
       ],
       "flags": {},
-      "order": 52,
+      "order": 107,
       "mode": 0,
       "inputs": [
         {
           "localized_name": "이미지",
           "name": "images",
           "type": "IMAGE",
-          "link": 22
+          "link": 28
         },
         {
           "localized_name": "파일명 접두어",
@@ -1227,277 +1015,251 @@
         "Node name for S&R": "SaveImage"
       },
       "widgets_values": [
-        "LostMemory_OurTone_pixel"
+        "LostMemory_Variation_smile"
       ]
     },
     {
-      "id": 53,
-      "type": "LostMemoryPixelize",
+      "id": 78,
+      "type": "CLIPTextEncode",
       "pos": [
-        1755,
-        700
+        1500,
+        760
       ],
       "size": [
-        340,
-        230
+        400,
+        200
       ],
       "flags": {},
-      "order": 53,
+      "order": 108,
       "mode": 0,
       "inputs": [
         {
-          "localized_name": "image",
-          "name": "image",
-          "type": "IMAGE",
-          "link": 23
+          "localized_name": "clip",
+          "name": "clip",
+          "type": "CLIP",
+          "link": 29
         },
         {
-          "localized_name": "preset",
-          "name": "preset",
-          "type": "COMBO",
+          "localized_name": "text",
+          "name": "text",
+          "type": "STRING",
           "widget": {
-            "name": "preset"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "size_override",
-          "name": "size_override",
-          "type": "INT",
-          "widget": {
-            "name": "size_override"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "palette_override",
-          "name": "palette_override",
-          "type": "COMBO",
-          "widget": {
-            "name": "palette_override"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "adaptive_colors",
-          "name": "adaptive_colors",
-          "type": "INT",
-          "widget": {
-            "name": "adaptive_colors"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "transparent_bg",
-          "name": "transparent_bg",
-          "type": "COMBO",
-          "widget": {
-            "name": "transparent_bg"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "bg_threshold",
-          "name": "bg_threshold",
-          "type": "INT",
-          "widget": {
-            "name": "bg_threshold"
+            "name": "text"
           },
           "link": null
         }
       ],
       "outputs": [
         {
-          "localized_name": "image",
-          "name": "image",
-          "type": "IMAGE",
+          "localized_name": "조건",
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
           "links": [
-            25
+            30
           ]
-        },
-        {
-          "localized_name": "mask",
-          "name": "mask",
-          "type": "MASK",
-          "links": null
         }
       ],
       "properties": {
-        "Node name for S&R": "LostMemoryPixelize"
+        "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "game-item16",
-        0,
-        "adaptive",
-        16,
-        "preset",
-        30
-      ]
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, surprised expression, wide open eyes, mouth open, hands raised in shock"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
     },
     {
-      "id": 54,
-      "type": "SaveImage",
+      "id": 79,
+      "type": "KSampler",
       "pos": [
-        2135,
-        700
+        1960,
+        760
       ],
       "size": [
         320,
         270
       ],
       "flags": {},
-      "order": 54,
+      "order": 109,
       "mode": 0,
       "inputs": [
         {
-          "localized_name": "이미지",
-          "name": "images",
-          "type": "IMAGE",
-          "link": 25
-        },
-        {
-          "localized_name": "파일명 접두어",
-          "name": "filename_prefix",
-          "type": "STRING",
-          "widget": {
-            "name": "filename_prefix"
-          },
-          "link": null
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "Node name for S&R": "SaveImage"
-      },
-      "widgets_values": [
-        "LostMemory_OurTone_pixel_pixel16"
-      ]
-    },
-    {
-      "id": 55,
-      "type": "LostMemoryBgRemove",
-      "pos": [
-        1755,
-        1070
-      ],
-      "size": [
-        340,
-        230
-      ],
-      "flags": {},
-      "order": 55,
-      "mode": 0,
-      "inputs": [
-        {
-          "localized_name": "image",
-          "name": "image",
-          "type": "IMAGE",
-          "link": 24
-        },
-        {
-          "localized_name": "model",
+          "localized_name": "모델",
           "name": "model",
+          "type": "MODEL",
+          "link": 33
+        },
+        {
+          "localized_name": "긍정",
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 30
+        },
+        {
+          "localized_name": "부정",
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 31
+        },
+        {
+          "localized_name": "잠재 이미지",
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 32
+        },
+        {
+          "localized_name": "시드",
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "이후 제어",
+          "name": "control_after_generate",
           "type": "COMBO",
           "widget": {
-            "name": "model"
+            "name": "control_after_generate"
           },
           "link": null
         },
         {
-          "localized_name": "alpha_matting",
-          "name": "alpha_matting",
+          "localized_name": "단계",
+          "name": "steps",
+          "type": "INT",
+          "widget": {
+            "name": "steps"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "cfg",
+          "name": "cfg",
+          "type": "FLOAT",
+          "widget": {
+            "name": "cfg"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "샘플러 이름",
+          "name": "sampler_name",
           "type": "COMBO",
           "widget": {
-            "name": "alpha_matting"
+            "name": "sampler_name"
           },
           "link": null
         },
         {
-          "localized_name": "alpha_threshold_fg",
-          "name": "alpha_threshold_fg",
-          "type": "INT",
+          "localized_name": "스케줄러",
+          "name": "scheduler",
+          "type": "COMBO",
           "widget": {
-            "name": "alpha_threshold_fg"
+            "name": "scheduler"
           },
           "link": null
         },
         {
-          "localized_name": "alpha_threshold_bg",
-          "name": "alpha_threshold_bg",
-          "type": "INT",
+          "localized_name": "노이즈 제거",
+          "name": "denoise",
+          "type": "FLOAT",
           "widget": {
-            "name": "alpha_threshold_bg"
-          },
-          "link": null
-        },
-        {
-          "localized_name": "erode_size",
-          "name": "erode_size",
-          "type": "INT",
-          "widget": {
-            "name": "erode_size"
+            "name": "denoise"
           },
           "link": null
         }
       ],
       "outputs": [
         {
-          "localized_name": "image",
-          "name": "image",
-          "type": "IMAGE",
+          "localized_name": "잠재",
+          "name": "LATENT",
+          "type": "LATENT",
           "links": [
-            26
-          ]
-        },
-        {
-          "localized_name": "mask",
-          "name": "mask",
-          "type": "MASK",
-          "links": [
-            27
+            34
           ]
         }
       ],
       "properties": {
-        "Node name for S&R": "LostMemoryBgRemove"
+        "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        "isnet-anime",
-        "no",
-        240,
+        400,
+        "randomize",
         10,
-        10
+        1.8,
+        "euler",
+        "simple",
+        0.55
       ]
     },
     {
-      "id": 56,
-      "type": "LostMemorySaveImageRGBA",
+      "id": 80,
+      "type": "VAEDecode",
       "pos": [
-        2120,
-        1070
+        2320,
+        760
       ],
       "size": [
-        320,
-        110
+        220,
+        60
       ],
       "flags": {},
-      "order": 56,
+      "order": 110,
       "mode": 0,
       "inputs": [
         {
-          "localized_name": "image",
-          "name": "image",
+          "localized_name": "샘플",
+          "name": "samples",
+          "type": "LATENT",
+          "link": 34
+        },
+        {
+          "localized_name": "VAE",
+          "name": "vae",
+          "type": "VAE",
+          "link": 35
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "이미지",
+          "name": "IMAGE",
           "type": "IMAGE",
-          "link": 26
+          "links": [
+            36
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 81,
+      "type": "SaveImage",
+      "pos": [
+        2560,
+        760
+      ],
+      "size": [
+        320,
+        270
+      ],
+      "flags": {},
+      "order": 111,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 36
         },
         {
-          "localized_name": "mask",
-          "name": "mask",
-          "type": "MASK",
-          "link": 27
-        },
-        {
-          "localized_name": "filename_prefix",
+          "localized_name": "파일명 접두어",
           "name": "filename_prefix",
           "type": "STRING",
           "widget": {
@@ -1508,10 +1270,526 @@
       ],
       "outputs": [],
       "properties": {
-        "Node name for S&R": "LostMemorySaveImageRGBA"
+        "Node name for S&R": "SaveImage"
       },
       "widgets_values": [
-        "LostMemory_OurTone_pixel_bgremove"
+        "LostMemory_Variation_surprised"
+      ]
+    },
+    {
+      "id": 82,
+      "type": "CLIPTextEncode",
+      "pos": [
+        1500,
+        1140
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 112,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "clip",
+          "name": "clip",
+          "type": "CLIP",
+          "link": 37
+        },
+        {
+          "localized_name": "text",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "조건",
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            38
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, angry expression, frowning eyebrows, fighting stance, clenched fist"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 83,
+      "type": "KSampler",
+      "pos": [
+        1960,
+        1140
+      ],
+      "size": [
+        320,
+        270
+      ],
+      "flags": {},
+      "order": 113,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "모델",
+          "name": "model",
+          "type": "MODEL",
+          "link": 41
+        },
+        {
+          "localized_name": "긍정",
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 38
+        },
+        {
+          "localized_name": "부정",
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 39
+        },
+        {
+          "localized_name": "잠재 이미지",
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 40
+        },
+        {
+          "localized_name": "시드",
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "이후 제어",
+          "name": "control_after_generate",
+          "type": "COMBO",
+          "widget": {
+            "name": "control_after_generate"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "단계",
+          "name": "steps",
+          "type": "INT",
+          "widget": {
+            "name": "steps"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "cfg",
+          "name": "cfg",
+          "type": "FLOAT",
+          "widget": {
+            "name": "cfg"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "샘플러 이름",
+          "name": "sampler_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "sampler_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "스케줄러",
+          "name": "scheduler",
+          "type": "COMBO",
+          "widget": {
+            "name": "scheduler"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "노이즈 제거",
+          "name": "denoise",
+          "type": "FLOAT",
+          "widget": {
+            "name": "denoise"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "잠재",
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            42
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        500,
+        "randomize",
+        10,
+        1.8,
+        "euler",
+        "simple",
+        0.55
+      ]
+    },
+    {
+      "id": 84,
+      "type": "VAEDecode",
+      "pos": [
+        2320,
+        1140
+      ],
+      "size": [
+        220,
+        60
+      ],
+      "flags": {},
+      "order": 114,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "샘플",
+          "name": "samples",
+          "type": "LATENT",
+          "link": 42
+        },
+        {
+          "localized_name": "VAE",
+          "name": "vae",
+          "type": "VAE",
+          "link": 43
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "이미지",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            44
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 85,
+      "type": "SaveImage",
+      "pos": [
+        2560,
+        1140
+      ],
+      "size": [
+        320,
+        270
+      ],
+      "flags": {},
+      "order": 115,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 44
+        },
+        {
+          "localized_name": "파일명 접두어",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "LostMemory_Variation_angry"
+      ]
+    },
+    {
+      "id": 86,
+      "type": "CLIPTextEncode",
+      "pos": [
+        1500,
+        1520
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 116,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "clip",
+          "name": "clip",
+          "type": "CLIP",
+          "link": 45
+        },
+        {
+          "localized_name": "text",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "조건",
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            46
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "Line art illustration, clean black lineart, anime line drawing style, clean bold black outlines, simple flat shading, minimal color, white background, isolated, centered, full body view, standing or posed character, high contrast line drawing, sad expression, downcast eyes, head slightly tilted down, hands clasped"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 87,
+      "type": "KSampler",
+      "pos": [
+        1960,
+        1520
+      ],
+      "size": [
+        320,
+        270
+      ],
+      "flags": {},
+      "order": 117,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "모델",
+          "name": "model",
+          "type": "MODEL",
+          "link": 49
+        },
+        {
+          "localized_name": "긍정",
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 46
+        },
+        {
+          "localized_name": "부정",
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 47
+        },
+        {
+          "localized_name": "잠재 이미지",
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 48
+        },
+        {
+          "localized_name": "시드",
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "이후 제어",
+          "name": "control_after_generate",
+          "type": "COMBO",
+          "widget": {
+            "name": "control_after_generate"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "단계",
+          "name": "steps",
+          "type": "INT",
+          "widget": {
+            "name": "steps"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "cfg",
+          "name": "cfg",
+          "type": "FLOAT",
+          "widget": {
+            "name": "cfg"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "샘플러 이름",
+          "name": "sampler_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "sampler_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "스케줄러",
+          "name": "scheduler",
+          "type": "COMBO",
+          "widget": {
+            "name": "scheduler"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "노이즈 제거",
+          "name": "denoise",
+          "type": "FLOAT",
+          "widget": {
+            "name": "denoise"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "잠재",
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            50
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        600,
+        "randomize",
+        10,
+        1.8,
+        "euler",
+        "simple",
+        0.55
+      ]
+    },
+    {
+      "id": 88,
+      "type": "VAEDecode",
+      "pos": [
+        2320,
+        1520
+      ],
+      "size": [
+        220,
+        60
+      ],
+      "flags": {},
+      "order": 118,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "샘플",
+          "name": "samples",
+          "type": "LATENT",
+          "link": 50
+        },
+        {
+          "localized_name": "VAE",
+          "name": "vae",
+          "type": "VAE",
+          "link": 51
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "이미지",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            52
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 89,
+      "type": "SaveImage",
+      "pos": [
+        2560,
+        1520
+      ],
+      "size": [
+        320,
+        270
+      ],
+      "flags": {},
+      "order": 119,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 52
+        },
+        {
+          "localized_name": "파일명 접두어",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "LostMemory_Variation_sad"
       ]
     }
   ],
@@ -1629,140 +1907,260 @@
       "IMAGE"
     ],
     [
-      16,
-      7,
-      0,
-      30,
-      0,
-      "IMAGE"
-    ],
-    [
-      17,
-      30,
-      0,
-      31,
-      0,
-      "IMAGE"
-    ],
-    [
-      18,
-      7,
-      0,
-      32,
-      0,
-      "IMAGE"
-    ],
-    [
-      19,
-      32,
-      0,
-      33,
-      0,
-      "IMAGE"
-    ],
-    [
-      20,
-      32,
-      1,
-      33,
-      1,
-      "MASK"
-    ],
-    [
       21,
-      50,
+      3,
+      1,
+      74,
       0,
-      51,
-      0,
-      "LATENT"
+      "CLIP"
     ],
     [
       22,
-      51,
+      74,
       0,
-      52,
-      0,
-      "IMAGE"
-    ],
-    [
-      23,
-      51,
-      0,
-      53,
-      0,
-      "IMAGE"
-    ],
-    [
-      24,
-      51,
-      0,
-      55,
-      0,
-      "IMAGE"
-    ],
-    [
-      25,
-      53,
-      0,
-      54,
-      0,
-      "IMAGE"
-    ],
-    [
-      26,
-      55,
-      0,
-      56,
-      0,
-      "IMAGE"
-    ],
-    [
-      27,
-      55,
-      1,
-      56,
-      1,
-      "MASK"
-    ],
-    [
-      28,
-      3,
-      0,
-      50,
-      0,
-      "MODEL"
-    ],
-    [
-      29,
-      4,
-      0,
-      50,
+      75,
       1,
       "CONDITIONING"
     ],
     [
-      30,
+      23,
       11,
       0,
-      50,
+      75,
       2,
       "CONDITIONING"
     ],
     [
-      31,
+      24,
       21,
       0,
-      50,
+      75,
       3,
       "LATENT"
     ],
     [
-      32,
+      25,
+      3,
+      0,
+      75,
+      0,
+      "MODEL"
+    ],
+    [
+      26,
+      75,
+      0,
+      76,
+      0,
+      "LATENT"
+    ],
+    [
+      27,
       9,
       0,
-      51,
+      76,
       1,
       "VAE"
+    ],
+    [
+      28,
+      76,
+      0,
+      77,
+      0,
+      "IMAGE"
+    ],
+    [
+      29,
+      3,
+      1,
+      78,
+      0,
+      "CLIP"
+    ],
+    [
+      30,
+      78,
+      0,
+      79,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      31,
+      11,
+      0,
+      79,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      32,
+      21,
+      0,
+      79,
+      3,
+      "LATENT"
+    ],
+    [
+      33,
+      3,
+      0,
+      79,
+      0,
+      "MODEL"
+    ],
+    [
+      34,
+      79,
+      0,
+      80,
+      0,
+      "LATENT"
+    ],
+    [
+      35,
+      9,
+      0,
+      80,
+      1,
+      "VAE"
+    ],
+    [
+      36,
+      80,
+      0,
+      81,
+      0,
+      "IMAGE"
+    ],
+    [
+      37,
+      3,
+      1,
+      82,
+      0,
+      "CLIP"
+    ],
+    [
+      38,
+      82,
+      0,
+      83,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      39,
+      11,
+      0,
+      83,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      40,
+      21,
+      0,
+      83,
+      3,
+      "LATENT"
+    ],
+    [
+      41,
+      3,
+      0,
+      83,
+      0,
+      "MODEL"
+    ],
+    [
+      42,
+      83,
+      0,
+      84,
+      0,
+      "LATENT"
+    ],
+    [
+      43,
+      9,
+      0,
+      84,
+      1,
+      "VAE"
+    ],
+    [
+      44,
+      84,
+      0,
+      85,
+      0,
+      "IMAGE"
+    ],
+    [
+      45,
+      3,
+      1,
+      86,
+      0,
+      "CLIP"
+    ],
+    [
+      46,
+      86,
+      0,
+      87,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      47,
+      11,
+      0,
+      87,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      48,
+      21,
+      0,
+      87,
+      3,
+      "LATENT"
+    ],
+    [
+      49,
+      3,
+      0,
+      87,
+      0,
+      "MODEL"
+    ],
+    [
+      50,
+      87,
+      0,
+      88,
+      0,
+      "LATENT"
+    ],
+    [
+      51,
+      9,
+      0,
+      88,
+      1,
+      "VAE"
+    ],
+    [
+      52,
+      88,
+      0,
+      89,
+      0,
+      "IMAGE"
     ]
   ],
   "groups": [],
