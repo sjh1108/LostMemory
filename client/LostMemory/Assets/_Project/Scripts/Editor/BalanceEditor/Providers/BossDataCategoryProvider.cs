@@ -21,7 +21,7 @@ namespace LostMemory.Editor.BalanceEditor.Providers
             return guids
                 .Select(g => AssetDatabase.LoadAssetAtPath<ScriptableObject>(
                     AssetDatabase.GUIDToAssetPath(g)))
-                .Where(s => s != null);
+                .Where(s => s != null && s.GetType().FullName == "LostMemory.Enemies.BossData");
         }
     }
 }
