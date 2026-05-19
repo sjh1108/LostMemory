@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using LostMemory.Relics;
 using TMPro;
 using UnityEngine;
@@ -22,12 +23,79 @@ namespace LostMemory.Shop
         [Header("닫기")]
         [SerializeField] private Button _closeButton;
 
+        [Header("활성 세트 요약 (옵션 — null 이면 미사용)")]
+        [Tooltip("현재 활성화된 세트 효과들을 한 줄로 표시. null 허용.")]
+        [SerializeField] private TextMeshProUGUI _setSummaryText;
+
+        private BuildManager _buildManager;
+
         /// <summary>X 버튼 클릭 이벤트 — InventoryToggleController 가 구독해 Close() 를 호출한다.</summary>
         public event Action OnCloseRequested;
 
         private void Start()
         {
             _closeButton?.onClick.AddListener(() => OnCloseRequested?.Invoke());
+            ResolveBuildManager();
+            RefreshSetSummary();
+        }
+
+        private void OnDestroy()
+        {
+            if (_buildManager != null)
+                _buildManager.OnSetTierChanged -= HandleSetTierChanged;
+        }
+
+        private void OnEnable()
+        {
+            // 패널이 다시 활성화될 때 (씬 전환 등) BuildManager 가 재구독돼야 함.
+            if (_buildManager == null)
+            {
+                ResolveBuildManager();
+            }
+            RefreshSetSummary();
+        }
+
+        private void ResolveBuildManager()
+        {
+            if (_buildManager != null) return;
+            _buildManager = FindFirstObjectByType<BuildManager>();
+            if (_buildManager != null)
+            {
+                _buildManager.OnSetTierChanged -= HandleSetTierChanged;
+                _buildManager.OnSetTierChanged += HandleSetTierChanged;
+            }
+        }
+
+        private void HandleSetTierChanged(RelicTag _, int __, int ___) => RefreshSetSummary();
+
+        private void RefreshSetSummary()
+        {
+            if (_setSummaryText == null) return;
+            if (_buildManager == null)
+            {
+                _setSummaryText.text = "활성 세트: 없음";
+                return;
+            }
+
+            var sb = new StringBuilder("활성 세트: ");
+            bool any = false;
+            var registered = _buildManager.RegisteredSetsInOrder;
+            if (registered != null)
+            {
+                for (int i = 0; i < registered.Count; i++)
+                {
+                    BuildSetData set = registered[i];
+                    if (set == null) continue;
+                    int tier = _buildManager.GetActiveTier(set.SetTag);
+                    if (tier < 0) continue;
+                    if (any) sb.Append(", ");
+                    sb.Append('[').Append(RelicTagLabels.ToKorean(set.SetTag))
+                      .Append(" T").Append(tier).Append(']');
+                    any = true;
+                }
+            }
+            if (!any) sb.Append("없음");
+            _setSummaryText.text = sb.ToString();
         }
 
         private void Reset()
