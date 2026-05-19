@@ -22,6 +22,7 @@
 | **`LostMemory_OurPixelTone.json`** | 단일 입력 → 두 갈래(denoise 0.55 / 0.4) 동시 변환. LostMemory 5명 reference 톤 강제 | 일러스트 또는 픽셀 아트 1장 | **PNG 6장** (illust 갈래 3장 + pixel 갈래 3장) |
 | `LostMemory_PixelArt_To_FrontView.json` | 임의 view/pose 픽셀 아트 → 정면 전신 sprite 재구성 (denoise 0.7) | 픽셀 아트 1장 | PNG 3장 (원본 / 16×16 / RGBA) |
 | **`LostMemory_BustToFullChibi.json`** | **3단계 chain**: 흉상 → 전신 → 2등신 chibi → 픽셀 (KSampler 2개, LoRA 0.4/0.7) | 흉상 일러스트 1장 | **PNG 4장** (전신 / 2등신 / 16×16 / RGBA) |
+| **`LostMemory_BustToFullLineArt.json`** | **3단계 chain**: 흉상 → 전신 → 라인 일러스트 → 픽셀 (BustToFullChibi 의 1단계 살리고 2단계 chibi → lineart 교체) | 흉상 일러스트 1장 | **PNG 4장** (전신 / 라인 / 16×16 / RGBA) |
 
 ### 후처리
 
