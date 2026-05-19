@@ -43,6 +43,18 @@ namespace LostMemory.UI
             // 다른 UI 패널에 가려지지 않도록 sibling 순서를 맨 뒤로 (= 최상위 렌더링).
             transform.SetAsLastSibling();
 
+            // 어떤 해상도에서도 화면 전체를 덮도록 RectTransform 을 강제 stretch.
+            // (prefab 인스턴스 wiring 사고나 부모 leftover offset 으로 사이즈가 어긋나는 경우 방어.)
+            if (transform is RectTransform rt)
+            {
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+                rt.pivot     = new Vector2(0.5f, 0.5f);
+                rt.localScale = Vector3.one;
+            }
+
             SetText(_killCountText, data.KillCount.ToString());
             SetText(_bossKillCountText, data.BossKillCount.ToString());
             SetText(_totalDamageText, data.TotalDamage.ToString("N0"));

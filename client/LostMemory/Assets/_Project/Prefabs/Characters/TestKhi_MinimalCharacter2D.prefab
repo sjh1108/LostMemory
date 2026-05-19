@@ -372,7 +372,7 @@ MonoBehaviour:
   DashFeedback: {fileID: 0}
   aim: {fileID: 114910001000000001}
   meleeCombo: {fileID: 114910001000000004}
-  allowDashDuringAttack: 0
+  allowDashDuringAttack: 1
   allowDashDuringAttackRecovery: 0
   logBlockedDashToConsole: 0
   statContainer: {fileID: 1496170365699431617}
@@ -686,6 +686,7 @@ MonoBehaviour:
   targetInvincibilityDuration: 0
   targetFlickerDuration: 0
   statContainer: {fileID: 1496170365699431617}
+  damageRelay: {fileID: 0}
   drawDebugGizmos: 1
   debugGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showRuntimePreview: 0
@@ -839,7 +840,7 @@ MonoBehaviour:
   successfulParryInvulnerability: 0.12
   failedParryDamageRatio: 0.2
   minFailedParryDamage: 1
-  allowParryDuringAttack: 0
+  allowParryDuringAttack: 1
   allowParryDuringAttackRecovery: 0
   allowParryDuringDash: 0
   logStateTransitions: 1
@@ -1628,9 +1629,16 @@ MonoBehaviour:
   mana: {fileID: 0}
   health: {fileID: 0}
   statContainer: {fileID: 0}
+  topDownController: {fileID: 0}
   teleportDistance: 5
+  lungeDuration: 0.12
   invulnerabilityDuration: 0.15
   cooldown: 0.8
+  obstacleLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
+  obstacleCheckRadius: 0.3
+  obstacleSafetyMargin: 0.05
   manaCost: 15
   slashComboStep: 1
   applyDamageOnArrive: 1
@@ -1673,9 +1681,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerSceneTransitionReset
   mana: {fileID: 7404419025855381829}
-  weaponUpgrade: {fileID: 1186589091235701340}
   restoreMana: 1
-  revertWeapon: 0
   logResets: 1
 --- !u!1 &1997364199477008
 GameObject:

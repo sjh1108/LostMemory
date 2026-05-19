@@ -20,9 +20,11 @@ namespace LostMemory.Editor.InventoryTest
         private const string UxmlPath = "InventoryTestWindow";
         private const string UssPath  = "InventoryTestWindow";
 
+        // 부모 폴더 하나만 지정 — AssetDatabase.FindAssets 는 하위 폴더(Generated)까지 재귀 검색.
+        // Generated 외부의 수동 자산(잔상의목걸이, 수호의파편 등 18개)도 같이 노출.
         private static readonly string[] RelicSearchFolders =
         {
-            "Assets/_Project/ScriptableObjects/Relics/Generated"
+            "Assets/_Project/ScriptableObjects/Relics"
         };
 
         private PlayerRelicInventory _relicInv;
@@ -41,6 +43,10 @@ namespace LostMemory.Editor.InventoryTest
         // CL-183: 검색 필드 + 마지막 필터 (Refresh / 자동갱신 시 보존)
         private ToolbarSearchField _searchField;
         private string _lastFilter = string.Empty;
+
+        // 미소녀 소환 유물(듀얼 태그 [미소녀]+[속성]) 만 표시하는 토글.
+        private ToolbarToggle _magicalGirlOnlyToggle;
+        private bool _magicalGirlOnly;
 
         // CL-221: RelicTag → BuildSetData.DisplayName (한글 세트명) 매핑. 좌측 트리 그룹 헤더용.
         private Dictionary<RelicTag, string> _setDisplayNames = new();
@@ -108,6 +114,16 @@ namespace LostMemory.Editor.InventoryTest
                 _searchField.RegisterValueChangedCallback(evt =>
                 {
                     _lastFilter = evt.newValue ?? string.Empty;
+                    RebuildTreeWithFilter();
+                });
+            }
+
+            _magicalGirlOnlyToggle = root.Q<ToolbarToggle>("MagicalGirlOnlyToggle");
+            if (_magicalGirlOnlyToggle != null)
+            {
+                _magicalGirlOnlyToggle.RegisterValueChangedCallback(evt =>
+                {
+                    _magicalGirlOnly = evt.newValue;
                     RebuildTreeWithFilter();
                 });
             }
@@ -225,6 +241,12 @@ namespace LostMemory.Editor.InventoryTest
             var permanents  = _allRelics.Where(r => !r.IsConsumable).ToList();
             var consumables = _allRelics.Where(r =>  r.IsConsumable).ToList();
 
+            if (_magicalGirlOnly)
+            {
+                permanents = permanents.Where(IsMagicalGirlSpawnRelic).ToList();
+                consumables = new List<RelicData>();   // 미소녀 모드에서는 소모품 숨김
+            }
+
             if (!string.IsNullOrEmpty(filter))
             {
                 var lower = filter.ToLowerInvariant();
@@ -251,6 +273,28 @@ namespace LostMemory.Editor.InventoryTest
 
             if (consumables.Count > 0) roots.Add(BuildGroup(ref id, "Consumable", consumables));
             return roots;
+        }
+
+        /// <summary>
+        /// 미소녀 소환/강화 유물 판정. 듀얼 태그에 [미소녀] 포함 + Effects 에 Summon/Elemental/Enhanced 보유.
+        /// MagicalGirlSpawner.HandleRelicAcquired 의 spawn 조건과 동일 로직.
+        /// </summary>
+        private static bool IsMagicalGirlSpawnRelic(RelicData r)
+        {
+            if (r == null) return false;
+            bool primaryIsGirl   = r.TagPrimary == RelicTag.MagicalGirl;
+            bool secondaryIsGirl = r.TagSecondary == RelicTag.MagicalGirl;
+            if (!primaryIsGirl && !secondaryIsGirl) return false;
+
+            if (r.Effects == null) return false;
+            foreach (var e in r.Effects)
+            {
+                if (e.Type == RelicEffectType.MagicalGirlSummon ||
+                    e.Type == RelicEffectType.MagicalGirlElementalAttack ||
+                    e.Type == RelicEffectType.MagicalGirlElementalEnhanced)
+                    return true;
+            }
+            return false;
         }
 
         // CL-183: 4채널 OR 매칭 — 이름 / 효과설명 / 태그 / 효과타입.

@@ -1,4 +1,5 @@
 using System.Text;
+using LostMemory.MagicalGirl;
 using LostMemory.Relics;
 using TMPro;
 using UnityEngine;
@@ -110,6 +111,22 @@ namespace LostMemory.Shop
             _nameText.color  = activeTier >= 0 ? new Color(1f, 0.85f, 0.35f) : Color.white;
             _rarityText.text = BuildSetSummaryLine(set, count, activeTier);
             _descText.text   = BuildSetTierList(set, count, activeTier);
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_rt);
+            UpdatePosition(screenPos);
+        }
+
+        /// <summary>미소녀 호버 시 visual별 숨은 능력 설명을 표시. (MagicalGirlHoverTooltip 호출 진입점)</summary>
+        public void ShowMagicalGirl(MagicalGirlVisual visual, Vector2 screenPos)
+        {
+            transform.SetAsLastSibling();
+            gameObject.SetActive(true);
+
+            (string name, string desc) = MagicalGirlTooltipText.For(visual);
+            _nameText.text   = name;
+            _nameText.color  = MagicalGirlVisualPalette.Get(visual);
+            _rarityText.text = "[마법소녀]";
+            _descText.text   = desc;
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(_rt);
             UpdatePosition(screenPos);
@@ -248,6 +265,9 @@ namespace LostMemory.Shop
                 }
             }
 
+            // 미소녀 시스템 정보 — 듀얼 태그 [미소녀]+[속성] 일 때 어떤 visual 미소녀를 소환/강화하는지 명시.
+            AppendMagicalGirlInfo(sb, relic);
+
             if (sb.Length == 0) sb.AppendLine("(설명 없음)");
 
             if (!relic.IsConsumable)
@@ -265,6 +285,45 @@ namespace LostMemory.Shop
             }
 
             return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>
+        /// 유물의 듀얼 태그 [미소녀]+[속성] 검사해서 어떤 미소녀가 소환/강화되는지 한 줄 추가.
+        /// 미소녀 태그가 없거나 Effects 에 Summon/Elemental/Enhanced 가 없으면 무시.
+        /// </summary>
+        private static void AppendMagicalGirlInfo(StringBuilder sb, RelicData relic)
+        {
+            if (relic == null) return;
+            bool primaryIsGirl   = relic.TagPrimary == RelicTag.MagicalGirl;
+            bool secondaryIsGirl = relic.TagSecondary == RelicTag.MagicalGirl;
+            if (!primaryIsGirl && !secondaryIsGirl) return;
+
+            RelicTag elementTag = primaryIsGirl ? relic.TagSecondary : relic.TagPrimary;
+            if (elementTag == RelicTag.None || elementTag == RelicTag.MagicalGirl) return;
+
+            MagicalGirlVisual visual = MagicalGirlVisualPalette.FromTag(elementTag);
+            if (visual == MagicalGirlVisual.Default) return;
+
+            bool hasSummon = false;
+            bool hasEnhanced = false;
+            if (relic.Effects != null)
+            {
+                foreach (EffectEntry e in relic.Effects)
+                {
+                    if (e.Type == RelicEffectType.MagicalGirlSummon ||
+                        e.Type == RelicEffectType.MagicalGirlElementalAttack)
+                        hasSummon = true;
+                    else if (e.Type == RelicEffectType.MagicalGirlElementalEnhanced)
+                        hasEnhanced = true;
+                }
+            }
+            if (!hasSummon && !hasEnhanced) return;
+
+            (string name, _) = MagicalGirlTooltipText.For(visual);
+            string action = hasEnhanced && !hasSummon ? "강화"
+                          : hasEnhanced              ? "소환 + 강화"
+                          :                            "소환";
+            sb.Append("<color=#FFD966>").Append("★ ").Append(name).Append(' ').Append(action).Append("</color>").AppendLine();
         }
 
         private static void AppendSetProgress(StringBuilder sb, BuildManager bm, RelicTag tag)

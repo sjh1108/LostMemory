@@ -107,15 +107,27 @@ namespace LostMemory.MagicalGirl
         {
             if (_sr == null) return;
             // catalog 에서 entry 찾으면 sprite 교체, 없으면 색상 tint 만 (placeholder).
-            if (_catalog != null && _catalog.TryGet(_visual, out var entry) && entry.sprite != null)
+            // 누락 진단을 위해 각 fallback 단계에 워닝을 남긴다 (전기 미소녀 등 미해결 이슈 추적용).
+            if (_catalog == null)
             {
-                _sr.sprite = entry.sprite;
-                _sr.color = Color.white;  // sprite 자체 색상 사용
-            }
-            else
-            {
+                Debug.LogWarning($"[MagicalGirlAI] catalog 미할당 — {_visual} placeholder 표시", this);
                 _sr.color = MagicalGirlVisualPalette.Get(_visual);
+                return;
             }
+            if (!_catalog.TryGet(_visual, out var entry))
+            {
+                Debug.LogWarning($"[MagicalGirlAI] catalog 에 {_visual} entry 없음 — placeholder 표시", this);
+                _sr.color = MagicalGirlVisualPalette.Get(_visual);
+                return;
+            }
+            if (entry.sprite == null)
+            {
+                Debug.LogWarning($"[MagicalGirlAI] {_visual} entry.sprite null — placeholder 표시. Catalog asset Inspector 확인 필요.", this);
+                _sr.color = MagicalGirlVisualPalette.Get(_visual);
+                return;
+            }
+            _sr.sprite = entry.sprite;
+            _sr.color = Color.white;  // sprite 자체 색상 사용
         }
 
         private void Update()

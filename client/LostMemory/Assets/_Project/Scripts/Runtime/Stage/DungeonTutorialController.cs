@@ -164,7 +164,9 @@ namespace LostMemory.Stage
 
         private void HandleClose()
         {
-            if (_panel.DontShowAgain)
+            bool dontShow = _panel.DontShowAgain;
+            Debug.Log($"[DungeonTutorialController] HandleClose dontShowAgain={dontShow} key='{_seenKey}'", this);
+            if (dontShow)
             {
                 PlayerPrefs.SetInt(_seenKey, 1);
                 PlayerPrefs.Save();

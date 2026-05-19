@@ -51,9 +51,32 @@ namespace LostMemory.Shop
         private RelicData _pendingRelic; // step 1/2 의 새 유물
         private RelicData _replacedRelic; // step 3 의 빠진 유물 (정보 표시용)
 
+        /// <summary>
+        /// 씬 로드 후 InventoryFullModal 이 씬에 배치되지 않았으면 자동 spawn.
+        /// PlayerRelicInventory 가 있는 씬(던전/마을)에서만 의미 있고,
+        /// 없는 씬에서는 OnEnable 의 자동 탐색이 실패해 조용히 disable 된다.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Bootstrap()
+        {
+            if (FindAnyObjectByType<InventoryFullModal>() != null) return;
+            GameObject go = new GameObject("InventoryFullModal_Auto");
+            go.AddComponent<InventoryFullModal>();
+        }
+
         private void OnEnable()
         {
-            if (inventory != null) inventory.OnTryAddRejected += HandleRejected;
+            if (inventory == null)
+            {
+                inventory = FindAnyObjectByType<PlayerRelicInventory>();
+            }
+            if (inventory == null)
+            {
+                Debug.LogWarning("[InventoryFullModal] PlayerRelicInventory not found — modal disabled.", this);
+                return;
+            }
+            inventory.OnTryAddRejected += HandleRejected;
+            Debug.Log($"[InventoryFullModal] Subscribed to OnTryAddRejected on '{inventory.name}'.", this);
         }
 
         private void OnDisable()
@@ -64,6 +87,7 @@ namespace LostMemory.Shop
 
         private void HandleRejected(RelicData relic, string reason)
         {
+            Debug.Log($"[InventoryFullModal] HandleRejected: relic='{(relic != null ? relic.DisplayName : "null")}', reason='{reason}'", this);
             if (reason != "공간 부족") return;
             if (relic == null || relic.IsConsumable) return;
             _pendingRelic = relic;
