@@ -3,6 +3,7 @@ using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
 using Unity.Netcode.Components;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LostMemory.Networking.Player
 {
@@ -58,6 +59,12 @@ namespace LostMemory.Networking.Player
 
             if (IsOwner)
             {
+                AlignToSpawnPoint();
+
+                // 씬 전환 시 PlayerObject 는 DontDestroyOnLoad 라 살아남고 position 유지 →
+                // 새 씬에 진입할 때마다 active scene 의 spawn point 로 재정렬.
+                SceneManager.activeSceneChanged += HandleActiveSceneChanged;
+
                 if (stateAggregator != null)
                 {
                     LocalPlayerResolver.Register(stateAggregator);
@@ -84,17 +91,39 @@ namespace LostMemory.Networking.Player
 
         public override void OnNetworkDespawn()
         {
-            if (IsOwner && stateAggregator != null)
+            if (IsOwner)
             {
-                LocalPlayerResolver.Unregister(stateAggregator);
+                SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
+                if (stateAggregator != null)
+                {
+                    LocalPlayerResolver.Unregister(stateAggregator);
+                }
             }
             base.OnNetworkDespawn();
+        }
+
+        private void HandleActiveSceneChanged(Scene previous, Scene current)
+        {
+            if (!IsOwner) return;
+            AlignToSpawnPoint();
         }
 
         private void ResolveRefs()
         {
             if (character == null) character = GetComponent<Character>();
             if (stateAggregator == null) stateAggregator = GetComponent<KhiPlayerStateAggregator>();
+        }
+
+        /// <summary>
+        /// owner 측 spawn 직후 Tag "Respawn" 인 GameObject 위치로 align.
+        /// NetworkTransform 이 owner-authoritative 라 다음 frame 에 다른 클라에도 자동 broadcast.
+        /// Tag "Respawn" 없으면 align skip (Town_solo / Test_MultiLobby 처럼 spawn 위치 신경 안 쓰는 씬).
+        /// </summary>
+        private void AlignToSpawnPoint()
+        {
+            GameObject spawnPoint = GameObject.FindGameObjectWithTag("Respawn");
+            if (spawnPoint == null) return;
+            transform.position = spawnPoint.transform.position;
         }
 
         private void DisableInputComponentsForNonOwner()
