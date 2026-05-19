@@ -1,97 +1,178 @@
-# LostMemory 게임 공식 사이트
+# LostMemory 게임 공식 사이트 — Spring Boot 동적 CMS
 
-`https://lostmemory.duckdns.org/` 로 서빙되는 **외부 (플레이어) 대상 마케팅 사이트** — 공지 / 패치노트 / FAQ.
+`https://lostmemory.duckdns.org/` 로 서빙되는 게임 공식 사이트. **Spring Boot 3.5 + PostgreSQL + Thymeleaf SSR** 동적 CMS. 운영자가 `/admin/` 에서 로그인 후 공지/패치노트/FAQ 를 직접 작성/편집.
 
 ## 구조
 
-- **MkDocs Material** 정적 사이트 생성기 + **게임 톤 custom CSS** (Galmuri9 픽셀 폰트 + 검은 배경 + 흰 텍스트 + 노란 hover)
-- **`website-nginx`** 컨테이너 (internal-only, infra_public network) 가 정적 파일 서빙
-- **`tools/infra/nginx`** (외부 HTTPS 진입점) 가 `server_name lostmemory.duckdns.org` 으로 매치 → website-nginx 로 `proxy_pass`
-- ComfyUI 는 sibling 도메인 `comfyui-lostmemory.duckdns.org` 로 분리 (DuckDNS dot 미허용으로 dash 형식)
-
-## 디렉토리
-
 ```
 website/
-├── docker-compose.yml             # website-nginx + mkdocs-builder
-├── nginx/conf.d/default.conf      # 정적 서빙
-├── mkdocs.yml                     # MkDocs config
-├── docs/
-│   ├── index.md                   # 랜딩
-│   ├── notices.md                 # 공지사항
-│   ├── patch-notes.md             # 패치노트
-│   ├── faq.md                     # FAQ
-│   └── stylesheets/extra.css      # 게임 톤 override
-├── README.md                      # 본 문서
-└── site/                          # .gitignore — `mkdocs build` 결과 (자동 생성)
+├── backend/                            # Spring Boot project (Gradle)
+│   ├── build.gradle, settings.gradle, Dockerfile, .dockerignore
+│   ├── gradlew, gradlew.bat, gradle/
+│   └── src/main/
+│       ├── java/com/lostmemory/website/
+│       │   ├── WebsiteApplication.java
+│       │   ├── global/{config,security,startup,time}
+│       │   ├── admin/{entity,repository,controller}     # AdminUser + Login/Dashboard
+│       │   ├── home/controller                          # GET /
+│       │   ├── notice/{entity,repository,service,controller,dto}
+│       │   ├── patchnote/...
+│       │   └── faq/...
+│       └── resources/
+│           ├── application.yaml
+│           ├── db/migration/V[1-4]__*.sql               # Flyway
+│           ├── templates/                               # Thymeleaf
+│           │   ├── fragments/layout.html
+│           │   ├── home/index.html
+│           │   ├── notice/{list,detail}.html
+│           │   ├── patchnote/{list,detail}.html
+│           │   ├── faq/list.html
+│           │   └── admin/{login,dashboard}.html + notice/, patchnote/, faq/ CRUD
+│           └── static/css/site.css                      # 게임 톤 (Galmuri9 + 다크 + 노란 hover)
+├── docker-compose.yml                  # cms-postgres + website-backend
+├── .env.example                        # 운영 환경변수 template
+└── README.md                           # 본 문서
 ```
 
-## 콘텐츠 업데이트 흐름
+## 아키텍처 (EC2#2)
 
-1. `docs/*.md` 수정 (운영자가 git 으로 commit + push)
-2. develop 머지
-3. EC2#2 운영자 SSH:
+```
+host nginx (systemd, lostmemory.duckdns.org HTTPS 종단)
+  └── proxy_pass http://127.0.0.1:8081
+        └── website-backend (Spring Boot, port 8081)
+              └── cms-postgres (Docker network 안)
+```
+
+ComfyUI (`comfyui-lostmemory.duckdns.org`) 는 별도 server block 으로 영향 X.
+
+## 첫 배포 절차 (EC2#2 SSH)
+
+```bash
+ssh ubuntu@lostmemory.duckdns.org
+cd /home/ubuntu/lostmemory
+git pull --ff-only origin develop
+
+# 1. 운영 .env 작성
+cd website
+cp .env.example .env
+vi .env   # POSTGRES_PASSWORD, ADMIN_PASSWORD 운영 비밀번호로 변경
+
+# 2. Docker 빌드 + 기동
+docker compose build website-backend
+docker compose up -d
+docker compose logs --tail=80 website-backend   # Flyway 4 migration 성공 + "[AdminSeed] admin 'XXX' seeded" 확인
+
+# 3. 내부 검증
+curl -fsS http://127.0.0.1:8081/actuator/health   # → {"status":"UP"}
+curl -I    http://127.0.0.1:8081/                  # → 200
+
+# 4. host nginx config swap (정적 root → backend proxy)
+sudo cp /etc/nginx/sites-enabled/lostmemory-site /home/ubuntu/lostmemory-site.bak.$(date +%Y%m%d)
+sudo tee /etc/nginx/sites-enabled/lostmemory-site > /dev/null <<'EOF'
+server {
+    server_name lostmemory.duckdns.org;
+
+    location / {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/lostmemory.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/lostmemory.duckdns.org/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    if ($host = lostmemory.duckdns.org) {
+        return 301 https://$host$request_uri;
+    }
+    listen 80;
+    server_name lostmemory.duckdns.org;
+    return 404;
+}
+EOF
+
+sudo nginx -t
+sudo systemctl reload nginx
+
+# 5. 외부 검증
+curl -I https://lostmemory.duckdns.org/                # → 200 (Spring 랜딩)
+curl -I https://lostmemory.duckdns.org/admin/login     # → 200 (로그인 폼)
+curl -I https://comfyui-lostmemory.duckdns.org/        # → 401 (ComfyUI, 변경 0)
+
+# 6. 기존 정적 site archive (안전 안전망)
+sudo mv /var/www/lostmemory-site /var/www/lostmemory-site.archive.$(date +%Y%m%d)
+```
+
+## 콘텐츠 운영 흐름
+
+1. 운영자가 `https://lostmemory.duckdns.org/admin/login` 접속
+2. `.env` 의 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 로 로그인
+3. 대시보드에서 공지/패치노트/FAQ 중 선택 → 새 항목 작성 또는 기존 편집
+4. "공개" 체크박스로 published 토글 — published=true 만 외부 사이트에 노출
+5. 변경 즉시 반영 (DB write 만, 별도 빌드/배포 step 없음)
+
+## 운영 명령
+
+```bash
+cd /home/ubuntu/lostmemory/website
+
+# 컨테이너 상태
+docker compose ps
+docker compose logs --tail=100 website-backend
+docker compose logs --tail=100 cms-postgres
+
+# 재시작
+docker compose restart website-backend
+
+# 코드 업데이트 후 재배포
+git pull --ff-only origin develop
+docker compose build website-backend
+docker compose up -d   # depends_on healthy 가 잡혀있어 무중단에 가깝게 swap
+
+# DB 백업 (매일 권장 — cron 등록)
+docker compose exec -T cms-postgres pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" \
+  > /home/ubuntu/backup/lostmemory_cms-$(date +%F).sql
+
+# DB 복구
+gunzip -c backup.sql.gz | docker compose exec -T cms-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+```
+
+## Admin 비밀번호 변경
+
+1. 임시 권장: SQL 직접 update (BCrypt hash 새로 생성 후)
    ```bash
-   cd /home/ubuntu/lostmemory
-   git pull --ff-only origin develop
-   cd website
-   docker compose --profile mkdocs run --rm mkdocs-builder
+   # BCrypt hash 생성 (별도 Spring Boot console 또는 온라인 tool)
+   docker compose exec -T cms-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+     "UPDATE admin_user SET password_hash='<NEW_BCRYPT_HASH>' WHERE username='admin';"
    ```
-4. nginx recreate/reload 불요 — 마운트된 `site/` 만 갱신됨
+2. 향후 enhancement — admin UI 의 비밀번호 변경 form 추가 후속 PR.
 
-## 로컬 미리보기 (옵션)
+## 로컬 개발 (옵션)
 
 ```bash
 cd website
-docker compose --profile mkdocs run --rm mkdocs-builder
-# 결과: site/index.html — 브라우저에서 file:// 로 열어 확인 가능
+cp .env.example .env   # 로컬 dummy 비밀번호
 
-# 또는 hot-reload dev server (port 8000)
-docker run --rm -it -p 8000:8000 -v "$(pwd):/docs" \
-  squidfunk/mkdocs-material:latest serve --dev-addr 0.0.0.0:8000
+# 옵션 a: docker compose 로 전체 (postgres + backend)
+docker compose up -d
+
+# 옵션 b: postgres 만 docker, backend 는 IntelliJ 에서 실행
+docker compose up -d cms-postgres
+# IntelliJ Run Configuration 에 환경변수 동일하게 주입
 ```
-
-## 첫 배포 절차 (EC2#2)
-
-운영자가 한 번만 수행:
-
-1. **DuckDNS 도메인 등록** (이미 완료):
-   - `lostmemory.duckdns.org` (기존)
-   - `comfyui-lostmemory.duckdns.org` (신규 sibling 도메인)
-2. **`.env` 갱신** (`tools/infra/.env`):
-   ```
-   WEBSITE_DOMAIN=lostmemory.duckdns.org
-   PUBLIC_DOMAIN=lostmemory.duckdns.org
-   COMFYUI_DOMAIN=comfyui-lostmemory.duckdns.org
-   ```
-3. **Let's Encrypt 인증서 발급** (comfyui-lostmemory.duckdns.org):
-   ```bash
-   cd tools/infra
-   docker compose --profile certbot run --rm certbot certonly --webroot \
-     -w /var/www/certbot \
-     -d comfyui-lostmemory.duckdns.org \
-     --email <EMAIL> --agree-tos --no-eff-email
-   ```
-4. **tools/infra nginx recreate** (template 변경 반영):
-   ```bash
-   docker compose up -d --force-recreate nginx
-   docker compose exec nginx nginx -t
-   ```
-5. **website stack 신설**:
-   ```bash
-   cd ../../website
-   docker compose --profile mkdocs run --rm mkdocs-builder
-   docker compose up -d website-nginx
-   ```
-6. **검증**:
-   ```bash
-   curl -I https://lostmemory.duckdns.org/            # → HTTP/2 200
-   curl -I https://comfyui-lostmemory.duckdns.org/    # → HTTP/2 200 (또는 401 Basic Auth)
-   ```
 
 ## 가드
 
-- **`infra_public` network 이름**: 운영자가 `cd tools/infra` 후 compose 실행 가정 (project name = infra). EC2#2 에서 `docker network ls | grep public` 으로 정확한 이름 확인 후 `docker-compose.yml` 의 `name:` 일치 보장.
-- **콘텐츠 수정 시 nginx 재기동 불요**: `site/` 만 마운트된 read-only 볼륨 — mkdocs-builder 가 site/ 갱신하면 자동 반영.
-- **ComfyUI 도메인 swap**: 기존 사용자 (게임 디자이너 등) 에게 새 URL (`comfyui-lostmemory.duckdns.org`) 안내 필수.
-- **DuckDNS dot 미허용**: `comfyui.lostmemory.duckdns.org` 형식 안 됨 (`valid chars: A-Z, 0-9, -`). 사용자가 dash 형식 sibling 도메인으로 우회.
+- **`.env` git 커밋 금지** — 루트 `.gitignore` 의 `.env` 패턴 차단됨.
+- **PostgreSQL 데이터 볼륨 보호** — `cms_postgres_data` named volume. `docker volume prune` 절대 금지.
+- **첫 부팅 admin seed** — `.env` 의 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 가 첫 부팅 시점의 초기 계정. seed 후 username 변경 시 새 계정 생성 (이전 계정과 별개).
+- **세션 단일 instance** — in-memory session, backend 재시작 시 로그아웃. Redis 도입은 후속.
+- **CSRF 활성화** — Thymeleaf `<form th:action>` 사용 시 자동 hidden field 삽입. 직접 fetch/XHR 호출 시 token 누락 시 403.
