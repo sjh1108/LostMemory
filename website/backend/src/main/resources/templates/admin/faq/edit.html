@@ -16,8 +16,9 @@
       <div class="field-error" th:if="${#fields.hasErrors('question')}" th:errors="*{question}"></div>
     </div>
     <div>
-      <label for="answer">답변</label>
+      <label for="answer">답변 (Markdown 또는 plain text)</label>
       <textarea id="answer" th:field="*{answer}" required></textarea>
+      <div th:replace="~{fragments/markdown-hint :: hint}"></div>
       <div class="field-error" th:if="${#fields.hasErrors('answer')}" th:errors="*{answer}"></div>
     </div>
     <div>

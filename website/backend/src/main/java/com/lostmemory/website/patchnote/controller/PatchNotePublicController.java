@@ -1,5 +1,7 @@
 package com.lostmemory.website.patchnote.controller;
 
+import com.lostmemory.website.global.markdown.MarkdownRenderer;
+import com.lostmemory.website.patchnote.entity.PatchNote;
 import com.lostmemory.website.patchnote.service.PatchNoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class PatchNotePublicController {
 
     private final PatchNoteService service;
+    private final MarkdownRenderer markdown;
 
     @GetMapping
     public String list(Model model) {
@@ -23,7 +26,9 @@ public class PatchNotePublicController {
 
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("patchNote", service.findPublishedById(id));
+        PatchNote patchNote = service.findPublishedById(id);
+        model.addAttribute("patchNote", patchNote);
+        model.addAttribute("bodyHtml", markdown.render(patchNote.getBody()));
         return "patchnote/detail";
     }
 }

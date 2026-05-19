@@ -18,6 +18,7 @@
     <div>
       <label for="body">본문 (Markdown 또는 plain text)</label>
       <textarea id="body" th:field="*{body}" required></textarea>
+      <div th:replace="~{fragments/markdown-hint :: hint}"></div>
       <div class="field-error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
     </div>
     <div>

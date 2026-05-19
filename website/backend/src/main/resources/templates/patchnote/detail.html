@@ -9,7 +9,7 @@
   <div class="entry-meta">
     Release date: <span th:text="${#temporals.format(patchNote.releaseDate, 'yyyy-MM-dd')}">날짜</span>
   </div>
-  <pre style="white-space:pre-wrap;margin-top:1rem;background:transparent;padding:0;color:var(--fg)" th:text="${patchNote.body}">본문</pre>
+  <div class="markdown-body" th:utext="${bodyHtml}">본문</div>
 
   <p style="margin-top:2rem"><a th:href="@{/patch-notes}">← 목록으로</a></p>
 </main>
