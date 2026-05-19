@@ -25,12 +25,15 @@ public class FaqForm {
 
     private boolean published = true;
 
+    private Long categoryId;
+
     public static FaqForm from(Faq faq) {
         FaqForm form = new FaqForm();
         form.setQuestion(faq.getQuestion());
         form.setAnswer(faq.getAnswer());
         form.setSortOrder(faq.getSortOrder());
         form.setPublished(faq.isPublished());
+        form.setCategoryId(faq.getCategory() == null ? null : faq.getCategory().getId());
         return form;
     }
 }

@@ -1,11 +1,15 @@
 package com.lostmemory.website.faq.entity;
 
+import com.lostmemory.website.faqcategory.entity.FaqCategory;
 import com.lostmemory.website.global.time.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -33,17 +37,23 @@ public class Faq extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean published;
 
-    public Faq(String question, String answer, int sortOrder, boolean published) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private FaqCategory category;
+
+    public Faq(String question, String answer, int sortOrder, boolean published, FaqCategory category) {
         this.question = question;
         this.answer = answer;
         this.sortOrder = sortOrder;
         this.published = published;
+        this.category = category;
     }
 
-    public void update(String question, String answer, int sortOrder, boolean published) {
+    public void update(String question, String answer, int sortOrder, boolean published, FaqCategory category) {
         this.question = question;
         this.answer = answer;
         this.sortOrder = sortOrder;
         this.published = published;
+        this.category = category;
     }
 }

@@ -3,6 +3,7 @@ package com.lostmemory.website.faq.controller;
 import com.lostmemory.website.faq.dto.FaqForm;
 import com.lostmemory.website.faq.entity.Faq;
 import com.lostmemory.website.faq.service.FaqService;
+import com.lostmemory.website.faqcategory.service.FaqCategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -21,6 +22,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class FaqAdminController {
 
     private final FaqService service;
+    private final FaqCategoryService categoryService;
 
     @GetMapping
     public String list(Model model) {
@@ -32,14 +34,17 @@ public class FaqAdminController {
     public String newForm(Model model) {
         model.addAttribute("form", new FaqForm());
         model.addAttribute("faqId", null);
+        model.addAttribute("categories", categoryService.findAll());
         return "admin/faq/edit";
     }
 
     @PostMapping
     public String create(@Valid @ModelAttribute("form") FaqForm form,
                          BindingResult result,
+                         Model model,
                          RedirectAttributes ra) {
         if (result.hasErrors()) {
+            model.addAttribute("categories", categoryService.findAll());
             return "admin/faq/edit";
         }
         service.create(form);
@@ -52,6 +57,7 @@ public class FaqAdminController {
         Faq faq = service.findById(id);
         model.addAttribute("form", FaqForm.from(faq));
         model.addAttribute("faqId", faq.getId());
+        model.addAttribute("categories", categoryService.findAll());
         return "admin/faq/edit";
     }
 
@@ -63,6 +69,7 @@ public class FaqAdminController {
                          RedirectAttributes ra) {
         if (result.hasErrors()) {
             model.addAttribute("faqId", id);
+            model.addAttribute("categories", categoryService.findAll());
             return "admin/faq/edit";
         }
         service.update(id, form);

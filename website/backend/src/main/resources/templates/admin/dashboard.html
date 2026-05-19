@@ -32,6 +32,11 @@
         <td th:text="${faqCount}">0</td>
         <td><a th:href="@{/admin/faqs}">관리 →</a></td>
       </tr>
+      <tr>
+        <td>FAQ 카테고리</td>
+        <td th:text="${faqCategoryCount}">0</td>
+        <td><a th:href="@{/admin/faq-categories}">관리 →</a></td>
+      </tr>
     </tbody>
   </table>
 
@@ -40,6 +45,7 @@
     <li><a th:href="@{/admin/notices/new}">새 공지 작성</a></li>
     <li><a th:href="@{/admin/patch-notes/new}">새 패치노트 작성</a></li>
     <li><a th:href="@{/admin/faqs/new}">새 FAQ 추가</a></li>
+    <li><a th:href="@{/admin/faq-categories/new}">새 FAQ 카테고리 추가</a></li>
   </ul>
 </main>
 

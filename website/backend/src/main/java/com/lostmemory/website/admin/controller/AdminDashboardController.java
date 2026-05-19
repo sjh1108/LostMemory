@@ -1,6 +1,7 @@
 package com.lostmemory.website.admin.controller;
 
 import com.lostmemory.website.faq.service.FaqService;
+import com.lostmemory.website.faqcategory.service.FaqCategoryService;
 import com.lostmemory.website.notice.service.NoticeService;
 import com.lostmemory.website.patchnote.service.PatchNoteService;
 import java.security.Principal;
@@ -16,6 +17,7 @@ public class AdminDashboardController {
     private final NoticeService noticeService;
     private final PatchNoteService patchNoteService;
     private final FaqService faqService;
+    private final FaqCategoryService faqCategoryService;
 
     @GetMapping("/admin/dashboard")
     public String dashboard(Principal principal, Model model) {
@@ -23,6 +25,7 @@ public class AdminDashboardController {
         model.addAttribute("noticeCount", noticeService.countAll());
         model.addAttribute("patchNoteCount", patchNoteService.countAll());
         model.addAttribute("faqCount", faqService.countAll());
+        model.addAttribute("faqCategoryCount", faqCategoryService.countAll());
         return "admin/dashboard";
     }
 }

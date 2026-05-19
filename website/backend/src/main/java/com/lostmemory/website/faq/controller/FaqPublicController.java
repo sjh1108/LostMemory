@@ -1,9 +1,13 @@
 package com.lostmemory.website.faq.controller;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.lostmemory.website.faq.dto.FaqView;
 import com.lostmemory.website.faq.service.FaqService;
+import com.lostmemory.website.faqcategory.entity.FaqCategory;
 import com.lostmemory.website.global.markdown.MarkdownRenderer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -21,10 +25,16 @@ public class FaqPublicController {
 
     @GetMapping
     public String list(Model model) {
-        List<FaqView> faqs = service.findAllPublished().stream()
-                .map(f -> new FaqView(f.getQuestion(), markdown.render(f.getAnswer())))
-                .toList();
-        model.addAttribute("faqs", faqs);
+        Map<FaqCategory, List<FaqView>> groupedFaqs = service.findAllPublishedGroupedByCategory().entrySet().stream()
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> e.getValue().stream()
+                        .map(f -> new FaqView(f.getQuestion(), markdown.render(f.getAnswer())))
+                        .toList(),
+                    (a, b) -> a,
+                    LinkedHashMap::new
+                ));
+        model.addAttribute("groupedFaqs", groupedFaqs);
         return "faq/list";
     }
 }
