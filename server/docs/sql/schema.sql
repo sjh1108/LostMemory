@@ -298,31 +298,7 @@ CREATE TRIGGER trg_user_record_updated_at
 
 
 -- =====================================================================
--- 기본 시드 데이터 — 무기 마스터 / 액자 마스터
+-- 기본 시드 데이터는 별도 파일 — seed_masters.sql
+-- DB 초기화 시 schema.sql 적용 후 seed_masters.sql 실행:
+--   psql -d <db> -f schema.sql -f seed_masters.sql
 -- =====================================================================
-
--- 무기 6종 (검·단검·활·화염방사기·스태프·강화 스태프)
--- parent_weapon_id 트리 구조: 검→단검, 활→화염방사기, 스태프→강화 스태프
-INSERT INTO weapons (weapon_id, weapon_name, weapon_type, parent_weapon_id, display_order)
-OVERRIDING SYSTEM VALUE
-VALUES
-    (1, '검',           'Sword',         NULL, 1),
-    (2, '단검',         'Dagger',        1,    2),
-    (3, '활',           'Bow',           NULL, 3),
-    (4, '화염방사기',   'Flamethrower',  3,    4),
-    (5, '스태프',       'Staff',         NULL, 5),
-    (6, '강화 스태프',  'EnhancedStaff', 5,    6);
-
--- weapon_id IDENTITY 시퀀스 재정렬 (수동 ID 삽입 이후 다음 INSERT 충돌 방지)
-SELECT setval(pg_get_serial_sequence('weapons', 'weapon_id'), (SELECT MAX(weapon_id) FROM weapons));
-
--- 기억 액자 4종 (display_order 1~4)
-INSERT INTO memory_frames (frame_id, display_order)
-OVERRIDING SYSTEM VALUE
-VALUES
-    (1, 1),
-    (2, 2),
-    (3, 3),
-    (4, 4);
-
-SELECT setval(pg_get_serial_sequence('memory_frames', 'frame_id'), (SELECT MAX(frame_id) FROM memory_frames));
