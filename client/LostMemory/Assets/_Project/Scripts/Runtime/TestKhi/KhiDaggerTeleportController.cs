@@ -29,14 +29,25 @@ namespace LostMemory.TestKhi
         [SerializeField] private LostMemory.Combat.PlayerMana mana;
         [SerializeField] private Health health;
         [SerializeField] private LostMemory.Combat.PlayerStatModifierContainer statContainer;
+        [SerializeField] private MoreMountains.TopDownEngine.TopDownController topDownController;
 
         [Header("Teleport")]
-        [Tooltip("aim 방향으로 텔레포트할 거리 (unit).")]
+        [Tooltip("aim 방향으로 이동할 거리 (unit). 벽 있으면 벽 직전까지만.")]
         [SerializeField, Min(0f)] private float teleportDistance = 3f;
-        [Tooltip("텔레포트 직후 무적 시간 (초).")]
+        [Tooltip("스무스 이동 지속 시간 (초). 0 이면 즉시 이동.")]
+        [SerializeField, Min(0f)] private float lungeDuration = 0.12f;
+        [Tooltip("이동 직후 무적 시간 (초).")]
         [SerializeField, Min(0f)] private float invulnerabilityDuration = 0.15f;
-        [Tooltip("텔레포트 쿨다운 (초). 마지막 텔레포트 이후 이 시간 동안 우클릭 무시.")]
+        [Tooltip("쿨다운 (초). 마지막 사용 이후 이 시간 동안 우클릭 무시.")]
         [SerializeField, Min(0f)] private float cooldown = 0.8f;
+
+        [Header("Obstacle Check (벽 관통 방지)")]
+        [Tooltip("벽 체크용 레이어 마스크 (Ground/Wall 등). None(0) 이면 벽 체크 건너뜀.")]
+        [SerializeField] private LayerMask obstacleLayerMask = 0;
+        [Tooltip("벽 감지 CircleCast 반경. 캐릭터 콜라이더 크기와 비슷하게 설정.")]
+        [SerializeField, Min(0.01f)] private float obstacleCheckRadius = 0.3f;
+        [Tooltip("벽 앞에서 멈출 때 안전 거리 (벽에 박히는 것 방지).")]
+        [SerializeField, Min(0f)] private float obstacleSafetyMargin = 0.05f;
 
         [Header("Mana")]
         [Tooltip("텔레포트 1회당 마나 소비량. 마나 부족 시 텔레포트 안 됨.")]
@@ -61,6 +72,9 @@ namespace LostMemory.TestKhi
         private readonly HashSet<Health> _alreadyHit = new HashSet<Health>();
         private readonly List<Health> _hitsThisSample = new List<Health>(8);
 
+        // 멀티 호환: 자기 플레이어 트리의 WeaponUpgradeService 캐시 (싱글톤 미사용).
+        private LostMemory.Combat.WeaponUpgradeService _weaponUpgrade;
+
         private void Awake()
         {
             aim ??= GetComponent<KhiPlayerAim>();
@@ -71,6 +85,9 @@ namespace LostMemory.TestKhi
             health ??= GetComponent<Health>() ?? GetComponentInParent<Health>();
             statContainer ??= GetComponent<LostMemory.Combat.PlayerStatModifierContainer>()
                               ?? GetComponentInParent<LostMemory.Combat.PlayerStatModifierContainer>();
+            topDownController ??= GetComponent<MoreMountains.TopDownEngine.TopDownController>();
+            // WeaponUpgradeService 는 자식 오브젝트(_WeaponUpgrade)에 있으므로 GetComponentInChildren 사용.
+            _weaponUpgrade = GetComponentInChildren<LostMemory.Combat.WeaponUpgradeService>(true);
         }
 
         private void Update()
@@ -106,13 +123,17 @@ namespace LostMemory.TestKhi
 
         private bool IsDaggerMode()
         {
-            var service = WeaponUpgradeService.Instance;
-            if (service == null) return false;
-            return service.CurrentKind == WeaponUpgradeService.WeaponKind.Dagger
-                || service.CurrentKind == WeaponUpgradeService.WeaponKind.DaggerNinja;
+            if (_weaponUpgrade == null) return false;
+            return _weaponUpgrade.CurrentKind == WeaponUpgradeService.WeaponKind.Dagger
+                || _weaponUpgrade.CurrentKind == WeaponUpgradeService.WeaponKind.DaggerNinja;
         }
 
         private void ExecuteTeleport()
+        {
+            StartCoroutine(ExecuteTeleportCoroutine());
+        }
+
+        private IEnumerator ExecuteTeleportCoroutine()
         {
             // 1. aim 방향
             Vector2 aimDir = aim != null ? aim.GetAimDirection() : Vector2.right;
@@ -120,45 +141,80 @@ namespace LostMemory.TestKhi
             {
                 aimDir = Vector2.right;
             }
+            aimDir.Normalize();
 
-            // 2. 위치 이동
-            Vector3 newPos = transform.position + (Vector3)(aimDir * teleportDistance);
-            transform.position = newPos;
-
-            // 3. 마나 소비
-            if (mana != null)
-            {
-                mana.Consume(manaCost);
-            }
-
-            // 4. 무적 (Health.DamageDisabled + 코루틴으로 복귀)
+            // 2. 마나 소비 + 무적 즉시 적용
+            if (mana != null) mana.Consume(manaCost);
             if (health != null && invulnerabilityDuration > 0f)
             {
                 health.DamageDisabled();
                 StartCoroutine(EnableDamageLater());
             }
 
-            // 5. 어느 step 사용할지 결정 (텔레포트 전용 step 우선, 없으면 SO step fallback)
+            // 3. 벽 체크 — CircleCast 로 경로상 첫 장애물까지의 거리 계산
+            Vector3 origin = transform.position;
+            float actualDistance = teleportDistance;
+            if (obstacleLayerMask.value != 0)
+            {
+                RaycastHit2D hit = Physics2D.CircleCast(origin, obstacleCheckRadius, aimDir, teleportDistance, obstacleLayerMask);
+                if (hit.collider != null)
+                {
+                    actualDistance = Mathf.Max(0f, hit.distance - obstacleSafetyMargin);
+                }
+            }
+            Vector3 destination = origin + (Vector3)(aimDir * actualDistance);
+
+            // 4. 스무스 이동 — FreeMovement 차단으로 CharacterMovement override 방지
+            bool prevFreeMovement = true;
+            if (topDownController != null)
+            {
+                prevFreeMovement = topDownController.FreeMovement;
+                topDownController.FreeMovement = false;
+            }
+
+            if (lungeDuration > 0f && topDownController != null)
+            {
+                float elapsed = 0f;
+                while (elapsed < lungeDuration)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = Mathf.Clamp01(elapsed / lungeDuration);
+                    float eased = 1f - Mathf.Pow(1f - t, 2f); // ease-out
+                    Vector3 newPos = Vector3.Lerp(origin, destination, eased);
+                    topDownController.MovePosition(newPos);
+                    yield return null;
+                }
+                // 마지막 보정 — 부동소수점 누적 오차 방지
+                topDownController.MovePosition(destination);
+            }
+            else
+            {
+                // fallback: 즉시 이동
+                if (topDownController != null) topDownController.MovePosition(destination);
+                else transform.position = destination;
+            }
+
+            if (topDownController != null) topDownController.FreeMovement = prevFreeMovement;
+
+            // 5. 도착 후: 슬래시 + 데미지
             AttackStepData stepToUse = ResolveStep();
 
-            // 6. 슬래시 시각 표시
             if (slashAnimator != null && stepToUse != null)
             {
                 slashAnimator.PlaySlashFromExternal(aimDir, stepToUse);
             }
 
-            // 7. hitbox 데미지 판정 (옵션)
             if (applyDamageOnArrive && hitbox != null && stepToUse != null && combo != null && combo.WeaponData != null)
             {
                 ApplyDamageAtArrive(aimDir, stepToUse);
             }
 
-            // 7. 쿨다운 갱신
+            // 6. 쿨다운 갱신 (이동 완료 후)
             _nextAllowedAt = Time.time + cooldown;
 
             if (logTeleport)
             {
-                Debug.Log($"[KhiDaggerTeleport] 텔레포트 → dir={aimDir} dist={teleportDistance} mana={mana?.CurrentMana ?? -1}", this);
+                Debug.Log($"[KhiDaggerTeleport] dash → dir={aimDir} dist={actualDistance:F2}/{teleportDistance:F2} mana={mana?.CurrentMana ?? -1}", this);
             }
         }
 

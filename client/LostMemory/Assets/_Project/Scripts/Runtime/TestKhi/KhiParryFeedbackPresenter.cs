@@ -257,7 +257,10 @@ namespace LostMemory.TestKhi
 
             // PlayClipAtPoint: AudioSource 의존성 제거 + 짧은 effect 라 매번 spawn OK.
             // 일관성: RelicEffectRegistry 등 다른 SFX 트리거와 동일 패턴.
-            AudioSource.PlayClipAtPoint(successSfx, transform.position, sfxVolume);
+            // per-clip balance multiplier (SfxBalanceWindow 로 조정) 적용. 증폭 (gain > 1) 허용.
+            float perClipGain = LostMemory.Audio.SfxClipVolumeBalance.GetGain(successSfx);
+            float finalVol = Mathf.Clamp(sfxVolume * perClipGain, 0f, LostMemory.Audio.SfxClipVolumeBalance.MaxGain);
+            AudioSource.PlayClipAtPoint(successSfx, transform.position, finalVol);
         }
 
         private void EnsureRing()

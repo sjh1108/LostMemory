@@ -2072,6 +2072,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: north
+  _blockCollider: {fileID: 0}
+  _renderer: {fileID: 0}
 --- !u!1 &1526086043126649584
 GameObject:
   m_ObjectHideFlags: 0
@@ -13668,6 +13670,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: south
+  _blockCollider: {fileID: 0}
+  _renderer: {fileID: 0}
 --- !u!1 &2972533892895032889
 GameObject:
   m_ObjectHideFlags: 0
@@ -13942,6 +13946,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: east
+  _blockCollider: {fileID: 0}
+  _renderer: {fileID: 0}
 --- !u!1 &4784362762908274528
 GameObject:
   m_ObjectHideFlags: 0
@@ -14584,6 +14590,7 @@ GameObject:
   - component: {fileID: 1064848046441803028}
   - component: {fileID: 6226433339382925121}
   - component: {fileID: 2858573164609050546}
+  - component: {fileID: 8966769049322742648}
   m_Layer: 0
   m_Name: Map_1F_2R_3_S_Hall
   m_TagString: Untagged
@@ -14628,6 +14635,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5f1b47db33bcc5409105e8ded726822, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
+  ShowTopMostFoldoutHeaderGroup: 1
   roomData: {fileID: 11400000, guid: fb52d722ea70463895ca57f1f24c4727, type: 2}
   enemyCatalog: {fileID: 11400000, guid: 266ecebe2bc0f8543abc8950f36f4971, type: 2}
   encounterAnchor: {fileID: 6226433339382925121}
@@ -14674,6 +14682,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b46f293a0f158ce49a5d805e46c54d34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemyEncounterSpawner
+--- !u!114 &8966769049322742648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6418301402336183476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &6634446056939490202
 GameObject:
   m_ObjectHideFlags: 0
@@ -17453,6 +17486,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: west
+  _blockCollider: {fileID: 0}
+  _renderer: {fileID: 0}
 --- !u!1 &8309308289899588917
 GameObject:
   m_ObjectHideFlags: 0
