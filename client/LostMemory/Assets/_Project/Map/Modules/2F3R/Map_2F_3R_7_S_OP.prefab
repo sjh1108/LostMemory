@@ -2081,6 +2081,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: north
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &1526086043126649584
 GameObject:
   m_ObjectHideFlags: 0
@@ -5543,6 +5545,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: south
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &3765793289030560441
 GameObject:
   m_ObjectHideFlags: 0
@@ -5852,6 +5856,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: east
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &4784362762908274528
 GameObject:
   m_ObjectHideFlags: 0
@@ -6265,56 +6271,6 @@ Tilemap:
       serializedVersion: 2
       m_TileIndex: 14
       m_TileSpriteIndex: 14
-      m_TileMatrixIndex: 4
-      m_TileColorIndex: 0
-      m_TileObjectToInstantiateIndex: 65535
-      dummyAlignment: 0
-      m_AllTileFlags: 1073741825
-  - first: {x: -3, y: -14, z: 0}
-    second:
-      serializedVersion: 2
-      m_TileIndex: 15
-      m_TileSpriteIndex: 15
-      m_TileMatrixIndex: 4
-      m_TileColorIndex: 0
-      m_TileObjectToInstantiateIndex: 65535
-      dummyAlignment: 0
-      m_AllTileFlags: 1073741825
-  - first: {x: -2, y: -14, z: 0}
-    second:
-      serializedVersion: 2
-      m_TileIndex: 15
-      m_TileSpriteIndex: 15
-      m_TileMatrixIndex: 4
-      m_TileColorIndex: 0
-      m_TileObjectToInstantiateIndex: 65535
-      dummyAlignment: 0
-      m_AllTileFlags: 1073741825
-  - first: {x: -1, y: -14, z: 0}
-    second:
-      serializedVersion: 2
-      m_TileIndex: 15
-      m_TileSpriteIndex: 15
-      m_TileMatrixIndex: 4
-      m_TileColorIndex: 0
-      m_TileObjectToInstantiateIndex: 65535
-      dummyAlignment: 0
-      m_AllTileFlags: 1073741825
-  - first: {x: 0, y: -14, z: 0}
-    second:
-      serializedVersion: 2
-      m_TileIndex: 15
-      m_TileSpriteIndex: 15
-      m_TileMatrixIndex: 4
-      m_TileColorIndex: 0
-      m_TileObjectToInstantiateIndex: 65535
-      dummyAlignment: 0
-      m_AllTileFlags: 1073741825
-  - first: {x: 1, y: -14, z: 0}
-    second:
-      serializedVersion: 2
-      m_TileIndex: 15
-      m_TileSpriteIndex: 15
       m_TileMatrixIndex: 4
       m_TileColorIndex: 0
       m_TileObjectToInstantiateIndex: 65535
@@ -10112,8 +10068,8 @@ Tilemap:
     m_Data: {fileID: 0}
   - m_RefCount: 385
     m_Data: {fileID: 11400000, guid: c0ac4bdd7d8c63d419e348ca4965f68d, type: 2}
-  - m_RefCount: 5
-    m_Data: {fileID: 11400000, guid: 329f10fe82dd3484abee130d3aedd2cf, type: 2}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
   m_TileSpriteArray:
   - m_RefCount: 0
     m_Data: {fileID: 0}
@@ -10145,8 +10101,8 @@ Tilemap:
     m_Data: {fileID: 0}
   - m_RefCount: 385
     m_Data: {fileID: -495113340, guid: a08ba5863d9d4b448a01bc4a75538209, type: 3}
-  - m_RefCount: 5
-    m_Data: {fileID: 1373650408, guid: 60abcdcb36e579e48980c724133e13db, type: 3}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
   m_TileMatrixArray:
   - m_RefCount: 0
     m_Data:
@@ -10220,7 +10176,7 @@ Tilemap:
       e31: 0
       e32: 8.46e-43
       e33: 8.42e-43
-  - m_RefCount: 390
+  - m_RefCount: 385
     m_Data:
       e00: 1
       e01: 0
@@ -10239,7 +10195,7 @@ Tilemap:
       e32: 0
       e33: 1
   m_TileColorArray:
-  - m_RefCount: 390
+  - m_RefCount: 385
     m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
@@ -10630,6 +10586,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5f1b47db33bcc5409105e8ded726822, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
+  ShowTopMostFoldoutHeaderGroup: 1
   roomData: {fileID: 11400000, guid: 36147e9079431fc4a88b4bd8c2fa8efa, type: 2}
   enemyCatalog: {fileID: 0}
   encounterAnchor: {fileID: 6226433339382925121}
@@ -10765,6 +10722,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: west
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &8309308289899588917
 GameObject:
   m_ObjectHideFlags: 0
