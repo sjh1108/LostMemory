@@ -12,7 +12,8 @@ namespace LostMemory.Dialogue
     /// 구조 (DialoguePanel.prefab 자식 GameObject 들을 inspector 슬롯에 wiring):
     ///   - Root (이 컴포넌트가 붙는 GameObject — 켜고 끄기로 패널 등장/숨김)
     ///   - Background (Image)
-    ///   - LeftPortrait (Image) — 단일 portrait. 현재 화자의 sprite 가 표시됨.
+    ///   - LeftPortrait (Image) — 플레이어 측
+    ///   - RightPortrait (Image) — 상대방 측
     ///   - NameBox (Image) + NameText (TMP_Text)
     ///   - TextBox (Image) + DialogueText (TMP_Text)
     ///   - ContinueIndicator (Image)
@@ -39,8 +40,8 @@ namespace LostMemory.Dialogue
         [SerializeField] private Image continueIndicatorImage;
 
         [Header("Portraits")]
-        [Tooltip("단일 portrait — 현재 화자의 sprite 가 표시됨 (isPlayer 무관)")]
         [SerializeField] private Image leftPortraitImage;
+        [SerializeField] private Image rightPortraitImage;
 
         [Header("Text")]
         [SerializeField] private TMP_Text nameText;
@@ -49,6 +50,9 @@ namespace LostMemory.Dialogue
         // === Runtime state ===
         private DialogueSkin _skin;
         private Coroutine _typewriterRoutine;
+        private Coroutine _indicatorBlinkRoutine;
+        private RectTransform _indicatorRect;
+        private Vector2 _indicatorBasePos;
         private string _pendingFullText;
         private bool _isTyping;
 
@@ -59,6 +63,11 @@ namespace LostMemory.Dialogue
 
         private void Awake()
         {
+            if (continueIndicatorImage != null)
+            {
+                _indicatorRect = continueIndicatorImage.rectTransform;
+                _indicatorBasePos = _indicatorRect.anchoredPosition;
+            }
             HidePanel();
         }
 
@@ -67,11 +76,10 @@ namespace LostMemory.Dialogue
             _skin = skin;
             if (skin == null) return;
 
-            // sprite 만 Skin 에서 override. 색상은 prefab Inspector 의 값 그대로 사용
-            // (edit 모드에서 본 색이 Play 모드에서도 동일하게 보이도록 — 사용자 결정사항)
-            if (backgroundImage != null && skin.backgroundSprite != null)
+            if (backgroundImage != null)
             {
-                backgroundImage.sprite = skin.backgroundSprite;
+                if (skin.backgroundSprite != null) backgroundImage.sprite = skin.backgroundSprite;
+                backgroundImage.color = skin.backgroundColor;
             }
             if (namePlateImage != null && skin.namePlateSprite != null)
             {
@@ -85,6 +93,8 @@ namespace LostMemory.Dialogue
             {
                 continueIndicatorImage.sprite = skin.continueIndicatorSprite;
             }
+            if (nameText != null) nameText.color = skin.speakerNameColor;
+            if (dialogueText != null) dialogueText.color = skin.dialogueTextColor;
         }
 
         public void ShowPanel()
@@ -141,10 +151,19 @@ namespace LostMemory.Dialogue
 
         private void ApplyPortraits(bool speakerIsPlayer, Sprite portraitSprite)
         {
-            // 단일 portrait — isPlayer 와 무관하게 현재 화자의 sprite 를 항상 표시.
-            // (이전: 좌=플레이어 / 우=상대방 양쪽 노출. 현재는 LeftPortrait 단일.)
+            // v2 단방향 portrait 모드: 화자(player/NPC) 무관하게 LeftPortrait 한 곳에 sprite 박음.
+            // 화자 바뀔 때마다 LeftPortrait 의 sprite 자체가 교체되므로 시각적 구분은 일러스트 차이로 표현.
+            // speakerIsPlayer 매개변수는 호환성 유지 차원에서 받지만 단방향 모드에선 사용 안 함.
+            _ = speakerIsPlayer;
+
             float speakerAlpha = _skin != null ? _skin.speakerPortraitAlpha : 1f;
             SetPortrait(leftPortraitImage, portraitSprite, speakerAlpha, replaceSprite: true);
+
+            // 양방향 prefab 호환: RightPortrait 슬롯이 wiring 돼있으면 항상 비활성.
+            if (rightPortraitImage != null)
+            {
+                rightPortraitImage.enabled = false;
+            }
         }
 
         private static void SetPortrait(Image image, Sprite sprite, float alpha, bool replaceSprite)
@@ -196,12 +215,39 @@ namespace LostMemory.Dialogue
 
         private void ShowContinueIndicator()
         {
-            if (continueIndicatorImage != null) continueIndicatorImage.enabled = true;
+            if (continueIndicatorImage == null) return;
+            continueIndicatorImage.enabled = true;
+
+            float interval = _skin != null ? _skin.continueIndicatorBlinkInterval : 0.5f;
+            if (interval <= 0f) return;
+
+            if (_indicatorBlinkRoutine != null) StopCoroutine(_indicatorBlinkRoutine);
+            _indicatorBlinkRoutine = StartCoroutine(BlinkIndicator(interval));
         }
 
         private void HideContinueIndicator()
         {
+            if (_indicatorBlinkRoutine != null)
+            {
+                StopCoroutine(_indicatorBlinkRoutine);
+                _indicatorBlinkRoutine = null;
+            }
+            if (_indicatorRect != null) _indicatorRect.anchoredPosition = _indicatorBasePos;
             if (continueIndicatorImage != null) continueIndicatorImage.enabled = false;
+        }
+
+        private IEnumerator BlinkIndicator(float interval)
+        {
+            const float amplitude = 6f;
+            float speed = Mathf.PI * 2f / Mathf.Max(0.1f, interval * 2f);
+
+            while (continueIndicatorImage != null)
+            {
+                float offset = Mathf.Sin(Time.unscaledTime * speed) * amplitude;
+                if (_indicatorRect != null)
+                    _indicatorRect.anchoredPosition = _indicatorBasePos + new Vector2(0f, offset);
+                yield return null;
+            }
         }
 
         private void StopTypewriter()
@@ -217,6 +263,11 @@ namespace LostMemory.Dialogue
         private void StopAllInternalRoutines()
         {
             StopTypewriter();
+            if (_indicatorBlinkRoutine != null)
+            {
+                StopCoroutine(_indicatorBlinkRoutine);
+                _indicatorBlinkRoutine = null;
+            }
         }
 
         private void OnDisable()
