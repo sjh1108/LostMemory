@@ -11,6 +11,9 @@ namespace LostMemory.VFX
     {
         private const string GameplayEffectSortingLayerName = "Foreground";
         private const int GameplayEffectSortingOrder = 60;
+        private const string MagicalGirlGroundEffectSortingLayerName = "Default";
+        private const int MagicalGirlGroundEffectSortingOrder = 18;
+        private const int MagicalGirlGroundEffectMaxSortingOrder = 19;
 
         public static GameObject Spawn(
             GameObject prefab,
@@ -44,10 +47,20 @@ namespace LostMemory.VFX
             ApplyFixedSorting(vfxInstance, GameplayEffectSortingLayerName, GameplayEffectSortingOrder);
         }
 
+        public static void ApplyMagicalGirlGroundEffectSorting(GameObject vfxInstance)
+        {
+            ApplyFixedSorting(
+                vfxInstance,
+                MagicalGirlGroundEffectSortingLayerName,
+                MagicalGirlGroundEffectSortingOrder,
+                MagicalGirlGroundEffectMaxSortingOrder);
+        }
+
         public static void ApplyFixedSorting(
             GameObject vfxInstance,
             string sortingLayerName,
-            int baseSortingOrder)
+            int baseSortingOrder,
+            int maxSortingOrder = int.MaxValue)
         {
             if (vfxInstance == null)
             {
@@ -92,7 +105,8 @@ namespace LostMemory.VFX
                     renderer.sortingLayerID = layerId;
                 }
 
-                renderer.sortingOrder = baseSortingOrder + (renderer.sortingOrder - minSortingOrder);
+                int sortingOrder = baseSortingOrder + (renderer.sortingOrder - minSortingOrder);
+                renderer.sortingOrder = Mathf.Min(sortingOrder, maxSortingOrder);
             }
         }
 
