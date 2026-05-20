@@ -70,6 +70,9 @@ COMMENT ON COLUMN user_currencies.memory_shards IS '기억의 파편 보유량';
 
 -- =====================================================================
 -- 4. USER_TALENT_ALLOCATIONS : 특성 포인트 분배
+--   * 백엔드는 4개 영역별 투자 포인트 값만 저장/조회. 총량 / 잔여 포인트는 관리 X.
+--   * 4 영역: 치명타 확률 / 공격속도 / 방어력 / 최대체력 (마나재생 slot 은 기획 정리로 제거).
+--   * total_point 컬럼은 의미 없는 0 으로 유지 (legacy — 추후 schema 정리 시 제거).
 -- =====================================================================
 CREATE TABLE user_talent_allocations (
     user_id              BIGINT      PRIMARY KEY
@@ -78,13 +81,8 @@ CREATE TABLE user_talent_allocations (
     crit_rate_points     INTEGER     NOT NULL DEFAULT 0 CHECK (crit_rate_points     >= 0),
     attack_speed_points  INTEGER     NOT NULL DEFAULT 0 CHECK (attack_speed_points  >= 0),
     defense_points       INTEGER     NOT NULL DEFAULT 0 CHECK (defense_points       >= 0),
-    mana_regen_points    INTEGER     NOT NULL DEFAULT 0 CHECK (mana_regen_points    >= 0),
     max_hp_points        INTEGER     NOT NULL DEFAULT 0 CHECK (max_hp_points        >= 0),
-    updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    -- 분배한 포인트 합이 사용 가능한 전체 포인트를 넘지 않도록 보장
-    CONSTRAINT chk_talent_points_sum
-        CHECK (crit_rate_points + attack_speed_points + defense_points
-               + mana_regen_points + max_hp_points <= total_point)
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -270,6 +268,23 @@ CREATE TABLE user_record (
 
 
 -- =====================================================================
+-- 15. USER_WEAPON_SELECTION : 유저별 마지막 선택 무기
+--   * 다음 런 시작 시 자동으로 쥐어줄 무기. 회원가입 시 weapon_id=1 (검) 으로 초기화.
+--   * user_id PK = 1:1. weapons.weapon_id FK. 무기 마스터 삭제는 RESTRICT 로 차단 (마스터 무결성).
+-- =====================================================================
+CREATE TABLE user_weapon_selection (
+    user_id              BIGINT      PRIMARY KEY
+                                     REFERENCES users(user_id) ON DELETE CASCADE,
+    selected_weapon_id   BIGINT      NOT NULL
+                                     REFERENCES weapons(weapon_id) ON DELETE RESTRICT,
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON COLUMN user_weapon_selection.selected_weapon_id
+    IS '다음 런 시작 시 자동 선택될 무기 ID. 회원가입 시 1 (검).';
+
+
+-- =====================================================================
 -- updated_at 자동 갱신 트리거
 -- =====================================================================
 CREATE OR REPLACE FUNCTION set_updated_at()
@@ -296,9 +311,46 @@ CREATE TRIGGER trg_user_record_updated_at
     BEFORE UPDATE ON user_record
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+CREATE TRIGGER trg_user_weapon_selection_updated_at
+    BEFORE UPDATE ON user_weapon_selection
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
 
 -- =====================================================================
--- 기본 시드 데이터는 별도 파일 — seed_masters.sql
--- DB 초기화 시 schema.sql 적용 후 seed_masters.sql 실행:
---   psql -d <db> -f schema.sql -f seed_masters.sql
+-- 마스터 시드 데이터 — 무기 / 기억 액자
+--   * 회원가입 보강 (AuthService) 이 weapons 마스터를 읽어 user_weapon_unlocks 를 만드므로,
+--     이 시드가 없으면 신규 회원의 unlocks 가 빈 배열이 됨.
+--   * 멱등 (ON CONFLICT DO NOTHING) — schema.sql 재실행해도 중복 INSERT 없음.
+--   * IDENTITY 시퀀스 setval 로 수동 ID 삽입 후 다음 INSERT 충돌 방지.
 -- =====================================================================
+
+
+-- 무기 6종 (검·단검·활·화염방사기·스태프·강화 스태프)
+-- parent_weapon_id 트리 구조: 검→단검, 활→화염방사기, 스태프→강화 스태프
+INSERT INTO weapons (weapon_id, weapon_name, weapon_type, parent_weapon_id, display_order)
+OVERRIDING SYSTEM VALUE
+VALUES
+    (1, '검',           'Sword',         NULL, 1),
+    (2, '단검',         'Dagger',        1,    2),
+    (3, '활',           'Bow',           NULL, 3),
+    (4, '화염방사기',   'Flamethrower',  3,    4),
+    (5, '스태프',       'Staff',         NULL, 5),
+    (6, '강화 스태프',  'EnhancedStaff', 5,    6)
+ON CONFLICT (weapon_id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('weapons', 'weapon_id'),
+              (SELECT COALESCE(MAX(weapon_id), 1) FROM weapons));
+
+
+-- 기억 액자 4종 (display_order 1~4). 각 프레임의 칸 정보(rows/cols/cost) 는 클라가 관리.
+INSERT INTO memory_frames (frame_id, display_order)
+OVERRIDING SYSTEM VALUE
+VALUES
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4)
+ON CONFLICT (frame_id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('memory_frames', 'frame_id'),
+              (SELECT COALESCE(MAX(frame_id), 1) FROM memory_frames));
