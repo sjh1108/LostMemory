@@ -118,6 +118,12 @@ services:
       RELAY_PEER_IDLE_TIMEOUT_MS: ${RELAY_PEER_IDLE_TIMEOUT_MS}
       RELAY_CLEANUP_INTERVAL_MS: ${RELAY_CLEANUP_INTERVAL_MS}
       HANDSHAKE_TIMEOUT_MS: ${HANDSHAKE_TIMEOUT_MS}
+      # LlmProperties binding 위한 envvar — Relay 자체는 LLM 안 쓰지만 JwtAuthenticationFilter bean
+      # 생성 시 LlmProperties 가 주입돼야 함 (lesson reference_relay_udp_infra.md).
+      VLLM_BASE_URL: ${VLLM_BASE_URL}
+      VLLM_API_KEY: ${VLLM_API_KEY}
+      DEV_BYPASS_ENABLED: ${DEV_BYPASS_ENABLED}
+      DEV_BYPASS_SECRET: ${DEV_BYPASS_SECRET}
       TZ: ${TZ}
     depends_on:
       app:
