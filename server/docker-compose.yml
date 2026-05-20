@@ -74,6 +74,11 @@ services:
       JWT_SESSION_EXPIRATION: ${JWT_SESSION_EXPIRATION}
       # CorsConfig 의 allowed-origin-patterns 매핑 — 본 #462 PR 누락분
       CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS}
+      # LLM 프록시 — dev-bypass 분기는 클라 로그인 완성 시점 후속 티켓에서 제거
+      VLLM_BASE_URL: ${VLLM_BASE_URL}
+      VLLM_API_KEY: ${VLLM_API_KEY}
+      DEV_BYPASS_ENABLED: ${DEV_BYPASS_ENABLED}
+      DEV_BYPASS_SECRET: ${DEV_BYPASS_SECRET}
       TZ: ${TZ}
     depends_on:
       postgres:
