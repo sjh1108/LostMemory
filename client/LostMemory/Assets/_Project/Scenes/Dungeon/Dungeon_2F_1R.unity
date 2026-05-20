@@ -2977,6 +2977,7 @@ MonoBehaviour:
   dontDestroyOnLoad: 1
   placePlayersAfterSceneLoad: 1
   destroyWhenSceneOutsideRoute: 1
+  completeDefaultRouteIfIncomplete: 1
   playerSpawnOffset: {x: 0.75, y: 0, z: 0}
   debugLogging: 1
 --- !u!114 &384745936 stripped
@@ -3816,6 +3817,13 @@ MonoBehaviour:
   requiredRoomIds: []
   exitTriggers:
   - {fileID: 501910289}
+  blockingRoots: []
+  disableBlockingRootsWhenUnlocked: 1
+  showBlockingRootVisuals: 1
+  blockingRootVisualColor: {r: 0.25, g: 0.85, b: 1, a: 0.55}
+  blockingRootSortingLayerName: Foreground
+  blockingRootSortingOrder: 16
+  blockingRootVisualPadding: 0.08
   includeInactiveControllers: 1
   autoDiscoverOnEnable: 1
   unlockIfNoRequiredRooms: 0
@@ -6794,7 +6802,7 @@ Transform:
   m_GameObject: {fileID: 1815617285}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.5, y: 3, z: 0}
+  m_LocalPosition: {x: 31.92, y: -87.44, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
