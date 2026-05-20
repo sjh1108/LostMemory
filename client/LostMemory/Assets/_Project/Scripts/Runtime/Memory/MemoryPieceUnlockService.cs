@@ -1,4 +1,6 @@
 using System;
+using System.Threading.Tasks;
+using LostMemory.Networking.Session;
 using UnityEngine;
 
 namespace LostMemory.Memory
@@ -127,7 +129,57 @@ namespace LostMemory.Memory
             }
 
             OnPieceUnlocked?.Invoke(piece);
+
+            // 백엔드 동기화 — fire-and-forget. 로컬은 이미 저장됐으니 실패해도 fallback 안전.
+            // 매핑: _allCanvases 인덱스 +1 = frame_id, fragments 인덱스 = slot_index (0~5).
+            _ = TrySyncToBackendAsync(piece);
+
             return true;
+        }
+
+        /// <summary>
+        /// 백엔드 user_memory_progress 동기화. 실패 시 로컬은 이미 저장됐으므로 warn 로그만 남김.
+        /// 비로그인 / 매핑 실패 시 silent skip.
+        /// </summary>
+        private async Task TrySyncToBackendAsync(MemoryFragmentData piece)
+        {
+            try
+            {
+                if (!SessionApiClient.IsLoggedIn) return;
+                if (_allCanvases == null || piece == null || piece.ParentCanvas == null) return;
+
+                int canvasIdx = System.Array.IndexOf(_allCanvases, piece.ParentCanvas);
+                if (canvasIdx < 0) return;
+
+                var frags = piece.ParentCanvas.Fragments;   // IReadOnlyList<MemoryFragmentData>
+                if (frags == null) return;
+                int slotIdx = -1;
+                for (int i = 0; i < frags.Count; i++)
+                {
+                    if (frags[i] == piece) { slotIdx = i; break; }
+                }
+                if (slotIdx < 0) return;
+
+                long frameId = canvasIdx + 1;   // 1-based
+
+                var resp = await SessionApiClient.UnlockMemorySlotAsync(frameId, slotIdx, piece.ShardCost);
+                if (resp == null || !resp.success)
+                {
+                    Debug.LogWarning($"[MemoryPieceUnlockService] 백엔드 동기화 실패 — " +
+                                     $"frameId={frameId}, slot={slotIdx}, code={resp?.error?.code}. 로컬만 저장됨.", this);
+                    return;
+                }
+
+                if (_logUnlocks)
+                {
+                    Debug.Log($"[MemoryPieceUnlockService] 백엔드 동기화 OK — " +
+                              $"frameId={resp.data.frameId}, mask={resp.data.unlockedMask}, state={resp.data.state}", this);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MemoryPieceUnlockService] 백엔드 동기화 예외 — {ex.Message}", this);
+            }
         }
 
         // ── 보상 집행 ─────────────────────────────────────────
