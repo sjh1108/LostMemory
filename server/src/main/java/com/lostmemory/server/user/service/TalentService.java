@@ -29,18 +29,13 @@ public class TalentService {
     /**
      * 분배 통째로 저장 — "장착" 클릭 시. invest 가 아닌 replace.
      *
-     * 엄격 검증: 서버 측 total_point == sum(5개) + remainingPoint. 불일치 시 TALENT_POINTS_SUM_MISMATCH.
+     * 정책: 5개 slot 의 투자 포인트만 검증 후 저장. 총량 / 잔여 포인트는 검증하지 않음 (클라가 관리).
      * row 미존재 (마이그레이션 edge) 시 USER_NOT_FOUND — 회원가입 보강이 적용된 정상 흐름에선 발생 X.
      */
     @Transactional
     public UserTalentAllocationResponse save(Long userId, TalentSaveRequest req) {
         UserTalentAllocation allocation = talentRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-        int expectedTotal = req.sumAllocations() + req.remainingPoint();
-        if (expectedTotal != allocation.getTotalPoint()) {
-            throw new BusinessException(ErrorCode.TALENT_POINTS_SUM_MISMATCH);
-        }
 
         allocation.replaceAllocation(
                 req.critRatePoints(),

@@ -58,8 +58,6 @@ public class AuthService {
     private final UserTalentAllocationRepository userTalentAllocationRepository;
     private final UserWeaponSelectionRepository userWeaponSelectionRepository;
 
-    /** 회원가입 시 talent total_point 초기값. */
-    private static final int INITIAL_TALENT_TOTAL_POINT = 5;
     /** 회원가입 시 default 장착 무기 ID — 검(weapon_id=1). */
     private static final long DEFAULT_SELECTED_WEAPON_ID = 1L;
 
@@ -70,7 +68,7 @@ public class AuthService {
      *  - user_record: cleared_chapter=0, cleared_stage=0
      *  - user_memory_progress: 모든 frame 에 대해 unlocked_mask=0 (Locked)
      *  - user_weapon_unlocks: 트리 루트 무기(parent IS NULL) 자동 해금 — 검·활·스태프
-     *  - user_talent_allocations: total_point=5, 5개 slot 분배 모두 0
+     *  - user_talent_allocations: 5개 slot 분배 모두 0 (총량/잔여는 백엔드 미관리 — 클라가 보유)
      *  - user_weapon_selection: 검(weapon_id=1) default 장착
      */
     @Transactional
@@ -107,9 +105,8 @@ public class AuthService {
             userWeaponUnlockRepository.save(UserWeaponUnlock.of(user, weapon.getId()));
         }
 
-        // 5. 재능 분배 초기값 — total_point=5, 5개 slot 모두 0
-        userTalentAllocationRepository.save(
-                UserTalentAllocation.create(user, INITIAL_TALENT_TOTAL_POINT));
+        // 5. 재능 분배 초기값 — 5개 slot 모두 0 (총량/잔여는 클라 관리)
+        userTalentAllocationRepository.save(UserTalentAllocation.create(user));
 
         // 6. default 장착 무기 — 검(weapon_id=1)
         userWeaponSelectionRepository.save(

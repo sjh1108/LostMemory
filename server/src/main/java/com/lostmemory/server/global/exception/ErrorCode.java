@@ -39,7 +39,6 @@ public enum ErrorCode {
     MEMORY_SLOT_INDEX_OUT_OF_RANGE(HttpStatus.BAD_REQUEST, "슬롯 인덱스는 0~5 사이여야 합니다"),
     MEMORY_SHARDS_INSUFFICIENT(HttpStatus.CONFLICT, "보유한 기억의 파편이 부족합니다"),
 
-    TALENT_POINTS_SUM_MISMATCH(HttpStatus.BAD_REQUEST, "재능 포인트 분배 합이 보유 총량과 일치하지 않습니다"),
     WEAPON_NOT_FOUND(HttpStatus.NOT_FOUND, "무기를 찾을 수 없습니다"),
     WEAPON_PARENT_NOT_UNLOCKED(HttpStatus.CONFLICT, "상위 무기를 먼저 해금해야 합니다"),
     WEAPON_SHARDS_INSUFFICIENT(HttpStatus.CONFLICT, "무기 해금에 필요한 파편이 부족합니다"),

@@ -7,9 +7,8 @@ import jakarta.validation.constraints.NotNull;
 /**
  * 재능 분배 통째로 저장 요청.
  *
- * 검증 (서비스 측):
- *   - 모든 필드 음수 X (@Min(0))
- *   - 서버 측 total_point == sum(5개) + remainingPoint 엄격 일치 — 위반 시 TALENT_POINTS_SUM_MISMATCH
+ * 정책: 5개 slot 의 투자 포인트만 송수신. 총량 / 잔여 포인트는 클라가 관리하고 백엔드는 검증하지 않음.
+ * 검증 (서비스 측): 모든 필드 음수 X (@Min(0)). 그 외 합 검증 없음.
  *
  * userId 는 Bearer 토큰에서 추출 (body 미포함).
  */
@@ -32,13 +31,6 @@ public record TalentSaveRequest(
 
         @Schema(description = "최대체력 투자 포인트", example = "1")
         @NotNull @Min(0)
-        Integer maxHpPoints,
-
-        @Schema(description = "잔여 포인트", example = "0")
-        @NotNull @Min(0)
-        Integer remainingPoint
+        Integer maxHpPoints
 ) {
-    public int sumAllocations() {
-        return critRatePoints + attackSpeedPoints + defensePoints + manaRegenPoints + maxHpPoints;
-    }
 }
