@@ -44,6 +44,7 @@ CREATE TABLE auth_refresh_tokens (
                                   REFERENCES users(user_id) ON DELETE CASCADE,
     token_hash       VARCHAR(255) NOT NULL,
     expires_at       TIMESTAMPTZ  NOT NULL,
+    revoked_at       TIMESTAMPTZ,
     last_used_at     TIMESTAMPTZ,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
