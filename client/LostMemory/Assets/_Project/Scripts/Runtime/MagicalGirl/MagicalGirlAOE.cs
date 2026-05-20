@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LostMemory.Combat;
 using LostMemory.Enemies;
 using LostMemory.TestKhi;
@@ -29,6 +30,7 @@ namespace LostMemory.MagicalGirl
         private float _slowMagnitude;
         private float _slowDuration;
         private KhiDownController _ownerDownController;
+        private readonly HashSet<Health> _hitTargetsThisTick = new HashSet<Health>();
 
         // 검색 임시 버퍼 (heap alloc 방지)
         private static readonly Collider2D[] _hitBuf = new Collider2D[24];
@@ -104,16 +106,15 @@ namespace LostMemory.MagicalGirl
         {
             if (IsOwnerActionBlocked()) return;
             if (_damagePerTick <= 0f && _pullSpeed <= 0f && _slowMagnitude <= 0f) return;
+            _hitTargetsThisTick.Clear();
             int hits = Physics2D.OverlapCircleNonAlloc(transform.position, _radius, _hitBuf);
             for (int i = 0; i < hits; i++)
             {
                 Collider2D col = _hitBuf[i];
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
-                if (h == null || h.CurrentHealth <= 0f) continue;
-                if (!CombatTargetable.CanBeTargeted(h)) continue;
-                Character ch = h.GetComponentInParent<Character>();
-                if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
+                if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
+                if (!_hitTargetsThisTick.Add(h)) continue;
 
                 if (_damagePerTick > 0f)
                     h.Damage(_damagePerTick, gameObject, 0f, 0f, Vector3.zero);
@@ -154,10 +155,7 @@ namespace LostMemory.MagicalGirl
                 Collider2D col = _hitBuf[i];
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
-                if (h == null || h.CurrentHealth <= 0f) continue;
-                if (!CombatTargetable.CanBeTargeted(h)) continue;
-                Character ch = h.GetComponentInParent<Character>();
-                if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
+                if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
                 float dSq = ((Vector2)(h.transform.position - transform.position)).sqrMagnitude;
                 if (dSq < minDistSq)
                 {

@@ -12,6 +12,9 @@ namespace LostMemory.TestKhi
     [DefaultExecutionOrder(50)]
     public class KhiMeleeComboController : MonoBehaviour
     {
+        private const float DefaultHeldAttackBaseInterval = 0.35f;
+        private const float MinimumHeldAttackInterval = 0.02f;
+
         [SerializeField] private KhiPlayerAim aim;
         [SerializeField] private KhiMeleeHitbox hitbox;
         [SerializeField] private KhiAttackVisualPresenter visualPresenter;
@@ -24,6 +27,8 @@ namespace LostMemory.TestKhi
         [SerializeField] private bool bufferAttackDuringDash = false;
         [SerializeField] private bool disableTdeHandleWeapon = true;
         [SerializeField] private bool logHitsToConsole = false;
+        [Tooltip("Hold auto-attack interval at AttackSpeed 1x. Current player AttackSpeed divides this value.")]
+        [SerializeField, Min(0.02f)] private float heldAttackBaseInterval = DefaultHeldAttackBaseInterval;
         [Tooltip("CL-107: AttackPower / AttackSpeed / FinisherDamage multiplier 조회용. 같은 GameObject 또는 Player root 의 컴포넌트.")]
         [SerializeField] private PlayerStatModifierContainer statContainer;
 
@@ -40,6 +45,7 @@ namespace LostMemory.TestKhi
         private float _comboExpiresAt = -1f;
         private float _chainInputAllowedAt = -1f;
         private float _bufferedAttackExpiresAt = -1f;
+        private float _lastHeldAttackRequestAt = float.NegativeInfinity;
 
         public event Action<KhiAttackRequest, AttackStepData> AttackStarted;
         public event Action<KhiAttackRequest, AttackStepData> AttackActiveStarted;
@@ -153,6 +159,9 @@ namespace LostMemory.TestKhi
             downController ??= GetComponent<KhiDownController>()
                 ?? GetComponentInParent<KhiDownController>()
                 ?? GetComponentInChildren<KhiDownController>();
+            statContainer ??= GetComponent<PlayerStatModifierContainer>()
+                ?? GetComponentInParent<PlayerStatModifierContainer>()
+                ?? GetComponentInChildren<PlayerStatModifierContainer>(true);
             _tdeHandleWeapon = GetComponent<CharacterHandleWeapon>();
 
             if (weaponData == null)
@@ -189,7 +198,11 @@ namespace LostMemory.TestKhi
                 return;
             }
 
-            if (!ExternalBlock && WasAttackPressedThisFrame())
+            if (ExternalBlock)
+            {
+                ResetHeldAttackClock();
+            }
+            else if (ShouldRequestAttackFromInput())
             {
                 RequestAttack();
             }
@@ -476,12 +489,93 @@ namespace LostMemory.TestKhi
             _tdeHandleWeapon.PermitAbility(false);
         }
 
-        // A-1·A-2 (UI 가드) + A-4 (홀드 자동 공격) 일체 처리.
+        private bool ShouldRequestAttackFromInput()
+        {
+            if (IsAttackInputBlockedByUI())
+            {
+                ResetHeldAttackClock();
+                return false;
+            }
+
+            bool isHeld = IsAttackHeldRaw();
+            if (!isHeld)
+            {
+                ResetHeldAttackClock();
+                return false;
+            }
+
+            float now = Time.time;
+            if (WasAttackPressedRawThisFrame() || now >= _lastHeldAttackRequestAt + GetHeldAttackInterval())
+            {
+                _lastHeldAttackRequestAt = now;
+                return true;
+            }
+
+            return false;
+        }
+
+        private float GetHeldAttackInterval()
+        {
+            float baseInterval = heldAttackBaseInterval > 0f
+                ? heldAttackBaseInterval
+                : DefaultHeldAttackBaseInterval;
+            float speedMultiplier = GetAttackSpeedMultiplier();
+            return Mathf.Max(MinimumHeldAttackInterval, baseInterval / speedMultiplier);
+        }
+
+        private float GetAttackSpeedMultiplier()
+        {
+            float speedMultiplier = statContainer != null
+                ? statContainer.GetTotalMultiplier(StatId.AttackSpeed)
+                : 1f;
+            return speedMultiplier > 0f ? speedMultiplier : 1f;
+        }
+
+        private void ResetHeldAttackClock()
+        {
+            _lastHeldAttackRequestAt = float.NegativeInfinity;
+        }
+
+        private static bool IsAttackInputBlockedByUI()
+        {
+            if (LostMemory.UI.UIInputBlocker.IsBlocked)
+            {
+                return true;
+            }
+
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            return es != null && es.IsPointerOverGameObject();
+        }
+
+        private static bool WasAttackPressedRawThisFrame()
+        {
+            Mouse mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            Gamepad gamepad = Gamepad.current;
+            return gamepad != null && gamepad.buttonWest.wasPressedThisFrame;
+        }
+
+        private static bool IsAttackHeldRaw()
+        {
+            Mouse mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.isPressed)
+            {
+                return true;
+            }
+
+            Gamepad gamepad = Gamepad.current;
+            return gamepad != null && gamepad.buttonWest.isPressed;
+        }
+
+        // A-1·A-2 (UI 가드) + 공격 입력 게이트 처리.
         // - UI 패널(인벤토리·상점·보상창 등) 열린 동안 공격 입력 무시 (UIInputBlocker).
         // - 추가로 마우스가 UI 위에 있을 때도 차단 (EventSystem) — 두 경로 모두 안전망.
-        // - wasPressedThisFrame → isPressed 로 변경. RequestAttack() 내부의 _isAttacking
-        //   · 콤보 윈도우 · 쿨다운 검사가 발사 빈도를 자체 제어하므로 매 프레임 호출되어도
-        //   공속 한계 이상으로 발사되지 않음.
+        // - 공격 입력은 새로 누른 순간만 처리한다.
+        //   누르고 있는 상태를 매 프레임 처리하면 콤보 버퍼가 자동으로 쌓여 과속 연타가 된다.
         private static bool WasAttackPressedThisFrame()
         {
             // (1) 글로벌 UI 차단 — 인벤토리 등 패널이 열려있으면 키보드/마우스 무관 입력 차단.
@@ -497,14 +591,15 @@ namespace LostMemory.TestKhi
                 return false;
             }
 
+            // Edge-triggered so holding the button cannot auto-buffer every combo step.
             Mouse mouse = Mouse.current;
-            if (mouse != null && mouse.leftButton.isPressed)
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
             {
                 return true;
             }
 
             Gamepad gamepad = Gamepad.current;
-            return gamepad != null && gamepad.buttonWest.isPressed;
+            return gamepad != null && gamepad.buttonWest.wasPressedThisFrame;
         }
     }
 }

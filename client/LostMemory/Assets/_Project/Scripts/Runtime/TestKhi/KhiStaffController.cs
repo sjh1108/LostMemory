@@ -16,8 +16,11 @@ namespace LostMemory.TestKhi
     [AddComponentMenu("Lost Memory/Test Khi/Khi Staff Controller")]
     public class KhiStaffController : MonoBehaviour
     {
+        private const float DefaultMinimumBoltInterval = 0.3f;
+
         [Header("Refs (Awake 시 자동 resolve)")]
         [SerializeField] private PlayerMana playerMana;
+        [SerializeField] private PlayerStatModifierContainer statContainer;
         [Tooltip("투사체 발사 위치 (마법탄·파이어볼 공용). 비어있으면 transform 사용.")]
         [SerializeField] private Transform projectileSpawnPoint;
         [Tooltip("마우스 worldPos 변환용. 비어있으면 Camera.main.")]
@@ -30,6 +33,8 @@ namespace LostMemory.TestKhi
         [SerializeField, Min(0f)] private float boltDamage = 8f;
         [Tooltip("뿅뿅뿅 — 마법탄 사이 최소 간격(초).")]
         [SerializeField, Min(0.02f)] private float boltInterval = 0.15f;
+        [Tooltip("Base lower bound for held-left-click bolt repeats at AttackSpeed 1x.")]
+        [SerializeField, Min(0.02f)] private float minimumBoltInterval = DefaultMinimumBoltInterval;
         [SerializeField, Min(0)] private int boltManaCost = 0;
         [Tooltip("마법탄 유도 — 초당 회전 각도. 0 = 직선, 60~90 = 약한 유도, 180+ = 강한 유도.")]
         [SerializeField, Min(0f)] private float boltHomingTurnRate = 90f;
@@ -79,6 +84,8 @@ namespace LostMemory.TestKhi
         public bool IsCharging => _isHoldingRight;
         /// <summary>차징 임계값 도달했는가 (release 시 메테오 발동).</summary>
         public bool IsChargeReady => ChargeProgress01 >= 1f;
+        private float EffectiveBoltInterval =>
+            Mathf.Max(0.02f, GetBaseBoltInterval() / GetAttackSpeedMultiplier());
         private int _sequenceId;
 
         public event Action<KhiAttackRequest> BoltFired;
@@ -92,6 +99,9 @@ namespace LostMemory.TestKhi
         private void Awake()
         {
             playerMana ??= GetComponentInParent<PlayerMana>();
+            statContainer ??= GetComponent<PlayerStatModifierContainer>()
+                ?? GetComponentInParent<PlayerStatModifierContainer>()
+                ?? GetComponentInChildren<PlayerStatModifierContainer>(true);
             if (projectileSpawnPoint == null) projectileSpawnPoint = transform;
 
             if (chargeBarPrefab != null)
@@ -105,6 +115,21 @@ namespace LostMemory.TestKhi
         {
             // 모드 전환 시 차지 상태 reset.
             _isHoldingRight = false;
+        }
+
+        private float GetBaseBoltInterval()
+        {
+            float configuredInterval = boltInterval > 0f ? boltInterval : DefaultMinimumBoltInterval;
+            float configuredMinimum = minimumBoltInterval > 0f ? minimumBoltInterval : DefaultMinimumBoltInterval;
+            return Mathf.Max(configuredInterval, configuredMinimum);
+        }
+
+        private float GetAttackSpeedMultiplier()
+        {
+            float speedMultiplier = statContainer != null
+                ? statContainer.GetTotalMultiplier(StatId.AttackSpeed)
+                : 1f;
+            return speedMultiplier > 0f ? speedMultiplier : 1f;
         }
 
         private void Update()
@@ -146,7 +171,7 @@ namespace LostMemory.TestKhi
             if (boltPrefab == null) return;
             if (boltManaCost > 0 && playerMana != null && !playerMana.Consume(boltManaCost))
             {
-                _nextBoltAt = Time.time + boltInterval;
+                _nextBoltAt = Time.time + EffectiveBoltInterval;
                 return;
             }
 
@@ -160,7 +185,7 @@ namespace LostMemory.TestKhi
                 bolt.SetHoming(boltHomingTurnRate, boltHomingRadius);
             }
 
-            _nextBoltAt = Time.time + boltInterval;
+            _nextBoltAt = Time.time + EffectiveBoltInterval;
 
             KhiAttackRequest request = MakeRequest(aimDir, spawnPos);
             BoltFired?.Invoke(request);

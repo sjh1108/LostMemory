@@ -17,6 +17,8 @@ namespace LostMemory.TestKhi
 
         [Header("Hit Detection")]
         [SerializeField] private LayerMask targetLayers = ~0;
+        [SerializeField, Min(0f)] private float sweepRadius = 0.18f;
+        [SerializeField] private bool acceptBossTaggedHealthOutsideTargetLayers = true;
         [SerializeField, Min(0f)] private float targetFlickerDuration = 0f;
         [SerializeField, Min(0f)] private float targetInvincibilityDuration = 0f;
         [Tooltip("적과 충돌 시 화살을 즉시 파괴.")]
@@ -50,12 +52,14 @@ namespace LostMemory.TestKhi
         private Rigidbody2D _rigidbody;
         private Collider2D _collider;
         private static readonly Collider2D[] _homingScanBuffer = new Collider2D[16];
+        private static readonly RaycastHit2D[] _sweepHitBuffer = new RaycastHit2D[32];
         private float _damage;
         private Vector2 _direction;
         private float _speed;
         private GameObject _attacker;
         private float _spawnedAt;
         private bool _launched;
+        private bool _hasHit;
 
         private void Awake()
         {
@@ -76,6 +80,7 @@ namespace LostMemory.TestKhi
             _attacker = attacker;
             _spawnedAt = Time.time;
             _launched = true;
+            _hasHit = false;
 
             float angleDeg = Mathf.Atan2(_direction.y, _direction.x) * Mathf.Rad2Deg + spriteAngleOffsetDeg;
             transform.rotation = Quaternion.Euler(0f, 0f, angleDeg);
@@ -102,7 +107,14 @@ namespace LostMemory.TestKhi
                 ApplyHoming();
             }
 
-            _rigidbody.MovePosition(_rigidbody.position + _direction * (_speed * Time.fixedDeltaTime));
+            Vector2 currentPosition = _rigidbody.position;
+            Vector2 movement = _direction * (_speed * Time.fixedDeltaTime);
+            if (TryHitAlongPath(currentPosition, movement))
+            {
+                return;
+            }
+
+            _rigidbody.MovePosition(currentPosition + movement);
         }
 
         private void ApplyHoming()
@@ -152,34 +164,84 @@ namespace LostMemory.TestKhi
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (!_launched) return;
+            TryApplyHit(other);
+        }
+
+        private bool TryHitAlongPath(Vector2 currentPosition, Vector2 movement)
+        {
+            float distance = movement.magnitude;
+            if (distance <= Mathf.Epsilon)
+            {
+                return false;
+            }
+
+            int count = Physics2D.CircleCastNonAlloc(
+                currentPosition,
+                GetSweepRadius(),
+                _direction,
+                _sweepHitBuffer,
+                distance,
+                GetSweepLayerMask());
+
+            RaycastHit2D nearestHit = default;
+            float nearestDistance = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit2D hit = _sweepHitBuffer[i];
+                Collider2D hitCollider = hit.collider;
+                if (hitCollider == null || hitCollider == _collider)
+                {
+                    continue;
+                }
+
+                if (hit.distance < nearestDistance && CanDamageCollider(hitCollider))
+                {
+                    nearestHit = hit;
+                    nearestDistance = hit.distance;
+                }
+            }
+
+            if (nearestHit.collider == null)
+            {
+                return false;
+            }
+
+            _rigidbody.position = nearestHit.centroid;
+            transform.position = nearestHit.centroid;
+            return TryApplyHit(nearestHit.collider);
+        }
+
+        private bool TryApplyHit(Collider2D other)
+        {
+            if (!_launched || _hasHit || other == null) return false;
 
             int layer = other.gameObject.layer;
             string lname = LayerMask.LayerToName(layer);
 
-            if (((1 << layer) & targetLayers.value) == 0)
+            if (!IsColliderAcceptedByLayerOrBossTag(other, layer))
             {
                 if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → blocked by layerMask");
-                return;
+                return false;
             }
 
             Health health = other.GetComponentInParent<Health>();
             if (health == null)
             {
                 if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → no Health in parent chain");
-                return;
+                return false;
             }
             if (_attacker != null && IsOwnedByAttacker(health, _attacker))
             {
                 if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → owned by attacker");
-                return;
+                return false;
             }
             if (!health.CanTakeDamageThisFrame())
             {
                 if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → CanTakeDamageThisFrame=false");
-                return;
+                return false;
             }
 
+            _hasHit = true;
             health.Damage(_damage, _attacker, targetFlickerDuration, targetInvincibilityDuration, _direction);
             if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → damage {_damage} APPLIED");
 
@@ -187,6 +249,91 @@ namespace LostMemory.TestKhi
             {
                 PlayImpactAndDestroy();
             }
+
+            return true;
+        }
+
+        private bool CanDamageCollider(Collider2D other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            Health health = other.GetComponentInParent<Health>();
+            if (health == null)
+            {
+                return false;
+            }
+
+            int layer = other.gameObject.layer;
+            if (!IsColliderAcceptedByLayerOrBossTag(other, layer))
+            {
+                return false;
+            }
+
+            return (_attacker == null || !IsOwnedByAttacker(health, _attacker))
+                   && health.CanTakeDamageThisFrame();
+        }
+
+        private float GetSweepRadius()
+        {
+            if (sweepRadius > 0f)
+            {
+                return sweepRadius;
+            }
+
+            return _collider != null
+                ? Mathf.Max(0.05f, Mathf.Min(_collider.bounds.extents.x, _collider.bounds.extents.y))
+                : 0.05f;
+        }
+
+        private int GetSweepLayerMask()
+        {
+            int mask = targetLayers.value;
+            if (acceptBossTaggedHealthOutsideTargetLayers)
+            {
+                int defaultLayer = LayerMask.NameToLayer("Default");
+                if (defaultLayer >= 0)
+                {
+                    mask |= 1 << defaultLayer;
+                }
+            }
+
+            return mask;
+        }
+
+        private bool IsColliderAcceptedByLayerOrBossTag(Collider2D other, int layer)
+        {
+            if (IsLayerAccepted(layer))
+            {
+                return true;
+            }
+
+            if (!acceptBossTaggedHealthOutsideTargetLayers || other == null)
+            {
+                return false;
+            }
+
+            Health health = other.GetComponentInParent<Health>();
+            return IsBossTagged(health);
+        }
+
+        private bool IsLayerAccepted(int layer)
+        {
+            return ((1 << layer) & targetLayers.value) != 0;
+        }
+
+        private static bool IsBossTagged(Health health)
+        {
+            if (health == null)
+            {
+                return false;
+            }
+
+            Transform healthTransform = health.transform;
+            return health.CompareTag("Boss")
+                   || (healthTransform.root != null && healthTransform.root.CompareTag("Boss"));
         }
 
         /// <summary>

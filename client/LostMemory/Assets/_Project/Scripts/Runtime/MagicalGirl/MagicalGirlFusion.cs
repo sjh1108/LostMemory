@@ -313,9 +313,7 @@ namespace LostMemory.MagicalGirl
                     {
                         if (col == null) continue;
                         Health h = col.GetComponentInParent<Health>();
-                        if (h == null || h.CurrentHealth <= 0f) continue;
-                        Character ch = h.GetComponentInParent<Character>();
-                        if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
+                        if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
                         if (!damageBuf.Add(h)) continue;
                         h.Damage(damage, gameObject, 0f, 0f, Vector3.zero);
                         totalHits++;
@@ -384,9 +382,7 @@ namespace LostMemory.MagicalGirl
                 {
                     if (col == null) continue;
                     Health h = col.GetComponentInParent<Health>();
-                    if (h == null || h.CurrentHealth <= 0f) continue;
-                    Character ch = h.GetComponentInParent<Character>();
-                    if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
+                    if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
                     h.Damage(damage, gameObject, 0f, 0f, Vector3.zero);
                     hitCount++;
                 }

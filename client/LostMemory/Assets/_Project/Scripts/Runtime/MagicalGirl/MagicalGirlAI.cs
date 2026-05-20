@@ -161,10 +161,7 @@ namespace LostMemory.MagicalGirl
                 Collider2D col = _searchBuf[i];
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
-                if (h == null || h.CurrentHealth <= 0f) continue;
-                if (!CombatTargetable.CanBeTargeted(h)) continue;
-                Character ch = h.GetComponentInParent<Character>();
-                if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
+                if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
 
                 Vector2 to = h.transform.position - transform.position;
                 float dSq = to.sqrMagnitude;
@@ -181,7 +178,7 @@ namespace LostMemory.MagicalGirl
         private void Attack(Health target, Vector2 toTargetDir)
         {
             if (IsOwnerActionBlocked()) return;
-            if (!CombatTargetable.CanBeTargeted(target)) return;
+            if (!CombatTargetable.CanBeAutoTargetedEnemy(target)) return;
 
             float damage = ComputeDamage();
             if (damage <= 0f) return;
@@ -231,7 +228,7 @@ namespace LostMemory.MagicalGirl
                 spawnPos += (Vector3)(forward * Mathf.Max(2f, entry.aoeRadius * 1.5f));
             }
             GameObject go = Instantiate(entry.vfxPrefab, spawnPos, Quaternion.identity);
-            VFXSpawner.ApplyGameplayEffectSorting(go);
+            VFXSpawner.ApplyMagicalGirlGroundEffectSorting(go);
             var aoe = go.GetComponent<MagicalGirlAOE>();
             if (aoe == null) aoe = go.AddComponent<MagicalGirlAOE>();
             // tick 데미지 = entry.damageRatio 기반이지만, catalog 에서 이미 1회 전달된 damage 를 tick 당 데미지로 사용.

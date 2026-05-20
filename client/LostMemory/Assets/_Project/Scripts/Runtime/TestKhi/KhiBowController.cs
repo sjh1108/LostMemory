@@ -16,9 +16,12 @@ namespace LostMemory.TestKhi
     [AddComponentMenu("Lost Memory/Test Khi/Khi Bow Controller")]
     public class KhiBowController : MonoBehaviour
     {
+        private const float MinimumShotInterval = 0.02f;
+
         [Header("Refs (Awake 시 자동 resolve)")]
         [SerializeField] private KhiPlayerAim aim;
         [SerializeField] private PlayerMana playerMana;
+        [SerializeField] private PlayerStatModifierContainer statContainer;
         [Tooltip("화살이 생성될 위치. 비어있으면 transform 사용.")]
         [SerializeField] private Transform arrowSpawnPoint;
         [Tooltip("화살 방향 계산에 쓰는 카메라. 비어있으면 Camera.main 사용.")]
@@ -52,6 +55,9 @@ namespace LostMemory.TestKhi
         {
             aim ??= GetComponent<KhiPlayerAim>();
             playerMana ??= GetComponentInParent<PlayerMana>();
+            statContainer ??= GetComponent<PlayerStatModifierContainer>()
+                ?? GetComponentInParent<PlayerStatModifierContainer>()
+                ?? GetComponentInChildren<PlayerStatModifierContainer>(true);
             if (arrowSpawnPoint == null) arrowSpawnPoint = transform;
 
             if (arrowPrefab == null)
@@ -107,22 +113,37 @@ namespace LostMemory.TestKhi
         private void FireSingleShot()
         {
             SpawnArrow(baseDamage, isRapid: false);
-            _nextSingleShotAllowedAt = Time.time + singleShotInterval;
+            _nextSingleShotAllowedAt = Time.time + GetShotInterval(singleShotInterval);
         }
 
         private void FireRapidShot()
         {
+            float shotInterval = GetShotInterval(rapidShotInterval);
             if (rapidShotManaCostPerShot > 0 && playerMana != null)
             {
                 if (!playerMana.Consume(rapidShotManaCostPerShot))
                 {
-                    _nextRapidShotAt = Time.time + rapidShotInterval;
+                    _nextRapidShotAt = Time.time + shotInterval;
                     return;
                 }
             }
 
             SpawnArrow(baseDamage * rapidDamageMultiplier, isRapid: true);
-            _nextRapidShotAt = Time.time + rapidShotInterval;
+            _nextRapidShotAt = Time.time + shotInterval;
+        }
+
+        private float GetShotInterval(float baseInterval)
+        {
+            float configuredInterval = baseInterval > 0f ? baseInterval : MinimumShotInterval;
+            return Mathf.Max(MinimumShotInterval, configuredInterval / GetAttackSpeedMultiplier());
+        }
+
+        private float GetAttackSpeedMultiplier()
+        {
+            float speedMultiplier = statContainer != null
+                ? statContainer.GetTotalMultiplier(StatId.AttackSpeed)
+                : 1f;
+            return speedMultiplier > 0f ? speedMultiplier : 1f;
         }
 
         private void SpawnArrow(float damage, bool isRapid)
