@@ -42,7 +42,10 @@ public enum ErrorCode {
     WEAPON_NOT_FOUND(HttpStatus.NOT_FOUND, "무기를 찾을 수 없습니다"),
     WEAPON_PARENT_NOT_UNLOCKED(HttpStatus.CONFLICT, "상위 무기를 먼저 해금해야 합니다"),
     WEAPON_SHARDS_INSUFFICIENT(HttpStatus.CONFLICT, "무기 해금에 필요한 파편이 부족합니다"),
-    WEAPON_NOT_UNLOCKED(HttpStatus.CONFLICT, "해금하지 않은 무기는 장착할 수 없습니다");
+    WEAPON_NOT_UNLOCKED(HttpStatus.CONFLICT, "해금하지 않은 무기는 장착할 수 없습니다"),
+
+    LLM_CONTEXT_TOO_LONG(HttpStatus.PAYLOAD_TOO_LARGE,
+            "메시지 누적 길이가 컨텍스트 한도를 초과했습니다 — 대화를 새로 시작해주세요");
 
     private final HttpStatus status;
     private final String message;
