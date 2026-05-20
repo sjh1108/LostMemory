@@ -27,6 +27,9 @@ namespace LostMemory.Networking.Session
         public static bool IsHost { get; internal set; }
         public static bool IsInSession => ActiveSessionId.HasValue;
 
+        /// <summary>현재 활성 세션의 입장 코드. 호스트는 생성 시·게스트는 join 시 set. Leave 시 null.</summary>
+        public static string ActiveJoinCode { get; internal set; }
+
         /// <summary>호스트/클라 진입 성공 시 발화. 인자: 본인이 호스트인지.</summary>
         public static event Action<bool> Joined;
 
@@ -103,6 +106,7 @@ namespace LostMemory.Networking.Session
             {
                 ActiveSessionId = null;
                 IsHost = false;
+                ActiveJoinCode = null;
                 RaiseLeft();
             }
         }
