@@ -29,10 +29,10 @@ class TalentServiceTest {
     private static final Long USER_ID = 1L;
 
     @Test
-    @DisplayName("getMyAllocation — row 존재 시 entity 매핑 (5 slot 만)")
+    @DisplayName("getMyAllocation — row 존재 시 entity 매핑 (4 slot 만)")
     void getMyAllocation_rowExists_returnsMappedResponse() {
         UserTalentAllocation allocation = UserTalentAllocation.create(null);
-        allocation.replaceAllocation(1, 1, 1, 1, 1);
+        allocation.replaceAllocation(1, 1, 1, 1);
         when(talentRepository.findById(USER_ID)).thenReturn(Optional.of(allocation));
 
         UserTalentAllocationResponse view = talentService.getMyAllocation(USER_ID);
@@ -40,12 +40,11 @@ class TalentServiceTest {
         assertThat(view.critRatePoints()).isEqualTo(1);
         assertThat(view.attackSpeedPoints()).isEqualTo(1);
         assertThat(view.defensePoints()).isEqualTo(1);
-        assertThat(view.manaRegenPoints()).isEqualTo(1);
         assertThat(view.maxHpPoints()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("getMyAllocation — row 미존재 시 default 응답 (5 slot 모두 0)")
+    @DisplayName("getMyAllocation — row 미존재 시 default 응답 (4 slot 모두 0)")
     void getMyAllocation_rowMissing_returnsDefault() {
         when(talentRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
@@ -55,25 +54,23 @@ class TalentServiceTest {
         assertThat(view.critRatePoints()).isZero();
         assertThat(view.attackSpeedPoints()).isZero();
         assertThat(view.defensePoints()).isZero();
-        assertThat(view.manaRegenPoints()).isZero();
         assertThat(view.maxHpPoints()).isZero();
         assertThat(view.updatedAt()).isNull();
     }
 
     @Test
-    @DisplayName("save — 정상 흐름: 5 slot 통째로 교체 (합 검증 없음)")
+    @DisplayName("save — 정상 흐름: 4 slot 통째로 교체 (합 검증 없음)")
     void save_replacesAllocation() {
         UserTalentAllocation allocation = UserTalentAllocation.create(null);
         when(talentRepository.findById(USER_ID)).thenReturn(Optional.of(allocation));
 
-        TalentSaveRequest req = new TalentSaveRequest(2, 2, 0, 1, 0);
+        TalentSaveRequest req = new TalentSaveRequest(2, 2, 0, 1);
         UserTalentAllocationResponse view = talentService.save(USER_ID, req);
 
         assertThat(view.critRatePoints()).isEqualTo(2);
         assertThat(view.attackSpeedPoints()).isEqualTo(2);
-        assertThat(view.manaRegenPoints()).isEqualTo(1);
         assertThat(view.defensePoints()).isZero();
-        assertThat(view.maxHpPoints()).isZero();
+        assertThat(view.maxHpPoints()).isEqualTo(1);
     }
 
     @Test
@@ -81,7 +78,7 @@ class TalentServiceTest {
     void save_rowMissing_throwsUserNotFound() {
         when(talentRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        TalentSaveRequest req = new TalentSaveRequest(1, 1, 1, 1, 1);
+        TalentSaveRequest req = new TalentSaveRequest(1, 1, 1, 1);
 
         BusinessException ex = catchThrowableOfType(
                 () -> talentService.save(USER_ID, req), BusinessException.class);

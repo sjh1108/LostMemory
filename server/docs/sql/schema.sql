@@ -70,7 +70,8 @@ COMMENT ON COLUMN user_currencies.memory_shards IS '기억의 파편 보유량';
 
 -- =====================================================================
 -- 4. USER_TALENT_ALLOCATIONS : 특성 포인트 분배
---   * 백엔드는 5개 영역별 투자 포인트 값만 저장/조회. 총량 / 잔여 포인트는 관리 X.
+--   * 백엔드는 4개 영역별 투자 포인트 값만 저장/조회. 총량 / 잔여 포인트는 관리 X.
+--   * 4 영역: 치명타 확률 / 공격속도 / 방어력 / 최대체력 (마나재생 slot 은 기획 정리로 제거).
 --   * total_point 컬럼은 의미 없는 0 으로 유지 (legacy — 추후 schema 정리 시 제거).
 -- =====================================================================
 CREATE TABLE user_talent_allocations (
@@ -80,7 +81,6 @@ CREATE TABLE user_talent_allocations (
     crit_rate_points     INTEGER     NOT NULL DEFAULT 0 CHECK (crit_rate_points     >= 0),
     attack_speed_points  INTEGER     NOT NULL DEFAULT 0 CHECK (attack_speed_points  >= 0),
     defense_points       INTEGER     NOT NULL DEFAULT 0 CHECK (defense_points       >= 0),
-    mana_regen_points    INTEGER     NOT NULL DEFAULT 0 CHECK (mana_regen_points    >= 0),
     max_hp_points        INTEGER     NOT NULL DEFAULT 0 CHECK (max_hp_points        >= 0),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

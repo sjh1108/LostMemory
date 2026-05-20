@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Talent", description = "유저 재능 포인트 분배 — 5 영역별 투자 포인트만 송수신 (총량/잔여는 클라 관리)")
+@Tag(name = "Talent", description = "유저 재능 포인트 분배 — 4 영역 (치명타율/공격속도/방어력/최대체력) 만 송수신")
 @RestController
 @RequestMapping("/users/me/talents")
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class TalentController {
     @Operation(
             summary = "본인 재능 분배 조회",
             description = """
-                    `user_talent_allocations` 의 본인 row 에서 5개 영역별 투자 포인트만 반환.
+                    `user_talent_allocations` 의 본인 row 에서 4개 영역별 투자 포인트만 반환.
                     row 미존재 시 default (모두 0) 응답.
 
                     정책: 총량 / 잔여 포인트는 백엔드가 관리하지 않음 — 클라가 보유 정보로 계산.
@@ -48,7 +48,6 @@ public class TalentController {
                                 "critRatePoints": 1,
                                 "attackSpeedPoints": 1,
                                 "defensePoints": 1,
-                                "manaRegenPoints": 1,
                                 "maxHpPoints": 1,
                                 "updatedAt": "2026-05-20T10:00:00Z"
                               }
@@ -64,9 +63,9 @@ public class TalentController {
             summary = "재능 분배 통째로 저장 (장착)",
             description = """
                     유저가 UI 에서 분배를 확정 (장착 버튼) 한 후 통째로 저장.
-                    invest 가 아닌 replace — 5개 slot 의 새 값을 한 번에 보냄.
+                    invest 가 아닌 replace — 4개 slot 의 새 값을 한 번에 보냄.
 
-                    정책: 백엔드는 5개 slot 값만 저장. 총량 / 잔여 검증 없음 (클라 책임).
+                    정책: 백엔드는 4개 slot 값만 저장. 총량 / 잔여 검증 없음 (클라 책임).
                     각 값은 음수 X (@Min(0)) 만 검증.
 
                     실패:
@@ -85,8 +84,7 @@ public class TalentController {
                                 "critRatePoints": 2,
                                 "attackSpeedPoints": 2,
                                 "defensePoints": 0,
-                                "manaRegenPoints": 1,
-                                "maxHpPoints": 0,
+                                "maxHpPoints": 1,
                                 "updatedAt": "2026-05-20T10:30:00Z"
                               }
                             }
