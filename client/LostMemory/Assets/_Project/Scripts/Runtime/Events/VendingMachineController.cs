@@ -1,3 +1,4 @@
+using LostMemory.Networking.Player;
 using LostMemory.Relics;
 using LostMemory.Shop;
 using LostMemory.Stage;
@@ -255,19 +256,21 @@ namespace LostMemory.Events
         private void ResolveSceneLocalRefs()
         {
             UnityEngine.SceneManagement.Scene active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            // scene-placed UI / room
             panel                     = ResolveInActiveScene(panel, active);
             inventoryPanel            = ResolveInActiveScene(inventoryPanel, active);
             shortcutBar               = ResolveInActiveScene(shortcutBar, active);
-            playerRelicInventory      = ResolveInActiveScene(playerRelicInventory, active);
-            playerConsumableInventory = ResolveInActiveScene(playerConsumableInventory, active);
-            goldWallet                = ResolveInActiveScene(goldWallet, active);
-            playerAim                 = ResolveInActiveScene(playerAim, active);
-            playerMovement            = ResolveInActiveScene(playerMovement, active);
-            playerWeaponPresenter     = ResolveInActiveScene(playerWeaponPresenter, active);
-            playerMeleeCombo          = ResolveInActiveScene(playerMeleeCombo, active);
-            playerDash                = ResolveInActiveScene(playerDash, active);
-            playerParry               = ResolveInActiveScene(playerParry, active);
             roomController            = ResolveInActiveScene(roomController, active);
+            // player-side — 멀티 본인 player 우선
+            playerRelicInventory      = ResolvePreferLocalPlayer(playerRelicInventory, active);
+            playerConsumableInventory = ResolvePreferLocalPlayer(playerConsumableInventory, active);
+            goldWallet                = ResolvePreferLocalPlayer(goldWallet, active);
+            playerAim                 = ResolvePreferLocalPlayer(playerAim, active);
+            playerMovement            = ResolvePreferLocalPlayer(playerMovement, active);
+            playerWeaponPresenter     = ResolvePreferLocalPlayer(playerWeaponPresenter, active);
+            playerMeleeCombo          = ResolvePreferLocalPlayer(playerMeleeCombo, active);
+            playerDash                = ResolvePreferLocalPlayer(playerDash, active);
+            playerParry               = ResolvePreferLocalPlayer(playerParry, active);
         }
 
         private static T ResolveInActiveScene<T>(T current, UnityEngine.SceneManagement.Scene active) where T : Component
@@ -280,6 +283,24 @@ namespace LostMemory.Events
                 if (all[i] != null && all[i].gameObject.scene == active) return all[i];
             }
             return all.Length > 0 ? all[0] : null;
+        }
+
+        /// <summary>
+        /// player-side 컴포넌트 resolve — LocalPlayerResolver.LocalCharacter 우선, fallback 으로 활성 씬 첫 매치.
+        /// 멀티 환경에서 host 의 PlayerRelicInventory 가 잡히지 않도록 guest 본인 player 우선 lookup.
+        /// </summary>
+        private static T ResolvePreferLocalPlayer<T>(T current, UnityEngine.SceneManagement.Scene active) where T : Component
+        {
+            if (current != null && current.gameObject.scene == active) return current;
+
+            var localChar = LocalPlayerResolver.LocalCharacter;
+            if (localChar != null)
+            {
+                T onLocal = localChar.GetComponentInChildren<T>(includeInactive: true);
+                if (onLocal != null) return onLocal;
+            }
+
+            return ResolveInActiveScene<T>(null, active);
         }
     }
 }

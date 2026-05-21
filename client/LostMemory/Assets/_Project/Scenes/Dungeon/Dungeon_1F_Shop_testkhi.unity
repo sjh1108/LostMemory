@@ -9206,7 +9206,15 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2230140976905920551, guid: 81d70782bee1d8b4186faea82636d865,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 7218144275895893454, guid: 81d70782bee1d8b4186faea82636d865,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 81d70782bee1d8b4186faea82636d865, type: 3}
 --- !u!114 &1589923360 stripped
 MonoBehaviour:
@@ -9274,6 +9282,13 @@ MonoBehaviour:
   requiredRoomIds: []
   exitTriggers:
   - {fileID: 1277333219}
+  blockingRoots: []
+  disableBlockingRootsWhenUnlocked: 1
+  showBlockingRootVisuals: 1
+  blockingRootVisualColor: {r: 0.25, g: 0.85, b: 1, a: 0.55}
+  blockingRootSortingLayerName: Foreground
+  blockingRootSortingOrder: 16
+  blockingRootVisualPadding: 0.08
   includeInactiveControllers: 1
   autoDiscoverOnEnable: 1
   unlockIfNoRequiredRooms: 0
@@ -10739,6 +10754,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 2006321086}
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2006321087}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!114 &1683277796 stripped
 MonoBehaviour:
@@ -11493,6 +11512,19 @@ MonoBehaviour:
   drawGizmos: 1
   primaryGizmoColor: {r: 1, g: 0.5, b: 0, a: 0.45}
   secondaryGizmoColor: {r: 1, g: 0.2, b: 0.4, a: 0.45}
+--- !u!114 &2006321087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1683277798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce83eca692aa5bf4e9a549f25747346c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.EditorTestCharacterMarker
+  verboseLog: 1
 --- !u!224 &2076544112 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4271859827719110504, guid: 7f2056a202591f344b3d7fec4020f15f,
@@ -11555,6 +11587,8 @@ MonoBehaviour:
   failureResultingDelaySeconds: 5
   townSceneName: Town
   townScenePath: Assets/_Project/Scenes/Town/Town.unity
+  lobbySceneName: 
+  lobbyScenePath: 
   restartDungeonSceneName: Dungeon_1F_1R
   restartDungeonScenePath: Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity
   totalStageCount: 1

@@ -1,5 +1,7 @@
 using System;
 using LostMemory.Combat;
+using LostMemory.Networking.Player;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,6 +27,8 @@ namespace LostMemory.TestKhi
         [SerializeField] private Transform projectileSpawnPoint;
         [Tooltip("마우스 worldPos 변환용. 비어있으면 Camera.main.")]
         [SerializeField] private Camera aimCamera;
+        [Tooltip("Multiplayer 시각 broadcast 채널 (Bug #28). 부모 계층에서 자동 검색.")]
+        [SerializeField] private AttackBroadcast attackBroadcast;
 
         [Header("Magic Bolt (Left Click Hold — 평타 자동 연사)")]
         [Tooltip("마법탄 prefab. KhiArrow.prefab(단발) 재사용 추천.")]
@@ -75,6 +79,9 @@ namespace LostMemory.TestKhi
         private float _nextMeteorAt;
         private float _rightPressStartTime;
         private bool _isHoldingRight;
+        // Phase E: 비-owner 측 자체 발사 차단용.
+        private NetworkObject _cachedNetObj;
+        private bool _netObjResolved;
 
         /// <summary>우클릭 차징 진행도 0~1. UI 차징바가 구독.</summary>
         public float ChargeProgress01 => _isHoldingRight && chargeThreshold > 0f
@@ -103,6 +110,7 @@ namespace LostMemory.TestKhi
                 ?? GetComponentInParent<PlayerStatModifierContainer>()
                 ?? GetComponentInChildren<PlayerStatModifierContainer>(true);
             if (projectileSpawnPoint == null) projectileSpawnPoint = transform;
+            if (attackBroadcast == null) attackBroadcast = GetComponentInParent<AttackBroadcast>();
 
             if (chargeBarPrefab != null)
             {
@@ -134,6 +142,10 @@ namespace LostMemory.TestKhi
 
         private void Update()
         {
+            // Phase E: 비-owner clone 은 자체 발사 금지. owner 만 입력 처리.
+            // (Staff bolt 는 호스트 권위 spawn 이 아니라 owner-local Instantiate 라 다른 클라엔 안 보임 — 향후 NetworkObject 화 별도 작업.)
+            if (IsRemoteClone()) return;
+
             Mouse mouse = Mouse.current;
             if (mouse == null) return;
 
@@ -190,6 +202,15 @@ namespace LostMemory.TestKhi
             KhiAttackRequest request = MakeRequest(aimDir, spawnPos);
             BoltFired?.Invoke(request);
             if (logSkillsToConsole) Debug.Log($"[KhiStaff] Bolt seq={request.SequenceId} dmg={boltDamage}");
+
+            // Bug #28 + #33 — non-owner 측 visual-only clone broadcast + owner kill 시 동기 destroy 위한 ID 발급.
+            if (attackBroadcast != null)
+            {
+                int projectileId = KhiArrowProjectile.AllocateProjectileId();
+                bolt.SetProjectileId(projectileId);
+                bolt.SetDespawnBroadcaster(attackBroadcast);  // owner hit 시 PlayImpactAndDestroy 가 RelayProjectileDespawn 호출.
+                attackBroadcast.RelayStaffProjectileSpawn(AttackBroadcast.StaffProjectileType.Bolt, spawnPos, aimDir, projectileId);
+            }
         }
 
         private void TryCastFireball()
@@ -209,6 +230,15 @@ namespace LostMemory.TestKhi
             FireballFired?.Invoke(request);
             Skill1Fired?.Invoke(request);
             if (logSkillsToConsole) Debug.Log($"[KhiStaff] Fireball seq={request.SequenceId} dmg={fireballDamage}");
+
+            // Bug #28 + #33 — non-owner 측 visual-only clone broadcast + owner kill 시 동기 destroy 위한 ID 발급.
+            if (attackBroadcast != null)
+            {
+                int projectileId = KhiArrowProjectile.AllocateProjectileId();
+                fireball.SetProjectileId(projectileId);
+                fireball.SetDespawnBroadcaster(attackBroadcast);
+                attackBroadcast.RelayStaffProjectileSpawn(AttackBroadcast.StaffProjectileType.Fireball, spawnPos, aimDir, projectileId);
+            }
         }
 
         private void TryCastMeteor()
@@ -227,6 +257,14 @@ namespace LostMemory.TestKhi
             MeteorFired?.Invoke(request);
             Skill2Fired?.Invoke(request);
             if (logSkillsToConsole) Debug.Log($"[KhiStaff] Meteor seq={request.SequenceId} pos={mouseWorld}");
+
+            // Bug #28 — non-owner 측 visual-only clone broadcast.
+            // Meteor 는 mouseWorld 위치 자체가 spawn 좌표 (direction 미사용 → Vector2.down placeholder).
+            // KhiMeteor 는 자체 코루틴으로 destroy 라 ID 무관 → 0 전달 (Bug #33 후속 path 우회).
+            if (attackBroadcast != null)
+            {
+                attackBroadcast.RelayStaffProjectileSpawn(AttackBroadcast.StaffProjectileType.Meteor, mouseWorld, Vector2.down, 0);
+            }
         }
 
         private KhiAttackRequest MakeRequest(Vector2 dir, Vector3 origin)
@@ -241,6 +279,56 @@ namespace LostMemory.TestKhi
                 StartedAt = Time.time,
                 Attacker = gameObject
             };
+        }
+
+        /// <summary>
+        /// Bug #28 — non-owner 측에서 AttackBroadcast.ClientRpc 가 호출. owner 측의 spawn 과 같은 prefab 으로
+        /// visual-only clone Instantiate. damage 권위는 owner 측 한 군데서만 → double-hit 없음.
+        ///   - Bolt/Fireball: KhiArrowProjectile.Launch(direction, speed, 0, null) + SetVisualOnly(true).
+        ///     speed 는 owner 측 값 그대로 (serialized field). 양 클라가 동일 spawnPos + direction 으로 시작해
+        ///     각자 짧은 직선 시뮬레이션. damage=0 + attacker=null 은 visualOnly 가드와 함께 안전망.
+        ///   - Meteor: KhiMeteor.Detonate(0, 0, null) — 0 은 serialized 기본값 유지 (override 안 함).
+        ///     warning/falling/explosion 시각 그대로, ApplyDamage 만 skip.
+        /// </summary>
+        public void SpawnVisualOnlyProjectile(AttackBroadcast.StaffProjectileType type, Vector3 spawnPos, Vector2 direction, int projectileId)
+        {
+            switch (type)
+            {
+                case AttackBroadcast.StaffProjectileType.Bolt:
+                    if (boltPrefab == null) return;
+                    KhiArrowProjectile boltClone = Instantiate(boltPrefab, spawnPos, Quaternion.identity);
+                    boltClone.SetVisualOnly(true);
+                    boltClone.SetProjectileId(projectileId);  // visualOnly 이미 true → dictionary 등록.
+                    boltClone.Launch(direction, boltSpeed, 0f, null);
+                    break;
+
+                case AttackBroadcast.StaffProjectileType.Fireball:
+                    if (fireballPrefab == null) return;
+                    KhiArrowProjectile fireballClone = Instantiate(fireballPrefab, spawnPos, Quaternion.identity);
+                    fireballClone.SetVisualOnly(true);
+                    fireballClone.SetProjectileId(projectileId);
+                    fireballClone.Launch(direction, fireballSpeed, 0f, null);
+                    break;
+
+                case AttackBroadcast.StaffProjectileType.Meteor:
+                    // Meteor 는 자체 코루틴 destroy — ID dictionary 미사용.
+                    if (meteorPrefab == null) return;
+                    KhiMeteor meteorClone = Instantiate(meteorPrefab, spawnPos, Quaternion.identity);
+                    meteorClone.SetVisualOnly(true);
+                    meteorClone.Detonate(0f, 0f, null);
+                    break;
+            }
+        }
+
+        /// <summary>Phase E: 비-owner clone 여부 (cached).</summary>
+        private bool IsRemoteClone()
+        {
+            if (!_netObjResolved)
+            {
+                _cachedNetObj = GetComponentInParent<NetworkObject>();
+                _netObjResolved = true;
+            }
+            return _cachedNetObj != null && _cachedNetObj.IsSpawned && !_cachedNetObj.IsOwner;
         }
 
         private Vector2 ComputeAimFromOrigin(Vector3 origin)

@@ -55,6 +55,12 @@ namespace LostMemory.Networking.Session
                 return JoinResult.Fail(SessionErrorKind.Unknown, "Already in a session.");
             }
 
+            // L-1: Local Fallback 모드 — backend 우회, UTP swap, StartClient.
+            if (RelaySession.UseLocalFallback)
+            {
+                return await JoinLocalFallbackAsync(joinCode);
+            }
+
             try
             {
                 await RelaySession.EnsureInitializedAsync();
@@ -88,6 +94,9 @@ namespace LostMemory.Networking.Session
                     return JoinResult.Fail(SessionErrorKind.JoinCodeNotFound, "백엔드 join 실패");
                 }
 
+                // L-1: fallback 흔적 복원.
+                RelaySession.RestoreRelayTransport(out _);
+
                 // 3. 호스트 userId 추출
                 ulong hostUserId = 0;
                 if (data.members != null)
@@ -115,12 +124,17 @@ namespace LostMemory.Networking.Session
                     transport.SetHostUserId(hostUserId);
                 }
 
+                // F-3 ReconnectGatekeeper 비활성 — NetworkConfig mismatch 우회.
+                // ReconnectGatekeeper.SetClientPayload((ulong)SessionApiClient.MyUserId);
+
                 // 5. NGO 클라이언트 시작
                 bool started = NetworkManager.Singleton.StartClient();
                 if (!started)
                 {
                     return JoinResult.Fail(SessionErrorKind.TransportStartFailed, "NetworkManager.StartClient() 실패");
                 }
+                // 안전: 호스트가 LoadScene(Single) 보내면 게스트 측 scene-placed NetworkManager 도 destroy 위험.
+                UnityEngine.Object.DontDestroyOnLoad(NetworkManager.Singleton.gameObject);
 
                 // 호스트 강제 끊김·NGO 측 강제 disconnect 도 RelaySession.Left 로 흘리기
                 NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
@@ -142,6 +156,43 @@ namespace LostMemory.Networking.Session
                 RelaySession.RaiseFailed(kind, ex.Message);
                 return JoinResult.Fail(kind, ex.Message);
             }
+        }
+
+        /// <summary>L-1: backend 우회 클라이언트 입장. UTP swap + 가짜 ID/nickname.</summary>
+        private static async Task<JoinResult> JoinLocalFallbackAsync(string joinCode)
+        {
+            await RelaySession.EnsureInitializedAsync(); // no-op in fallback
+
+            if (!RelaySession.SwapToUnityTransport(out string transportError))
+            {
+                return JoinResult.Fail(SessionErrorKind.TransportStartFailed,
+                    $"[LOCAL FALLBACK] Transport swap 실패: {transportError}");
+            }
+
+            ulong fallbackUserId = RelaySession.LocalFallbackUserId;
+            NetLog.Info("Client", $"[LOCAL FALLBACK] JoinByCodeAsync code='{joinCode}' — backend bypass. userId={fallbackUserId}");
+
+            // F-3 비활성 — NetworkConfig mismatch 회피.
+            // ReconnectGatekeeper.SetClientPayload(fallbackUserId);
+
+            bool started = NetworkManager.Singleton.StartClient();
+            if (!started)
+            {
+                return JoinResult.Fail(SessionErrorKind.TransportStartFailed,
+                    "[LOCAL FALLBACK] StartClient 실패 — 호스트가 켜져있는지 확인.");
+            }
+            // 안전: scene-placed NetworkManager LoadScene destroy 방지.
+            UnityEngine.Object.DontDestroyOnLoad(NetworkManager.Singleton.gameObject);
+
+            NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
+            NetworkManager.Singleton.OnClientStopped += OnClientStoppedHandler;
+
+            RelaySession.ActiveSessionId = 1;
+            RelaySession.IsHost = false;
+            RelaySession.ActiveJoinCode = string.IsNullOrEmpty(joinCode) ? "LOCAL" : joinCode.Trim().ToUpperInvariant();
+            RelaySession.RaiseJoined(asHost: false);
+
+            return JoinResult.Ok(1);
         }
 
         private static async void OnClientStoppedHandler(bool _)

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using LostMemory.Combat.Telegraph;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Enemies
@@ -387,6 +388,14 @@ namespace LostMemory.Enemies
         private void DamageTargets()
         {
             if (_damage <= 0f || _radius <= 0f)
+            {
+                return;
+            }
+
+            // Bug #31 — 멀티에서는 host 만 데미지 권위. 게스트 측 NetworkObject 복제 인스턴스도 DamageTargets 를 호출할 수 있어
+            // double-hit 위험. 솔로(NM 비활성) 또는 host(IsServer) 만 통과. KhiMeteor.SetVisualOnly 와 동등 효과.
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && !nm.IsServer)
             {
                 return;
             }

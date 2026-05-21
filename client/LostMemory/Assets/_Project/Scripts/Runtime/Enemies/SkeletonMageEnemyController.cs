@@ -1,4 +1,6 @@
+using LostMemory.Combat.Telegraph;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Enemies
@@ -34,6 +36,8 @@ namespace LostMemory.Enemies
         [SerializeField] private Health health;
         [SerializeField] private SkeletonMageProjectile projectilePrefab;
         [SerializeField] private SkeletonMageAreaAttack areaAttackPrefab;
+        [Tooltip("Multiplayer 시각 broadcast 채널 (Bug #31). 본 GameObject 또는 부모 계층의 NetworkObject 와 같은 root 에 부착.")]
+        [SerializeField] private MonsterAttackBroadcast monsterAttackBroadcast;
 
         [Header("Animation States")]
         [SerializeField] private string idleStateName = "New Animation";
@@ -296,6 +300,12 @@ namespace LostMemory.Enemies
             {
                 health = GetComponent<Health>();
             }
+
+            if (monsterAttackBroadcast == null)
+            {
+                monsterAttackBroadcast = GetComponent<MonsterAttackBroadcast>();
+                if (monsterAttackBroadcast == null) monsterAttackBroadcast = GetComponentInParent<MonsterAttackBroadcast>();
+            }
         }
 
         private void CaptureVisualBaseScale()
@@ -518,6 +528,9 @@ namespace LostMemory.Enemies
                 new Vector3(spawnPosition.x, spawnPosition.y, transform.position.z),
                 Quaternion.AngleAxis(angle, Vector3.forward));
 
+            // 멀티: NGO Spawn 으로 게스트에 sync. NetworkObject 부착되어 있고 host 일 때만.
+            TrySpawnNetworked(projectile.gameObject);
+
             projectile.Initialize(
                 gameObject,
                 health,
@@ -546,10 +559,15 @@ namespace LostMemory.Enemies
                 return;
             }
 
+            Vector3 spawnWorldPos = new Vector3(targetPosition.x, targetPosition.y, transform.position.z);
+
             SkeletonMageAreaAttack areaAttack = Instantiate(
                 areaAttackPrefab,
-                new Vector3(targetPosition.x, targetPosition.y, transform.position.z),
+                spawnWorldPos,
                 Quaternion.identity);
+
+            // 멀티: NGO Spawn 으로 게스트에 sync (기존 path — 검증 안 됐을 가능성 있음, 본 사이클에 진단 로그로 isolation).
+            TrySpawnNetworked(areaAttack.gameObject);
 
             areaAttack.Initialize(
                 gameObject,
@@ -563,6 +581,38 @@ namespace LostMemory.Enemies
                 areaInvincibilityDuration,
                 applyAreaKnockback,
                 areaKnockbackForce);
+
+            // Bug #31 — 공통 visual broadcast (단검/스태프/활 패턴과 일관). 위의 NetworkObject.Spawn 이 *왜 안 보이는지*
+            // 진단하면서 동시에 안정적 시각 sync 보강. 양쪽 path 가 동시에 보이면 그건 게스트에 *NetworkObject.Spawn 도* 정상 도착했다는 뜻 (디버그용 안전망).
+            if (monsterAttackBroadcast != null)
+            {
+                float diameter = Mathf.Max(0f, areaRadius * 2f);
+                monsterAttackBroadcast.BroadcastTelegraph(
+                    AttackTelegraphShape2D.Circle,
+                    spawnWorldPos,
+                    new Vector2(diameter, diameter),
+                    0f,
+                    Mathf.Max(0.01f, areaImpactTime),
+                    Mathf.Max(0f, areaLifetime),
+                    new Color(1f, 0.12f, 0.05f, 0.38f));
+            }
+        }
+
+        /// <summary>
+        /// 멀티 환경 — 적이 spawn 한 GameObject 의 NetworkObject 를 NGO 로 spawn. 게스트 측 sync.
+        /// NetworkObject 없으면 (= 해당 prefab 이 sync 필요 없음) skip.
+        /// 솔로 (NGO 미동작) 또는 호스트 아님 (server 아님) 시 skip.
+        /// </summary>
+        private static void TrySpawnNetworked(GameObject instance)
+        {
+            if (instance == null) return;
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+            NetworkObject netObj = instance.GetComponent<NetworkObject>();
+            if (netObj != null && !netObj.IsSpawned)
+            {
+                netObj.Spawn(destroyWithScene: true);
+            }
         }
 
         private bool CanStartProjectileAttack()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Networking.Player;
 using LostMemory.Relics;
 using UnityEngine;
 
@@ -74,6 +75,20 @@ namespace LostMemory.Rewards
         public void Show(PlayerRelicInventory inventory, int count, int picksAllowed,
                          int luckPoints, bool forceLegendary, bool relicOnly, float rarityBoostPercent)
         {
+            // [DiagPhaseF] Log 6a — Show 진입 시점 + 활성 상태 (SetActive 호출 전).
+            var nmLog6a = Unity.Netcode.NetworkManager.Singleton;
+            Debug.Log($"[RewardPanelView] Show ENTER localId={nmLog6a?.LocalClientId} " +
+                      $"inventory={(inventory != null ? inventory.gameObject.name : "NULL")} " +
+                      $"count={count} picks={picksAllowed} " +
+                      $"beforeActive={gameObject.activeSelf} hier={gameObject.activeInHierarchy}", this);
+
+            // Phase E: inventory 인자가 null 인 경우 (호출자 wiring 실패 등) LocalPlayer 측에서 fallback.
+            // RewardController 가 이미 LocalPlayerResolver 로 resolve 하므로 보통은 non-null 이지만 안전망.
+            if (inventory == null)
+            {
+                inventory = LocalPlayerResolver.GetComponentOnLocalPlayer<PlayerRelicInventory>();
+                Debug.LogWarning($"[RewardPanelView] Show: inventory 인자 null → LocalPlayerResolver fallback. resolved={(inventory != null ? inventory.gameObject.name : "still-null")}", this);
+            }
             _inventory = inventory;
             _picksMade = 0;
             _picksAllowed = Mathf.Max(1, picksAllowed);
@@ -110,6 +125,12 @@ namespace LostMemory.Rewards
             }
 
             gameObject.SetActive(true);
+
+            // [DiagPhaseF] Log 6b — SetActive(true) 직후 hierarchy 실제 active 상태. hier=false 면 부모 Canvas/parent 비활성 의심.
+            var nmLog6b = Unity.Netcode.NetworkManager.Singleton;
+            Debug.Log($"[RewardPanelView] Show EXIT — SetActive(true) called. " +
+                      $"afterActive={gameObject.activeSelf} hier={gameObject.activeInHierarchy} " +
+                      $"localId={nmLog6b?.LocalClientId}", this);
 
             // 즉시 선택 방지 — 활성 카드 비활성화 후 _selectionDelay 뒤 다시 활성화.
             if (_selectionDelay > 0f)
@@ -149,6 +170,18 @@ namespace LostMemory.Rewards
 
         private void OnCardSelected(RelicData selected)
         {
+            // Phase C 검증 로그 — 멀티에서 본인 인벤토리에 정확히 추가되는지 확인.
+            // host/guest 각자 자기 클릭에 대해서만 자기 PlayerRelicInventory.TryAdd 호출되어야 정상.
+            string inventoryHostName = _inventory != null ? _inventory.gameObject.name : "null";
+            Debug.Log($"[RewardPanelView] OnCardSelected '{selected?.DisplayName}' → TryAdd on inventory host='{inventoryHostName}'", this);
+
+            // Phase E: _inventory 가 어떤 이유로 null 이면 LocalPlayer 측 fallback.
+            if (_inventory == null)
+            {
+                _inventory = LocalPlayerResolver.GetComponentOnLocalPlayer<PlayerRelicInventory>();
+                Debug.LogWarning($"[RewardPanelView] OnCardSelected fallback resolve → {(_inventory != null ? _inventory.gameObject.name : "still-null")}", this);
+                if (_inventory == null) return;
+            }
             _inventory.TryAdd(selected);
             _picksMade++;
 

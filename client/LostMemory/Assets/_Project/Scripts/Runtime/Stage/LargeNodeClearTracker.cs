@@ -127,7 +127,8 @@ namespace LostMemory.Stage
 
                 requiredControllers.Add(controller);
                 Action<RoomClearedPayload> roomClearedHandler = payload => HandleRoomCleared(controller, payload);
-                controller.RoomCleared += roomClearedHandler;
+                // Q-2: RoomClearedBroadcast 사용 — 게스트 화면에도 출구 잠금 해제 시각 동기화.
+                controller.RoomClearedBroadcast += roomClearedHandler;
                 roomClearedHandlers.Add(controller, roomClearedHandler);
 
                 if (clearPolicy == LargeNodeClearPolicy.NoActiveCombat)
@@ -453,7 +454,7 @@ namespace LostMemory.Stage
             {
                 if (entry.Key != null)
                 {
-                    entry.Key.RoomCleared -= entry.Value;
+                    entry.Key.RoomClearedBroadcast -= entry.Value;
                 }
             }
 

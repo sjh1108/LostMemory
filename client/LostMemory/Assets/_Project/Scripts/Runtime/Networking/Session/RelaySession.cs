@@ -1,6 +1,9 @@
 using System;
 using System.Threading.Tasks;
+using LostMemory.Multiplayer;
 using LostMemory.Networking.Common;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 
 namespace LostMemory.Networking.Session
 {
@@ -30,6 +33,78 @@ namespace LostMemory.Networking.Session
         /// <summary>현재 활성 세션의 입장 코드. 호스트는 생성 시·게스트는 join 시 set. Leave 시 null.</summary>
         public static string ActiveJoinCode { get; internal set; }
 
+        // ============================================================
+        // L-1: 백엔드 우회 Local Fallback (Editor 전용)
+        // ============================================================
+
+        /// <summary>
+        /// EDITOR-ONLY: true 면 backend API / Relay 우회 + UTP localhost 자동 swap.
+        /// 빌드에서는 항상 false (compile-out). 메뉴: Lost Memory > Toggle Local Fallback.
+        /// </summary>
+        public static bool UseLocalFallback
+        {
+            get
+            {
+#if UNITY_EDITOR
+                return UnityEditor.EditorPrefs.GetBool("LostMemory.RelaySession.UseLocalFallback", false);
+#else
+                return false;
+#endif
+            }
+            set
+            {
+#if UNITY_EDITOR
+                UnityEditor.EditorPrefs.SetBool("LostMemory.RelaySession.UseLocalFallback", value);
+#endif
+            }
+        }
+
+        /// <summary>fallback 가짜 userId (PID 기반 → 인스턴스마다 다름).</summary>
+        public static ulong LocalFallbackUserId
+            => (ulong)System.Diagnostics.Process.GetCurrentProcess().Id;
+
+        public static string LocalFallbackNickname
+        {
+            get
+            {
+                int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+                return $"테스터{pid % 100:00}";
+            }
+        }
+
+        public static string LocalFallbackAddress = "127.0.0.1";
+        public static ushort LocalFallbackPort = 7777;
+
+        /// <summary>NetworkTransport 슬롯을 UnityTransport 로 동적 교체. prefab 영구 변경 없음.</summary>
+        internal static bool SwapToUnityTransport(out string error)
+        {
+            error = null;
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null) { error = "NetworkManager.Singleton == null"; return false; }
+            if (nm.IsListening) { error = "NetworkManager 이미 활성 — swap 불가"; return false; }
+
+            UnityTransport utp = nm.GetComponent<UnityTransport>();
+            if (utp == null) utp = nm.gameObject.AddComponent<UnityTransport>();
+            utp.SetConnectionData(LocalFallbackAddress, LocalFallbackPort);
+            nm.NetworkConfig.NetworkTransport = utp;
+            NetLog.Info("Transport", $"[LOCAL FALLBACK] UnityTransport swapped to {LocalFallbackAddress}:{LocalFallbackPort}");
+            return true;
+        }
+
+        /// <summary>NetworkTransport 를 LostMemoryRelayTransport 로 복원 (정상 모드 진입 시 idempotent).</summary>
+        internal static bool RestoreRelayTransport(out string error)
+        {
+            error = null;
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null) { error = "NetworkManager.Singleton == null"; return false; }
+            if (nm.IsListening) { error = "NetworkManager 이미 활성"; return false; }
+
+            LostMemoryRelayTransport lrt = nm.GetComponent<LostMemoryRelayTransport>();
+            if (lrt == null) { error = "LostMemoryRelayTransport 미부착"; return false; }
+            nm.NetworkConfig.NetworkTransport = lrt;
+            return true;
+        }
+
         /// <summary>호스트/클라 진입 성공 시 발화. 인자: 본인이 호스트인지.</summary>
         public static event Action<bool> Joined;
 
@@ -45,6 +120,15 @@ namespace LostMemory.Networking.Session
         /// </summary>
         internal static async Task EnsureInitializedAsync()
         {
+            // L-1: Local Fallback — 백엔드 skip. AutoLoginNickname 만 fallback 닉네임으로.
+            if (UseLocalFallback)
+            {
+                AutoLoginNickname = LocalFallbackNickname;
+                NetLog.Info("Session", $"[LOCAL FALLBACK] init skipped. nick='{AutoLoginNickname}' userId={LocalFallbackUserId}");
+                await Task.CompletedTask;
+                return;
+            }
+
             if (SessionApiClient.IsLoggedIn) return;
 
             // signup (이미 있으면 silent)
@@ -84,6 +168,18 @@ namespace LostMemory.Networking.Session
         {
             long? sessionId = ActiveSessionId;
             if (!sessionId.HasValue) return;
+
+            // L-1: Local Fallback — backend DELETE/leave 호출 skip.
+            if (UseLocalFallback)
+            {
+                NetLog.Info("Session", $"[LOCAL FALLBACK] Leave skipped backend call.");
+                ActiveSessionId = null;
+                IsHost = false;
+                ActiveJoinCode = null;
+                RaiseLeft();
+                await Task.CompletedTask;
+                return;
+            }
 
             try
             {

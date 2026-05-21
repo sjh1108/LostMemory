@@ -78,6 +78,8 @@ namespace LostMemory.TestKhi
         private bool _warningActive;
         private Vector3 _warningBaseScale = Vector3.one;
         private Vector3 _magicCircleBaseScale = Vector3.one;
+        // Multiplayer: non-owner 측 시각 전용. ApplyDamage 만 skip.
+        private bool _visualOnly;
 
         private static Sprite _cachedCircleSprite;
 
@@ -167,6 +169,16 @@ namespace LostMemory.TestKhi
             StartCoroutine(Sequence());
         }
 
+        /// <summary>
+        /// Multiplayer 시각 전용 clone 으로 설정. non-owner 측에서 Detonate 호출 전에 부른다.
+        /// ApplyDamage 만 skip — warning/falling/explosion 시각은 그대로 재생.
+        /// damage 권위는 owner 측 한 군데서만 처리 → double-hit 방지.
+        /// </summary>
+        public void SetVisualOnly(bool visualOnly)
+        {
+            _visualOnly = visualOnly;
+        }
+
         private IEnumerator Sequence()
         {
             ShowWarning(true);
@@ -231,6 +243,9 @@ namespace LostMemory.TestKhi
 
         private void ApplyDamage()
         {
+            // Multiplayer 시각 전용 clone — damage 권위는 owner 측만. non-owner 의 OverlapCircleAll 결과는 무시.
+            if (_visualOnly) return;
+
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius, targetLayers);
             if (logMeteorEvents) Debug.Log($"[Meteor] pos={transform.position} radius={damageRadius} → {hits.Length} colliders");
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using LostMemory.Networking.Common;
 using UnityEngine;
 
 namespace LostMemory.Relics
@@ -15,7 +16,7 @@ namespace LostMemory.Relics
     /// - <see cref="PlayerRelicInventory"/> 의 OnRelicAcquired/Removed/Cleared 구독
     /// - 변화 발생 시 dirty flag set → LateUpdate 1회 재계산 (한 프레임 N번 변화 흡수)
     /// - 각 BuildSetData 의 RequiredCount 임계치 기준 *최고* 티어만 활성
-    /// - <see cref="IRelicEffectAuthority"/> 게이트 (싱글/호스트만 카운트)
+    /// - <see cref="HostAuthority"/> 게이트 (싱글/호스트만 카운트)
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Lost Memory/Relics/Build Manager")]
@@ -32,7 +33,7 @@ namespace LostMemory.Relics
 
         // Phase B-1 패턴 재활용 (RelicEffectRegistry 와 동일).
         // 싱글 실행 시 NetworkManager 비활성 → true, 멀티 실행 시 호스트만 true.
-        private readonly IRelicEffectAuthority _authority = new NetworkRelicEffectAuthority();
+        // F-2: HostAuthority 로 일원화. 싱글 → true, 멀티 호스트 → true, 멀티 게스트 → false.
 
         private readonly Dictionary<RelicTag, int> _tagCounts = new();
         private readonly Dictionary<RelicTag, int> _activeTiers = new();      // -1 = 미발동
@@ -134,13 +135,13 @@ namespace LostMemory.Relics
 
         private void HandleInventoryChanged(RelicData _)
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             _isDirty = true;
         }
 
         private void HandleInventoryCleared()
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             _isDirty = true;
         }
 

@@ -142,6 +142,9 @@ namespace LostMemory.UI
 
         private void HandleGoldChanged(int amount)
         {
+            // [DiagGold-HUD] HUD presenter 가 *어느* wallet 인스턴스를 구독했는지 + 새 값 가시화.
+            // RunManager 의 [DiagGold-Resolve] 인스턴스 ID 와 비교해 일치 여부 확인. 일치 안 하면 wallet 인스턴스 불일치 = 픽스 대상.
+            Debug.Log($"[DiagGold-HUD] HandleGoldChanged wallet#{(_subscribedGoldWallet != null ? _subscribedGoldWallet.GetInstanceID() : 0)} host='{(_subscribedGoldWallet != null ? _subscribedGoldWallet.gameObject.name : "NULL")}' value={amount} view={(_view != null ? "OK" : "NULL")}", this);
             if (_view != null)
             {
                 _view.SetGold(amount);

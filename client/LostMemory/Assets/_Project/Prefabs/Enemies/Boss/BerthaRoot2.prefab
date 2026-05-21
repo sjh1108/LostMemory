@@ -442,6 +442,24 @@ GameObject:
   - component: {fileID: 7462428657690772210}
   - component: {fileID: 7750076076812265523}
   - component: {fileID: 5569211883825108730}
+  - component: {fileID: 4242720324304542719}
+  - component: {fileID: 4429168169431843373}
+  - component: {fileID: 1043843594476341092}
+  - component: {fileID: 8657573170882295662}
+  - component: {fileID: 3901317907183881520}
+  - component: {fileID: 4207886968295581058}
+  - component: {fileID: 6084131678362375030}
+  - component: {fileID: 3377387649981839488}
+  - component: {fileID: 4961677221529822955}
+  - component: {fileID: 5641004471912468383}
+  - component: {fileID: 1415906470773258767}
+  - component: {fileID: 8764284415656804833}
+  - component: {fileID: 633800859596650514}
+  - component: {fileID: 7545567777979679060}
+  - component: {fileID: 3329909688073159179}
+  - component: {fileID: 8460922008795374413}
+  - component: {fileID: 6904832983570661674}
+  - component: {fileID: 7367615520016203882}
   m_Layer: 0
   m_Name: BerthaRoot2
   m_TagString: Untagged
@@ -716,7 +734,7 @@ MonoBehaviour:
       - {fileID: 5466689045922151871}
     Transitions:
       array:
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 8657573170882295662}
         TrueState: LightProjectileAttack
         FalseState: 
         LastDecisionEvaluation: 0
@@ -726,7 +744,7 @@ MonoBehaviour:
       - {fileID: 5466689045922151871}
     Transitions:
       array:
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 3901317907183881520}
         TrueState: LightProjectileRecover
         FalseState: 
         LastDecisionEvaluation: 0
@@ -740,7 +758,7 @@ MonoBehaviour:
         TrueState: 
         FalseState: Detecting
         LastDecisionEvaluation: 0
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 4207886968295581058}
         TrueState: Moving
         FalseState: 
         LastDecisionEvaluation: 0
@@ -750,7 +768,7 @@ MonoBehaviour:
       - {fileID: 5466689045922151871}
     Transitions:
       array:
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 6084131678362375030}
         TrueState: ProjectileBarrageAttack
         FalseState: 
         LastDecisionEvaluation: 0
@@ -760,7 +778,7 @@ MonoBehaviour:
       - {fileID: 5466689045922151871}
     Transitions:
       array:
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 3377387649981839488}
         TrueState: ProjectileBarrageRecover
         FalseState: 
         LastDecisionEvaluation: 0
@@ -774,7 +792,7 @@ MonoBehaviour:
         TrueState: 
         FalseState: Detecting
         LastDecisionEvaluation: 0
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 4961677221529822955}
         TrueState: Moving
         FalseState: 
         LastDecisionEvaluation: 0
@@ -784,7 +802,7 @@ MonoBehaviour:
       - {fileID: 5466689045922151871}
     Transitions:
       array:
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 5641004471912468383}
         TrueState: ProjectileStormAttack
         FalseState: 
         LastDecisionEvaluation: 0
@@ -794,7 +812,7 @@ MonoBehaviour:
       - {fileID: 5466689045922151871}
     Transitions:
       array:
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 1415906470773258767}
         TrueState: ProjectileStormRecover
         FalseState: 
         LastDecisionEvaluation: 0
@@ -808,7 +826,7 @@ MonoBehaviour:
         TrueState: 
         FalseState: Detecting
         LastDecisionEvaluation: 0
-      - Decision: {fileID: 0}
+      - Decision: {fileID: 8764284415656804833}
         TrueState: Moving
         FalseState: 
         LastDecisionEvaluation: 0
@@ -880,6 +898,10 @@ MonoBehaviour:
   entryTriggerName: 
   entryStateName: Entry
   entryStateLayer: 0
+  entryMotionRoot: {fileID: 0}
+  moveEntryFromOffset: 0
+  entryStartLocalOffset: {x: 0, y: 6, z: 0}
+  entryMoveDuration: 0.9
   introVisibilityTargets: []
   dialoguePlayerOwner: {fileID: 7691799999625441337}
   bossHealth: {fileID: 0}
@@ -1454,10 +1476,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
   Model: {fileID: 0}
-  CurrentHealth: 1000
+  CurrentHealth: 1400
   Invulnerable: 0
-  InitialHealth: 800
-  MaximumHealth: 800
+  InitialHealth: 1400
+  MaximumHealth: 1400
   ResetHealthOnEnable: 1
   OnHealFeedback: {fileID: 0}
   ImmuneToDamage: 0
@@ -1876,6 +1898,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 1615596352621668811}
   telegraphOrigin: {fileID: 8917022440390223556}
   telegraphView: {fileID: 8731987763666845086}
+  monsterAttackBroadcast: {fileID: 7367615520016203882}
+  estimatedTelegraphDuration: 1.5
   telegraphStateName: LightTelegraph
   attackStateName: LightAttack1
   attackAnimationStateName: LightAtk1
@@ -2036,6 +2060,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 1615596352621668811}
   telegraphOrigin: {fileID: 8917022440390223556}
   telegraphView: {fileID: 8731987763666845086}
+  monsterAttackBroadcast: {fileID: 7367615520016203882}
+  estimatedTelegraphDuration: 1.5
   telegraphStateName: Light2Telegraph
   attackStateName: LightAttack2
   attackAnimationStateName: LightAtk2
@@ -2078,6 +2104,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 1615596352621668811}
   telegraphOrigin: {fileID: 8917022440390223556}
   telegraphView: {fileID: 8731987763666845086}
+  monsterAttackBroadcast: {fileID: 7367615520016203882}
+  estimatedTelegraphDuration: 1.5
   telegraphStateName: HeavyTelegraph
   attackStateName: HeavyAttack
   attackAnimationStateName: HeavyAtk
@@ -2120,6 +2148,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 1615596352621668811}
   telegraphOrigin: {fileID: 8917022440390223556}
   telegraphView: {fileID: 8731987763666845086}
+  monsterAttackBroadcast: {fileID: 7367615520016203882}
+  estimatedTelegraphDuration: 1.5
   telegraphStateName: FullTelegraph
   attackStateName: FullComboAttack
   attackAnimationStateName: FullCombo
@@ -2849,6 +2879,578 @@ MonoBehaviour:
   roomController: {fileID: 0}
   clearDelaySeconds: 0
   debugLogging: 1
+--- !u!114 &4242720324304542719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bee0f2e2d80e54b1e891c70612563b60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectilePatternDriver
+  driverKey: LightProjectile
+  brain: {fileID: 6457538628010552793}
+  character: {fileID: 4447270931488285520}
+  orientationAbility: {fileID: 7940307094650667150}
+  phaseController: {fileID: 7750076076812265523}
+  animator: {fileID: 3739491042386699188}
+  projectileOrigin: {fileID: 1625856087237583964}
+  burstEmitter: {fileID: 7717694166337342079}
+  attackStateName: LightProjectileAttack
+  attackAnimationStateName: LightAtk2
+  attackAnimationLayer: 0
+  minimumPhase: 1
+  burstSequence:
+  - Mode: 1
+    Delay: 0.08
+    ProjectileCount: 3
+    SpreadAngle: 34
+    Speed: 6
+    Lifetime: 6
+    Damage: 5
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.3
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 60
+    HomingDuration: 6
+  burstSfx: {fileID: 8300000, guid: aeb67eefa66f34ffeae4fd8422461e84, type: 3}
+  burstSfxVolume: 0.8
+  burstSfxMinPitch: 0.98
+  burstSfxMaxPitch: 1.08
+  burstSfxMinimumInterval: 0
+  fallbackWithoutSoundManager: 1
+  debugLogging: 0
+--- !u!114 &4429168169431843373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bee0f2e2d80e54b1e891c70612563b60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectilePatternDriver
+  driverKey: ProjectileBarrage
+  brain: {fileID: 6457538628010552793}
+  character: {fileID: 4447270931488285520}
+  orientationAbility: {fileID: 7940307094650667150}
+  phaseController: {fileID: 7750076076812265523}
+  animator: {fileID: 3739491042386699188}
+  projectileOrigin: {fileID: 1625856087237583964}
+  burstEmitter: {fileID: 7717694166337342079}
+  attackStateName: ProjectileBarrageAttack
+  attackAnimationStateName: HeavyAtk
+  attackAnimationLayer: 0
+  minimumPhase: 2
+  burstSequence:
+  - Mode: 0
+    Delay: 0.2
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.5
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.28
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.2
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 3.6
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.28
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.8
+    Lifetime: 2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 7.2
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 1
+    Delay: 0.18
+    ProjectileCount: 7
+    SpreadAngle: 110
+    Speed: 8
+    Lifetime: 2
+    Damage: 7
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  burstSfx: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
+  burstSfxVolume: 0.75
+  burstSfxMinPitch: 0.94
+  burstSfxMaxPitch: 1.08
+  burstSfxMinimumInterval: 0.08
+  fallbackWithoutSoundManager: 1
+  debugLogging: 0
+--- !u!114 &1043843594476341092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bee0f2e2d80e54b1e891c70612563b60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Enemies.Boss.Bertha.BerthaProjectilePatternDriver
+  driverKey: ProjectileStorm
+  brain: {fileID: 6457538628010552793}
+  character: {fileID: 4447270931488285520}
+  orientationAbility: {fileID: 7940307094650667150}
+  phaseController: {fileID: 7750076076812265523}
+  animator: {fileID: 3739491042386699188}
+  projectileOrigin: {fileID: 1625856087237583964}
+  burstEmitter: {fileID: 7717694166337342079}
+  attackStateName: ProjectileStormAttack
+  attackAnimationStateName: HeavyAtk
+  attackAnimationLayer: 0
+  minimumPhase: 3
+  burstSequence:
+  - Mode: 0
+    Delay: 0.12
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.2
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 0
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.5
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 3.6
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 6.8
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 7.2
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.1
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 10.8
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.4
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 14.4
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 7.7
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 18
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 21.6
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8.3
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 25.2
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 8.6
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 28.8
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  - Mode: 0
+    Delay: 0.14
+    ProjectileCount: 10
+    SpreadAngle: 0
+    Speed: 9
+    Lifetime: 2.2
+    Damage: 6
+    TargetInvincibilityDuration: 0.5
+    HitRadius: 0.35
+    AngleOffsetDegrees: 32.4
+    SpawnDistance: 0.45
+    HomingTurnSpeedDegrees: 0
+    HomingDuration: 0
+  burstSfx: {fileID: 8300000, guid: d2f4840d643f74756911068b8d82d073, type: 3}
+  burstSfxVolume: 0.65
+  burstSfxMinPitch: 0.94
+  burstSfxMaxPitch: 1.08
+  burstSfxMinimumInterval: 0.12
+  fallbackWithoutSoundManager: 1
+  debugLogging: 0
+--- !u!114 &8657573170882295662
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: LightProjectileTelegraphDuration
+  AfterTimeMin: 0.45
+  AfterTimeMax: 0.45
+--- !u!114 &3901317907183881520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: LightProjectileDuration
+  AfterTimeMin: 0.45
+  AfterTimeMax: 0.45
+--- !u!114 &4207886968295581058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: LightProjectileRecoverDuration
+  AfterTimeMin: 0.35
+  AfterTimeMax: 0.35
+--- !u!114 &6084131678362375030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: ProjectileBarrageTelegraphDuration
+  AfterTimeMin: 0.75
+  AfterTimeMax: 0.75
+--- !u!114 &3377387649981839488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: ProjectileBarrageDuration
+  AfterTimeMin: 1.6
+  AfterTimeMax: 1.6
+--- !u!114 &4961677221529822955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: ProjectileBarrageRecoverDuration
+  AfterTimeMin: 0.55
+  AfterTimeMax: 0.55
+--- !u!114 &5641004471912468383
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: ProjectileStormTelegraphDuration
+  AfterTimeMin: 0.85
+  AfterTimeMax: 0.85
+--- !u!114 &1415906470773258767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: ProjectileStormDuration
+  AfterTimeMin: 1.9
+  AfterTimeMax: 1.9
+--- !u!114 &8764284415656804833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21818f4def5bf646bec3d25770336cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.AIDecisionTimeInState
+  Label: ProjectileStormRecoverDuration
+  AfterTimeMin: 0.6
+  AfterTimeMax: 0.6
+--- !u!114 &633800859596650514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1620369034
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &7545567777979679060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 573cbbffe1b3dbe43a9ac95004e00d78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Monster.MonsterHealthSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  health: {fileID: 0}
+  minDelta: 0.01
+  deathDespawnDelay: 2
+  verboseLog: 0
+--- !u!114 &3329909688073159179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095fde1737311e54bbd8284bf96a54a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Monster.MonsterNetSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  disableCharacterOnNonServer: 1
+  additionalDisableComponentNames:
+  - CharacterMovement
+  - CharacterOrientation2D
+  - CharacterHandleWeapon
+  - AIBrain
+  disableAllAIActions: 1
+  disableAllAIDecisions: 1
+  syncFacingDirection: 1
+  verboseLog: 0
+--- !u!114 &8460922008795374413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 0
+  m_Animator: {fileID: 3121806248806134486}
+  TransitionStateInfoList: []
+  AnimatorParameterEntries:
+    ParameterEntries: []
+  AnimatorParametersExpanded: 0
+--- !u!114 &6904832983570661674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &7367615520016203882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7691799999625441337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d21240348f3b58c428af48fc531aa447, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.MonsterAttackBroadcast
+  ShowTopMostFoldoutHeaderGroup: 1
+  telegraphVisualPrefab: {fileID: 0}
+  verboseLog: 1
 --- !u!1001 &6125131418129660249
 PrefabInstance:
   m_ObjectHideFlags: 0

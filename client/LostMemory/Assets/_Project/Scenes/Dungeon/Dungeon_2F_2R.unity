@@ -4836,6 +4836,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e2f9d27b8efef4e9688b546527dc76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.SetEffectPanelView
+--- !u!1 &1484968668 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1504169818
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6361,12 +6367,16 @@ PrefabInstance:
     - target: {fileID: 9053980675064386983, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 2091018224
+      value: 2022017464
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2113634228}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!114 &1683277796 stripped
 MonoBehaviour:
@@ -6374,7 +6384,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de088c31fad134e4ca9c7b7d65df81cb, type: 3}
@@ -6398,7 +6408,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e91b5caa1ec5f7a428fe2e32f2b348d2, type: 3}
@@ -6410,7 +6420,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce4d96451ada47fd91066a50793a9f2f, type: 3}
@@ -6422,7 +6432,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7ac875443dcb4ae0b3958b7545375b92, type: 3}
@@ -6434,7 +6444,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f47b34d4ea84fbfba2cb67c6db59740, type: 3}
@@ -7107,7 +7117,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
@@ -7119,7 +7129,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ce249ab02704ff4ab08dddf7901fad5, type: 3}
@@ -7131,7 +7141,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33c724ba75b7ffe42af7580044857e52, type: 3}
@@ -7250,12 +7260,25 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
+--- !u!114 &2113634228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1484968668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce83eca692aa5bf4e9a549f25747346c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.EditorTestCharacterMarker
+  verboseLog: 1
 --- !u!1 &2147510001
 GameObject:
   m_ObjectHideFlags: 0

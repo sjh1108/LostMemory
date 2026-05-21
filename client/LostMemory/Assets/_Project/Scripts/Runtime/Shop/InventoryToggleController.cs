@@ -1,3 +1,4 @@
+using LostMemory.Networking.Player;
 using LostMemory.Relics;
 using LostMemory.Stage;
 using LostMemory.TestKhi;
@@ -95,6 +96,9 @@ namespace LostMemory.Shop
         public void Open()
         {
             if (IsPlayerActionBlocked()) return;
+            // 멀티 안전: scene-placed InventoryToggleController 의 SerializeField 는 host PlayerRelicInventory 만
+            // 가리키므로 guest 에선 null. LocalPlayer 기반 lazy resolve 로 본인 player 컴포넌트 잡기.
+            EnsurePlayerSideRefsResolved();
             if (panel == null || playerRelicInventory == null)
             {
                 Debug.LogError("[InventoryToggleController] panel 또는 playerRelicInventory 가 null. wiring 확인.", this);
@@ -161,6 +165,21 @@ namespace LostMemory.Shop
             }
 
             return KhiPlayerActionGate.IsBlocked(downController);
+        }
+
+        /// <summary>
+        /// player-side 컴포넌트(PlayerRelicInventory / GoldWallet / BuildManager) 를 LocalPlayer 기반으로 lazy resolve.
+        /// scene-placed Canvas 자식의 SerializeField 는 host 측 PlayerObject 만 가리키므로 guest 에선 null.
+        /// 멀티에서 본인 인벤토리만 정확히 잡도록 LocalPlayerResolver 위임.
+        /// </summary>
+        private void EnsurePlayerSideRefsResolved()
+        {
+            if (playerRelicInventory == null)
+                playerRelicInventory = LocalPlayerResolver.GetComponentOnLocalPlayer<PlayerRelicInventory>();
+            if (goldWallet == null)
+                goldWallet = LocalPlayerResolver.GetComponentOnLocalPlayer<GoldWallet>();
+            if (buildManager == null)
+                buildManager = LocalPlayerResolver.GetComponentOnLocalPlayer<BuildManager>();
         }
     }
 }

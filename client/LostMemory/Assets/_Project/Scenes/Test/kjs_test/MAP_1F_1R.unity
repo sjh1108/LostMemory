@@ -6072,11 +6072,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9053980675064386983, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 570191210
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2006321066}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
+--- !u!1 &1683277796 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1883107776
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6435,7 +6450,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1683277796}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
@@ -6447,7 +6462,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1683277796}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ce249ab02704ff4ab08dddf7901fad5, type: 3}
@@ -6459,12 +6474,25 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1683277796}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33c724ba75b7ffe42af7580044857e52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiDownController
+--- !u!114 &2006321066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1683277796}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce83eca692aa5bf4e9a549f25747346c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.EditorTestCharacterMarker
+  verboseLog: 1
 --- !u!1 &2092617967
 GameObject:
   m_ObjectHideFlags: 0
@@ -6504,8 +6532,15 @@ MonoBehaviour:
   memoryProgressTracker: {fileID: 0}
   autoStartOnAwake: 0
   resultingDelaySeconds: 2
+  failureResultingDelaySeconds: 5
   townSceneName: Town
+  townScenePath: Assets/_Project/Scenes/Town/Town.unity
+  lobbySceneName: 
+  lobbyScenePath: 
+  restartDungeonSceneName: Dungeon_1F_1R
+  restartDungeonScenePath: Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity
   totalStageCount: 1
+  allowBossPortalStageAdvance: 0
   logStageProgression: 1
 --- !u!4 &2092617969
 Transform:

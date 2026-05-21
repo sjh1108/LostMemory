@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using LostMemory.Networking.Player;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -59,7 +61,72 @@ namespace LostMemory.TestKhi
         private GameObject _attacker;
         private float _spawnedAt;
         private bool _launched;
+        // develop: CircleCast sweep 이 동일 프레임에 중복 hit 발생 방지 + visual-only clone 도
+        // PlayImpactAndDestroy 1회 보장.
         private bool _hasHit;
+
+        // Multiplayer: non-owner 측에서 시각만 재현하는 clone 표시.
+        // true 면 OnTriggerEnter2D 방어 + Collider/homing disable → owner 측만 damage 권위.
+        private bool _visualOnly;
+
+        // Bug #33 후속 — projectile spawn 단위로 발급되는 고유 ID.
+        //   owner 가 hit 시 broadcaster 통해 ID broadcast → 게스트 측 dictionary lookup → 매칭 clone destroy.
+        //   owner kill 로 적 NGO destroy → 게스트 clone 충돌 못 함 케이스에서 시각 sync 보장 (clone 이 wall 까지 비행 안 함).
+        //   ID <= 0 = 미설정 (솔로 또는 broadcast 비활성 — 일반 maxLifetime 으로 자동 cleanup).
+        private int _projectileId = -1;
+        // owner 측 instance 에서만 set (KhiStaffController/KhiBowController 가 spawn 직후 호출).
+        // visual-only clone 은 set 안 됨 → PlayImpactAndDestroy 시 echo broadcast 차단.
+        private AttackBroadcast _despawnBroadcaster;
+        // visual-only clone registry. key = owner 측 발급 ID. owner 의 RelayProjectileDespawn 도착 시 lookup.
+        private static readonly Dictionary<int, KhiArrowProjectile> _visualOnlyClones = new Dictionary<int, KhiArrowProjectile>();
+        // owner 측 ID 발급용 모노톤 카운터. KhiStaffController/KhiBowController 가 AllocateProjectileId 호출.
+        private static int _nextProjectileId = 1;
+
+        public static int AllocateProjectileId()
+        {
+            // 0 또는 음수는 미설정 표시값으로 사용 → 1부터 시작.
+            int id = _nextProjectileId++;
+            if (_nextProjectileId <= 0) _nextProjectileId = 1; // overflow wrap.
+            return id;
+        }
+
+        /// <summary>spawn 발급 ID 저장. visual-only clone 의 경우 dictionary 등록 (owner hit broadcast 매칭용).</summary>
+        public void SetProjectileId(int id)
+        {
+            _projectileId = id;
+            if (_visualOnly && id > 0)
+            {
+                _visualOnlyClones[id] = this;
+            }
+        }
+
+        /// <summary>owner instance 전용 — PlayImpactAndDestroy 시점에 ID broadcast 통해 게스트 clone destroy 요청.</summary>
+        public void SetDespawnBroadcaster(AttackBroadcast broadcaster)
+        {
+            _despawnBroadcaster = broadcaster;
+        }
+
+        /// <summary>
+        /// owner 의 PlayImpactAndDestroy 가 ClientRpc 발화하면 게스트 측 본 메서드가 dictionary lookup → clone destroy.
+        /// owner 가 적 kill 시 enemy NGO destroy 로 게스트 clone 의 trigger 발화 못 하는 케이스 (Bug #33 후속) 대응.
+        /// </summary>
+        public static void DespawnVisualOnlyCloneById(int id)
+        {
+            if (id <= 0) return;
+            if (!_visualOnlyClones.TryGetValue(id, out var clone)) return;
+            _visualOnlyClones.Remove(id);
+            if (clone == null) return;
+            clone.PlayImpactAndDestroy();
+        }
+
+        private void OnDestroy()
+        {
+            // visual-only clone 이 destroy 되면 registry 정리. owner instance 는 등록 안 했으므로 무영향.
+            if (_visualOnly && _projectileId > 0)
+            {
+                _visualOnlyClones.Remove(_projectileId);
+            }
+        }
 
         private void Awake()
         {
@@ -94,6 +161,30 @@ namespace LostMemory.TestKhi
         {
             homingTurnRateDegPerSec = Mathf.Max(0f, turnRateDegPerSec);
             homingDetectionRadius = Mathf.Max(0f, detectionRadius);
+        }
+
+        /// <summary>
+        /// Multiplayer 시각 전용 clone 으로 설정. non-owner 측 AttackBroadcast.ClientRpc 에서 Instantiate 직후 호출.
+        ///   - Collider2D 유지 → OnTriggerEnter2D 정상 발화 → 적과 충돌 시 PlayImpactAndDestroy 호출 (시각 일치).
+        ///   - Health.Damage 호출은 OnTriggerEnter2D 내부의 _visualOnly 가드로 skip → owner 측 단일 데미지 권위.
+        ///   - homing 파라미터 0 → 직선 이동 (owner 측 homing 결과와 약간 발산 가능하나 정확성보다 단순성 우선).
+        ///   - 이동/sprite rotation 은 그대로 동작 → 시각적으로 동일하게 보임.
+        ///   - maxLifetime 단축 (Bug #33 후속) — owner 가 적 kill 시 enemy NGO sync destroy 로
+        ///     clone 이 *충돌 대상 없음* → maxLifetime 까지 직선 비행 (사용자 눈에 "통과해 안 사라짐").
+        ///     짧은 lifetime 으로 발산 시간 최소화. owner 의 sprite 보다 약간 일찍 사라져도 시각 차 미미.
+        ///
+        /// Bug #33 — 이전 구현 (collider disable) 은 게스트 화면에서 host 투사체가 적을 통과해 maxLifetime 까지 비행.
+        /// 추가 픽스: maxLifetime *명시 단축* — owner kill → enemy 사라지면 trigger 자체 안 됨 케이스 대응.
+        /// </summary>
+        public void SetVisualOnly(bool visualOnly)
+        {
+            _visualOnly = visualOnly;
+            if (!visualOnly) return;
+            // collider 는 유지 — 충돌 trigger 정상 발화 + OnTriggerEnter2D 내부에서 damage 만 skip.
+            homingTurnRateDegPerSec = 0f;
+            homingDetectionRadius = 0f;
+            // Bug #33 후속: maxLifetime 은 prefab 값 그대로 (3초). 단축은 *먼 적* 케이스 깨짐.
+            // owner hit 시점 ID despawn broadcast 가 정확한 시점 sync 담당 → 단축 불필요.
         }
 
         private void FixedUpdate()
@@ -133,6 +224,8 @@ namespace LostMemory.TestKhi
                 Health h = c.GetComponentInParent<Health>();
                 if (h == null) continue;
                 if (_attacker != null && IsOwnedByAttacker(h, _attacker)) continue;
+                // Phase E: homing 도 다른 player 를 후보에서 제외.
+                if (IsPlayerTarget(h)) continue;
                 float sqr = ((Vector2)c.transform.position - myPos).sqrMagnitude;
                 if (sqr < bestSqr)
                 {
@@ -213,37 +306,92 @@ namespace LostMemory.TestKhi
 
         private bool TryApplyHit(Collider2D other)
         {
-            if (!_launched || _hasHit || other == null) return false;
+            // Bug #33 진단 — visual-only clone 의 OnTriggerEnter2D 호출 여부 + 어느 가드에 막히는지 강제 isolation.
+            // 일반 logProjectileEvents 와 별개로 _visualOnly clone 은 *항상* 로그 (inspector 토글 안 켜져 있어도).
+            // prefab inspector 에 logProjectileEvents=false 라 게스트 콘솔에 충돌 로그가 안 떠 root cause 안 잡힘 → 강제 진단.
+            bool diag = logProjectileEvents || _visualOnly;
+
+            if (!_launched || _hasHit || other == null)
+            {
+                if (diag && !_launched) Debug.Log($"[Projectile {name}] OnTrigger {other?.name} → !_launched return (visualOnly={_visualOnly})");
+                return false;
+            }
 
             int layer = other.gameObject.layer;
             string lname = LayerMask.LayerToName(layer);
 
             if (!IsColliderAcceptedByLayerOrBossTag(other, layer))
             {
-                if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → blocked by layerMask");
+                if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → blocked by layerMask (mask={targetLayers.value} visualOnly={_visualOnly})");
                 return false;
             }
 
             Health health = other.GetComponentInParent<Health>();
             if (health == null)
             {
-                if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → no Health in parent chain");
+                if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → no Health in parent chain (visualOnly={_visualOnly})");
                 return false;
             }
             if (_attacker != null && IsOwnedByAttacker(health, _attacker))
             {
-                if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → owned by attacker");
+                if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → owned by attacker (visualOnly={_visualOnly})");
                 return false;
             }
-            if (!health.CanTakeDamageThisFrame())
+            // Phase E: PvP 미상정 — Player Health 는 발사자 무관 모두 면역.
+            // 자기 자신 player 는 IsOwnedByAttacker 가 잡지만 다른 player 는 통과 → 본 가드 필요.
+            if (IsPlayerTarget(health))
             {
-                if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → CanTakeDamageThisFrame=false");
+                if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → friendly player skip (visualOnly={_visualOnly})");
                 return false;
             }
 
+            // Bug #33 / #35 — CanTakeDamageThisFrame 가드 우회 조건:
+            //   - visual-only clone: damage 어차피 호출 안 함, race 무관.
+            //   - client owner (게스트의 진짜 projectile): MonsterHealthSync 가 Invulnerable=true 영구 set →
+            //     본 가드 항상 false. 우회해서 server-relay path 진입해야 함.
+            //   - host owner / solo: 정상 가드 적용.
+            bool isClientOwner = !_visualOnly && _despawnBroadcaster != null && !_despawnBroadcaster.IsServer;
+            bool skipCanTakeGuard = _visualOnly || isClientOwner;
+            if (!skipCanTakeGuard && !health.CanTakeDamageThisFrame())
+            {
+                if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → CanTakeDamageThisFrame=false");
+                return false;
+            }
+
+            // develop: 동일 프레임 sweep 중복 hit 방지 + visual-only clone 도 PlayImpactAndDestroy 1회 보장.
+            // damage 분기 진입 전에 set → 분기별로 따로 set 할 필요 없음.
             _hasHit = true;
-            health.Damage(_damage, _attacker, targetFlickerDuration, targetInvincibilityDuration, _direction);
-            if (logProjectileEvents) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → damage {_damage} APPLIED");
+
+            // Bug #33 / #35 — Damage 분기:
+            //   - visual-only clone: damage skip (시각만), PlayImpactAndDestroy 만.
+            //   - host owner / solo: server-side direct Damage.
+            //   - client owner: ServerRpc relay → server (host) 가 enemy.Health.Damage 호출. client-side direct 무효.
+            if (!_visualOnly)
+            {
+                if (isClientOwner)
+                {
+                    Unity.Netcode.NetworkObject netObj = health.GetComponentInParent<Unity.Netcode.NetworkObject>();
+                    if (netObj != null && netObj.IsSpawned)
+                    {
+                        _despawnBroadcaster.RelayProjectileDamage(netObj.NetworkObjectId, _damage, targetFlickerDuration, targetInvincibilityDuration, _direction);
+                        if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → damage {_damage} RELAY (client→server NetObjId={netObj.NetworkObjectId})");
+                    }
+                    else if (diag)
+                    {
+                        Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → damage skip (target not NGO-spawned, client)");
+                    }
+                }
+                else
+                {
+                    // host owner 또는 solo (broadcaster=null) — server-side direct.
+                    health.Damage(_damage, _attacker, targetFlickerDuration, targetInvincibilityDuration, _direction);
+                    if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → damage {_damage} APPLIED (server/solo)");
+                }
+            }
+            else
+            {
+                if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → visual-only skip damage, PlayImpactAndDestroy 호출 예정 (destroyOnHit={destroyOnHit})");
+            }
 
             if (destroyOnHit)
             {
@@ -339,9 +487,20 @@ namespace LostMemory.TestKhi
         /// <summary>
         /// impactAnimator 가 있으면 state 전환 + Collider/이동 정지 + impactHoldDuration 후 Destroy.
         /// 없으면 즉시 Destroy.
+        /// owner instance 인 경우 (_despawnBroadcaster != null) → 게스트 clone destroy 위해 ID broadcast 발화.
+        /// visual-only clone 이거나 broadcaster 미설정 (솔로) 인 경우 broadcast 안 함.
         /// </summary>
         private void PlayImpactAndDestroy()
         {
+            // Bug #33 후속: owner hit → 게스트 clone 시각 sync.
+            //   _despawnBroadcaster 는 owner spawn 시 KhiStaffController/KhiBowController 가 set.
+            //   _visualOnly clone 은 broadcaster=null → 호출 안 함 → echo loop 차단.
+            //   DespawnVisualOnlyCloneById 가 게스트 측에서 다시 PlayImpactAndDestroy 호출하지만 그쪽도 broadcaster=null.
+            if (_despawnBroadcaster != null && _projectileId > 0 && !_visualOnly)
+            {
+                _despawnBroadcaster.RelayProjectileDespawn(_projectileId);
+            }
+
             if (impactAnimator != null && !string.IsNullOrEmpty(impactStateName))
             {
                 impactAnimator.Play(impactStateName);
@@ -359,6 +518,16 @@ namespace LostMemory.TestKhi
         {
             if (attacker == null || health == null) return false;
             return health.gameObject == attacker || health.transform.IsChildOf(attacker.transform);
+        }
+
+        /// <summary>
+        /// Phase E: target Health 가 Player 측 entity 인지 — PlayerHealthSync 컴포넌트 존재로 판정.
+        /// host/guest 양측 player NetworkObject 모두 동일 컴포넌트 보유 → 자/타 player 일괄 보호.
+        /// </summary>
+        private static bool IsPlayerTarget(Health health)
+        {
+            if (health == null) return false;
+            return health.GetComponentInParent<PlayerHealthSync>() != null;
         }
     }
 }

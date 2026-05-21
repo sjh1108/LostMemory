@@ -113,6 +113,7 @@ namespace LostMemory.MagicalGirl
                 Collider2D col = _hitBuf[i];
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
+                // 멀티 가드 통합: CanBeAutoTargetedEnemy 내부에서 IsAuthoritativePlayer 도 함께 처리.
                 if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
                 if (!_hitTargetsThisTick.Add(h)) continue;
 
@@ -155,6 +156,7 @@ namespace LostMemory.MagicalGirl
                 Collider2D col = _hitBuf[i];
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
+                // 멀티 가드 통합: CanBeAutoTargetedEnemy 내부에서 IsAuthoritativePlayer 도 함께 처리.
                 if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
                 float dSq = ((Vector2)(h.transform.position - transform.position)).sqrMagnitude;
                 if (dSq < minDistSq)

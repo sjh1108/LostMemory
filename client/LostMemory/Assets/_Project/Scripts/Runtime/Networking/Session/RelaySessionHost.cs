@@ -53,6 +53,12 @@ namespace LostMemory.Networking.Session
                 return CreateResult.Fail(SessionErrorKind.Unknown, "Already in a session.");
             }
 
+            // L-1: Local Fallback 모드 — backend 우회, UTP swap, StartHost.
+            if (RelaySession.UseLocalFallback)
+            {
+                return await CreateLocalFallbackAsync();
+            }
+
             try
             {
                 await RelaySession.EnsureInitializedAsync();
@@ -82,6 +88,9 @@ namespace LostMemory.Networking.Session
 
                 NetLog.Info("Host", $"Session created. id={data.sessionId}, code={data.privateCode}");
 
+                // L-1: 이전 Editor 세션에서 fallback 으로 UTP swap 됐을 수 있어 LostMemoryRelay 복원 (idempotent).
+                RelaySession.RestoreRelayTransport(out _);
+
                 // Transport 에 sessionToken + 본인 userId 주입
                 var transport = NetworkManager.Singleton.GetComponent<LostMemoryRelayTransport>();
                 if (transport == null)
@@ -93,6 +102,9 @@ namespace LostMemory.Networking.Session
                 }
                 transport.SetSession(data.sessionToken, (ulong)data.hostId);
 
+                // F-3 ReconnectGatekeeper 비활성 — NetworkConfig mismatch 우회. 필요시 한 번에 다시 켜는 작업 필요.
+                // ReconnectGatekeeper.AttachHost((ulong)SessionApiClient.MyUserId);
+
                 // NGO 호스트 모드 시작 (StartHost = StartServer + StartClient)
                 bool started = NetworkManager.Singleton.StartHost();
                 if (!started)
@@ -102,6 +114,8 @@ namespace LostMemory.Networking.Session
                     await TryRollbackSessionAsync(data.sessionId);
                     return CreateResult.Fail(SessionErrorKind.TransportStartFailed, "NetworkManager.StartHost() 실패");
                 }
+                // 안전: scene-placed NetworkManager 가 LoadScene(Single) 시 destroy 방지.
+                UnityEngine.Object.DontDestroyOnLoad(NetworkManager.Singleton.gameObject);
                 NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
                 NetworkManager.Singleton.OnClientStopped += OnClientStoppedHandler;
 
@@ -134,12 +148,53 @@ namespace LostMemory.Networking.Session
             }
         }
 
+        /// <summary>L-1: backend 전체 우회 호스트 시작. UTP swap + 가짜 ID/nickname.</summary>
+        private static async Task<CreateResult> CreateLocalFallbackAsync()
+        {
+            await RelaySession.EnsureInitializedAsync(); // no-op in fallback
+
+            if (!RelaySession.SwapToUnityTransport(out string transportError))
+            {
+                return CreateResult.Fail(SessionErrorKind.TransportStartFailed,
+                    $"[LOCAL FALLBACK] Transport swap 실패: {transportError}");
+            }
+
+            ulong fallbackUserId = RelaySession.LocalFallbackUserId;
+            NetLog.Info("Host", $"[LOCAL FALLBACK] CreateAsync — backend bypass. userId={fallbackUserId}, nick='{RelaySession.LocalFallbackNickname}'");
+
+            // F-3 비활성 — NetworkConfig mismatch 회피.
+            // ReconnectGatekeeper.AttachHost(fallbackUserId);
+
+            bool started = NetworkManager.Singleton.StartHost();
+            if (!started)
+            {
+                // ReconnectGatekeeper.DetachHost();
+                return CreateResult.Fail(SessionErrorKind.TransportStartFailed,
+                    "[LOCAL FALLBACK] StartHost 실패 — UTP swap / 포트 충돌 확인.");
+            }
+            // 안전: scene-placed NetworkManager 가 LoadScene(Single) 시 destroy 방지.
+            UnityEngine.Object.DontDestroyOnLoad(NetworkManager.Singleton.gameObject);
+
+            NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
+            NetworkManager.Singleton.OnClientStopped += OnClientStoppedHandler;
+
+            RelaySession.ActiveSessionId = 1;
+            RelaySession.IsHost = true;
+            RelaySession.ActiveJoinCode = "LOCAL";
+            RelaySession.RaiseJoined(asHost: true);
+
+            NetLog.Info("Host", $"[LOCAL FALLBACK] Session activated. JoinCode=LOCAL");
+            return CreateResult.Ok("LOCAL", 1);
+        }
+
         private static async void OnClientStoppedHandler(bool _)
         {
             if (NetworkManager.Singleton != null)
             {
                 NetworkManager.Singleton.OnClientStopped -= OnClientStoppedHandler;
             }
+            // F-3 비활성.
+            // ReconnectGatekeeper.DetachHost();
             if (!RelaySession.IsInSession) return;
             try { await RelaySession.LeaveAsync(); }
             catch (Exception ex) { NetLog.Warn("Host", $"Auto-leave threw: {ex.Message}"); }

@@ -1,4 +1,5 @@
 using LostMemory.Networking.Common;
+using LostMemory.Stage;
 using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
 using Unity.Netcode.Components;
@@ -56,6 +57,18 @@ namespace LostMemory.Networking.Player
         {
             base.OnNetworkSpawn();
             ResolveRefs();
+
+            // scene-placed PrefabInstance (Town_solo_Copy 의 'Player', 던전 씬의 'TestKhi_MinimalCharacter2D')
+            // 가 NetworkObject 라 NGO scene sweep 으로 spawn 됨 → 여기서 LocalPlayerResolver/AlignToSpawnPoint 가
+            // 잘못 실행되면 호스트 카메라가 곧 Despawn 될 캐릭터에 바인딩됨.
+            // PlayerHealthSync 의 동일 가드와 짝.
+            if (!NetworkObject.IsPlayerObject)
+            {
+                NetLog.Info("Player",
+                    $"scene-placed NetworkObject — OnNetworkSpawn skipped (PlayerHealthSync 가 Despawn). {gameObject.name}",
+                    this);
+                return;
+            }
 
             if (IsOwner)
             {
@@ -115,14 +128,32 @@ namespace LostMemory.Networking.Player
         }
 
         /// <summary>
-        /// owner 측 spawn 직후 Tag "Respawn" 인 GameObject 위치로 align.
+        /// owner 측 spawn 직후 활성 씬의 spawn point 위치로 align.
+        /// 우선순위:
+        ///   1. RouteNodeSpawnPoint — 던전 씬에서 StageRouteManager 가 사용하는 표준 spawn 컴포넌트
+        ///   2. Tag "Respawn" — Town_solo 등 일반 씬의 fallback
         /// NetworkTransform 이 owner-authoritative 라 다음 frame 에 다른 클라에도 자동 broadcast.
-        /// Tag "Respawn" 없으면 align skip (Town_solo / Test_MultiLobby 처럼 spawn 위치 신경 안 쓰는 씬).
         /// </summary>
         private void AlignToSpawnPoint()
         {
+            // 1. RouteNodeSpawnPoint 우선 — 던전 씬은 이걸로 spawn 위치 정의.
+            RouteNodeSpawnPoint routeSpawn = Object.FindFirstObjectByType<RouteNodeSpawnPoint>();
+            if (routeSpawn != null)
+            {
+                Vector3 target = routeSpawn.transform.position;
+                Debug.Log($"[PlayerMovementSync] AlignToSpawnPoint via RouteNodeSpawnPoint @ {target} (was {transform.position}) IsOwner={IsOwner} ClientId={NetworkManager.LocalClientId} {gameObject.name}", this);
+                transform.position = target;
+                return;
+            }
+
+            // 2. Tag "Respawn" fallback — Town_solo 등 기존 흐름.
             GameObject spawnPoint = GameObject.FindGameObjectWithTag("Respawn");
-            if (spawnPoint == null) return;
+            if (spawnPoint == null)
+            {
+                Debug.LogWarning($"[PlayerMovementSync] AlignToSpawnPoint skipped — no RouteNodeSpawnPoint, no 'Respawn' tag. {gameObject.name}", this);
+                return;
+            }
+            Debug.Log($"[PlayerMovementSync] AlignToSpawnPoint via Tag 'Respawn' @ {spawnPoint.transform.position} (was {transform.position}) IsOwner={IsOwner} {gameObject.name}", this);
             transform.position = spawnPoint.transform.position;
         }
 
@@ -132,6 +163,16 @@ namespace LostMemory.Networking.Player
             DisableIfPresent<KhiParryController>();
             DisableIfPresent<KhiDashController>();
             DisableIfPresent<KhiFinisherLunge>();
+            // Phase B: WeaponModeController 는 자체 IsOwner 가드 (Update / CycleMode / SetMode) 있지만
+            // 안전망으로 비-owner 의 input Update 자체를 차단. visual 적용은 NetworkVariable.OnValueChanged
+            // 가 별도로 처리하므로 enabled=false 여도 sync OK.
+            DisableIfPresent<WeaponModeController>();
+            // Phase E: Staff / Flame 도 owner-only 입력. Update IsOwner gate 가 1차 방어,
+            // 본 disable 이 2차 안전망. WeaponModeController 모드 전환 시 enabled 토글 충돌 가능성은
+            // WeaponModeController 가 owner-write NetworkVariable 동기화로 비-owner 측 모드를 표시만 함
+            // (실제 입력은 owner 만 → 비-owner enabled=false 무관).
+            DisableIfPresent<KhiStaffController>();
+            DisableIfPresent<KhiFlamethrowerController>();
             // KhiWeaponPresenter 는 비활성하지 않음 — Update 에서 KhiPlayerAim.GetAimDirection()
             // (NetworkVariable sync 값) 받아 무기 회전 적용. non-owner 측에서도 무기 위치/방향이
             // owner 의 마우스 방향을 따라가도록 한다 (Bug #22 의 일부).
