@@ -36,7 +36,9 @@ public class OpenApiConfig {
                                 - Session — 매칭룸 생성 / 입장 / 종료 (자체 Relay 핸드셰이크용 sessionToken 발급)
                                 - Run — 던전 런 시작 / 종료 / 조회 (결과 저장 + 파편 적립 + 전적 갱신)
                                 - User — 본인 정보 / 재화 / 전적
-                                - Weapon — 무기 마스터 데이터 + 본인 해금 상태
+                                - Talent — 유저 재능 포인트 4 영역 분배 (치명타율/공격속도/방어력/최대체력)
+                                - Weapon — 무기 마스터 데이터 + 본인 해금 상태 + 장착
+                                - Memory — 기억 액자 마스터 + 본인 슬롯 해금 진행도
 
                                 **에러 코드**: `ErrorCode` enum 참조. HTTP status 와 매핑됨 — 400 / 401 / 403 / 404 / 409 / 500.
                                 """)

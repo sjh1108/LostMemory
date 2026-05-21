@@ -10,8 +10,6 @@ namespace LostMemory.Stage
     /// </summary>
     public static class StandaloneDungeonSceneBootstrap
     {
-        private const string DefaultEntrySpawnId = "default";
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void BootstrapActiveScene()
         {
@@ -26,12 +24,7 @@ namespace LostMemory.Stage
                 return;
             }
 
-            if (!scene.IsValid() || !TryResolveRouteIndex(scene.name, out int routeNodeIndex))
-            {
-                return;
-            }
-
-            if (StageRouteManager.Instance != null)
+            if (!scene.IsValid() || !StageRouteDefaults.TryResolveRouteIndex(scene.name, out int routeNodeIndex))
             {
                 return;
             }
@@ -42,60 +35,28 @@ namespace LostMemory.Stage
                 return;
             }
 
-            GameObject routeManagerObject = new GameObject("StageRouteManager (Standalone Test)");
-            routeManagerObject.AddComponent<NetworkObject>();
-            StageRouteManager routeManager = routeManagerObject.AddComponent<StageRouteManager>();
-            routeManager.ConfigureRouteNodes(CreateDefaultRouteNodes(), routeNodeIndex, DefaultEntrySpawnId, false);
+            StageRouteManager routeManager = StageRouteManager.Instance;
+            if (routeManager == null)
+            {
+                GameObject routeManagerObject = new GameObject("StageRouteManager (Standalone Test)");
+                routeManagerObject.AddComponent<NetworkObject>();
+                routeManager = routeManagerObject.AddComponent<StageRouteManager>();
+            }
+            routeManager.ConfigureRouteNodes(
+                StageRouteDefaults.CreateRouteNodes(),
+                routeNodeIndex,
+                StageRouteDefaults.DefaultEntrySpawnId,
+                false);
 
-            UnlockRouteExitTriggers();
+            if (scene.name != "Dungeon_1F_Boss")
+            {
+                UnlockRouteExitTriggers(routeManager);
+            }
+
             Debug.Log($"[StandaloneDungeonSceneBootstrap] Bootstrapped route context for '{scene.name}' at node index {routeNodeIndex}.");
         }
 
-        private static StageRouteManager.RouteNode[] CreateDefaultRouteNodes()
-        {
-            return new[]
-            {
-                CreateNode("stage1_1r", "Dungeon_1F_1R", "Dungeon_1F_1R", "to_1f_2r"),
-                CreateNode("stage1_2r", "Dungeon_1F_2R", "Dungeon_1F_2R", "to_1f_shop"),
-                CreateNode("stage1_shop", "Dungeon_1F_Shop", "Dungeon_1F_Shop", "to_1f_3r"),
-                CreateNode("stage1_3r", "Dungeon_1F_3R", "Dungeon_1F_3R", "to_1f_4r"),
-                CreateNode("stage1_4r", "Dungeon_1F_4R", "Dungeon_1F_4R", "to_1f_boss"),
-                CreateNode("stage1_boss", "Dungeon_1F_Boss", "Dungeon_1F_Boss", string.Empty),
-            };
-        }
-
-        private static StageRouteManager.RouteNode CreateNode(
-            string nodeId,
-            string sceneName,
-            string sceneFileName,
-            string exitTriggerId)
-        {
-            return new StageRouteManager.RouteNode(
-                nodeId,
-                sceneName,
-                $"Assets/_Project/Scenes/Dungeon/{sceneFileName}.unity",
-                DefaultEntrySpawnId,
-                exitTriggerId,
-                LoadSceneMode.Single);
-        }
-
-        private static bool TryResolveRouteIndex(string sceneName, out int routeNodeIndex)
-        {
-            StageRouteManager.RouteNode[] routeNodes = CreateDefaultRouteNodes();
-            for (int i = 0; i < routeNodes.Length; i++)
-            {
-                if (routeNodes[i].SceneName == sceneName)
-                {
-                    routeNodeIndex = i;
-                    return true;
-                }
-            }
-
-            routeNodeIndex = 0;
-            return false;
-        }
-
-        private static void UnlockRouteExitTriggers()
+        private static void UnlockRouteExitTriggers(StageRouteManager routeManager)
         {
             RouteNodeExitTrigger[] triggers = UnityEngine.Object.FindObjectsByType<RouteNodeExitTrigger>(
                 FindObjectsInactive.Include,
@@ -105,7 +66,12 @@ namespace LostMemory.Stage
             {
                 if (triggers[i] != null)
                 {
-                    triggers[i].Unlock();
+                    if (routeManager == null ||
+                        triggers[i].UsesLocalTeleport ||
+                        routeManager.CanAdvanceRouteNode(triggers[i].TriggerId))
+                    {
+                        triggers[i].Unlock();
+                    }
                 }
             }
         }

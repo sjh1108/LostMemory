@@ -36,9 +36,6 @@ public class Weapon {
     @Column(name = "parent_weapon_id")
     private Long parentWeaponId;
 
-    @Column(name = "cost_memory_shards", nullable = false)
-    private Integer costMemoryShards;
-
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 }

@@ -140,10 +140,18 @@ namespace LostMemory.Relics
         {
             if (!_authority.IsAuthority) return;
             if (relic == null || container == null) return;
+            bool appliedAttackSpeedEffect = ApplyAttackSpeedPercentEffects(relic);
+            bool appliedDefenseEffect = ApplyDefenseFlatEffects(relic);
             switch (relic.EffectType)
             {
                 case RelicEffectType.AttackPowerPercent:
                     container.AddPermanent(StatId.AttackPower, relic.Magnitude, relic);
+                    break;
+                case RelicEffectType.AttackSpeedPercent:
+                    if (!appliedAttackSpeedEffect)
+                    {
+                        container.AddPermanent(StatId.AttackSpeed, relic.Magnitude, relic);
+                    }
                     break;
                 case RelicEffectType.FinisherDamagePercent:
                     container.AddPermanent(StatId.FinisherDamage, relic.Magnitude, relic);
@@ -161,6 +169,12 @@ namespace LostMemory.Relics
                     break;
                 case RelicEffectType.MaxHealthPercent:
                     container.AddPermanent(StatId.MaxHealth, relic.Magnitude, relic);
+                    break;
+                case RelicEffectType.DefenseFlat:
+                    if (!appliedDefenseEffect)
+                    {
+                        container.AddPermanent(StatId.Defense, relic.Magnitude, relic);
+                    }
                     break;
                 case RelicEffectType.AttackSpeedOnKillTimed:
                     _onKillSubscriptions.Add(new OnKillSubscription
@@ -201,6 +215,46 @@ namespace LostMemory.Relics
                     break;
                 // None: Wave A 시점 미구현 효과 (비-MVP, 랜덤박스 등). 후속 ticket 분담.
             }
+        }
+
+        private bool ApplyAttackSpeedPercentEffects(RelicData relic)
+        {
+            IReadOnlyList<EffectEntry> effects = relic.Effects;
+            bool applied = false;
+            if (effects != null && effects.Count > 0)
+            {
+                for (int i = 0; i < effects.Count; i++)
+                {
+                    EffectEntry effect = effects[i];
+                    if (effect.Type == RelicEffectType.AttackSpeedPercent)
+                    {
+                        container.AddPermanent(StatId.AttackSpeed, effect.Magnitude, relic);
+                        applied = true;
+                    }
+                }
+            }
+
+            return applied;
+        }
+
+        private bool ApplyDefenseFlatEffects(RelicData relic)
+        {
+            IReadOnlyList<EffectEntry> effects = relic.Effects;
+            bool applied = false;
+            if (effects != null && effects.Count > 0)
+            {
+                for (int i = 0; i < effects.Count; i++)
+                {
+                    EffectEntry effect = effects[i];
+                    if (effect.Type == RelicEffectType.DefenseFlat)
+                    {
+                        container.AddPermanent(StatId.Defense, effect.Magnitude, relic);
+                        applied = true;
+                    }
+                }
+            }
+
+            return applied;
         }
 
         private void HandleEnemyKilled(KhiAttackRequest req, AttackStepData step, Health victim)

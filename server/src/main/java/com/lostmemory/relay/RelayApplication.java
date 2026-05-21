@@ -33,7 +33,12 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @SpringBootApplication(
         scanBasePackages = {
                 "com.lostmemory.relay",
-                "com.lostmemory.server.global.security"
+                "com.lostmemory.server.global.security",
+                // JwtAuthenticationFilter 의 LlmProperties 의존성 — Relay 가 실제 LLM 기능은 안 쓰지만
+                // security 패키지의 JwtAuthenticationFilter bean 생성 시 LlmProperties 가 필요해 scan 확장.
+                // controller/service 가 아닌 config 패키지만 잡아 LlmController/LlmProxyService 는 제외.
+                // lesson reference_relay_udp_infra.md — security 패키지에 새 의존 추가 시 Relay scan 동기화 필수.
+                "com.lostmemory.server.llm.config"
         },
         exclude = {
                 DataSourceAutoConfiguration.class,
@@ -46,7 +51,8 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 )
 @ConfigurationPropertiesScan(basePackages = {
         "com.lostmemory.relay",
-        "com.lostmemory.server.global.security"
+        "com.lostmemory.server.global.security",
+        "com.lostmemory.server.llm.config"
 })
 public class RelayApplication {
 

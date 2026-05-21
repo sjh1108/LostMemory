@@ -354,6 +354,13 @@ namespace LostMemory.MagicalGirl
             follower.BobAmplitude = followBobAmplitude;
             follower.BobSpeed = followBobSpeed;
 
+            // 호버 툴팁(숨은 능력 설명). Collider2D + MagicalGirlHoverTooltip 자동 부착.
+            var hoverCol = go.AddComponent<CircleCollider2D>();
+            hoverCol.isTrigger = true;
+            hoverCol.radius = 0.6f;
+            var tooltip = go.AddComponent<MagicalGirlHoverTooltip>();
+            tooltip.SetVisual(visual);
+
             if (_logSpawn) Debug.Log($"[MagicalGirl] +{visual} (count={_girlsByVisual.Count})");
         }
 

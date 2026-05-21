@@ -57,11 +57,7 @@ namespace LostMemory.TestKhi
             _attachedTrail.startColor = trailStartColor;
             _attachedTrail.endColor = trailEndColor;
             _attachedTrail.minVertexDistance = 0.01f;
-
-            if (_attachedTrail.material == null || _attachedTrail.material.shader == null)
-            {
-                _attachedTrail.material = new Material(Shader.Find("Sprites/Default"));
-            }
+            KhiRuntimeVisualMaterialUtility.ApplyTrailMaterial(_attachedTrail);
         }
 
         private void OnEnable()
@@ -133,6 +129,7 @@ namespace LostMemory.TestKhi
             SpriteRenderer slashRenderer = slashObject.AddComponent<SpriteRenderer>();
             slashRenderer.sprite = GetSlashSprite(spec.SpriteKind);
             slashRenderer.color = spec.Color;
+            KhiRuntimeVisualMaterialUtility.ApplySpriteMaterial(slashRenderer);
             CopySortingLayerFromOwner(slashRenderer);
             slashRenderer.sortingOrder = temporarySlashSortingOrder;
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Rendering;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -823,6 +824,7 @@ namespace LostMemory.Combat.Telegraph
             effectTransform.position = (Vector3)center + followUpAreaImpactOffset;
 
             SpriteRenderer spriteRenderer = effectObject.AddComponent<SpriteRenderer>();
+            RuntimeSpriteMaterialUtility.ApplySpriteMaterial(spriteRenderer);
             spriteRenderer.sprite = firstSprite;
             spriteRenderer.color = followUpAreaImpactColor;
 

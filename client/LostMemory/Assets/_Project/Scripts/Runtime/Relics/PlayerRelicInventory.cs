@@ -18,15 +18,15 @@ namespace LostMemory.Relics
     public class PlayerRelicInventory : MonoBehaviour
     {
         [Header("CL-146 Inventory Capacity")]
-        [Tooltip("기본 인벤토리 최대 슬롯 (5×5 그리드 가정).")]
-        [SerializeField, Min(1)] private int _baseMaxSlots = 25;
+        [Tooltip("기본 인벤토리 최대 슬롯 (4×4 그리드).")]
+        [SerializeField, Min(1)] private int _baseMaxSlots = 16;
 
         [Header("CL-151 Grid (자동 배치)")]
-        [Tooltip("그리드 가로 셀 수. CL-150 의 (5×5) 임시 상수를 정식화.")]
-        [SerializeField, Min(1)] private int _maxCols = 5;
+        [Tooltip("그리드 가로 셀 수.")]
+        [SerializeField, Min(1)] private int _maxCols = 4;
 
         [Tooltip("그리드 세로 셀 수.")]
-        [SerializeField, Min(1)] private int _maxRows = 5;
+        [SerializeField, Min(1)] private int _maxRows = 4;
 
         [Header("Consumables")]
         [SerializeField] private PlayerConsumableInventory _consumableInventory;

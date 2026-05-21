@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using LostMemory.Combat;
 using LostMemory.Data;
+using LostMemory.Networking.Player;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -17,6 +18,8 @@ namespace LostMemory.TestKhi
         [SerializeField] private float targetFlickerDuration = 0f;
         [Tooltip("CL-146: 같은 GameObject (또는 부모) 의 PlayerStatModifierContainer. 비워두면 GetComponentInParent. Range multiplier 조회용.")]
         [SerializeField] private PlayerStatModifierContainer statContainer;
+        [Tooltip("멀티 환경 server-authoritative damage relay. 비워두면 GetComponentInParent. 솔로면 null 허용.")]
+        [SerializeField] private PlayerDamageRelay damageRelay;
         [Tooltip("Editor Scene 뷰에서 hitbox 윤곽 Gizmo 표시 (선택된 GameObject 만). 인게임 화면엔 영향 없음.")]
         [SerializeField] private bool drawDebugGizmos = false;
         [SerializeField] private Color debugGizmoColor = new Color(1f, 0.2f, 0.1f, 0.25f);
@@ -41,6 +44,8 @@ namespace LostMemory.TestKhi
             EnsureRuntimePreview();
             if (statContainer == null)
                 statContainer = GetComponentInParent<PlayerStatModifierContainer>();
+            if (damageRelay == null)
+                damageRelay = GetComponentInParent<PlayerDamageRelay>();
         }
 
         public int Sample(KhiAttackRequest request, AttackStepData step, Vector2 globalPostRotationOffset, float damage, HashSet<Health> alreadyHit, List<Health> hitsThisSample)
@@ -84,13 +89,25 @@ namespace LostMemory.TestKhi
                     continue;
                 }
 
-                if (!health.CanTakeDamageThisFrame())
+                // 게스트가 ServerRpc 로 호스트에 위임할 경로면 자체 CanTakeDamageThisFrame 가드 우회.
+                // 비-server 측 target Health 는 MonsterHealthSync/PlayerHealthSync 가 DamageDisabled() 호출했기 때문에
+                // CanTakeDamageThisFrame=false 가 되어 RelayDamage 도달 전에 차단되어 버린다.
+                // 실제 데미지 판정은 호스트 측 Health 가 자체 가드로 처리.
+                bool willRelayToServer = damageRelay != null && damageRelay.IsSpawned && !damageRelay.IsServer;
+                if (!willRelayToServer && !health.CanTakeDamageThisFrame())
                 {
                     continue;
                 }
 
                 alreadyHit.Add(health);
-                health.Damage(damage, request.Attacker, targetFlickerDuration, targetInvincibilityDuration, request.AimDirection);
+                if (damageRelay != null)
+                {
+                    damageRelay.RelayDamage(health, damage, request.Attacker, targetFlickerDuration, targetInvincibilityDuration, request.AimDirection);
+                }
+                else
+                {
+                    health.Damage(damage, request.Attacker, targetFlickerDuration, targetInvincibilityDuration, request.AimDirection);
+                }
                 hitsThisSample?.Add(health);
                 appliedHits++;
             }

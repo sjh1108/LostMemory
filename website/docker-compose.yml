@@ -1,0 +1,83 @@
+# LostMemory 게임 공식 사이트 — Spring Boot 동적 CMS stack (EC2#2, lostmemory.duckdns.org).
+#
+# 외부 진입: EC2#2 의 host (systemd) nginx 가 lostmemory.duckdns.org HTTPS 종단 후
+# 127.0.0.1:${SERVER_PORT} (.env 의 SERVER_PORT 설정값) 로 proxy_pass.
+# 따라서 website-backend 는 127.0.0.1 만 bind — 외부 직접 노출 X.
+#
+# Postgres 는 cms-backend network 안에서만 접근 (cms-postgres hostname).
+#
+# 첫 부팅 / 콘텐츠 운영:
+#   cp .env.example .env  &&  vi .env   # 운영 비밀번호 (POSTGRES_PASSWORD, ADMIN_PASSWORD) 설정
+#   docker compose build website-backend
+#   docker compose up -d
+#   docker compose logs --tail=50 website-backend   # Flyway migration + admin seed 성공 확인
+#
+# 백업:
+#   docker compose exec cms-postgres pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup-$(date +%F).sql
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
+services:
+  cms-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ:-Asia/Seoul}
+    volumes:
+      - cms_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging: *default-logging
+    networks:
+      - cms-backend
+
+  website-backend:
+    build: ./backend
+    image: lostmemory-website:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${SERVER_PORT}:${SERVER_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: ${SERVER_PORT}
+      POSTGRES_HOST: cms-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_BASE_PATH: ${ADMIN_BASE_PATH}
+      THYMELEAF_CACHE: "true"
+      TZ: ${TZ:-Asia/Seoul}
+    depends_on:
+      cms-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:${SERVER_PORT}/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+    logging: *default-logging
+    networks:
+      - cms-backend
+
+volumes:
+  cms_postgres_data:
+
+networks:
+  cms-backend:
+    driver: bridge

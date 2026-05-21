@@ -1,8 +1,13 @@
 using System;
+using System.Collections;
 using LostMemory.Combat;
 using LostMemory.Networking.Common;
+using LostMemory.Networking.Player;
+using LostMemory.Relics;
+using LostMemory.Rewards;
 using LostMemory.Stage.Data;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Stage
@@ -23,8 +28,23 @@ namespace LostMemory.Stage
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Lost Memory/Stage/Room Entry Runtime Controller")]
-    public sealed class RoomEntryRuntimeController : MonoBehaviour
+    public sealed class RoomEntryRuntimeController : NetworkBehaviour
     {
+        /// <summary>
+        /// 출구 잠금 상태. server write / everyone read.
+        /// false = 자유 통과 (진입 전 default), true = 막힘 (진입 후~클리어 전).
+        /// 변화 시 ExitLockedStateChanged 이벤트 발행 → 자식 RoomExitWall 들이 자기 collider/renderer 토글.
+        /// GameObject.SetActive 를 토글하지 않으므로 NetworkObject 부담 / 초기 race 없음.
+        /// </summary>
+        public readonly NetworkVariable<bool> IsLocked = new NetworkVariable<bool>(
+            value: false,
+            readPerm: NetworkVariableReadPermission.Everyone,
+            writePerm: NetworkVariableWritePermission.Server);
+
+        /// <summary>RoomExitWall 들이 구독. NetworkSpawn 시 현재 값으로 1회 발행 (late join 대응).</summary>
+        public event Action<bool> ExitLockedStateChanged;
+
+
         [Header("Data")]
         [SerializeField] private RoomData roomData;
         [SerializeField] private EnemyCatalog enemyCatalog;
@@ -96,10 +116,28 @@ namespace LostMemory.Stage
                 exitWalls = GetComponentsInChildren<RoomExitWall>(includeInactive: true);
             }
 
-            // CL-323: 시작 시 *모든 ExitWall 비활성화* — 진입 전이라 막을 필요 X.
-            // BeginRoomEntry 의 ApplyInitContext 가 lockExitDoors=true 일 때 활성화.
-            // 디자이너 셋업 (prefab 의 active 상태) 무관하게 안전한 기본 상태 보장.
-            SetExitWallsActive(false);
+            // CL-323 → 변경: SetExitWallsActive(false) 호출 제거.
+            // RoomExitWall 들이 자기 Awake 에서 default false 상태(collider/renderer 둘 다 disabled)로 시작함.
+            // GameObject.SetActive 토글 안 함 → NetworkBehaviour 활성화 보장.
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            IsLocked.OnValueChanged += HandleLockedChanged;
+            // late join 대응: 현재 값으로 즉시 1회 wall 동기화.
+            ExitLockedStateChanged?.Invoke(IsLocked.Value);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            IsLocked.OnValueChanged -= HandleLockedChanged;
+            base.OnNetworkDespawn();
+        }
+
+        private void HandleLockedChanged(bool previous, bool current)
+        {
+            ExitLockedStateChanged?.Invoke(current);
         }
 
         private void Reset()
@@ -179,12 +217,15 @@ namespace LostMemory.Stage
                 return;
             }
 
+            // 모든 방에서 anchor 적용 + 전 플레이어 텔레포트.
+            // 한 명이 진입 트리거 밟으면 호스트가 ClientRpc 로 모든 클라이언트의 로컬 player 를 anchor 로 이동.
+            // → 코옵에서 팀원 분리 / 벽 잠금 후 입장 불가 문제 원천 차단.
             if (initiator != null && !string.IsNullOrEmpty(init.PlayerSpawnAnchorTag))
             {
                 RoomEntryAnchor anchor = ResolveEntryAnchor(init.PlayerSpawnAnchorTag);
                 if (anchor != null)
                 {
-                    AlignCharacterTo(initiator, anchor.transform.position, init.Facing);
+                    TeleportAllToAnchor(initiator, anchor.transform.position, init.Facing);
                 }
             }
 
@@ -211,6 +252,79 @@ namespace LostMemory.Stage
                 }
             }
             return null;
+        }
+
+        // 코옵: 호스트가 진입 트리거 감지 → 모든 클라이언트 (호스트 포함) 의 로컬 player 를 anchor 로 이동.
+        // 싱글플레이: NetworkManager 미동작 → initiator 직접 이동.
+        // 다중 플레이어 겹침 방지: ClientRpc 받는 각 클라이언트가 자기 random offset 적용 (sync 불필요).
+        private void TeleportAllToAnchor(Character initiator, Vector3 position, Vector2 facing)
+        {
+            if (IsSpawned)
+            {
+                // 멀티: ClientRpc 브로드캐스트. 호스트도 받아서 자기 캐릭터 이동.
+                TeleportLocalPlayerClientRpc(position, facing);
+            }
+            else
+            {
+                // 싱글: initiator 가 곧 로컬 player.
+                if (initiator != null)
+                {
+                    AlignCharacterTo(initiator, position, facing);
+                }
+            }
+        }
+
+        [ClientRpc]
+        private void TeleportLocalPlayerClientRpc(Vector3 position, Vector2 facing)
+        {
+            // 내 화면에 RewardPanel 열려있으면 카드 선택 끝날 때까지 텔레포트 대기.
+            // 호스트는 자기 보상 보는 중엔 timeScale=0 이라 진입 트리거 못 밟으므로 자기 화면엔 거의 항상 닫혀있음.
+            // 게스트가 늦게 고르는 중일 때를 위한 안전장치.
+            RewardPanelView rewardPanel = UnityEngine.Object.FindFirstObjectByType<RewardPanelView>();
+            if (rewardPanel != null && rewardPanel.gameObject.activeSelf)
+            {
+                StartCoroutine(WaitForRewardThenTeleport(rewardPanel, position, facing));
+                return;
+            }
+
+            DoLocalPlayerTeleport(position, facing);
+        }
+
+        private IEnumerator WaitForRewardThenTeleport(RewardPanelView panel, Vector3 position, Vector2 facing)
+        {
+            bool selected = false;
+            Action<RelicData> handler = _ => selected = true;
+            panel.RewardSelected += handler;
+
+            try
+            {
+                // timeScale=0 에서도 frame 은 진행되므로 yield return null 안전.
+                while (!selected && panel != null && panel.gameObject.activeSelf)
+                {
+                    yield return null;
+                }
+            }
+            finally
+            {
+                if (panel != null) panel.RewardSelected -= handler;
+            }
+
+            DoLocalPlayerTeleport(position, facing);
+        }
+
+        private static void DoLocalPlayerTeleport(Vector3 position, Vector2 facing)
+        {
+            // 프로젝트 표준: LocalPlayerResolver.LocalCharacter 사용.
+            Character localPlayer = LocalPlayerResolver.LocalCharacter;
+            if (localPlayer == null)
+            {
+                return;
+            }
+
+            // 다중 플레이어 anchor 겹침 방지: 작은 random offset (각 클라 독립).
+            Vector2 offset = UnityEngine.Random.insideUnitCircle * 0.4f;
+            Vector3 spawnPos = position + new Vector3(offset.x, offset.y, 0f);
+            AlignCharacterTo(localPlayer, spawnPos, facing);
         }
 
         // BossRoomLocalTransitionDriver.TeleportCharacter / AlignFacingDirection 의 알고리즘을 본 컴포넌트 결로 옮겼다.
@@ -351,24 +465,33 @@ namespace LostMemory.Stage
             SetExitWallsActive(false);
         }
 
-        // CL-036: 모든 출구 벽 일괄 토글. 출구별 다른 정책 (LockPolicy 등) 은 후속 CL.
+        // CL-036 → 멀티 안전화: NetworkVariable<bool> IsLocked 토글로 변경.
+        // 호스트만 write → 게스트는 OnValueChanged 로 자동 sync.
+        // RoomExitWall 측이 ExitLockedStateChanged 구독해서 자기 collider/renderer 토글.
         private void SetExitWallsActive(bool active)
         {
-            if (exitWalls == null)
+            if (!IsAuthority)
             {
                 return;
             }
-            for (int i = 0; i < exitWalls.Length; i++)
+
+            if (IsSpawned)
             {
-                RoomExitWall wall = exitWalls[i];
-                if (wall != null)
+                // 멀티: NetworkVariable 통해 sync. OnValueChanged → ExitLockedStateChanged.
+                if (IsLocked.Value != active)
                 {
-                    wall.gameObject.SetActive(active);
+                    IsLocked.Value = active;
                 }
+            }
+            else
+            {
+                // 싱글 / NetworkManager 미동작: NetworkVariable 작동 안 함 → 직접 이벤트 발행.
+                // RoomExitWall 들이 ExitLockedStateChanged 구독하므로 같은 결과.
+                ExitLockedStateChanged?.Invoke(active);
             }
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             if (encounterSpawner != null)
             {
@@ -380,6 +503,7 @@ namespace LostMemory.Stage
                 clearTracker.OnNextWaveReady -= HandleNextWaveReady;
                 clearTracker.OnRoomCleared -= HandleRoomCleared;
             }
+            base.OnDestroy();
         }
     }
 }

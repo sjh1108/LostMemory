@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('관리자 대시보드')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<div th:replace="~{fragments/layout :: admin-bar}"></div>
+
+<main class="site-main">
+  <h2>관리자 대시보드</h2>
+  <p>안녕하세요, <strong th:text="${username}">admin</strong> 님.</p>
+
+  <div th:if="${message}" class="flash" th:text="${message}"></div>
+
+  <h3>콘텐츠 현황</h3>
+  <table class="admin-table">
+    <thead>
+      <tr><th>섹션</th><th>전체 개수</th><th>관리</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>공지사항</td>
+        <td th:text="${noticeCount}">0</td>
+        <td><a th:href="@{__${adminBase}__/notices}">관리 →</a></td>
+      </tr>
+      <tr>
+        <td>패치노트</td>
+        <td th:text="${patchNoteCount}">0</td>
+        <td><a th:href="@{__${adminBase}__/patch-notes}">관리 →</a></td>
+      </tr>
+      <tr>
+        <td>FAQ</td>
+        <td th:text="${faqCount}">0</td>
+        <td><a th:href="@{__${adminBase}__/faqs}">관리 →</a></td>
+      </tr>
+      <tr>
+        <td>FAQ 카테고리</td>
+        <td th:text="${faqCategoryCount}">0</td>
+        <td><a th:href="@{__${adminBase}__/faq-categories}">관리 →</a></td>
+      </tr>
+      <tr>
+        <td>건의/버그 (미처리)</td>
+        <td th:text="${feedbackUnhandledCount}">0</td>
+        <td><a th:href="@{__${adminBase}__/feedbacks}">관리 →</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:2rem">빠른 시작</h3>
+  <ul>
+    <li><a th:href="@{__${adminBase}__/notices/new}">새 공지 작성</a></li>
+    <li><a th:href="@{__${adminBase}__/patch-notes/new}">새 패치노트 작성</a></li>
+    <li><a th:href="@{__${adminBase}__/faqs/new}">새 FAQ 추가</a></li>
+    <li><a th:href="@{__${adminBase}__/faq-categories/new}">새 FAQ 카테고리 추가</a></li>
+    <li><a th:href="@{__${adminBase}__/feedbacks}">건의/버그 확인</a></li>
+  </ul>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

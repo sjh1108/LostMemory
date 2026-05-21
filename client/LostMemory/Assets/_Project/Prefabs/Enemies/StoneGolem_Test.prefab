@@ -891,6 +891,9 @@ MonoBehaviour:
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
   positionOffset: {x: 0, y: 0.02, z: 0}
+  timingMarkerObjectName: AttackTelegraphTimingMarker
+  timingMarkerDefaultColor: {r: 1, g: 0.92, b: 0.55, a: 0.75}
+  timingMarkerThickness: 0.055
 --- !u!114 &114900000000100002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1311,7 +1314,7 @@ SpriteRenderer:
   m_Size: {x: 0.8, y: 0.1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
 --- !u!1 &278138783316840189
 GameObject:
@@ -1591,7 +1594,7 @@ MonoBehaviour:
     - rid: 1
       type: {class: MMF_Particles, ns: MoreMountains.Feedbacks, asm: MoreMountains.Tools}
       data:
-        Active: 1
+        Active: 0
         UniqueID: -423115958
         Label: Particles
         OriginalLabel: Particles Play
@@ -2249,7 +2252,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: e2ca7bf8a62241169f20277802ae4b6c, type: 2}
+      objectReference: {fileID: 2100000, guid: f55510fe3269acd4e904e69d94d24cec, type: 2}
     - target: {fileID: 3248787690555597829, guid: 17bd4c4a974d8844ba51e5837e231100,
         type: 3}
       propertyPath: m_LocalScale.x

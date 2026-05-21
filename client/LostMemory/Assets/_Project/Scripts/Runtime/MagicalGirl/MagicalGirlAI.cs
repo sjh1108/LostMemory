@@ -107,15 +107,27 @@ namespace LostMemory.MagicalGirl
         {
             if (_sr == null) return;
             // catalog 에서 entry 찾으면 sprite 교체, 없으면 색상 tint 만 (placeholder).
-            if (_catalog != null && _catalog.TryGet(_visual, out var entry) && entry.sprite != null)
+            // 누락 진단을 위해 각 fallback 단계에 워닝을 남긴다 (전기 미소녀 등 미해결 이슈 추적용).
+            if (_catalog == null)
             {
-                _sr.sprite = entry.sprite;
-                _sr.color = Color.white;  // sprite 자체 색상 사용
-            }
-            else
-            {
+                Debug.LogWarning($"[MagicalGirlAI] catalog 미할당 — {_visual} placeholder 표시", this);
                 _sr.color = MagicalGirlVisualPalette.Get(_visual);
+                return;
             }
+            if (!_catalog.TryGet(_visual, out var entry))
+            {
+                Debug.LogWarning($"[MagicalGirlAI] catalog 에 {_visual} entry 없음 — placeholder 표시", this);
+                _sr.color = MagicalGirlVisualPalette.Get(_visual);
+                return;
+            }
+            if (entry.sprite == null)
+            {
+                Debug.LogWarning($"[MagicalGirlAI] {_visual} entry.sprite null — placeholder 표시. Catalog asset Inspector 확인 필요.", this);
+                _sr.color = MagicalGirlVisualPalette.Get(_visual);
+                return;
+            }
+            _sr.sprite = entry.sprite;
+            _sr.color = Color.white;  // sprite 자체 색상 사용
         }
 
         private void Update()
@@ -149,10 +161,7 @@ namespace LostMemory.MagicalGirl
                 Collider2D col = _searchBuf[i];
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
-                if (h == null || h.CurrentHealth <= 0f) continue;
-                if (!CombatTargetable.CanBeTargeted(h)) continue;
-                Character ch = h.GetComponentInParent<Character>();
-                if (ch == null || ch.CharacterType != Character.CharacterTypes.AI) continue;
+                if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
 
                 Vector2 to = h.transform.position - transform.position;
                 float dSq = to.sqrMagnitude;
@@ -169,7 +178,7 @@ namespace LostMemory.MagicalGirl
         private void Attack(Health target, Vector2 toTargetDir)
         {
             if (IsOwnerActionBlocked()) return;
-            if (!CombatTargetable.CanBeTargeted(target)) return;
+            if (!CombatTargetable.CanBeAutoTargetedEnemy(target)) return;
 
             float damage = ComputeDamage();
             if (damage <= 0f) return;
@@ -219,7 +228,7 @@ namespace LostMemory.MagicalGirl
                 spawnPos += (Vector3)(forward * Mathf.Max(2f, entry.aoeRadius * 1.5f));
             }
             GameObject go = Instantiate(entry.vfxPrefab, spawnPos, Quaternion.identity);
-            VFXSpawner.ApplyGameplayEffectSorting(go);
+            VFXSpawner.ApplyMagicalGirlGroundEffectSorting(go);
             var aoe = go.GetComponent<MagicalGirlAOE>();
             if (aoe == null) aoe = go.AddComponent<MagicalGirlAOE>();
             // tick 데미지 = entry.damageRatio 기반이지만, catalog 에서 이미 1회 전달된 damage 를 tick 당 데미지로 사용.

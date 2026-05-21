@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LostMemory.Stage.Data;
+using LostMemory.Rendering;
 using UnityEngine;
 
 namespace LostMemory.Stage
@@ -20,6 +21,13 @@ namespace LostMemory.Stage
         [SerializeField] private LargeNodeClearPolicy clearPolicy = LargeNodeClearPolicy.NoActiveCombat;
         [SerializeField] private string[] requiredRoomIds = Array.Empty<string>();
         [SerializeField] private RouteNodeExitTrigger[] exitTriggers = Array.Empty<RouteNodeExitTrigger>();
+        [SerializeField] private GameObject[] blockingRoots = Array.Empty<GameObject>();
+        [SerializeField] private bool disableBlockingRootsWhenUnlocked = true;
+        [SerializeField] private bool showBlockingRootVisuals = true;
+        [SerializeField] private Color blockingRootVisualColor = new Color(0.25f, 0.85f, 1f, 0.55f);
+        [SerializeField] private string blockingRootSortingLayerName = "Foreground";
+        [SerializeField] private int blockingRootSortingOrder = 16;
+        [SerializeField, Min(0f)] private float blockingRootVisualPadding = 0.08f;
         [SerializeField] private bool includeInactiveControllers = true;
         [SerializeField] private bool autoDiscoverOnEnable = true;
         [SerializeField] private bool unlockIfNoRequiredRooms;
@@ -43,6 +51,8 @@ namespace LostMemory.Stage
 
         private readonly HashSet<string> requiredIds = new HashSet<string>();
         private readonly HashSet<string> completedIds = new HashSet<string>();
+        private const string BlockingVisualName = "__LargeNodeBlockingVisual";
+        private static Sprite blockingVisualSprite;
         private bool nodeCleared;
 
         public bool IsCleared => clearPolicy == LargeNodeClearPolicy.NoActiveCombat
@@ -255,6 +265,8 @@ namespace LostMemory.Stage
 
         private void LockExits()
         {
+            ApplyBlockingRoots(true);
+
             if (exitTriggers == null)
             {
                 return;
@@ -271,6 +283,8 @@ namespace LostMemory.Stage
 
         private void UnlockExits()
         {
+            ApplyBlockingRoots(false);
+
             if (exitTriggers == null)
             {
                 return;
@@ -283,6 +297,154 @@ namespace LostMemory.Stage
                     exitTriggers[i].Unlock();
                 }
             }
+        }
+
+        private void ApplyBlockingRoots(bool blocking)
+        {
+            if (blockingRoots == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < blockingRoots.Length; i++)
+            {
+                GameObject root = blockingRoots[i];
+                if (root == null)
+                {
+                    continue;
+                }
+
+                bool shouldBeActive = blocking || !disableBlockingRootsWhenUnlocked;
+                root.SetActive(shouldBeActive);
+                if (!shouldBeActive)
+                {
+                    continue;
+                }
+
+                Collider2D[] colliders = root.GetComponentsInChildren<Collider2D>(includeInactive: true);
+                if (blocking && showBlockingRootVisuals)
+                {
+                    EnsureBlockingRootVisual(root, colliders);
+                }
+
+                SetBlockingCollidersEnabled(colliders, blocking);
+                SetBlockingRenderersEnabled(root, blocking);
+            }
+        }
+
+        private static void SetBlockingCollidersEnabled(Collider2D[] colliders, bool enabled)
+        {
+            if (colliders == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider2D collider = colliders[i];
+                if (collider != null && !collider.isTrigger)
+                {
+                    collider.enabled = enabled;
+                }
+            }
+        }
+
+        private static void SetBlockingRenderersEnabled(GameObject root, bool enabled)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                {
+                    renderers[i].enabled = enabled;
+                }
+            }
+        }
+
+        private void EnsureBlockingRootVisual(GameObject root, Collider2D[] colliders)
+        {
+            BoxCollider2D boundsSource = FindVisualBoundsSource(colliders);
+            if (boundsSource == null)
+            {
+                return;
+            }
+
+            Transform visualTransform = root.transform.Find(BlockingVisualName);
+            GameObject visualObject = visualTransform != null ? visualTransform.gameObject : null;
+            if (visualObject == null)
+            {
+                visualObject = new GameObject(BlockingVisualName);
+                visualTransform = visualObject.transform;
+                visualTransform.SetParent(root.transform, false);
+
+                SpriteRenderer spriteRenderer = visualObject.AddComponent<SpriteRenderer>();
+                spriteRenderer.sprite = GetOrCreateBlockingVisualSprite();
+                RuntimeSpriteMaterialUtility.ApplySpriteMaterial(spriteRenderer);
+                visualObject.AddComponent<BlockedPulse>();
+            }
+
+            visualTransform.SetParent(boundsSource.transform, false);
+            visualTransform.localPosition = new Vector3(boundsSource.offset.x, boundsSource.offset.y, -0.01f);
+            visualTransform.localRotation = Quaternion.identity;
+            visualTransform.localScale = new Vector3(
+                Mathf.Max(0.01f, boundsSource.size.x + blockingRootVisualPadding * 2f),
+                Mathf.Max(0.01f, boundsSource.size.y + blockingRootVisualPadding * 2f),
+                1f);
+
+            SpriteRenderer renderer = visualObject.GetComponent<SpriteRenderer>();
+            if (renderer == null)
+            {
+                return;
+            }
+
+            renderer.sprite = GetOrCreateBlockingVisualSprite();
+            renderer.color = blockingRootVisualColor;
+            renderer.sortingLayerName = blockingRootSortingLayerName;
+            renderer.sortingOrder = blockingRootSortingOrder;
+            renderer.enabled = true;
+        }
+
+        private static BoxCollider2D FindVisualBoundsSource(Collider2D[] colliders)
+        {
+            if (colliders == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] is BoxCollider2D boxCollider && !boxCollider.isTrigger)
+                {
+                    return boxCollider;
+                }
+            }
+
+            return null;
+        }
+
+        private static Sprite GetOrCreateBlockingVisualSprite()
+        {
+            if (blockingVisualSprite != null)
+            {
+                return blockingVisualSprite;
+            }
+
+            Texture2D texture = new Texture2D(1, 1, TextureFormat.RGBA32, false)
+            {
+                name = "LargeNodeBlockingVisualTexture",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            texture.SetPixel(0, 0, Color.white);
+            texture.Apply();
+
+            blockingVisualSprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, 1f, 1f),
+                new Vector2(0.5f, 0.5f),
+                1f);
+            blockingVisualSprite.name = "LargeNodeBlockingVisualSprite";
+            blockingVisualSprite.hideFlags = HideFlags.HideAndDontSave;
+            return blockingVisualSprite;
         }
 
         private void UnsubscribeAll()

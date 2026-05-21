@@ -9,17 +9,18 @@ namespace LostMemory.Combat
     /// CL-230: 인런(in-run) 무기 업그레이드 서비스.
     ///
     /// 책임:
-    /// - 씬에 1개 부착 (보통 SceneBootstrap / GameManager GameObject 또는 별도 _WeaponUpgrade GameObject).
-    /// - WeaponData SO 카탈로그 보유 (현재는 defaultSword, daggerSword 2개).
-    /// - 외부 트리거(아이템 픽업/이벤트 등)는 본 서비스의 UpgradeToDagger() / RevertToDefault() 만 호출.
-    /// - 실제 SO 교체는 씬의 KhiMeleeComboController 를 찾아 SetWeaponData() 호출로 처리.
+    /// - **플레이어 prefab 자식**에 부착 (멀티 호환). 각 플레이어가 자기 인스턴스 보유.
+    /// - WeaponData SO 카탈로그 보유 (defaultSword, daggerSword, daggerNinjaSword).
+    /// - 외부 트리거(아이템 픽업/이벤트 등)는 본 서비스의 UpgradeToDagger() / RevertToDefault() 호출.
+    /// - 실제 SO 교체는 자기 부모 트리의 KhiMeleeComboController 에 SetWeaponData() 호출.
     ///
-    /// 라이프사이클:
-    /// - 씬 부착 컴포넌트. 씬 unload 시 destroy. _instance 자동 cleanup.
-    /// - in-run 도중 단검 상태를 다음 씬으로 carry over 하려면 별도 RunState/PlayerSession 시스템에 저장 필요 (후속 작업).
+    /// 멀티 정책:
+    /// - 싱글톤 아님. 호출자는 LocalPlayerResolver.GetComponentOnLocalPlayer&lt;WeaponUpgradeService&gt;()
+    ///   또는 GetComponentInParent&lt;WeaponUpgradeService&gt;() 로 자기 인스턴스 조회.
+    /// - 각 클라이언트는 자기 플레이어 인스턴스의 무기만 다룸.
     /// </summary>
     [AddComponentMenu("Lost Memory/Combat/Weapon Upgrade Service")]
-    [DefaultExecutionOrder(-100)] // 다른 시스템보다 먼저 instance 등록되도록
+    [DefaultExecutionOrder(-100)]
     public class WeaponUpgradeService : MonoBehaviour
     {
         [Header("Weapon Catalog (Inspector 에서 SO 드래그)")]
@@ -59,22 +60,13 @@ namespace LostMemory.Combat
         /// <summary>(kind, weaponData) — UI / 사운드 / 도전과제 구독 지점. UpgradeToDagger/RevertToDefault 성공 시 발화.</summary>
         public event Action<WeaponKind, WeaponData> WeaponUpgraded;
 
-        private static WeaponUpgradeService _instance;
-        public static WeaponUpgradeService Instance => _instance;
-
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Debug.LogWarning($"[WeaponUpgradeService] 중복 인스턴스. 본 인스턴스 destroy. (existing on '{_instance.name}', new on '{name}')", this);
-                Destroy(this);
-                return;
-            }
-            _instance = this;
-
             if (targetController == null)
             {
-                targetController = FindFirstObjectByType<KhiMeleeComboController>(FindObjectsInactive.Include);
+                // 멀티 호환: 자기 부모 트리에서 자기 플레이어 controller 만 잡음.
+                // (이전: FindFirstObjectByType — 멀티에서 첫 번째 플레이어 한 명만 잡혀 다른 클라 무기 안 바뀜)
+                targetController = GetComponentInParent<KhiMeleeComboController>(true);
             }
 
             // defaultSword 미지정 시 controller 의 현재 SO 캡처.
@@ -111,13 +103,8 @@ namespace LostMemory.Combat
             }
         }
 
-        private void OnDestroy()
-        {
-            if (_instance == this)
-            {
-                _instance = null;
-            }
-        }
+        // 스냅샷은 WeaponModeController 가 담당 — 거기서 SetMode 가 자동으로
+        // WeaponUpgradeService.UpgradeToDagger/RevertToDefault 를 호출하므로 이중 처리 X.
 
         /// <summary>
         /// 단검으로 업그레이드.
@@ -179,10 +166,10 @@ namespace LostMemory.Combat
         {
             if (targetController == null)
             {
-                targetController = FindFirstObjectByType<KhiMeleeComboController>(FindObjectsInactive.Include);
+                targetController = GetComponentInParent<KhiMeleeComboController>(true);
                 if (targetController == null)
                 {
-                    Debug.LogError("[WeaponUpgradeService] KhiMeleeComboController 를 씬에서 찾지 못함.", this);
+                    Debug.LogError("[WeaponUpgradeService] 자기 부모 트리에서 KhiMeleeComboController 를 찾지 못함. _WeaponUpgrade GameObject 가 플레이어 prefab 자식인지 확인.", this);
                     return false;
                 }
             }

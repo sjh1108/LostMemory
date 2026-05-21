@@ -12,6 +12,11 @@ namespace LostMemory.Talents
     {
         private const string KeyPrefix = "Talent_";
 
+        /// <summary>
+        /// 재능 저장이 완료된 직후 발화. 마을에서 즉시 stat 적용에 사용 (TalentStartupApplier 구독).
+        /// </summary>
+        public static event Action Saved;
+
         /// <summary>현재 모델의 투자값을 PlayerPrefs에 저장한다.</summary>
         public static void Save(TalentModel model)
         {
@@ -21,6 +26,7 @@ namespace LostMemory.Talents
             }
             PlayerPrefs.Save();
             Debug.Log("[TalentSaveService] 저장 완료");
+            Saved?.Invoke();
         }
 
         /// <summary>PlayerPrefs에서 투자값을 불러온다. 저장값이 없으면 빈 딕셔너리를 반환한다.</summary>

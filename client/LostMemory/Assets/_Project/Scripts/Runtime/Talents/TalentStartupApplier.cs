@@ -22,6 +22,12 @@ namespace LostMemory.Talents
     [AddComponentMenu("Lost Memory/Talents/Talent Startup Applier")]
     public sealed class TalentStartupApplier : MonoBehaviour
     {
+        /// <summary>
+        /// 재능 stat 의 공통 source identifier. TalentStartupApplier 와 TalentPanelView 가
+        /// 같은 source 로 등록/제거해야 중복 누적이 발생하지 않는다.
+        /// </summary>
+        public static readonly object Source = new object();
+
         [Header("Refs")]
         [SerializeField] private TalentData[] _talentDatas;
         [SerializeField, Min(1)] private int _totalPoints = 10;
@@ -50,15 +56,23 @@ namespace LostMemory.Talents
 
             if (_bootstrap != null)
                 _bootstrap.DungeonBuilt += Apply;
-            else
-                Debug.LogWarning("[TalentStartupApplier] DungeonRunBootstrap 미연결 — 자동 resolve 실패. " +
-                                 "씬에 Bootstrap 이 있는지 확인하거나 Inspector 에서 직접 드래그.", this);
+            // 마을 씬에는 DungeonRunBootstrap 이 없는 게 정상이라 경고 생략 (Start 에서 Apply 호출됨).
+
+            // 재능 저장 직후 즉시 stat 반영 — 마을에서 HP 늘려도 HUD/캐릭터에 곧바로 적용.
+            TalentSaveService.Saved += HandleTalentSaved;
         }
 
         private void OnDisable()
         {
             if (_bootstrap != null)
                 _bootstrap.DungeonBuilt -= Apply;
+            TalentSaveService.Saved -= HandleTalentSaved;
+        }
+
+        private void HandleTalentSaved()
+        {
+            Debug.Log("[TalentStartupApplier] TalentSaveService.Saved 수신 → 즉시 재적용", this);
+            Apply();
         }
 
         private void Start()
@@ -106,8 +120,8 @@ namespace LostMemory.Talents
                 return;
             }
 
-            // 이전 런 modifier 전부 초기화 (런 재시작 안전)
-            _container.RemoveBySource(this);
+            // 이전 modifier 전부 초기화 (런 재시작 안전 + 마을에서 TalentPanelView 가 등록한 것도 정리).
+            _container.RemoveBySource(Source);
 
             MemorySaveData save = MemoryMetaService.Load();
             ApplyTalentStats(save);
@@ -125,15 +139,17 @@ namespace LostMemory.Talents
             RunStartStats stats = TalentCalculator.Calculate(model);
 
             if (stats.CriticalRate != 0f)
-                _container.AddPermanent(StatId.Critical, stats.CriticalRate, this);
+                _container.AddPermanent(StatId.Critical, stats.CriticalRate, Source);
             if (stats.AttackSpeed != 0f)
-                _container.AddPermanent(StatId.AttackSpeed, stats.AttackSpeed, this);
+                _container.AddPermanent(StatId.AttackSpeed, stats.AttackSpeed, Source);
             if (stats.Defense != 0f)
-                _container.AddPermanent(StatId.Defense, stats.Defense, this);
+                _container.AddPermanent(StatId.Defense, stats.Defense, Source);
+            // CL-234: 재능 MaxHealth 는 flat track 으로 등록 (multiplier 합산 폭주 방지).
+            //         IncreasePerPoint=1 + 10포인트 = +10 HP. PlayerHealthStatApplier 가 (base+flat)*mul 로 합성.
             if (stats.MaxHealth != 0f)
-                _container.AddPermanent(StatId.MaxHealth, stats.MaxHealth, this);
+                _container.AddPermanent(StatId.MaxHealthFlat, stats.MaxHealth, Source);
             if (stats.MoveSpeed != 0f)
-                _container.AddPermanent(StatId.MoveSpeed, stats.MoveSpeed, this);
+                _container.AddPermanent(StatId.MoveSpeed, stats.MoveSpeed, Source);
 
             if (_logApply)
             {
@@ -151,11 +167,15 @@ namespace LostMemory.Talents
         private void ApplyMemoryBoosts(MemorySaveData save)
         {
             foreach (var boost in save.PermanentBoosts)
-                _container.AddPermanent(boost.Stat, boost.Magnitude, this);
-
-            if (_logApply && save.PermanentBoosts.Count > 0)
             {
-                Debug.Log($"[TalentStartupApplier] 기억 영구 스탯 {save.PermanentBoosts.Count}건 적용", this);
+                _container.AddPermanent(boost.Stat, boost.Magnitude, Source);
+                if (_logApply)
+                    Debug.Log($"[TalentStartupApplier] 기억 보스트 적용: {boost.Stat} +{boost.Magnitude:F2} (source={boost.SourcePieceId})", this);
+            }
+
+            if (_logApply)
+            {
+                Debug.Log($"[TalentStartupApplier] ApplyMemoryBoosts 완료 — {save.PermanentBoosts.Count}건", this);
             }
         }
 

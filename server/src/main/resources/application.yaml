@@ -37,3 +37,12 @@ relay:
 app:
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS}
+
+# vLLM 채팅 프록시.
+# dev-bypass 는 클라 로그인 미완성 단계 endpoint 검증용 — 정식 단계에서 본 블록 + JwtAuthenticationFilter 분기 제거.
+llm:
+  base-url: ${VLLM_BASE_URL}
+  api-key: ${VLLM_API_KEY}
+  dev-bypass:
+    enabled: ${DEV_BYPASS_ENABLED}
+    secret: ${DEV_BYPASS_SECRET}

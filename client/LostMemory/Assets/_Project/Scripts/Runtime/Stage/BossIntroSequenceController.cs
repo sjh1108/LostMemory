@@ -16,6 +16,13 @@ namespace LostMemory.Stage
         [SerializeField] private string entryTriggerName = string.Empty;
         [SerializeField] private string entryStateName = "Entry";
         [SerializeField, Min(0)] private int entryStateLayer;
+
+        [Header("Entry Motion")]
+        [SerializeField] private Transform entryMotionRoot;
+        [SerializeField] private bool moveEntryFromOffset;
+        [SerializeField] private Vector3 entryStartLocalOffset = new Vector3(0f, 6f, 0f);
+        [SerializeField, Min(0f)] private float entryMoveDuration = 0.9f;
+
         [SerializeField] private GameObject[] introVisibilityTargets = System.Array.Empty<GameObject>();
         [SerializeField] private GameObject dialoguePlayerOwner;
         [SerializeField] private Health bossHealth;
@@ -27,10 +34,15 @@ namespace LostMemory.Stage
 
         private Coroutine _introRoutine;
         private Coroutine _entryLandingSfxRoutine;
+        private Coroutine _entryMotionRoutine;
         private Character[] _cachedPlayers = System.Array.Empty<Character>();
         private BossRoomTransitionCompletedContext _currentContext;
+        private Transform _activeEntryMotionRoot;
+        private Vector3 _entryMotionStartLocalPosition;
+        private Vector3 _entryMotionEndLocalPosition;
         private bool _isIntroRunning;
         private bool _introCompleted;
+        private bool _entryMotionPrepared;
         private bool _introInvulnerabilityApplied;
         private bool _bossWasInvulnerable;
         private bool _introTargetabilityApplied;
@@ -135,6 +147,8 @@ namespace LostMemory.Stage
                     yield return new WaitForSecondsRealtime(data.DelayBeforeEntry);
                 }
 
+                PrepareEntryMotion();
+
                 if (data.HideBossBeforeEntry)
                 {
                     SetIntroVisibility(isVisible: true);
@@ -145,10 +159,17 @@ namespace LostMemory.Stage
                 if (data.PlayEntryAnimation)
                 {
                     PlayEntryAnimation();
+                    StartEntryMotion(data.EntryDuration);
                     if (data.EntryDuration > 0f)
                     {
                         yield return new WaitForSecondsRealtime(data.EntryDuration);
                     }
+
+                    CompleteEntryMotion();
+                }
+                else
+                {
+                    CompleteEntryMotion();
                 }
 
                 if (data.DelayBeforeDialogue > 0f)
@@ -193,6 +214,102 @@ namespace LostMemory.Stage
             {
                 bossAnimator.Play(entryStateName, entryStateLayer, 0f);
             }
+        }
+
+        private void PrepareEntryMotion()
+        {
+            if (!moveEntryFromOffset || entryStartLocalOffset == Vector3.zero)
+            {
+                return;
+            }
+
+            Transform motionRoot = ResolveEntryMotionRoot();
+            if (motionRoot == null)
+            {
+                return;
+            }
+
+            if (_entryMotionRoutine != null)
+            {
+                StopCoroutine(_entryMotionRoutine);
+                _entryMotionRoutine = null;
+            }
+
+            _activeEntryMotionRoot = motionRoot;
+            _entryMotionEndLocalPosition = motionRoot.localPosition;
+            _entryMotionStartLocalPosition = _entryMotionEndLocalPosition + entryStartLocalOffset;
+            motionRoot.localPosition = _entryMotionStartLocalPosition;
+            _entryMotionPrepared = true;
+        }
+
+        private void StartEntryMotion(float fallbackDuration)
+        {
+            if (!_entryMotionPrepared || _activeEntryMotionRoot == null)
+            {
+                return;
+            }
+
+            float duration = entryMoveDuration > 0f ? entryMoveDuration : fallbackDuration;
+            if (duration <= 0f)
+            {
+                CompleteEntryMotion();
+                return;
+            }
+
+            _entryMotionRoutine = StartCoroutine(RunEntryMotion(duration));
+        }
+
+        private IEnumerator RunEntryMotion(float duration)
+        {
+            Transform motionRoot = _activeEntryMotionRoot;
+            float elapsed = 0f;
+            while (_entryMotionPrepared && motionRoot != null && elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = t * t * (3f - 2f * t);
+                motionRoot.localPosition = Vector3.LerpUnclamped(
+                    _entryMotionStartLocalPosition,
+                    _entryMotionEndLocalPosition,
+                    eased);
+                yield return null;
+            }
+
+            if (_entryMotionPrepared && motionRoot != null)
+            {
+                motionRoot.localPosition = _entryMotionEndLocalPosition;
+            }
+
+            _entryMotionRoutine = null;
+            _entryMotionPrepared = false;
+            _activeEntryMotionRoot = null;
+        }
+
+        private void CompleteEntryMotion()
+        {
+            if (_entryMotionRoutine != null)
+            {
+                StopCoroutine(_entryMotionRoutine);
+                _entryMotionRoutine = null;
+            }
+
+            if (_entryMotionPrepared && _activeEntryMotionRoot != null)
+            {
+                _activeEntryMotionRoot.localPosition = _entryMotionEndLocalPosition;
+            }
+
+            _entryMotionPrepared = false;
+            _activeEntryMotionRoot = null;
+        }
+
+        private Transform ResolveEntryMotionRoot()
+        {
+            if (entryMotionRoot != null)
+            {
+                return entryMotionRoot;
+            }
+
+            return bossAnimator != null ? bossAnimator.transform : transform;
         }
 
         private void PlayEntryLandingSfx(BossIntroSequenceData data)
@@ -271,6 +388,8 @@ namespace LostMemory.Stage
 
         private void CompleteIntro(BossRoomTransitionCompletedContext context, bool shouldUnlockPlayers)
         {
+            CompleteEntryMotion();
+
             if (shouldUnlockPlayers)
             {
                 UnfreezeCachedPlayers();
@@ -292,6 +411,8 @@ namespace LostMemory.Stage
                 StopCoroutine(_entryLandingSfxRoutine);
                 _entryLandingSfxRoutine = null;
             }
+
+            CompleteEntryMotion();
 
             if (_introRoutine != null)
             {

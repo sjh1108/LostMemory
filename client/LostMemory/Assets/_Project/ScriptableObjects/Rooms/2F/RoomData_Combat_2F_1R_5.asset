@@ -18,7 +18,8 @@ MonoBehaviour:
   category: 0
   bossEntryRequirementMode: 0
   sequenceIndex: 0
-  layoutPrefab: {fileID: 613413873586368898, guid: b2ee31fd17977164cb9154bb281db06f, type: 3}
+  layoutPrefab: {fileID: 613413873586368898, guid: b2ee31fd17977164cb9154bb281db06f,
+    type: 3}
   initContext:
     playerSpawnAnchorTag: default
     facing: {x: 1, y: 0}
@@ -31,38 +32,13 @@ MonoBehaviour:
       triggerNextWaveDeathRatio: 0.6
       enemies:
       - enemyId: enemy_assassin
-        count: 1
+        count: 3
         spawnGroupFilter: assassin1
       - enemyId: enemy_bat
-        count: 1
+        count: 2
         spawnGroupFilter: bat1
       - enemyId: enemy_skeleton_elite
-        count: 1
+        count: 2
         spawnGroupFilter: skeleton_elite1
-      - enemyId: enemy_skeleton1
-        count: 1
-        spawnGroupFilter: skeleton11
-      - enemyId: enemy_slime
-        count: 1
-        spawnGroupFilter: slime1
-    - label: Wave 2
-      startDelay: 30
-      triggerNextWaveDeathRatio: 0.5
-      enemies:
-      - enemyId: enemy_assassin
-        count: 1
-        spawnGroupFilter: assassin2
-      - enemyId: enemy_bat
-        count: 1
-        spawnGroupFilter: bat2
-      - enemyId: enemy_skeleton_elite
-        count: 1
-        spawnGroupFilter: skeleton_elite2
-      - enemyId: enemy_skeleton1
-        count: 1
-        spawnGroupFilter: skeleton12
-      - enemyId: enemy_slime
-        count: 1
-        spawnGroupFilter: slime2
   clearCondition: 0
   exits: []

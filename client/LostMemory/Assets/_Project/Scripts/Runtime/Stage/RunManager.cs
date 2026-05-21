@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Memory;
 using LostMemory.Networking.Common;
+using LostMemory.Networking.Player;
 using LostMemory.Player;
 using LostMemory.Relics;
 using LostMemory.SceneFlow;
@@ -67,6 +68,13 @@ namespace LostMemory.Stage
         [SerializeField, Tooltip("Editor Play Mode에서 Build Settings 이름 로드가 막힐 때 사용할 Town 씬 경로.")]
         private string townScenePath = "Assets/_Project/Scenes/Town/Town.unity";
 
+        [SerializeField, Tooltip("멀티 세션 활성 시 결과창 마을로 버튼을 눌렀을 때 로드할 로비 씬 이름. " +
+            "비워두면 기존 townSceneName 흐름 (솔로 경로) 유지. NGO SceneManager.LoadScene 으로 호스트가 트리거 → 모든 클라 sync, 세션 유지.")]
+        private string lobbySceneName = string.Empty;
+
+        [SerializeField, Tooltip("Editor Play Mode 또는 build 안 등록 시 fallback 으로 사용할 로비 씬 경로.")]
+        private string lobbyScenePath = string.Empty;
+
         [SerializeField, Tooltip("Result Restart button target dungeon start scene name.")]
         private string restartDungeonSceneName = "Dungeon_1F_1R";
 
@@ -76,6 +84,9 @@ namespace LostMemory.Stage
         [Header("Stage Progression")]
         [SerializeField, Min(1), Tooltip("이번 런에서 진행할 스테이지 수. 보스 클리어 포탈 진입 시 다음 스테이지가 없으면 결과 화면으로 간다.")]
         private int totalStageCount = 1;
+
+        [SerializeField, Tooltip("2-1 개발 전 임시 운영값. false 면 보스 클리어 포탈은 다음 스테이지 대신 결과 화면으로 간다.")]
+        private bool allowBossPortalStageAdvance;
 
         [SerializeField, Tooltip("보스 클리어 포탈/스테이지 진행 로그 출력.")]
         private bool logStageProgression = true;
@@ -91,6 +102,20 @@ namespace LostMemory.Stage
         public int TotalStageCount => Mathf.Max(1, totalStageCount);
         public bool HasNextStage => CurrentStageIndex + 1 < TotalStageCount;
 
+        /// <summary>CL-234 (A-12): 던전 HUD 타이머가 폴링하는 게터. 런 시작 시각(Time.time 기준).</summary>
+        public float RunStartedAt => runStartedAt;
+
+        /// <summary>CL-234 (A-12): InRun 상태에서의 경과 시간(초). InRun 이 아니면 0.</summary>
+        public float ElapsedRunTime
+        {
+            get
+            {
+                if (StateMachine == null) return 0f;
+                if (StateMachine.Current != RunState.InRun) return 0f;
+                return Mathf.Max(0f, Time.time - runStartedAt);
+            }
+        }
+
         private readonly HashSet<RoomEntryRuntimeController> _subscribedControllers = new HashSet<RoomEntryRuntimeController>();
         private float runStartedAt;
         private int killCount;
@@ -100,11 +125,19 @@ namespace LostMemory.Stage
         private bool bossClearPortalReady;
         private bool townReturnInProgress;
         private bool restartSceneLoadPending;
+        // 멀티 환경에서 ShowResultingUI 가 두 경로(호스트 측 DelayedTransitionToResulting 코루틴 + 게스트 측 ClientRpc)
+        // 에서 호출될 수 있어 idempotent guard 필요. CleanupRunResultingState 에서 reset.
+        private bool _resultingUiShown;
         private Coroutine refreshSceneSubscriptionsRoutine;
         private DungeonRunBootstrap subscribedDungeonRunBootstrap;
         private KhiPlayerStateAggregator subscribedPlayerStateAggregator;
         private KhiDownController subscribedPlayerDownController;
         private RunResultPanelView subscribedRunResultPanelView;
+
+        // 파티 전원 전투불능 판정용 폴링 + 결과 전환 코루틴 중복 방지.
+        private Coroutine resultTransitionRoutine;
+        private float nextPartyDefeatCheckAt;
+        private const float PartyDefeatCheckInterval = 0.25f;
 
         private void Awake()
         {
@@ -459,6 +492,101 @@ namespace LostMemory.Stage
             }
         }
 
+        private void Update()
+        {
+            if (Instance != this || StateMachine == null)
+            {
+                return;
+            }
+            if (StateMachine.Current != RunState.InRun)
+            {
+                return;
+            }
+            if (Time.unscaledTime < nextPartyDefeatCheckAt)
+            {
+                return;
+            }
+            nextPartyDefeatCheckAt = Time.unscaledTime + PartyDefeatCheckInterval;
+
+            if (AreAllActivePlayersDownOrDefeated())
+            {
+                FailRunFromPartyDefeat();
+            }
+        }
+
+        /// <summary>
+        /// 활성 플레이어 모두가 Down 또는 Defeated 인지 검사.
+        /// 싱글: 1명이 다운/사망이면 true.
+        /// 멀티: 파티 전원 다운/사망이면 true.
+        /// 활성 플레이어가 0명이면 false (런 시작 전/씬 전환 중 등).
+        /// </summary>
+        private bool AreAllActivePlayersDownOrDefeated()
+        {
+            KhiDownController[] players = FindObjectsByType<KhiDownController>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            if (players.Length == 0)
+            {
+                return false;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            bool foundPlayer = false;
+            for (int i = 0; i < players.Length; i++)
+            {
+                KhiDownController player = players[i];
+                if (player == null || player.gameObject.scene != activeScene)
+                {
+                    continue;
+                }
+                foundPlayer = true;
+                if (!player.IsDown && !player.IsDefeated)
+                {
+                    return false;
+                }
+            }
+            return foundPlayer;
+        }
+
+        /// <summary>이벤트 핸들러용 — 즉시 파티 상태 검사 후 실패 트리거 여부 판정.</summary>
+        private void CheckPartyDefeatNow()
+        {
+            if (!EnsureRunActiveForDefeat())
+            {
+                return;
+            }
+            if (!AreAllActivePlayersDownOrDefeated())
+            {
+                return;
+            }
+            FailRunFromPartyDefeat();
+        }
+
+        /// <summary>파티 전원 전투불능 → RunFailed 전이 + 결과 패널 전환 예약. 단일 진입점.</summary>
+        private void FailRunFromPartyDefeat()
+        {
+            if (!EnsureRunActiveForDefeat())
+            {
+                return;
+            }
+            if (!StateMachine.TryTransition(RunState.RunFailed))
+            {
+                return;
+            }
+            bossClearPortalReady = false;
+            BeginDelayedTransitionToResulting(failureResultingDelaySeconds);
+        }
+
+        /// <summary>결과 전환 코루틴을 시작하며 중복을 방지.</summary>
+        private void BeginDelayedTransitionToResulting(float delaySeconds)
+        {
+            if (resultTransitionRoutine != null)
+            {
+                StopCoroutine(resultTransitionRoutine);
+            }
+            resultTransitionRoutine = StartCoroutine(DelayedTransitionToResulting(delaySeconds));
+        }
+
         /// <summary>
         /// 런 시작 — None → Initializing 전이 + DungeonRunBootstrap.BuildRun() 호출.
         /// 호스트 권위 가드 적용. 외부 (UI 시작 버튼 / autoStartOnAwake) 가 호출.
@@ -480,7 +608,8 @@ namespace LostMemory.Stage
         }
 
         /// <summary>
-        /// 보스 클리어 포탈 진입 시 호출. 다음 스테이지가 있으면 새 스테이지를 빌드하고, 없으면 결과 화면으로 진입한다.
+        /// 보스 클리어 포탈 진입 시 호출. 활성 라우트의 다음 노드가 있으면 라우트 씬으로 이동하고,
+        /// 없으면 기존 스테이지 진행 또는 결과 화면 흐름으로 진입한다.
         /// </summary>
         public bool NotifyBossClearPortalEntered()
         {
@@ -488,7 +617,7 @@ namespace LostMemory.Stage
             {
                 return false;
             }
-            if (StateMachine.Current != RunState.InRun)
+            if (!EnsureRunActiveForSceneEvent())
             {
                 Debug.LogWarning($"[RunManager] Boss clear portal ignored. Current state is {StateMachine.Current}.", this);
                 return false;
@@ -501,13 +630,36 @@ namespace LostMemory.Stage
 
             bossClearPortalReady = false;
 
-            bool handled = HasNextStage ? AdvanceToNextStage() : CompleteRunFromBossPortal();
+            bool handled = TryAdvanceActiveRouteFromBossPortal();
+            if (!handled)
+            {
+                handled = allowBossPortalStageAdvance && HasNextStage
+                    ? AdvanceToNextStage()
+                    : CompleteRunFromBossPortal();
+            }
+
             if (!handled)
             {
                 bossClearPortalReady = true;
             }
 
             return handled;
+        }
+
+        private bool TryAdvanceActiveRouteFromBossPortal()
+        {
+            StageRouteManager routeManager = StageRouteManager.Instance;
+            if (routeManager == null || !routeManager.CanAdvanceCurrentRouteNode())
+            {
+                return false;
+            }
+
+            if (logStageProgression)
+            {
+                Debug.Log("[RunManager] Boss clear portal advancing active stage route.", this);
+            }
+
+            return routeManager.RequestAdvanceCurrentRouteNode(null);
         }
 
         private void BuildCurrentStage()
@@ -557,12 +709,6 @@ namespace LostMemory.Stage
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(townSceneName))
-            {
-                Debug.LogWarning("[RunManager] Town scene name is empty.", this);
-                return;
-            }
-
             NetworkManager networkManager = NetworkManager.Singleton;
             bool networkSessionActive = networkManager != null && networkManager.IsListening;
             if (networkSessionActive && !networkManager.IsServer)
@@ -571,52 +717,83 @@ namespace LostMemory.Stage
                 return;
             }
 
-            bool canLoadSceneName = Application.CanStreamedLevelBeLoaded(townSceneName);
-            if (!canLoadSceneName && !CanUseEditorTownScenePath(networkSessionActive))
+            // 멀티 분기 — lobbySceneName 이 set 된 경우만 lobby 경로. 솔로 또는 lobby 미지정 시 기존 town 흐름 그대로.
+            bool useLobbyScene = networkSessionActive && !string.IsNullOrWhiteSpace(lobbySceneName);
+            string targetSceneName = useLobbyScene ? lobbySceneName : townSceneName;
+            string targetScenePath = useLobbyScene ? lobbyScenePath : townScenePath;
+
+            if (string.IsNullOrWhiteSpace(targetSceneName))
             {
-                Debug.LogWarning($"[RunManager] Town scene '{townSceneName}' is not available. Add it to Build Settings or set a valid Town scene path.", this);
+                Debug.LogWarning($"[RunManager] Return scene name is empty. (useLobbyScene={useLobbyScene})", this);
+                return;
+            }
+
+            bool canLoadSceneName = Application.CanStreamedLevelBeLoaded(targetSceneName);
+            if (!canLoadSceneName && !CanUseEditorScenePath(networkSessionActive, targetScenePath))
+            {
+                Debug.LogWarning($"[RunManager] Scene '{targetSceneName}' is not available. Add it to Build Settings or set a valid scene path.", this);
                 return;
             }
 
             townReturnInProgress = true;
-            TownSpawnRouter.RequestTownReturn(townSceneName);
+            // TownSpawnRouter 는 town 씬 spawn 전용 — lobby 분기 시 skip (lobby 씬 자체 spawn 로직 사용).
+            if (!useLobbyScene)
+            {
+                TownSpawnRouter.RequestTownReturn(targetSceneName);
+            }
             if (!TryCloseResulting(saveRunRewards))
             {
                 CleanupRunResultingState(saveRunRewards);
             }
             Time.timeScale = 1f;
 
+            // 멀티 환경:
+            //   lobby 분기 (마을→로비 복귀) → 정공법으로 PlayerObject Despawn + 새 씬에서 fresh 재 spawn.
+            //     DontDestroyOnLoad 인 player 의 사망 잔재 문제 근본 해결.
+            //   townScene 분기 (기존 솔로 town 로 복귀) → 기존 reset broadcast 유지 (회귀 차단).
             if (networkSessionActive)
             {
-                networkManager.SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
+                if (useLobbyScene)
+                {
+                    PlayerHealthSync.RespawnPlayersAfterSceneLoad();
+                }
+                else
+                {
+                    PlayerHealthSync.BroadcastResetDeathStateForAll();
+                }
+            }
+
+            if (networkSessionActive)
+            {
+                networkManager.SceneManager.LoadScene(targetSceneName, LoadSceneMode.Single);
             }
             else if (canLoadSceneName)
             {
-                SceneManager.LoadScene(townSceneName, LoadSceneMode.Single);
+                SceneManager.LoadScene(targetSceneName, LoadSceneMode.Single);
             }
             else
             {
-                LoadTownSceneInEditorPlayMode();
+                LoadSceneInEditorPlayMode(targetScenePath, targetSceneName);
             }
 
             Destroy(gameObject);
         }
 
-        private bool CanUseEditorTownScenePath(bool networkSessionActive)
+        private static bool CanUseEditorScenePath(bool networkSessionActive, string scenePath)
         {
 #if UNITY_EDITOR
-            return !networkSessionActive && !string.IsNullOrWhiteSpace(townScenePath);
+            return !networkSessionActive && !string.IsNullOrWhiteSpace(scenePath);
 #else
             return false;
 #endif
         }
 
-        private void LoadTownSceneInEditorPlayMode()
+        private static void LoadSceneInEditorPlayMode(string scenePath, string sceneName)
         {
 #if UNITY_EDITOR
-            EditorSceneManager.LoadSceneInPlayMode(townScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            EditorSceneManager.LoadSceneInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
 #else
-            Debug.LogWarning($"[RunManager] Town scene '{townSceneName}' is not available in this build.", this);
+            Debug.LogWarning($"[RunManager] Scene '{sceneName}' is not available in this build.");
 #endif
         }
 
@@ -658,6 +835,7 @@ namespace LostMemory.Stage
         {
             ResolveEconomyRefs();
             bossClearPortalReady = false;
+            _resultingUiShown = false;
             RunResultPanelView resultPanelView = ResolveRunResultPanelView();
             if (resultPanelView != null)
             {
@@ -843,48 +1021,40 @@ namespace LostMemory.Stage
                 return false;
             }
 
-            StartCoroutine(DelayedTransitionToResulting(resultingDelaySeconds));
+            BeginDelayedTransitionToResulting(resultingDelaySeconds);
             return true;
         }
 
         private void HandlePlayerStateChanged(KhiPlayerState prev, KhiPlayerState current)
         {
-            // TODO(CL-014): 부활 deadline 처리. 현재는 *솔로 = Player Defeated 즉시 RunFailed* 임시 정책.
-            // 멀티 도입 시 *파티 전원 다운 + 부활 deadline 만료* 로 변경.
-            if (current != KhiPlayerState.Defeated)
+            // 정책: 파티 전원 Down/Defeated 시점에만 RunFailed.
+            // 본 이벤트는 즉시 검사 트리거. Update() 폴링이 누락 케이스도 잡음.
+            if (current != KhiPlayerState.Down && current != KhiPlayerState.Defeated)
             {
                 return;
             }
-            if (!EnsureRunActiveForDefeat())
-            {
-                return;
-            }
-            if (StateMachine.TryTransition(RunState.RunFailed))
-            {
-                bossClearPortalReady = false;
-                StartCoroutine(DelayedTransitionToResulting(failureResultingDelaySeconds));
-            }
+            CheckPartyDefeatNow();
         }
 
         // KhiPlayerStateAggregator 는 Player GameObject 가 Defeated 와 동일 프레임에 비활성화되어
         // Update 폴링이 StateChanged(Defeated) 를 발행하지 못한다.
         // KhiDownController 의 DefeatedByTimeout / DefeatedSolo 는 GameObject 비활성화 *직전* 에 발행되므로
         // RunFailed 트리거의 신뢰 경로. Aggregator 구독은 잔존시켜 비치명 경로(있을 시) 보호.
-        private void HandlePlayerDefeatedDirect()
+        //
+        // public 변경: 멀티 환경에서 PlayerHealthSync 가 "팀 전체 사망" 감지 시 직접 호출.
+        // RunManager 는 local player 한 명의 KhiDownController 만 hook 하므로,
+        // 다른 player 가 죽는 경로는 외부 트리거가 필요함.
+        public void HandlePlayerDefeatedDirect()
         {
-            // TODO(CL-014): 부활 deadline 도입 시 즉시가 아닌 deadline 만료 후로 변경.
-            if (!EnsureRunActiveForDefeat())
-            {
-                return;
-            }
-            if (StateMachine.TryTransition(RunState.RunFailed))
-            {
-                bossClearPortalReady = false;
-                StartCoroutine(DelayedTransitionToResulting(failureResultingDelaySeconds));
-            }
+            CheckPartyDefeatNow();
         }
 
         private bool EnsureRunActiveForDefeat()
+        {
+            return EnsureRunActiveForSceneEvent();
+        }
+
+        private bool EnsureRunActiveForSceneEvent()
         {
             if (StateMachine.Current == RunState.InRun)
             {
@@ -913,7 +1083,10 @@ namespace LostMemory.Stage
 
         private IEnumerator DelayedTransitionToResulting(float delaySeconds)
         {
-            yield return new WaitForSeconds(Mathf.Max(0f, delaySeconds));
+            // 일시정지(timeScale=0) 상태에서도 결과 전환이 진행되도록 Realtime 사용.
+            yield return new WaitForSecondsRealtime(Mathf.Max(0f, delaySeconds));
+            resultTransitionRoutine = null;
+
             if (!StateMachine.TryTransition(RunState.Resulting))
             {
                 yield break;
@@ -921,12 +1094,24 @@ namespace LostMemory.Stage
             ShowResultingUI();
         }
 
-        private void ShowResultingUI()
+        // public 변경: 멀티 환경에서 PlayerHealthSync 의 ClientRpc 가 게스트 화면에도 결과 패널 표시하도록 외부 호출.
+        // _resultingUiShown idempotent guard — 호스트 측은 DelayedTransitionToResulting 코루틴 + ClientRpc 양쪽에서 호출될 수 있음.
+        public void ShowResultingUI()
         {
+            // 호스트 측은 DelayedTransitionToResulting 코루틴 + PlayerHealthSync ClientRpc 양쪽에서 호출될 수 있음 — idempotent 가드.
+            if (_resultingUiShown)
+            {
+                return;
+            }
+            _resultingUiShown = true;
+
+            // 다시 시작 후 timeScale 이 0 으로 남아있을 가능성 대비 — 결과 패널 표시 직전 1 로 복구.
+            Time.timeScale = 1f;
+
             RunResultPanelView resultPanelView = ResolveRunResultPanelView();
             if (resultPanelView == null)
             {
-                Debug.Log("[RunManager] Resulting state — no RunResultPanelView wired (stub).");
+                Debug.LogWarning("[RunManager] Resulting state — no RunResultPanelView wired (stub).", this);
                 return;
             }
 

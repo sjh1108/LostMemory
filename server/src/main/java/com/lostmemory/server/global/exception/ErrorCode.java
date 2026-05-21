@@ -33,7 +33,19 @@ public enum ErrorCode {
     RUN_NOT_HOST(HttpStatus.FORBIDDEN, "호스트만 런을 시작/종료할 수 있습니다"),
     RUN_ALREADY_ENDED(HttpStatus.CONFLICT, "이미 종료된 런입니다"),
     RUN_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "해당 세션에 이미 진행 중인 런이 있습니다"),
-    RUN_NOT_MEMBER(HttpStatus.FORBIDDEN, "본인이 참여한 런만 조회할 수 있습니다");
+    RUN_NOT_MEMBER(HttpStatus.FORBIDDEN, "본인이 참여한 런만 조회할 수 있습니다"),
+
+    MEMORY_FRAME_NOT_FOUND(HttpStatus.NOT_FOUND, "기억 액자를 찾을 수 없습니다"),
+    MEMORY_SLOT_INDEX_OUT_OF_RANGE(HttpStatus.BAD_REQUEST, "슬롯 인덱스는 0~5 사이여야 합니다"),
+    MEMORY_SHARDS_INSUFFICIENT(HttpStatus.CONFLICT, "보유한 기억의 파편이 부족합니다"),
+
+    WEAPON_NOT_FOUND(HttpStatus.NOT_FOUND, "무기를 찾을 수 없습니다"),
+    WEAPON_PARENT_NOT_UNLOCKED(HttpStatus.CONFLICT, "상위 무기를 먼저 해금해야 합니다"),
+    WEAPON_SHARDS_INSUFFICIENT(HttpStatus.CONFLICT, "무기 해금에 필요한 파편이 부족합니다"),
+    WEAPON_NOT_UNLOCKED(HttpStatus.CONFLICT, "해금하지 않은 무기는 장착할 수 없습니다"),
+
+    LLM_CONTEXT_TOO_LONG(HttpStatus.PAYLOAD_TOO_LARGE,
+            "메시지 누적 길이가 컨텍스트 한도를 초과했습니다 — 대화를 새로 시작해주세요");
 
     private final HttpStatus status;
     private final String message;

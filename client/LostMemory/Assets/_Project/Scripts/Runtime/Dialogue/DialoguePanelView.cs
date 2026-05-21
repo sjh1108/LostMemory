@@ -51,6 +51,8 @@ namespace LostMemory.Dialogue
         private DialogueSkin _skin;
         private Coroutine _typewriterRoutine;
         private Coroutine _indicatorBlinkRoutine;
+        private RectTransform _indicatorRect;
+        private Vector2 _indicatorBasePos;
         private string _pendingFullText;
         private bool _isTyping;
 
@@ -61,6 +63,11 @@ namespace LostMemory.Dialogue
 
         private void Awake()
         {
+            if (continueIndicatorImage != null)
+            {
+                _indicatorRect = continueIndicatorImage.rectTransform;
+                _indicatorBasePos = _indicatorRect.anchoredPosition;
+            }
             HidePanel();
         }
 
@@ -144,19 +151,18 @@ namespace LostMemory.Dialogue
 
         private void ApplyPortraits(bool speakerIsPlayer, Sprite portraitSprite)
         {
-            // portraitSprite 는 항상 *현재 화자의* sprite. 반대편은 이전 라인에서 세팅된 sprite 를 유지하며 알파만 낮춤.
-            float speakerAlpha = _skin != null ? _skin.speakerPortraitAlpha : 1f;
-            float idleAlpha = _skin != null ? _skin.idlePortraitAlpha : 0.4f;
+            // v2 단방향 portrait 모드: 화자(player/NPC) 무관하게 LeftPortrait 한 곳에 sprite 박음.
+            // 화자 바뀔 때마다 LeftPortrait 의 sprite 자체가 교체되므로 시각적 구분은 일러스트 차이로 표현.
+            // speakerIsPlayer 매개변수는 호환성 유지 차원에서 받지만 단방향 모드에선 사용 안 함.
+            _ = speakerIsPlayer;
 
-            if (speakerIsPlayer)
+            float speakerAlpha = _skin != null ? _skin.speakerPortraitAlpha : 1f;
+            SetPortrait(leftPortraitImage, portraitSprite, speakerAlpha, replaceSprite: true);
+
+            // 양방향 prefab 호환: RightPortrait 슬롯이 wiring 돼있으면 항상 비활성.
+            if (rightPortraitImage != null)
             {
-                SetPortrait(leftPortraitImage, portraitSprite, speakerAlpha, replaceSprite: true);
-                SetPortrait(rightPortraitImage, null, idleAlpha, replaceSprite: false);
-            }
-            else
-            {
-                SetPortrait(leftPortraitImage, null, idleAlpha, replaceSprite: false);
-                SetPortrait(rightPortraitImage, portraitSprite, speakerAlpha, replaceSprite: true);
+                rightPortraitImage.enabled = false;
             }
         }
 
@@ -226,16 +232,21 @@ namespace LostMemory.Dialogue
                 StopCoroutine(_indicatorBlinkRoutine);
                 _indicatorBlinkRoutine = null;
             }
+            if (_indicatorRect != null) _indicatorRect.anchoredPosition = _indicatorBasePos;
             if (continueIndicatorImage != null) continueIndicatorImage.enabled = false;
         }
 
         private IEnumerator BlinkIndicator(float interval)
         {
-            var wait = new WaitForSecondsRealtime(interval);
+            const float amplitude = 6f;
+            float speed = Mathf.PI * 2f / Mathf.Max(0.1f, interval * 2f);
+
             while (continueIndicatorImage != null)
             {
-                continueIndicatorImage.enabled = !continueIndicatorImage.enabled;
-                yield return wait;
+                float offset = Mathf.Sin(Time.unscaledTime * speed) * amplitude;
+                if (_indicatorRect != null)
+                    _indicatorRect.anchoredPosition = _indicatorBasePos + new Vector2(0f, offset);
+                yield return null;
             }
         }
 

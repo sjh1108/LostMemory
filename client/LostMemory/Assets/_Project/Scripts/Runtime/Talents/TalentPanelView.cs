@@ -1,5 +1,8 @@
+using System.Threading.Tasks;
+using LostMemory.Combat;
 using LostMemory.Data;
 using LostMemory.Memory;
+using LostMemory.Networking.Session;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,7 +30,7 @@ namespace LostMemory.Talents
 
         public bool IsOpen => gameObject.activeSelf;
 
-        private void Start()
+        private async void Start()
         {
             var saved = TalentSaveService.Load();
             int effectiveTotal = _debugTotalPoints + MemoryMetaService.Load().BonusTalentPoints;
@@ -53,6 +56,9 @@ namespace LostMemory.Talents
                 gameObject.SetActive(false);
 
             Refresh();
+
+            // 백엔드 동기화 — 실패 시 위 PlayerPrefs 모델 유지 (fallback 안전)
+            await TryPullFromServerAsync();
         }
 
         private void Update()
@@ -64,13 +70,16 @@ namespace LostMemory.Talents
         // ── 외부 공개 API ────────────────────────────────────
 
         /// <summary>NPC 상호작용 시 패널을 연다. 저장된 투자값을 다시 로드해 최신 상태로 표시.</summary>
-        public void Open()
+        public async void Open()
         {
             var saved = TalentSaveService.Load();
             int effectiveTotal = _debugTotalPoints + MemoryMetaService.Load().BonusTalentPoints;
             _model = new TalentModel(_talentDatas, effectiveTotal, saved);
             Refresh();
             gameObject.SetActive(true);
+
+            // 백엔드 동기화 — 실패 시 위 PlayerPrefs 모델 유지
+            await TryPullFromServerAsync();
         }
 
         /// <summary>패널을 열거나 닫는다.</summary>
@@ -98,9 +107,75 @@ namespace LostMemory.Talents
             }
         }
 
-        private void OnSave()
+        private async void OnSave()
         {
+            // 1. 로컬 (PlayerPrefs) — 즉시 안전
             TalentSaveService.Save(_model);
+            ApplyStatsImmediately();
+
+            // 2. 백엔드 동기화 — 실패해도 로컬은 이미 저장됨
+            if (SessionApiClient.IsLoggedIn)
+            {
+                bool ok = await TalentSyncService.PushAsync(_model);
+                if (!ok)
+                {
+                    Debug.LogWarning("[TalentPanelView] 백엔드 저장 실패 — 로컬만 저장됨. 다시 장착 시 재시도됨.", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 백엔드의 4 slot 값으로 모델을 갱신. 실패 시 기존 PlayerPrefs 모델 유지.
+        /// 비로그인 상태면 skip.
+        /// </summary>
+        private async Task TryPullFromServerAsync()
+        {
+            if (!SessionApiClient.IsLoggedIn) return;
+            if (_talentDatas == null || _talentDatas.Length == 0) return;
+
+            int effectiveTotal = _debugTotalPoints + MemoryMetaService.Load().BonusTalentPoints;
+            var pulled = await TalentSyncService.PullAsync(_talentDatas, effectiveTotal);
+            if (pulled != null)
+            {
+                _model = pulled;
+                Refresh();
+                // 로컬도 동기화 — 다음 진입 시 같은 값으로 시작
+                TalentSaveService.Save(_model);
+            }
+        }
+
+        /// <summary>
+        /// 저장 직후 PlayerStatModifierContainer 를 직접 갱신해 마을 HUD 도 즉시 반영.
+        /// 던전 진입 시 TalentStartupApplier 가 같은 Source 로 RemoveBySource + 재등록하므로 중복 누적 없음.
+        /// </summary>
+        private void ApplyStatsImmediately()
+        {
+            PlayerStatModifierContainer container = FindAnyObjectByType<PlayerStatModifierContainer>(FindObjectsInactive.Include);
+            if (container == null)
+            {
+                Debug.LogWarning("[TalentPanelView] PlayerStatModifierContainer 가 씬에 없음 — 즉시 적용 불가.", this);
+                return;
+            }
+
+            RunStartStats stats = TalentCalculator.Calculate(_model);
+
+            // 이전에 같은 Source 로 등록한 stat 제거 → 누적 방지
+            container.RemoveBySource(TalentStartupApplier.Source);
+
+            if (stats.CriticalRate != 0f)
+                container.AddPermanent(StatId.Critical, stats.CriticalRate, TalentStartupApplier.Source);
+            if (stats.AttackSpeed != 0f)
+                container.AddPermanent(StatId.AttackSpeed, stats.AttackSpeed, TalentStartupApplier.Source);
+            if (stats.Defense != 0f)
+                container.AddPermanent(StatId.Defense, stats.Defense, TalentStartupApplier.Source);
+            if (stats.MaxHealth != 0f)
+                container.AddPermanent(StatId.MaxHealth, stats.MaxHealth, TalentStartupApplier.Source);
+            if (stats.MoveSpeed != 0f)
+                container.AddPermanent(StatId.MoveSpeed, stats.MoveSpeed, TalentStartupApplier.Source);
+
+            Debug.Log($"[TalentPanelView] 즉시 적용 — Critical={stats.CriticalRate:+0.0%;-0.0%;0%} " +
+                      $"AttackSpeed={stats.AttackSpeed:+0.0%;-0.0%;0%} Defense={stats.Defense:F2} " +
+                      $"MaxHealth={stats.MaxHealth:+0.0%;-0.0%;0%} MoveSpeed={stats.MoveSpeed:+0.0%;-0.0%;0%}", this);
         }
     }
 }

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('FAQ')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="site-main">
+  <h2>자주 묻는 질문 (FAQ)</h2>
+
+  <div th:if="${!groupedFaqs.isEmpty()}">
+    <div th:each="group : ${groupedFaqs}" style="margin-bottom:2rem">
+      <h3 th:text="${group.key != null ? group.key.name : '기타'}">카테고리</h3>
+      <details th:each="f : ${group.value}" style="margin-bottom:0.5rem;border:1px solid var(--border);padding:1rem;background:var(--panel)">
+        <summary style="cursor:pointer;color:var(--accent)" th:text="${f.question}">질문</summary>
+        <div class="markdown-body" style="margin-top:0.75rem" th:utext="${f.answerHtml}">답변</div>
+      </details>
+    </div>
+  </div>
+  <p th:if="${groupedFaqs.isEmpty()}" class="entry-meta">등록된 FAQ가 없습니다.</p>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

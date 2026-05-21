@@ -5,9 +5,11 @@
 --  * 모든 시간 컬럼은 TIMESTAMPTZ (timestamp with time zone) 사용
 --  * JSON 컬럼은 JSONB 사용 (인덱싱/쿼리 성능 우위)
 --  * PK 는 BIGINT GENERATED ALWAYS AS IDENTITY 로 자동 증가 (PostgreSQL 10+ 표준)
---  * 원본 ERD의 타입 불일치(weapon_id bigint vs parent_weapon_id varchar 등)는
---    FK 무결성을 위해 BIGINT로 정규화함
 --  * SESSION_JOINS 는 관계 정의상 session_id FK 가 필요하므로 컬럼 추가함
+--  * 무기/프레임의 cost 정보는 백엔드 관리하지 않음 — 클라가 알아서 계산하고
+--    파편 소비량(consumed_shards) 만 백엔드로 보내 user_currencies.memory_shards 차감
+--  * 프레임 칸 해금은 6칸 비트마스크 (unlocked_mask, 0~63) 로 관리
+--    state 는 mask 로부터 derive (0=Locked, 63=Done, 그 외=In Progress) — 컬럼 보관 X
 -- =====================================================================
 
 
@@ -42,6 +44,7 @@ CREATE TABLE auth_refresh_tokens (
                                   REFERENCES users(user_id) ON DELETE CASCADE,
     token_hash       VARCHAR(255) NOT NULL,
     expires_at       TIMESTAMPTZ  NOT NULL,
+    revoked_at       TIMESTAMPTZ,
     last_used_at     TIMESTAMPTZ,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -52,7 +55,8 @@ CREATE INDEX idx_refresh_tokens_expires_at ON auth_refresh_tokens(expires_at);
 
 
 -- =====================================================================
--- 3. USER_CURRENCIES : 유저 재화
+-- 3. USER_CURRENCIES : 유저 재화 (파편 보유량)
+--   * 백엔드는 보유량만 관리. 적립/소비량은 클라가 계산해서 delta 만 보냄.
 -- =====================================================================
 CREATE TABLE user_currencies (
     user_id        BIGINT      PRIMARY KEY
@@ -67,6 +71,9 @@ COMMENT ON COLUMN user_currencies.memory_shards IS '기억의 파편 보유량';
 
 -- =====================================================================
 -- 4. USER_TALENT_ALLOCATIONS : 특성 포인트 분배
+--   * 백엔드는 4개 영역별 투자 포인트 값만 저장/조회. 총량 / 잔여 포인트는 관리 X.
+--   * 4 영역: 치명타 확률 / 공격속도 / 방어력 / 최대체력 (마나재생 slot 은 기획 정리로 제거).
+--   * total_point 컬럼은 의미 없는 0 으로 유지 (legacy — 추후 schema 정리 시 제거).
 -- =====================================================================
 CREATE TABLE user_talent_allocations (
     user_id              BIGINT      PRIMARY KEY
@@ -75,26 +82,20 @@ CREATE TABLE user_talent_allocations (
     crit_rate_points     INTEGER     NOT NULL DEFAULT 0 CHECK (crit_rate_points     >= 0),
     attack_speed_points  INTEGER     NOT NULL DEFAULT 0 CHECK (attack_speed_points  >= 0),
     defense_points       INTEGER     NOT NULL DEFAULT 0 CHECK (defense_points       >= 0),
-    mana_regen_points    INTEGER     NOT NULL DEFAULT 0 CHECK (mana_regen_points    >= 0),
     max_hp_points        INTEGER     NOT NULL DEFAULT 0 CHECK (max_hp_points        >= 0),
-    updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    -- 분배한 포인트 합이 사용 가능한 전체 포인트를 넘지 않도록 보장
-    CONSTRAINT chk_talent_points_sum
-        CHECK (crit_rate_points + attack_speed_points + defense_points
-               + mana_regen_points + max_hp_points <= total_point)
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 
 -- =====================================================================
 -- 5. WEAPONS : 무기 마스터
+--   * cost 정보는 클라가 관리. 백엔드는 트리 구조 + 식별자만.
 -- =====================================================================
 CREATE TABLE weapons (
     weapon_id           BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     weapon_name         VARCHAR(100) NOT NULL,
     weapon_type         VARCHAR(50)  NOT NULL,
     parent_weapon_id    BIGINT       REFERENCES weapons(weapon_id) ON DELETE SET NULL,
-    cost_memory_shards  INTEGER      NOT NULL DEFAULT 0
-                                     CHECK (cost_memory_shards >= 0),
     display_order       INTEGER      NOT NULL DEFAULT 0
 );
 
@@ -140,7 +141,6 @@ CREATE UNIQUE INDEX idx_sessions_private_code
 
 -- =====================================================================
 -- 8. SESSION_JOINS : 세션 참가자
---   (원본 ERD 에 session_id FK 가 누락되어 있어 관계 기반으로 추가)
 -- =====================================================================
 CREATE TABLE session_joins (
     session_join_id BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -219,35 +219,40 @@ CREATE TABLE run_results (
 
 -- =====================================================================
 -- 12. MEMORY_FRAMES : 기억 액자 마스터
+--   * 칸 정보 / 요구 cost 는 클라가 관리. 백엔드는 frame_id + 정렬만 보관.
 -- =====================================================================
 CREATE TABLE memory_frames (
-    frame_id          BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    required_chapter  INTEGER     NOT NULL DEFAULT 1 CHECK (required_chapter >= 1),
-    rows              INTEGER     NOT NULL CHECK (rows    > 0),
-    columns           INTEGER     NOT NULL CHECK (columns > 0),
-    total             INTEGER     NOT NULL CHECK (total   > 0),
-    display_order     INTEGER     NOT NULL DEFAULT 0
+    frame_id       BIGINT  GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    display_order  INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_memory_frames_display_order ON memory_frames(display_order);
 
 
 -- =====================================================================
--- 13. USER_MEMORY_PROGRESS : 유저별 액자 채우기 진행도
+-- 13. USER_MEMORY_PROGRESS : 유저별 액자 해금 상태
+--   * unlocked_mask : 6칸 비트마스크 (0~63). 1 비트가 해금된 칸.
+--     예) 0b101010 (=42) → slot 1, 3, 5 해금
+--   * state 는 mask 로부터 derive (보관 X):
+--       0  → Locked
+--       63 → Done (6칸 다 해금)
+--       그 외 → In Progress
 -- =====================================================================
 CREATE TABLE user_memory_progress (
-    memory_progress_id BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    user_id            BIGINT      NOT NULL
-                                   REFERENCES users(user_id) ON DELETE CASCADE,
-    frame_id           BIGINT      NOT NULL
-                                   REFERENCES memory_frames(frame_id) ON DELETE CASCADE,
-    filled             INTEGER     NOT NULL DEFAULT 0 CHECK (filled >= 0),
-    state              VARCHAR(20) NOT NULL DEFAULT 'Locked'
-                                   CHECK (state IN ('Locked', 'In Progress', 'Done')),
+    memory_progress_id BIGINT  GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id            BIGINT  NOT NULL
+                               REFERENCES users(user_id) ON DELETE CASCADE,
+    frame_id           BIGINT  NOT NULL
+                               REFERENCES memory_frames(frame_id) ON DELETE CASCADE,
+    unlocked_mask      INTEGER NOT NULL DEFAULT 0
+                               CHECK (unlocked_mask BETWEEN 0 AND 63),
     CONSTRAINT uq_user_frame UNIQUE (user_id, frame_id)
 );
 
 CREATE INDEX idx_user_memory_progress_user ON user_memory_progress(user_id);
+
+COMMENT ON COLUMN user_memory_progress.unlocked_mask
+    IS '6칸 비트마스크 (0~63). bit n=1 이면 slot n 해금. 63 이면 Done.';
 
 
 -- =====================================================================
@@ -261,6 +266,23 @@ CREATE TABLE user_record (
     cleared_stage    INTEGER     NOT NULL DEFAULT 0 CHECK (cleared_stage   >= 0),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+
+-- =====================================================================
+-- 15. USER_WEAPON_SELECTION : 유저별 마지막 선택 무기
+--   * 다음 런 시작 시 자동으로 쥐어줄 무기. 회원가입 시 weapon_id=1 (검) 으로 초기화.
+--   * user_id PK = 1:1. weapons.weapon_id FK. 무기 마스터 삭제는 RESTRICT 로 차단 (마스터 무결성).
+-- =====================================================================
+CREATE TABLE user_weapon_selection (
+    user_id              BIGINT      PRIMARY KEY
+                                     REFERENCES users(user_id) ON DELETE CASCADE,
+    selected_weapon_id   BIGINT      NOT NULL
+                                     REFERENCES weapons(weapon_id) ON DELETE RESTRICT,
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON COLUMN user_weapon_selection.selected_weapon_id
+    IS '다음 런 시작 시 자동 선택될 무기 ID. 회원가입 시 1 (검).';
 
 
 -- =====================================================================
@@ -289,3 +311,47 @@ CREATE TRIGGER trg_user_talent_allocations_updated_at
 CREATE TRIGGER trg_user_record_updated_at
     BEFORE UPDATE ON user_record
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_user_weapon_selection_updated_at
+    BEFORE UPDATE ON user_weapon_selection
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =====================================================================
+-- 마스터 시드 데이터 — 무기 / 기억 액자
+--   * 회원가입 보강 (AuthService) 이 weapons 마스터를 읽어 user_weapon_unlocks 를 만드므로,
+--     이 시드가 없으면 신규 회원의 unlocks 가 빈 배열이 됨.
+--   * 멱등 (ON CONFLICT DO NOTHING) — schema.sql 재실행해도 중복 INSERT 없음.
+--   * IDENTITY 시퀀스 setval 로 수동 ID 삽입 후 다음 INSERT 충돌 방지.
+-- =====================================================================
+
+
+-- 무기 6종 (검·단검·활·화염방사기·스태프·강화 스태프)
+-- parent_weapon_id 트리 구조: 검→단검, 활→화염방사기, 스태프→강화 스태프
+INSERT INTO weapons (weapon_id, weapon_name, weapon_type, parent_weapon_id, display_order)
+OVERRIDING SYSTEM VALUE
+VALUES
+    (1, '검',           'Sword',         NULL, 1),
+    (2, '단검',         'Dagger',        1,    2),
+    (3, '활',           'Bow',           NULL, 3),
+    (4, '화염방사기',   'Flamethrower',  3,    4),
+    (5, '스태프',       'Staff',         NULL, 5),
+    (6, '강화 스태프',  'EnhancedStaff', 5,    6)
+ON CONFLICT (weapon_id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('weapons', 'weapon_id'),
+              (SELECT COALESCE(MAX(weapon_id), 1) FROM weapons));
+
+
+-- 기억 액자 4종 (display_order 1~4). 각 프레임의 칸 정보(rows/cols/cost) 는 클라가 관리.
+INSERT INTO memory_frames (frame_id, display_order)
+OVERRIDING SYSTEM VALUE
+VALUES
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4)
+ON CONFLICT (frame_id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('memory_frames', 'frame_id'),
+              (SELECT COALESCE(MAX(frame_id), 1) FROM memory_frames));

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('홈')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="site-main">
+  <h2>LostMemory</h2>
+  <p>기억을 잃은 이들의 던전 모험 — 친구들과 함께 잃어버린 기억의 조각을 되찾으세요.</p>
+
+  <div th:if="${latestPatchNote != null}" class="patch-summary">
+    <h3>최신 패치노트</h3>
+    <p>
+      <strong th:text="${latestPatchNote.version}">v0.0.0</strong> ·
+      <span class="entry-meta" th:text="${#temporals.format(latestPatchNote.releaseDate, 'yyyy-MM-dd')}">날짜</span>
+    </p>
+    <div class="patch-excerpt markdown-body" th:utext="${latestPatchNoteExcerptHtml}"></div>
+    <p><a th:href="@{/patch-notes/{id}(id=${latestPatchNote.id})}">자세히 보기 →</a></p>
+  </div>
+
+  <h3>최근 공지</h3>
+  <ul class="entry-list" th:if="${!recentNotices.isEmpty()}">
+    <li th:each="n : ${recentNotices}">
+      <a th:href="@{/notices/{id}(id=${n.id})}" th:text="${n.title}">제목</a>
+      <div class="entry-meta" th:text="${#temporals.format(n.createdAt, 'yyyy-MM-dd')}">날짜</div>
+    </li>
+  </ul>
+  <p th:if="${recentNotices.isEmpty()}" class="entry-meta">등록된 공지가 없습니다.</p>
+
+  <p style="margin-top:2rem"><a th:href="@{/notices}">전체 공지 보기 →</a></p>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -66,6 +66,7 @@ namespace LostMemory.Stage
         [SerializeField] private bool dontDestroyOnLoad = true;
         [SerializeField] private bool placePlayersAfterSceneLoad = true;
         [SerializeField] private bool destroyWhenSceneOutsideRoute = true;
+        [SerializeField] private bool completeDefaultRouteIfIncomplete = true;
         [SerializeField] private Vector3 playerSpawnOffset = new Vector3(0.75f, 0f, 0f);
         [SerializeField] private bool debugLogging = true;
 
@@ -74,6 +75,7 @@ namespace LostMemory.Stage
         private string pendingSpawnId = string.Empty;
 
         public int CurrentNodeIndex => currentNodeIndex;
+        public int RouteNodeCount => routeNodes?.Length ?? 0;
         public bool LoadInProgress => loadInProgress;
 
         public void ConfigureRouteNodes(RouteNode[] nodes, int nodeIndex, string overrideEntrySpawnId, bool placePlayers)
@@ -107,6 +109,7 @@ namespace LostMemory.Stage
             }
 
             Instance = this;
+            CompleteDefaultRouteIfIncompleteForActiveScene();
             currentNodeIndex = Mathf.Clamp(initialNodeIndex, 0, Mathf.Max(0, routeNodes.Length - 1));
 
             if (dontDestroyOnLoad)
@@ -128,6 +131,54 @@ namespace LostMemory.Stage
             {
                 Instance = null;
             }
+        }
+
+        private void CompleteDefaultRouteIfIncompleteForActiveScene()
+        {
+            if (!completeDefaultRouteIfIncomplete)
+            {
+                return;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() ||
+                !StageRouteDefaults.TryResolveRouteIndex(activeScene.name, out int routeNodeIndex))
+            {
+                return;
+            }
+
+            StageRouteManager.RouteNode[] defaultNodes = StageRouteDefaults.CreateRouteNodes();
+            if (HasRouteCoverage(defaultNodes))
+            {
+                return;
+            }
+
+            routeNodes = defaultNodes;
+            initialNodeIndex = routeNodeIndex;
+            Log($"Completed default dungeon route for scene '{activeScene.name}' at node index {routeNodeIndex}.");
+        }
+
+        private bool HasRouteCoverage(RouteNode[] expectedNodes)
+        {
+            if (routeNodes == null || expectedNodes == null || routeNodes.Length < expectedNodes.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < expectedNodes.Length; i++)
+            {
+                RouteNode current = routeNodes[i];
+                RouteNode expected = expectedNodes[i];
+                if (current == null ||
+                    expected == null ||
+                    current.SceneName != expected.SceneName ||
+                    current.ExitTriggerId != expected.ExitTriggerId)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public bool RequestAdvanceRouteNode(string triggerId, Character requester)
@@ -180,6 +231,22 @@ namespace LostMemory.Stage
             return current == null ||
                    string.IsNullOrEmpty(current.ExitTriggerId) ||
                    current.ExitTriggerId == triggerId;
+        }
+
+        public bool CanAdvanceCurrentRouteNode()
+        {
+            return TryGetCurrentRouteExitTriggerId(out string triggerId) &&
+                   CanAdvanceRouteNode(triggerId);
+        }
+
+        public bool RequestAdvanceCurrentRouteNode(Character requester)
+        {
+            if (!TryGetCurrentRouteExitTriggerId(out string triggerId))
+            {
+                return false;
+            }
+
+            return RequestAdvanceRouteNode(triggerId, requester);
         }
 
         public bool LoadRouteNode(int nodeIndex)
@@ -236,6 +303,25 @@ namespace LostMemory.Stage
             }
 
             return TryLoadRouteNode(currentNodeIndex + 1);
+        }
+
+        private bool TryGetCurrentRouteExitTriggerId(out string triggerId)
+        {
+            triggerId = string.Empty;
+
+            if (routeNodes == null || currentNodeIndex < 0 || currentNodeIndex >= routeNodes.Length)
+            {
+                return false;
+            }
+
+            RouteNode current = routeNodes[currentNodeIndex];
+            if (current == null)
+            {
+                return false;
+            }
+
+            triggerId = current.ExitTriggerId;
+            return true;
         }
 
         private bool TryLoadRouteNode(int nodeIndex)
@@ -432,6 +518,15 @@ namespace LostMemory.Stage
             if (healthSnapshotter != null)
             {
                 healthSnapshotter.CaptureInto(ref snapshot);
+            }
+
+            // CL-230: 무기 모드 (Sword/Dagger/Bow/Staff/Flamethrower) 도 씬 전환 시 보존.
+            // WeaponModeController.ApplyMode 가 WeaponUpgradeService SO 교체까지 자동 호출하므로
+            // 이 한 값만 복구하면 Dagger SO 까지 자동 전파됨.
+            LostMemory.TestKhi.WeaponModeController weaponMode = player.GetComponentInChildren<LostMemory.TestKhi.WeaponModeController>(true);
+            if (weaponMode != null)
+            {
+                weaponMode.CaptureInto(ref snapshot);
             }
 
             runState.Capture(snapshot);

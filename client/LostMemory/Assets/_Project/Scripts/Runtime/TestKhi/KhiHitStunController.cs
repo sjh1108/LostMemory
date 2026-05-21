@@ -166,13 +166,29 @@ namespace LostMemory.TestKhi
         public void TriggerHitStun(float overrideDuration = -1f)
         {
             float duration = overrideDuration > 0f ? overrideDuration : hitStunDuration;
-            TryEnterHitStun(duration);
+            ForceEnterHitStun(duration);
         }
 
         private void TryEnterHitStun(float duration)
         {
             if (!CanEnterHitStun())
             {
+                return;
+            }
+
+            EnterHitStun(duration);
+        }
+
+        private void ForceEnterHitStun(float duration)
+        {
+            if (!CanForceEnterHitStun())
+            {
+                return;
+            }
+
+            if (_state == KhiHitStunState.HitStun)
+            {
+                _stateEndTime = Mathf.Max(_stateEndTime, Time.time + duration);
                 return;
             }
 
@@ -197,6 +213,32 @@ namespace LostMemory.TestKhi
             }
 
             if (_state != KhiHitStunState.Idle)
+            {
+                return false;
+            }
+
+            if (parryController != null
+                && (parryController.IsParryWindowActive || parryController.IsParryRecovering))
+            {
+                return false;
+            }
+
+            if (downController != null && (downController.IsDown || downController.IsDefeated))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool CanForceEnterHitStun()
+        {
+            if (health == null || health.CurrentHealth <= 0f)
+            {
+                return false;
+            }
+
+            if (_state != KhiHitStunState.Idle && _state != KhiHitStunState.HitStun)
             {
                 return false;
             }

@@ -4249,24 +4249,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33dad3eacfaf13e4fbbb7067c41f1d90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiWeaponPresenter
---- !u!1 &1498255475 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3468736836876036444, guid: 4d290d1fc0f84526999c421c61df5d8f,
-    type: 3}
-  m_PrefabInstance: {fileID: 1683277795}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1498255476 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8040876225746159604, guid: 4d290d1fc0f84526999c421c61df5d8f,
-    type: 3}
-  m_PrefabInstance: {fileID: 1683277795}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1498255475}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 33dad3eacfaf13e4fbbb7067c41f1d90, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiWeaponPresenter
 --- !u!1001 &1508690559
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5886,11 +5868,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7597007434435170627, guid: 4d290d1fc0f84526999c421c61df5d8f,
-        type: 3}
-      propertyPath: weaponUpgradeService
-      value: 
-      objectReference: {fileID: 1799985273}
     - target: {fileID: 9053980675064386983, guid: 4d290d1fc0f84526999c421c61df5d8f,
         type: 3}
       propertyPath: GlobalObjectIdHash
@@ -6084,119 +6061,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e2f9d27b8efef4e9688b546527dc76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Shop.SetEffectPanelView
---- !u!1 &1799985271
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1799985274}
-  - component: {fileID: 1799985273}
-  - component: {fileID: 1799985272}
-  - component: {fileID: 1799985275}
-  m_Layer: 0
-  m_Name: _WeaponUpgrade
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1799985272
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1799985271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c677899e963b6c47964f9a5bcc5fc78, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiWeaponUpgradeDebug
-  upgradeKey: 102
-  revertKey: 103
-  ninjaKey: 101
-  showOnGuiHint: 1
-  hintOrigin: {x: 10, y: 260}
-  fontSize: 12
---- !u!114 &1799985273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1799985271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 52d888d15d5fe7c4b9a1541ccf406130, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.WeaponUpgradeService
-  defaultSword: {fileID: 11400000, guid: be21afd1099c64146b384f8bee29eb68, type: 2}
-  daggerSword: {fileID: 11400000, guid: 6d1f3a8c7b2e451d9f4a8c2e6b1d3a5f, type: 2}
-  daggerNinjaSword: {fileID: 11400000, guid: 8a4c7f1b2d6e3914a5f8b9c0d1e2a3b4, type: 2}
-  targetController: {fileID: 2006321072}
-  secondaryWeaponObject: {fileID: 1498255475}
-  swordParry: {fileID: 2006321066}
-  finishCurrentSwingBeforeSwap: 1
---- !u!4 &1799985274
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1799985271}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.76617, y: -0.1644, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1799985275
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1799985271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fbd019788f8feba4697ae296fd2ca666, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiDaggerSpriteCycler
-  cycleKey: 100
-  allowReverseWithShift: 1
-  mainPresenter: {fileID: 1417789450}
-  secondaryPresenter: {fileID: 1498255476}
-  daggerSprites:
-  - {fileID: 21300000, guid: cb46719d7c6d4fa41a35bceceb755156, type: 3}
-  - {fileID: 21300000, guid: bc286010efe664c4d927ca352f88a5c2, type: 3}
-  - {fileID: 21300000, guid: 1aba46ab4779265409c0436ba3282edd, type: 3}
-  - {fileID: 21300000, guid: 821db1a26a6d0534490f3203826abc9c, type: 3}
-  - {fileID: 21300000, guid: e007d5c81ce0fc54eb9303a4be9cc657, type: 3}
-  - {fileID: 21300000, guid: 04f3035c3a5476846a29500b15161956, type: 3}
-  - {fileID: 21300000, guid: 6a634b4cc04704948a1c4aba024dc358, type: 3}
-  - {fileID: 21300000, guid: 617364b7fa4eaac449df809e0f685a84, type: 3}
-  - {fileID: 21300000, guid: 50167427ee47d7548ac2f24903d3f46f, type: 3}
-  - {fileID: 21300000, guid: 7251bd6dff90f7a48930f57ad7c9dae2, type: 3}
-  - {fileID: 21300000, guid: b209b5abd39f72e49978ee3a2e2b2adb, type: 3}
-  - {fileID: 21300000, guid: 35e223dbcfa396a43ae379f6affca9d7, type: 3}
-  - {fileID: 21300000, guid: 553e361ff2297d84389b4c46063ed921, type: 3}
-  - {fileID: 21300000, guid: 01bb5fc3a51981949b99ad4522bbc1fe, type: 3}
-  - {fileID: 21300000, guid: e60a23b800b933546b27303df635b000, type: 3}
-  - {fileID: 21300000, guid: 22cb36cd3908c6e40a0e1211d2b558b4, type: 3}
-  - {fileID: 21300000, guid: 30825d66e6a143d4280e0dce1491ce66, type: 3}
-  - {fileID: 21300000, guid: 0f44be3f38d33ee459ddde9cf60d943f, type: 3}
-  - {fileID: 21300000, guid: 4ccc3ee37349d4e488d0469ac3e53b2b, type: 3}
-  - {fileID: 21300000, guid: 8154d3bf413c9ab4385bf285c9536dce, type: 3}
-  spriteScale: 2
-  applyScaleOnCycle: 1
-  showOnGuiHint: 1
-  hintOrigin: {x: 10, y: 285}
-  fontSize: 12
 --- !u!1 &1891704496
 GameObject:
   m_ObjectHideFlags: 0
@@ -6383,6 +6247,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1366147387271061323, guid: 69eef7b55b50b6e458d554360031ce0c,
+        type: 3}
+      propertyPath: m_SortingLayer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366147387271061323, guid: 69eef7b55b50b6e458d554360031ce0c,
+        type: 3}
+      propertyPath: m_SortingLayerID
+      value: -1998343457
+      objectReference: {fileID: 0}
     - target: {fileID: 3676956050655987511, guid: 69eef7b55b50b6e458d554360031ce0c,
         type: 3}
       propertyPath: shopController
@@ -6756,6 +6630,7 @@ MonoBehaviour:
   restartDungeonSceneName: Dungeon_1F_1R
   restartDungeonScenePath: Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity
   totalStageCount: 1
+  allowBossPortalStageAdvance: 0
   logStageProgression: 1
 --- !u!4 &2092617969
 Transform:
@@ -7341,4 +7216,3 @@ SceneRoots:
   - {fileID: 1678041492460301917}
   - {fileID: 2403128116470344391}
   - {fileID: 1049831566779465315}
-  - {fileID: 1799985274}

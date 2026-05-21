@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Enemies;
+using LostMemory.Enemies.AI;
 using LostMemory.Stage;
 using LostMemory.Stage.Data;
 using MoreMountains.TopDownEngine;
@@ -179,6 +180,7 @@ namespace LostMemory.Combat
 
                     GameObject instance = Instantiate(prefab, point.transform.position, Quaternion.identity);
                     EnemyDataRuntimeAdapter.ApplyTo(instance, catalogEntry.Data);
+                    StageOneEnemyBehaviorInstaller.ApplySpawnOverrides(entry.EnemyId, instance);
                     HardenSpawnedInstance(instance);
                     EnsureDeathAnimationLock(instance);
                     RegisterHitAnimationRecovery(instance);

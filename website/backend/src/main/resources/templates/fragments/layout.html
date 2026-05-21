@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title} + ' | LostMemory'">LostMemory</title>
+  <link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+
+<header th:fragment="header" class="site-header">
+  <h1><a th:href="@{/}">LostMemory</a></h1>
+  <nav class="site-nav">
+    <a th:href="@{/}">홈</a>
+    <a th:href="@{/notices}">공지사항</a>
+    <a th:href="@{/patch-notes}">패치노트</a>
+    <a th:href="@{/faq}">FAQ</a>
+    <a th:href="@{/feedback}">건의/버그</a>
+    <span sec:authorize="isAuthenticated()">
+      <a th:href="@{__${adminBase}__/dashboard}">관리자</a>
+    </span>
+    <a th:if="${latestDownloadUrl != null and !latestDownloadUrl.isBlank()}"
+       class="header-download"
+       th:href="${latestDownloadUrl}"
+       target="_blank" rel="noopener noreferrer">최신 버전 다운로드 ↓</a>
+  </nav>
+</header>
+
+<footer th:fragment="footer" class="site-footer">
+  &copy; LostMemory Team — SSAFY 14기 자율 프로젝트 (S14P31C201)
+</footer>
+
+<div th:fragment="admin-bar" class="admin-bar" sec:authorize="isAuthenticated()">
+  <a th:href="@{__${adminBase}__/dashboard}">대시보드</a>
+  <a th:href="@{__${adminBase}__/notices}">공지 관리</a>
+  <a th:href="@{__${adminBase}__/patch-notes}">패치노트 관리</a>
+  <a th:href="@{__${adminBase}__/faqs}">FAQ 관리</a>
+  <a th:href="@{__${adminBase}__/faq-categories}">FAQ 카테고리</a>
+  <a th:href="@{__${adminBase}__/feedbacks}">건의/버그</a>
+  <span class="admin-user">
+    <span sec:authentication="name">user</span> ·
+    <form th:action="@{__${adminBase}__/logout}" method="post" style="display:inline">
+      <button type="submit" style="background:transparent;color:#fff;padding:0;border:0;cursor:pointer">로그아웃</button>
+    </form>
+  </span>
+</div>
+
+</body>
+</html>

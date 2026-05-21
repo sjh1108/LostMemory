@@ -16,9 +16,12 @@ namespace LostMemory.TestKhi
     [AddComponentMenu("Lost Memory/Test Khi/Khi Bow Controller")]
     public class KhiBowController : MonoBehaviour
     {
+        private const float MinimumShotInterval = 0.02f;
+
         [Header("Refs (Awake 시 자동 resolve)")]
         [SerializeField] private KhiPlayerAim aim;
         [SerializeField] private PlayerMana playerMana;
+        [SerializeField] private PlayerStatModifierContainer statContainer;
         [Tooltip("화살이 생성될 위치. 비어있으면 transform 사용.")]
         [SerializeField] private Transform arrowSpawnPoint;
         [Tooltip("화살 방향 계산에 쓰는 카메라. 비어있으면 Camera.main 사용.")]
@@ -52,6 +55,9 @@ namespace LostMemory.TestKhi
         {
             aim ??= GetComponent<KhiPlayerAim>();
             playerMana ??= GetComponentInParent<PlayerMana>();
+            statContainer ??= GetComponent<PlayerStatModifierContainer>()
+                ?? GetComponentInParent<PlayerStatModifierContainer>()
+                ?? GetComponentInChildren<PlayerStatModifierContainer>(true);
             if (arrowSpawnPoint == null) arrowSpawnPoint = transform;
 
             if (arrowPrefab == null)
@@ -66,7 +72,25 @@ namespace LostMemory.TestKhi
             Mouse mouse = Mouse.current;
             if (mouse == null) return;
 
-            if (mouse.leftButton.wasPressedThisFrame && Time.time >= _nextSingleShotAllowedAt)
+            // CL-234 (A-1/A-2): UI 패널 열린 동안 활 입력 차단 (UIInputBlocker + EventSystem 양쪽).
+            if (LostMemory.UI.UIInputBlocker.IsBlocked)
+            {
+                if (logShotsToConsole && mouse.leftButton.wasPressedThisFrame)
+                    Debug.Log("[KhiBowController] LEFT click blocked by UIInputBlocker.", this);
+                return;
+            }
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null && es.IsPointerOverGameObject())
+            {
+                if (logShotsToConsole && mouse.leftButton.wasPressedThisFrame)
+                    Debug.Log("[KhiBowController] LEFT click blocked by EventSystem (pointer over UI).", this);
+                return;
+            }
+
+            // CL-234 (A-4): 검과 동일하게 홀드 자동 공격.
+            //   wasPressedThisFrame (1회) → isPressed (누르고 있는 동안 매 프레임 시도).
+            //   _nextSingleShotAllowedAt = Time.time + singleShotInterval 로 발사 빈도 자체 제한.
+            if (mouse.leftButton.isPressed && Time.time >= _nextSingleShotAllowedAt)
             {
                 FireSingleShot();
             }
@@ -89,22 +113,37 @@ namespace LostMemory.TestKhi
         private void FireSingleShot()
         {
             SpawnArrow(baseDamage, isRapid: false);
-            _nextSingleShotAllowedAt = Time.time + singleShotInterval;
+            _nextSingleShotAllowedAt = Time.time + GetShotInterval(singleShotInterval);
         }
 
         private void FireRapidShot()
         {
+            float shotInterval = GetShotInterval(rapidShotInterval);
             if (rapidShotManaCostPerShot > 0 && playerMana != null)
             {
                 if (!playerMana.Consume(rapidShotManaCostPerShot))
                 {
-                    _nextRapidShotAt = Time.time + rapidShotInterval;
+                    _nextRapidShotAt = Time.time + shotInterval;
                     return;
                 }
             }
 
             SpawnArrow(baseDamage * rapidDamageMultiplier, isRapid: true);
-            _nextRapidShotAt = Time.time + rapidShotInterval;
+            _nextRapidShotAt = Time.time + shotInterval;
+        }
+
+        private float GetShotInterval(float baseInterval)
+        {
+            float configuredInterval = baseInterval > 0f ? baseInterval : MinimumShotInterval;
+            return Mathf.Max(MinimumShotInterval, configuredInterval / GetAttackSpeedMultiplier());
+        }
+
+        private float GetAttackSpeedMultiplier()
+        {
+            float speedMultiplier = statContainer != null
+                ? statContainer.GetTotalMultiplier(StatId.AttackSpeed)
+                : 1f;
+            return speedMultiplier > 0f ? speedMultiplier : 1f;
         }
 
         private void SpawnArrow(float damage, bool isRapid)

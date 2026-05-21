@@ -92,6 +92,8 @@ GameObject:
   - component: {fileID: 8147428423782863227}
   - component: {fileID: 4362045906954319907}
   - component: {fileID: 2165398457196784295}
+  - component: {fileID: 2259337896623269115}
+  - component: {fileID: 2884954370927517461}
   m_Layer: 10
   m_Name: Test_shm_nickname
   m_TagString: Player
@@ -681,6 +683,7 @@ MonoBehaviour:
   targetInvincibilityDuration: 0
   targetFlickerDuration: 0
   statContainer: {fileID: 1496170365699431617}
+  damageRelay: {fileID: 0}
   drawDebugGizmos: 1
   debugGizmoColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showRuntimePreview: 0
@@ -915,6 +918,7 @@ MonoBehaviour:
   meleeCombo: {fileID: 0}
   flashPresenter: {fileID: 0}
   playerCamera: {fileID: 0}
+  hitVignette: {fileID: 0}
   hitStopOnHit: 0.06
   hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
   hitFlashDuration: 0.12
@@ -1054,6 +1058,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealthStatApplier
   health: {fileID: 8256579939838082894}
   container: {fileID: 1496170365699431617}
+  _logChanges: 1
 --- !u!114 &1736420558605640635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1066,9 +1071,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
-  _baseMaxSlots: 25
-  _maxCols: 5
-  _maxRows: 5
+  _baseMaxSlots: 16
+  _maxCols: 4
+  _maxRows: 4
   _consumableInventory: {fileID: 2913988551999795102}
   _debugRelicsToAdd:
   - {fileID: 11400000, guid: 4651ad8d210e68940a60fb9b17f23717, type: 2}
@@ -1499,7 +1504,17 @@ MonoBehaviour:
   bowController: {fileID: 3769329048501235405}
   bowPresenter: {fileID: 8898648390547866743}
   bowObject: {fileID: 271686056155902964}
+  staffController: {fileID: 0}
+  staffPresenter: {fileID: 0}
+  staffObject: {fileID: 0}
+  flamethrowerController: {fileID: 0}
+  flamethrowerPresenter: {fileID: 0}
+  flamethrowerZone: {fileID: 0}
+  flamethrowerObject: {fileID: 0}
+  weaponUpgradeService: {fileID: 0}
   switchKey: 31
+  enableMouseWheelSwitch: 1
+  wheelSwitchCooldown: 0.15
   logModeChanges: 1
 --- !u!114 &8147428423782863227
 MonoBehaviour:
@@ -1588,9 +1603,57 @@ MonoBehaviour:
   - {fileID: 7445542604703793321}
   - {fileID: 6753678586816588783}
   - {fileID: 5232590325398445965}
+  extraSlashSlots: []
   slashSortingOrder: 1001
   slashSortingLayer: 
+  elementCatalog: {fileID: 0}
+  elementMaterial: {fileID: 0}
   slashRigCenterY: 0.6
+--- !u!114 &2259337896623269115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a505a93a3cfd664eb84c71d248d4698, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.PlayerDamageRelay
+  ShowTopMostFoldoutHeaderGroup: 1
+  verboseLog: 1
+--- !u!114 &2884954370927517461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6edc758d6f60b94184e65f8bb735143, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.PlayerHealthSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  health: {fileID: 0}
+  minDelta: 0.01
+  syncHit: 1
+  hitAnimatorTrigger: Hit
+  syncDown: 1
+  downAnimatorTrigger: Down
+  syncDeath: 1
+  deathAnimatorTrigger: Down
+  inputComponentNamesToDisableOnDeath:
+  - KhiMeleeComboController
+  - KhiParryController
+  - KhiDashController
+  - KhiFinisherLunge
+  deathOverlayObject: {fileID: 0}
+  deathOverlayFallbackText: You Died
+  verboseLog: 1
+  defeatHideDelaySeconds: 5
+  runFailedUiDelaySeconds: 5
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
@@ -2052,8 +2115,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: nickname
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 9df3a6a0879745041aa283d09bf9627f, type: 2}
-  m_sharedMaterial: {fileID: 4056146775108264783, guid: 9df3a6a0879745041aa283d09bf9627f,
+  m_fontAsset: {fileID: 11400000, guid: c9faec49f7cb36249ba1b7d9d48dbf6d, type: 2}
+  m_sharedMaterial: {fileID: -1963734077680825402, guid: c9faec49f7cb36249ba1b7d9d48dbf6d,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -2533,6 +2596,8 @@ MonoBehaviour:
   playerAim: {fileID: 0}
   comboController: {fileID: 0}
   downController: {fileID: 0}
+  weaponData: {fileID: 0}
+  isSecondaryHand: 0
   externalSprite: {fileID: 0}
   useProceduralIfNoExternal: 1
   swordWidthPx: 48

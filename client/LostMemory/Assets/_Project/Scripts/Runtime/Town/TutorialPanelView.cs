@@ -41,9 +41,87 @@ namespace LostMemory.Town
 
         private void Awake()
         {
+            if (_dontShowAgainToggle == null)
+            {
+                _dontShowAgainToggle = GetComponentInChildren<Toggle>(true);
+                if (_dontShowAgainToggle == null)
+                    _dontShowAgainToggle = CreateDontShowAgainToggle();
+            }
             if (_prevButton != null)  _prevButton.onClick.AddListener(() => OnPrevClicked?.Invoke());
             if (_nextButton != null)  _nextButton.onClick.AddListener(() => OnNextClicked?.Invoke());
             if (_closeButton != null) _closeButton.onClick.AddListener(() => OnCloseClicked?.Invoke());
+        }
+
+        /// <summary>
+        /// prefab 에 Toggle 이 wired 되어 있지 않으면 코드로 패널 좌하단에 자동 생성.
+        /// 체크박스 16×16 + 라벨 "다시 보지 않기".
+        /// </summary>
+        private Toggle CreateDontShowAgainToggle()
+        {
+            // 패널 좌하단에 부착할 컨테이너
+            GameObject toggleGO = new GameObject("DontShowAgainToggle_Auto",
+                typeof(RectTransform), typeof(Toggle));
+            toggleGO.transform.SetParent(transform, false);
+            var toggleRT = (RectTransform)toggleGO.transform;
+            toggleRT.anchorMin = new Vector2(0f, 0f);
+            toggleRT.anchorMax = new Vector2(0f, 0f);
+            toggleRT.pivot     = new Vector2(0f, 0f);
+            toggleRT.anchoredPosition = new Vector2(16f, 16f);
+            toggleRT.sizeDelta = new Vector2(160f, 24f);
+
+            // 체크박스 배경 (Image)
+            GameObject bgGO = new GameObject("Background",
+                typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            bgGO.transform.SetParent(toggleGO.transform, false);
+            var bgRT = (RectTransform)bgGO.transform;
+            bgRT.anchorMin = new Vector2(0f, 0.5f);
+            bgRT.anchorMax = new Vector2(0f, 0.5f);
+            bgRT.pivot     = new Vector2(0f, 0.5f);
+            bgRT.anchoredPosition = new Vector2(0f, 0f);
+            bgRT.sizeDelta = new Vector2(20f, 20f);
+            var bgImg = bgGO.GetComponent<Image>();
+            bgImg.color = new Color(1f, 1f, 1f, 0.85f);
+
+            // 체크 표시 (Image — Toggle.graphic)
+            GameObject checkGO = new GameObject("Checkmark",
+                typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            checkGO.transform.SetParent(bgGO.transform, false);
+            var checkRT = (RectTransform)checkGO.transform;
+            checkRT.anchorMin = new Vector2(0.15f, 0.15f);
+            checkRT.anchorMax = new Vector2(0.85f, 0.85f);
+            checkRT.offsetMin = Vector2.zero;
+            checkRT.offsetMax = Vector2.zero;
+            var checkImg = checkGO.GetComponent<Image>();
+            checkImg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+
+            // 라벨
+            GameObject labelGO = new GameObject("Label",
+                typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            labelGO.transform.SetParent(toggleGO.transform, false);
+            var labelRT = (RectTransform)labelGO.transform;
+            labelRT.anchorMin = new Vector2(0f, 0f);
+            labelRT.anchorMax = new Vector2(1f, 1f);
+            labelRT.pivot     = new Vector2(0f, 0.5f);
+            labelRT.offsetMin = new Vector2(26f, 0f);
+            labelRT.offsetMax = Vector2.zero;
+            var labelTxt = labelGO.GetComponent<TextMeshProUGUI>();
+            labelTxt.text = "다시 보지 않기";
+            labelTxt.fontSize = 14;
+            labelTxt.color = Color.white;
+            labelTxt.alignment = TextAlignmentOptions.Left;
+            labelTxt.raycastTarget = false;
+            // 한글 폰트: 패널 내 다른 TMP_Text 의 font 빌림
+            if (_titleText != null && _titleText.font != null) labelTxt.font = _titleText.font;
+            else if (_bodyText != null && _bodyText.font != null) labelTxt.font = _bodyText.font;
+
+            // Toggle wiring
+            var toggle = toggleGO.GetComponent<Toggle>();
+            toggle.targetGraphic = bgImg;
+            toggle.graphic = checkImg;
+            toggle.isOn = false;
+
+            Debug.Log("[TutorialPanelView] '다시 보지 않기' Toggle 자동 생성 (prefab 미할당 대체).", this);
+            return toggle;
         }
 
         public void Show()

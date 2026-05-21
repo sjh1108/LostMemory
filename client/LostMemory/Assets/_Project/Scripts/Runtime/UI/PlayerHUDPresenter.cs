@@ -23,6 +23,7 @@ namespace LostMemory.UI
 
         private Health _subscribedHealth;
         private float _nextResolveTime;
+        private float _lastObservedMax = -1f;
 
         private void Reset()
         {
@@ -63,6 +64,15 @@ namespace LostMemory.UI
 
         private void Update()
         {
+            // 마을 조각 영구 강화 등으로 MaxHealth 가 바뀌면 HealthChangeEvent 가 항상 발화되지 않을 수 있어
+            // 폴링으로 보강. 비교 1회만 하므로 비용은 무시할 수준.
+            if (_targetHealth != null
+                && !Mathf.Approximately(_targetHealth.MaximumHealth, _lastObservedMax))
+            {
+                _lastObservedMax = _targetHealth.MaximumHealth;
+                RefreshHP();
+            }
+
             if (!_autoResolveLocalPlayer || _targetHealth != null || Time.unscaledTime < _nextResolveTime)
             {
                 return;

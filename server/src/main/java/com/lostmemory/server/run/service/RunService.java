@@ -78,6 +78,8 @@ public class RunService {
      *
      * result 는 클라가 안 보내고 chapter_reached 로 추론 — 1챕터=1보스 정책 (클라 합의).
      *   chapterReached > 0 → CLEAR, 0 → DEATH. surrender 는 추후 신호 들어오면 분기 추가.
+     *
+     * idempotency: 이미 종료된 run 에 대한 재호출은 기존 result 반환 (클라 네트워크 retry 안전).
      */
     @Transactional
     public RunResultResponse endRun(Long userId, Long runId, EndRunRequest request) {
@@ -89,7 +91,10 @@ public class RunService {
         }
 
         if (run.isEnded()) {
-            throw new BusinessException(ErrorCode.RUN_ALREADY_ENDED);
+            // idempotent — 기존 result 그대로 반환. 보상 재적립 안 함 (이미 처리됨).
+            return runResultRepository.findById(runId)
+                    .map(RunResultResponse::from)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RUN_NOT_FOUND));
         }
 
         run.markEnded();

@@ -13,51 +13,303 @@ MonoBehaviour:
   m_Name: Phase0IntroSequenceData_SCN01
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Intro.Phase0.Phase0IntroSequenceData
   initialBlackHold: 2
-  defaultCharsPerSecond: 18
+  defaultCharsPerSecond: 10
   lines:
-  - text: "\uC5B4\uB290 \uB0A0 \uB9C8\uBB3C\uC774 \uB9C8\uC744\uC744 \uCE68\uB7B5\uD574\uC654\uB2E4."
+  - text: "<color=#FFE066>\uCC3E\uC558\uB2E4.</color>"
     delayBefore: 0
     charsPerSecond: 0
     instantReveal: 0
-    clearBeforeLine: 0
-    delayAfter: 0.4
-  - text: "\uB098\uB294 \uB9C8\uC744\uC744 \uC9C0\uD0A4\uAE30 \uC704\uD574 \uC2F8\uC6E0\uB2E4.
-      \uC2F8\uC6B0\uACE0, \uB610 \uC2F8\uC6E0\uB2E4."
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: ... ... .
     delayBefore: 0
     charsPerSecond: 0
     instantReveal: 0
-    clearBeforeLine: 0
-    delayAfter: 1
-  - text: "\uC8FD\uACE0, \uB2E4\uC2DC \uC0B4\uC544\uB0AC\uB2E4."
+    clearBeforeLine: 1
+    delayAfter: 2
+  - text: "<color=#FFE066>\uC624\uB798 \uAC78\uB824\uC11C \uBBF8\uC548.</color>"
     delayBefore: 0
     charsPerSecond: 0
     instantReveal: 0
-    clearBeforeLine: 0
-    delayAfter: 0
-  - text: "\uC8FD\uACE0, \uB2E4\uC2DC \uC0B4\uC544\uB0AC\uB2E4."
+    clearBeforeLine: 1
+    delayAfter: 2
+  - text: "<color=#FFE066>\uC774\uC820 \uC78A\uC9C0 \uC54A\uC744\uAC8C.</color>"
     delayBefore: 0
     charsPerSecond: 0
-    instantReveal: 1
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 2
+  - text: "<color=#FF6B6B>\uC808\uB300\uB85C.</color>"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 2
+  - text: 
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 12
+  - text: "\uB0B4\uAC00 \uC0AC\uB294 \uC774 \uB9C8\uC744\uC740 \uC791\uC740 \uD558\uB298
+      \uC12C\uC774\uB77C,"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uBE44\uAD50\uC801 \uC0B4\uAE30 \uC88B\uC740 \uACF3\uC774\uB77C\uACE0
+      \uD55C\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
     clearBeforeLine: 0
     delayAfter: 1.5
-  bgmClip: {fileID: 8300000, guid: e1ffe11dea4a5414b90274533d881e8e, type: 3}
+  - text: "\uB098\uB294 \uC774 \uBC16\uC744 \uB098\uAC00\uBCF8 \uC801 \uC5C6\uACE0,"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uB098\uAC04 \uC0AC\uB78C\uC740 \uC544\uBB34\uB3C4 \uB3CC\uC544\uC624\uC9C0
+      \uC54A\uC558\uAE30 \uB54C\uBB38\uC5D0"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 0.3
+  - text: "\uADF8 \uB9D0\uC774 \uC0AC\uC2E4\uC778\uC9C0 \uD655\uC778\uD560 \uC21C
+      \uC5C6\uC5C8\uB2E4. "
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 1.5
+  - text: "\uD558\uC9C0\uB9CC \uB9C8\uC744\uC758 \uC0AC\uB78C\uB4E4\uC744 \uC9C0\uCF1C\uC57C
+      \uD55C\uB2E4\uB294 \uC5B4\uB5A0\uD55C \uC0AC\uBA85\uAC10\uC774"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.8
+  - text: "\uB098\uB97C \uB2F9\uC5F0\uD55C \uAD81\uAE08\uC99D\uC5D0\uAC8C\uC11C \uB208
+      \uB3CC\uB9AC\uAC8C \uB9CC\uB4E4\uC5C8\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 1.5
+  - text: "\uC774 \uC0AC\uC2E4\uC758 \uC5B4\uAE0B\uB0A8\uC744 \uAE68\uB2EC\uC740
+      \uAC74"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uB0B4 \uC18C\uAFC9\uCE5C\uAD6C\uC758 \uC774\uB984\uC774 \uBC14\uB00C\uC5C8\uC744
+      \uB54C\uC600\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 1.5
+  - text: "\uADF8\uB140\uB294 \uC720\uB098\uC600\uB2E4\uAC00, \uC5D0\uC774\uBC84\uB9AC\uC600\uB2E4\uAC00, "
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uC5B4\uB5A8 \uB550 \uD558\uD37C\uC600\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 1.5
+  - text: "\uC774\uC0C1\uD55C \uAC74 \uB098 \uC790\uC2E0\uC778 \uC904\uB9CC \uC54C\uC558\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "\uB9C8\uC744\uC5D4 \uC885\uC885 \uAD11\uC99D\uC774 \uB3C4\uB294 \uC0AC\uB78C\uB4E4\uC774
+      \uC788\uC5C8\uAE30 \uB54C\uBB38\uC774\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "\uD5C8\uACF5\uC744 \uBCF4\uBA70 \uC18C\uB9AC\uCE58\uAC70\uB098, \uAC11\uC790\uAE30
+      \uC778\uACA9\uC774 \uBC14\uB00C\uB294 \uBAA8\uC2B5."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "\uADF8\uB4E4\uC740 \uC5B4\uB290 \uB0A0 \uAC11\uC790\uAE30 \uC0AC\uB77C\uC84C\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 2
+  - text: "\uB2E4\uB4E4 \uC815\uC2E0\uC774 \uB098\uAC00\uC11C \uC774 \uC12C\uC744
+      \uB098\uAC04 \uAC70\uB77C \uD588\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "\uADF8\uB7FC \uB098\uB3C4 \uACE7 \uC774\uACF3\uC744 \uB098\uAC00\uACE0
+      \uC2F6\uC5B4\uC9C0\uB294 \uAC78\uAE4C?"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "\uC2E4\uC81C\uB85C \uBC14\uAE65 \uC138\uC0C1\uC5D0 \uB300\uD55C \uC758\uBB38\uC774
+      \uB4E4\uAE30 \uC2DC\uC791\uD588\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uADF8\uB7FC \uADF8 \uB9D0\uC774 \uC0AC\uC2E4\uC77C\uC9C0\uB3C4 \uBAA8\uB974\uC9C0."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 1.5
+  - text: "\uB2E4\uD589\uD788 \uC544\uC9C1 \uB098\uB294 \uC5EC\uAE30\uC5D0 \uC788\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uC774 \uB9C8\uC744 \uC0AC\uB78C\uB4E4\uC744 \uC9C0\uCF1C\uC57C \uD558\uB2C8\uAE4C."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 3
+  - text: "\uC5BC\uB9C8 \uD6C4 \uB9C8\uBB3C\uB4E4\uC774 \uB9C8\uC744\uC744 \uACF5\uACA9\uD588\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uB098\uB294 \uC775\uC219\uD55C\uAC80\uC2E0\uC744 \uC7A1\uACE0 \uB358\uC804
+      \uB358\uC804\uC73C\uB85C \uD5A5\uD588\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 1.2
+  - text: "\uBA87 \uBC88\uC9F8\uC778\uC9C0 \uBAA8\uB97C<color=#FF6B6B>\uCCAB \uD074\uB9AC\uC5B4</color>\uB97C
+      \uC704\uD574."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.2
+  - text: 
+    delayBefore: 6
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.2
+  - text: "\uC140 \uC218 \uC5C6\uC774 \uC4F0\uB7EC\uC9C0\uB2E4 \uBCF4\uBA74"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uC5B4\uB5A0\uD55C \uC5ED\uACBD\uC758 \uB9C8\uC9C0\uB9C9\uC5D0 \uB3C4\uB2EC\uD558\uAE30\uB3C4
+      \uD55C\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 0
+    delayAfter: 1.5
+  - text: "\uC774 \uB358\uC804\uC758 \uB05D,  "
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 0.3
+  - text: "\uD655\uC2E4\uD788 \uBB34\uC5B8\uAC00\uB97C \uC5C6\uC574\uB2E4\uB294 \uAC10\uAC01\uC774
+      \uAC80\uC744 \uD1B5\uD574 \uC804\uD574\uC84C\uC744 \uB54C,"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "\uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "<color=#FF6B6B>\uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774
+      \uD754\uB4E4\uB838\uB2E4. \uC138\uC0C1\uC774 \uD754\uB4E4\uB838\uB2E4.</color>"
+    delayBefore: 0
+    charsPerSecond: 100
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 2.5
+  - text: ... ... .
+    delayBefore: 0
+    charsPerSecond: 100
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "\uADF8\uB9AC\uACE0 \uBA48\uCDC4\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 100
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 3
+  - text: "\uADF8 \uC21C\uAC04\uC740 \uCC30\uB098\uC778 \uB4EF \uC601\uAC81\uAC19\uC544\uC11C
+      \uAE30\uC5B5\uC774 \uC628\uC804\uCE58 \uC54A\uB2E4."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 1.5
+  - text: "\uC720\uC77C\uD55C \uAE30\uC5B5\uC758 \uC870\uAC01\uC740"
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 3
+  - text: "\uC5B4\uB518\uAC00 \uC775\uC219\uD55C \uBAA9\uC18C\uB9AC\uBFD0."
+    delayBefore: 0
+    charsPerSecond: 0
+    instantReveal: 0
+    clearBeforeLine: 1
+    delayAfter: 3
+  bgmClip: {fileID: 8300000, guid: 247d6e8beb2d0f046b0f8f85650b359a, type: 3}
   bgmFadeInDuration: 2.5
-  bgmTargetVolume: 0.15
-  bgmStartDelay: 0
-  typeClip: {fileID: 0}
-  typeVolume: 0.35
-  typePitchJitter: 0.05
-  playEveryNCharacters: 2
-  backdropFrames:
-  - {fileID: 21300000, guid: b122af3fc288a824aa6fb2852f50c6cb, type: 3}
-  - {fileID: 21300000, guid: c32cd947741c407438c7f5a437eb4876, type: 3}
-  - {fileID: 21300000, guid: 8ccb21416e0e8ea41930005bf99b34c3, type: 3}
-  - {fileID: 21300000, guid: 5f721806583927b47922e975e663229f, type: 3}
-  - {fileID: 21300000, guid: e5c6501d612dae54b8e0aa43c711e524, type: 3}
-  - {fileID: 21300000, guid: 4e6db83104333d14d9bd7c8bf053edb7, type: 3}
-  - {fileID: 21300000, guid: c6f80409ed5882e4ba92e02f0a9e2b73, type: 3}
-  - {fileID: 21300000, guid: 8a239a42f9e35454e9f89863130be952, type: 3}
+  bgmTargetVolume: 0.4
+  bgmStartDelay: 20
+  typeClip: {fileID: 8300000, guid: 6ef9d39f2c3485b4d98668fde4f1cde2, type: 3}
+  typeVolume: 0.5
+  typePitchJitter: 0.051
+  playEveryNCharacters: 1
+  backdropFrames: []
   backdropFps: 1
   backdropFadeInDuration: 1
-  backdropFadeInDelay: 0
-  sceneVisualId: 
+  backdropFadeInDelay: 16
+  sceneVisualId: SCN-05-SHAKE

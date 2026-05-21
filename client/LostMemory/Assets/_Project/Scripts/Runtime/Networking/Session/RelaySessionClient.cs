@@ -128,6 +128,7 @@ namespace LostMemory.Networking.Session
 
                 RelaySession.ActiveSessionId = data.sessionId;
                 RelaySession.IsHost = false;
+                RelaySession.ActiveJoinCode = normalized;
                 RelaySession.RaiseJoined(asHost: false);
 
                 NetLog.Info("Client", $"Joined session id={data.sessionId}.");

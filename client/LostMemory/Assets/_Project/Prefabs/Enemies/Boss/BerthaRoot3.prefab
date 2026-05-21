@@ -892,6 +892,10 @@ MonoBehaviour:
   entryTriggerName: 
   entryStateName: Entry
   entryStateLayer: 0
+  entryMotionRoot: {fileID: 0}
+  moveEntryFromOffset: 0
+  entryStartLocalOffset: {x: 0, y: 6, z: 0}
+  entryMoveDuration: 0.9
   introVisibilityTargets: []
   dialoguePlayerOwner: {fileID: 8384635405403100115}
   bossHealth: {fileID: 0}
@@ -1468,8 +1472,8 @@ MonoBehaviour:
   Model: {fileID: 0}
   CurrentHealth: 500
   Invulnerable: 0
-  InitialHealth: 800
-  MaximumHealth: 800
+  InitialHealth: 1400
+  MaximumHealth: 1400
   ResetHealthOnEnable: 1
   OnHealFeedback: {fileID: 0}
   ImmuneToDamage: 0
@@ -1618,6 +1622,9 @@ MonoBehaviour:
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
   positionOffset: {x: 0, y: 0.02, z: 0}
+  timingMarkerObjectName: AttackTelegraphTimingMarker
+  timingMarkerDefaultColor: {r: 1, g: 0.92, b: 0.55, a: 0.75}
+  timingMarkerThickness: 0.055
 --- !u!114 &3848115661702086392
 MonoBehaviour:
   m_ObjectHideFlags: 0

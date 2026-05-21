@@ -92,6 +92,15 @@ namespace LostMemory.TestKhi
             }
             audioSource.playOnAwake = false;
             audioSource.spatialBlend = 0f; // 2D — 카메라 거리·HitStop 영향 X
+
+            // SFX 카테고리 mixer group 으로 라우팅 → 사용자 UI 슬라이더 (GameAudioSettings.SetSfxVolume)
+            // 가 mixer 의 SfxVol dB 를 조정하면 DSP 레벨에서 자동 곱셈 적용.
+            // GameAudioSettings 가 BeforeSceneLoad 에서 부트스트랩되므로 이 Awake 시점에 Instance 보장.
+            if (LostMemory.Audio.GameAudioSettings.Instance != null
+                && LostMemory.Audio.GameAudioSettings.Instance.SfxGroup != null)
+            {
+                audioSource.outputAudioMixerGroup = LostMemory.Audio.GameAudioSettings.Instance.SfxGroup;
+            }
         }
 
         private void OnEnable()
@@ -202,8 +211,23 @@ namespace LostMemory.TestKhi
                 return;
             }
 
-            // AudioSource.PlayOneShot 은 Time.timeScale=0 (HitStop) 에서도 정상 재생됨.
-            audioSource.PlayOneShot(clip, Mathf.Clamp01(volume));
+            // 라우팅 lazy 보강: Awake 시점에 GameAudioSettings.Instance 가 null 이었더라도
+            // (예: Title 안 거치고 dungeon 씬 바로 Play), 첫 SFX 직전에 Instance 가 살아있으면 라우팅.
+            if (audioSource.outputAudioMixerGroup == null
+                && LostMemory.Audio.GameAudioSettings.Instance != null
+                && LostMemory.Audio.GameAudioSettings.Instance.SfxGroup != null)
+            {
+                audioSource.outputAudioMixerGroup = LostMemory.Audio.GameAudioSettings.Instance.SfxGroup;
+            }
+
+            // 최종 볼륨 = (이벤트 Inspector volume) × (per-clip balance gain) × (mixer SFX group dB).
+            // - 이벤트 volume: 디자이너가 이벤트 그룹 단위로 조정 (예: attackSwingVolume).
+            // - per-clip balance: 사운드 디자이너가 SfxBalanceWindow 로 클립 단위 균일화 (이상치만 깎음, 1 초과 = 증폭).
+            // - mixer dB: 사용자가 옵션 메뉴 / AudioSettingsWindow 로 카테고리 볼륨 조정.
+            // 증폭 (gain > 1) 허용 → Clamp01 대신 MaxGain 으로 상한.
+            float perClipGain = LostMemory.Audio.SfxClipVolumeBalance.GetGain(clip);
+            float finalVol = Mathf.Clamp(volume * perClipGain, 0f, LostMemory.Audio.SfxClipVolumeBalance.MaxGain);
+            audioSource.PlayOneShot(clip, finalVol);
             Log(tag, clip);
         }
 

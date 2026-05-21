@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Relics;
 using UnityEngine;
@@ -22,6 +23,8 @@ namespace LostMemory.Rewards
         [SerializeField] private PlayerRelicInventory _inventory;
         [Tooltip("카드 슬롯 배열 — 5장 권장 (행운 5스택 시 5장 표시).")]
         [SerializeField] private RewardCardView[] _cards;
+        [Tooltip("패널이 열린 후 카드를 선택 가능해지기까지의 지연 시간 (초, realtime). 0 이면 즉시 선택 가능.")]
+        [SerializeField, Min(0f)] private float _selectionDelay = 1f;
 
         /// <summary>CL-110: 카드 선택 후 발화. RewardController 가 구독하여 문 열기 등 후속 처리.</summary>
         public event Action<RelicData> RewardSelected;
@@ -32,6 +35,9 @@ namespace LostMemory.Rewards
 
         // CL-147 타로 재추첨 — 다음 Show 호출 시 N회 재추첨 적용 후 마지막 결과 표시
         private int _pendingRerolls;
+
+        // 선택 지연 코루틴 핸들 — 패널 닫힐 때 안전하게 stop.
+        private Coroutine _enableSelectionCoroutine;
 
         /// <summary>CL-147: 타로 RerollCard 가 호출. 다음 Show 시 N회 추가 재추첨.</summary>
         public void RequestReroll(int additionalDraws)
@@ -104,7 +110,41 @@ namespace LostMemory.Rewards
             }
 
             gameObject.SetActive(true);
+
+            // 즉시 선택 방지 — 활성 카드 비활성화 후 _selectionDelay 뒤 다시 활성화.
+            if (_selectionDelay > 0f)
+            {
+                for (int i = 0; i < _cards.Length; i++)
+                {
+                    if (_cards[i] != null && _cards[i].gameObject.activeSelf)
+                        _cards[i].SetInteractable(false);
+                }
+                if (_enableSelectionCoroutine != null) StopCoroutine(_enableSelectionCoroutine);
+                _enableSelectionCoroutine = StartCoroutine(EnableSelectionAfterDelay());
+            }
+
             Debug.Log($"[RewardPanel] Show — count={count}, picksAllowed={_picksAllowed}, luckPoints={luckPoints}, forceLegendary={forceLegendary}");
+        }
+
+        private IEnumerator EnableSelectionAfterDelay()
+        {
+            yield return new WaitForSecondsRealtime(_selectionDelay);
+            for (int i = 0; i < _cards.Length; i++)
+            {
+                if (_cards[i] != null && _cards[i].gameObject.activeSelf)
+                    _cards[i].SetInteractable(true);
+            }
+            _enableSelectionCoroutine = null;
+        }
+
+        private void OnDisable()
+        {
+            // 다중 픽 도중 패널이 닫히거나 씬 전환 시 코루틴 누수 방지.
+            if (_enableSelectionCoroutine != null)
+            {
+                StopCoroutine(_enableSelectionCoroutine);
+                _enableSelectionCoroutine = null;
+            }
         }
 
         private void OnCardSelected(RelicData selected)

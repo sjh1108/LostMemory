@@ -18,8 +18,23 @@ namespace LostMemory.Rewards
         [SerializeField] private TextMeshProUGUI _descriptionText;
         [SerializeField] private Button _selectButton;
 
+        [Header("Disabled visual (선택 불가 시 카드 전체 dim)")]
+        [Tooltip("비할당이면 Awake 에서 카드 root 에 자동 추가. interactable=false 시 alpha 를 disabledAlpha 로.")]
+        [SerializeField] private CanvasGroup _canvasGroup;
+        [Tooltip("interactable=false 일 때 카드 전체 alpha. Icon 포함 자식 전부 동시에 dim.")]
+        [SerializeField, Range(0f, 1f)] private float _disabledAlpha = 0.4f;
+
         private RelicData _data;
         private Action<RelicData> _onSelected;
+
+        private void Awake()
+        {
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = GetComponent<CanvasGroup>();
+                if (_canvasGroup == null) _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+        }
 
         /// <summary>CL-146: 다중 픽 모드에서 선택된 카드 식별용 (RewardPanelView 가 disable 처리).</summary>
         public RelicData Data => _data;
@@ -42,6 +57,13 @@ namespace LostMemory.Rewards
 
             _selectButton.onClick.RemoveAllListeners();
             _selectButton.onClick.AddListener(() => _onSelected?.Invoke(_data));
+        }
+
+        /// <summary>버튼 상호작용 토글 + 카드 전체 dim. RewardPanelView 가 열림 직후 잠시 false 로 두어 즉시 선택 방지.</summary>
+        public void SetInteractable(bool interactable)
+        {
+            if (_selectButton != null) _selectButton.interactable = interactable;
+            if (_canvasGroup != null) _canvasGroup.alpha = interactable ? 1f : _disabledAlpha;
         }
 
         private static string ToKorean(RelicRarity rarity) => rarity switch

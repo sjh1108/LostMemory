@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('건의/버그 상세')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<div th:replace="~{fragments/layout :: admin-bar}"></div>
+
+<main class="site-main">
+  <h2 th:text="${feedback.title}">제목</h2>
+  <div class="entry-meta">
+    <span th:text="${feedback.category.displayName}">카테고리</span> ·
+    <span th:text="${#temporals.format(feedback.createdAt, 'yyyy-MM-dd HH:mm')}">날짜</span> ·
+    <span th:text="${feedback.handled} ? '처리 완료' : '미처리'">상태</span>
+    <span th:if="${feedback.handled and feedback.handledAt != null}">
+      · 처리일 <span th:text="${#temporals.format(feedback.handledAt, 'yyyy-MM-dd HH:mm')}">날짜</span>
+    </span>
+  </div>
+
+  <div th:if="${message}" class="flash" th:text="${message}"></div>
+
+  <div th:if="${feedback.contact != null and !feedback.contact.isBlank()}" class="field-hint" style="margin-top:1rem">
+    연락처: <strong th:text="${feedback.contact}">contact</strong>
+  </div>
+
+  <pre style="white-space:pre-wrap;margin-top:1rem;background:var(--panel);padding:1rem;color:var(--fg)" th:text="${feedback.body}">본문</pre>
+
+  <div style="margin-top:2rem">
+    <form th:if="${!feedback.handled}" th:action="@{__${adminBase}__/feedbacks/{id}/handle(id=${feedback.id})}" method="post" style="display:inline">
+      <button type="submit">처리 완료로 표시</button>
+    </form>
+    <form th:if="${feedback.handled}" th:action="@{__${adminBase}__/feedbacks/{id}/unhandle(id=${feedback.id})}" method="post" style="display:inline">
+      <button type="submit">처리 완료 해제</button>
+    </form>
+    <a th:href="@{__${adminBase}__/feedbacks}" style="margin-left:1rem">← 목록으로</a>
+  </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

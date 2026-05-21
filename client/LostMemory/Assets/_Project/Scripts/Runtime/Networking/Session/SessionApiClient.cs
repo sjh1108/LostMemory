@@ -135,6 +135,108 @@ namespace LostMemory.Networking.Session
         }
 
         // ============================================================
+        // Talent — #144 (4 slot: 치명타율/공격속도/방어력/최대체력)
+        // ============================================================
+
+        public static async Task<TalentAllocationData> GetMyTalentsAsync()
+        {
+            var resp = await GetAsync<TalentAllocationData>("/users/me/talents");
+            if (resp == null || !resp.success)
+            {
+                NetLog.Error("API", $"GetMyTalents 실패: code={resp?.error?.code}");
+                return null;
+            }
+            return resp.data;
+        }
+
+        public static async Task<TalentAllocationData> SaveTalentsAsync(TalentSaveBody body)
+        {
+            var resp = await PostAsync<TalentAllocationData>("/users/me/talents/save", body);
+            if (resp == null || !resp.success)
+            {
+                NetLog.Error("API", $"SaveTalents 실패: code={resp?.error?.code}");
+                return null;
+            }
+            return resp.data;
+        }
+
+        // ============================================================
+        // Weapon — #144
+        // ============================================================
+
+        /// <summary>무기 마스터 트리 — 앱 기동 또는 마을 진입 시 1회. 평탄 리스트, parentWeaponId 로 클라가 트리 재구성.</summary>
+        public static async Task<WeaponMasterData[]> GetMasterWeaponsAsync()
+        {
+            var resp = await GetAsync<WeaponMasterData[]>("/master/weapons");
+            if (resp == null || !resp.success)
+            {
+                NetLog.Error("API", $"GetMasterWeapons 실패: code={resp?.error?.code}");
+                return null;
+            }
+            return resp.data;
+        }
+
+        /// <summary>본인 인벤토리 — 해금 목록 + 현재 장착 무기 ID. 마을 진입 시 1회.</summary>
+        public static async Task<WeaponInventoryData> GetMyWeaponsAsync()
+        {
+            var resp = await GetAsync<WeaponInventoryData>("/users/me/weapons");
+            if (resp == null || !resp.success)
+            {
+                NetLog.Error("API", $"GetMyWeapons 실패: code={resp?.error?.code}");
+                return null;
+            }
+            return resp.data;
+        }
+
+        /// <summary>무기 해금 (파편 차감). cost 는 클라가 계산해서 보냄. 이미 해금이면 idempotent.</summary>
+        public static async Task<ApiEnvelope<WeaponUnlockedData>> UnlockWeaponAsync(long weaponId, int consumedShards)
+        {
+            var body = new { weaponId, consumedShards };
+            var resp = await PostAsync<WeaponUnlockedData>("/users/me/weapons/unlock", body);
+            if (resp == null || !resp.success)
+            {
+                NetLog.Warn("API", $"UnlockWeapon 실패: code={resp?.error?.code}");
+            }
+            return resp;
+        }
+
+        /// <summary>장착 무기 갱신. 본인이 해금한 무기만 가능.</summary>
+        public static async Task<ApiEnvelope<WeaponSelectionData>> SelectWeaponAsync(long weaponId)
+        {
+            var body = new { weaponId };
+            var resp = await PutAsync<WeaponSelectionData>("/users/me/weapons/selected", body);
+            if (resp == null || !resp.success)
+            {
+                NetLog.Warn("API", $"SelectWeapon 실패: code={resp?.error?.code}");
+            }
+            return resp;
+        }
+
+        // ============================================================
+        // Memory — #138/#142 (frame slot 해금)
+        // ============================================================
+
+        /// <summary>
+        /// 프레임 내 특정 slot 해금 + 파편 차감.
+        /// cost 는 클라가 계산해서 보냄. 이미 해금된 slot 이면 idempotent (변화 없음).
+        ///
+        /// 실패 시 ApiEnvelope 자체 반환 — 호출자가 error.code 분기:
+        ///   - 400 MEMORY_SLOT_INDEX_OUT_OF_RANGE — slotIndex 가 0~5 밖
+        ///   - 404 MEMORY_FRAME_NOT_FOUND — frameId 존재하지 않음
+        ///   - 409 MEMORY_SHARDS_INSUFFICIENT — 보유 파편 부족
+        /// </summary>
+        public static async Task<ApiEnvelope<MemoryProgressData>> UnlockMemorySlotAsync(long frameId, int slotIndex, int consumedShards)
+        {
+            var body = new { frameId, slotIndex, consumedShards };
+            var resp = await PostAsync<MemoryProgressData>("/memory/progress/unlock-slot", body);
+            if (resp == null || !resp.success)
+            {
+                NetLog.Warn("API", $"UnlockMemorySlot 실패: code={resp?.error?.code}");
+            }
+            return resp;
+        }
+
+        // ============================================================
         // HTTP helpers
         // ============================================================
 
@@ -159,6 +261,15 @@ namespace LostMemory.Networking.Session
             using var req = new HttpRequestMessage(HttpMethod.Delete, BaseUrl + path);
             AddAuth(req);
             await SendAndParseAsync<object>(req);
+        }
+
+        private static async Task<ApiEnvelope<T>> PutAsync<T>(string path, object body)
+        {
+            var json = JsonConvert.SerializeObject(body, jsonSettings);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var req = new HttpRequestMessage(HttpMethod.Put, BaseUrl + path) { Content = content };
+            AddAuth(req);
+            return await SendAndParseAsync<T>(req);
         }
 
         private static void AddAuth(HttpRequestMessage req)
@@ -253,6 +364,72 @@ namespace LostMemory.Networking.Session
             public int maxPlayers;
             public long currentMembers;
             public bool isFull;
+        }
+
+        // ============================================================
+        // #144 — Talent / Weapon DTO
+        // ============================================================
+
+        [Serializable]
+        public class TalentAllocationData
+        {
+            public long userId;
+            public int critRatePoints;
+            public int attackSpeedPoints;
+            public int defensePoints;
+            public int maxHpPoints;
+            public string updatedAt;
+        }
+
+        [Serializable]
+        public class TalentSaveBody
+        {
+            public int critRatePoints;
+            public int attackSpeedPoints;
+            public int defensePoints;
+            public int maxHpPoints;
+        }
+
+        [Serializable]
+        public class WeaponMasterData
+        {
+            public long weaponId;
+            public string weaponName;
+            public string weaponType;
+            public long? parentWeaponId;   // 루트면 null
+            public int displayOrder;
+        }
+
+        [Serializable]
+        public class WeaponInventoryData
+        {
+            public long selectedWeaponId;
+            public WeaponUnlockedData[] unlocks;
+        }
+
+        [Serializable]
+        public class WeaponUnlockedData
+        {
+            public long unlockNodeId;
+            public string unlockedAt;
+        }
+
+        [Serializable]
+        public class WeaponSelectionData
+        {
+            public long selectedWeaponId;
+        }
+
+        // ============================================================
+        // #138/#142 — Memory DTO
+        // ============================================================
+
+        [Serializable]
+        public class MemoryProgressData
+        {
+            public long frameId;
+            public int unlockedMask;     // 6-bit. bit n=1 이면 slot n 해금. 63 = 6칸 다 해금
+            public string state;         // "Locked" / "In Progress" / "Done" — mask 에서 derive
         }
     }
 }

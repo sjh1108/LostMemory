@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('패치노트 관리')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<div th:replace="~{fragments/layout :: admin-bar}"></div>
+
+<main class="site-main">
+  <h2>패치노트 관리</h2>
+
+  <div th:if="${message}" class="flash" th:text="${message}"></div>
+
+  <p><a th:href="@{__${adminBase}__/patch-notes/new}">+ 새 패치노트 작성</a></p>
+
+  <table class="admin-table">
+    <thead>
+      <tr><th>ID</th><th>버전</th><th>릴리스</th><th>공개</th><th>수정</th><th>액션</th></tr>
+    </thead>
+    <tbody>
+      <tr th:each="p : ${patchNotes}">
+        <td th:text="${p.id}">1</td>
+        <td><a th:href="@{__${adminBase}__/patch-notes/{id}/edit(id=${p.id})}" th:text="${p.version}">v0.0</a></td>
+        <td th:text="${#temporals.format(p.releaseDate, 'yyyy-MM-dd')}">날짜</td>
+        <td th:text="${p.published} ? '공개' : '비공개'">공개</td>
+        <td th:text="${#temporals.format(p.updatedAt, 'yyyy-MM-dd HH:mm')}">날짜</td>
+        <td>
+          <form th:action="@{__${adminBase}__/patch-notes/{id}/delete(id=${p.id})}" method="post" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?')">
+            <button type="submit" class="btn-danger">삭제</button>
+          </form>
+        </td>
+      </tr>
+      <tr th:if="${patchNotes.isEmpty()}">
+        <td colspan="6" class="entry-meta" style="text-align:center">등록된 패치노트가 없습니다.</td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
