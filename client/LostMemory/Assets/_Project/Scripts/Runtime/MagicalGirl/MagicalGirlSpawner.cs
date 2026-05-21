@@ -47,6 +47,9 @@ namespace LostMemory.MagicalGirl
         [Tooltip("CL-204: visual → sprite/공격 패턴 매핑 카탈로그. 미설정 시 fallback (placeholder sprite + 즉시 데미지).")]
         [SerializeField] private MagicalGirlAttackCatalog attackCatalog;
 
+        [Tooltip("Bug #32 — 마법소녀 visual broadcast 채널. 같은 player root 에 부착. 비워두면 자동 resolve.")]
+        [SerializeField] private MagicalGirlBroadcast magicalGirlBroadcast;
+
         [Tooltip("원형 배치 반경 (유닛).")]
         [SerializeField, Min(0.1f)] private float ringRadius = 1.5f;
 
@@ -211,6 +214,12 @@ namespace LostMemory.MagicalGirl
         private void OnEnable()
         {
             ResolveDownController();
+            if (magicalGirlBroadcast == null)
+            {
+                magicalGirlBroadcast = GetComponent<MagicalGirlBroadcast>();
+                if (magicalGirlBroadcast == null) magicalGirlBroadcast = GetComponentInParent<MagicalGirlBroadcast>();
+                if (magicalGirlBroadcast == null) magicalGirlBroadcast = GetComponentInChildren<MagicalGirlBroadcast>(true);
+            }
 
             string anchorWiring = anchor != null ? "OK" : "self";
             string statWiring = playerStat != null ? "OK" : "❌ NULL";
@@ -218,7 +227,8 @@ namespace LostMemory.MagicalGirl
             string inventoryWiring = inventory != null ? "OK" : "❌ NULL (visual hook 동작 X)";
             string aimWiring = playerAim != null ? "OK" : "⚠ NULL (ultimate 레이저 fallback=right)";
             string catalogWiring = attackCatalog != null ? "OK" : "⚠ NULL (placeholder 즉시 데미지)";
-            Debug.Log($"[MagicalGirlSpawner] OnEnable — wiring: anchor={anchorWiring}, playerStat={statWiring}, playerCombat={combatWiring}, inventory={inventoryWiring}, playerAim={aimWiring}, catalog={catalogWiring}", this);
+            string broadcastWiring = magicalGirlBroadcast != null ? "OK" : "⚠ NULL (멀티 sync 안 됨, 자기 클라만 보임)";
+            Debug.Log($"[MagicalGirlSpawner] OnEnable — wiring: anchor={anchorWiring}, playerStat={statWiring}, playerCombat={combatWiring}, inventory={inventoryWiring}, playerAim={aimWiring}, catalog={catalogWiring}, broadcast={broadcastWiring}", this);
 
             if (inventory != null)
             {
@@ -333,6 +343,18 @@ namespace LostMemory.MagicalGirl
                 return;
             }
 
+            // Bug #32 — owner-aware 가드 (Phase C 1단계 host-only 가드 교체):
+            //   기존: 호스트만 spawn 허용 → 게스트가 자기 유물 획득해도 본인 화면에 미소녀 안 보임.
+            //   변경: 각 플레이어의 *owner 클라* 에서만 본체 spawn, *non-owner 클라* 는 MagicalGirlBroadcast
+            //   의 ClientRpc 가 SpawnVisualOnlyClone 으로 visual-only clone 생성 → 양쪽 화면에 보임.
+            //
+            // 솔로 (NM 비활성 or broadcast 미부착): 가드 통과 → 일반 spawn (회귀 없음).
+            if (magicalGirlBroadcast != null && magicalGirlBroadcast.IsSpawned && !magicalGirlBroadcast.IsOwner)
+            {
+                if (_logSpawn) Debug.Log($"[MagicalGirl] non-owner client skip local spawn — ClientRpc 로 visual-only clone 동기화 예정. visual={visual}");
+                return;
+            }
+
             var go = new GameObject($"MagicalGirl_{visual}");
             // CL-204 Follow Polish: 부모-자식 parenting 제거 — world space 독립.
             // 위치는 MagicalGirlFollower 가 매 LateUpdate 에서 SmoothDamp 로 anchor + offset 따라감.
@@ -362,6 +384,83 @@ namespace LostMemory.MagicalGirl
             tooltip.SetVisual(visual);
 
             if (_logSpawn) Debug.Log($"[MagicalGirl] +{visual} (count={_girlsByVisual.Count})");
+
+            // Bug #32 — 다른 클라에 visual-only clone broadcast. 본 메서드는 owner 측에서만 도달.
+            // (위쪽 owner-aware 가드가 non-owner 를 차단 → 본 호출은 owner 한 명만 실행 → 중복 ClientRpc 없음.)
+            if (magicalGirlBroadcast != null)
+            {
+                magicalGirlBroadcast.NotifyLocalGirlSpawned(visual);
+            }
+        }
+
+        /// <summary>
+        /// Bug #32 — non-owner 클라 측에서 <see cref="MagicalGirlBroadcast"/> 의 ClientRpc 가 호출.
+        /// visual-only clone 생성 — AI / Collider / HoverTooltip 부착 안 함. SpriteRenderer + Follower 만.
+        /// damage 권위는 owner 측 본체 한 군데서만 → double-hit / 잘못된 ult 트리거 자동 방지.
+        /// </summary>
+        public void SpawnVisualOnlyClone(MagicalGirlVisual visual)
+        {
+            if (visual == MagicalGirlVisual.Default) return;
+
+            var go = new GameObject($"MagicalGirl_{visual}_VisualClone");
+            Transform anchorT = anchor != null ? anchor : transform;
+            go.transform.position = anchorT.position;
+            // Bug #34 — scale 을 모든 분기에 통일 적용 (AI.Awake 의 FallbackSpriteSize=0.4 와 동일).
+            //   이전 구현은 catalog 성공 시 scale=1.0 (4배 큼) → host 화면에 거대한 sprite 또는 미정렬로 검정 박스처럼 보임.
+            go.transform.localScale = new Vector3(0.4f, 0.4f, 1f);
+
+            // Bug #34 진단 — catalog wiring 검증. host-side spawner 의 prefab inspector 할당 누락 확인용.
+            if (attackCatalog == null)
+            {
+                Debug.LogWarning($"[DiagMagicalGirl-Clone] attackCatalog NULL — host-side prefab 의 inspector catalog 할당 확인 필요. visual={visual}", this);
+            }
+
+            // Sprite — catalog 에서 entry 조회. 없으면 흰색 placeholder (AI 의 Awake fallback 과 동일 외형).
+            var sr = go.AddComponent<SpriteRenderer>();
+            Sprite sprite = null;
+            if (attackCatalog != null && attackCatalog.TryGet(visual, out var entry))
+            {
+                sprite = entry.sprite;
+                if (sprite == null)
+                {
+                    Debug.LogWarning($"[DiagMagicalGirl-Clone] catalog entry.sprite NULL — catalog 의 visual={visual} entry 의 sprite 필드 할당 필요.", this);
+                }
+            }
+            if (sprite != null)
+            {
+                sr.sprite = sprite;
+                // Bug #34 — AI.ApplyVisualAppearance 와 동일하게 Color.white 명시. sprite 자체 색상 사용.
+                sr.color = Color.white;
+            }
+            else
+            {
+                // fallback — AI.Awake 와 동일 시각 처리 (whiteTexture + tint).
+                sr.sprite = Sprite.Create(
+                    Texture2D.whiteTexture,
+                    new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
+                    new Vector2(0.5f, 0.5f),
+                    pixelsPerUnit: Texture2D.whiteTexture.width);
+                sr.color = MagicalGirlVisualPalette.Get(visual);
+            }
+            // Bug #34 후속: sortingLayerName 미설정 = "Default". AI 본체 (MagicalGirlAI.Awake) 와 통일.
+            // "Foreground" 명시 시 URP 2D Renderer 의 카메라 Light 2D blend / Renderer culling 과 정합 안 맞아 검정으로 렌더.
+            // AI 본체가 "Default" + sortingOrder=100 으로 정상 동작 → clone 도 동일하게 맞춤.
+            sr.sortingOrder = 100;
+
+            // Follower — anchor 추적 + bob animation. owner 본체와 동일 follow 거동.
+            var follower = go.AddComponent<MagicalGirlFollower>();
+            Vector2 off = GetFormationOffset(visual);
+            follower.Init(anchorT, playerAim, off);
+            follower.SmoothTime = followSmoothTime;
+            follower.BobAmplitude = followBobAmplitude;
+            follower.BobSpeed = followBobSpeed;
+
+            // 의도적 누락:
+            //   - MagicalGirlAI: 적 검색 / 공격 발사 시뮬레이션. owner 단일 권위로 충분 (clone 도 시뮬하면 double-hit).
+            //   - CircleCollider2D + MagicalGirlHoverTooltip: 호버 정보는 owner 측 인벤토리 권위. clone 은 시각만.
+            //   - _girlsByVisual dictionary: 본체 cap 관리용. clone 은 cap 외 — visual 한정.
+
+            if (_logSpawn) Debug.Log($"[MagicalGirl] visual-only clone spawned visual={visual} sprite={(sprite != null ? "OK" : "FALLBACK")} (non-owner 측 시각 sync)");
         }
 
         /// <summary>CL-204: Type=27 강화 적용. visual 미소녀가 spawn 되어 있으면 즉시 반영, 없어도 플래그 보관 후 spawn 시 적용.</summary>

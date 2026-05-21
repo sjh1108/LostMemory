@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using LostMemory.Combat;
 using LostMemory.Data;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -36,6 +37,9 @@ namespace LostMemory.TestKhi
         private readonly List<Health> _hitsThisSample = new List<Health>(8);
 
         private CharacterHandleWeapon _tdeHandleWeapon;
+        // Phase E: 비-owner 측 입력 중복 발화 차단용 cached NetworkObject. 부모 chain 에서 1회 resolve.
+        private NetworkObject _cachedNetObj;
+        private bool _netObjResolved;
         private bool _isAttacking;
         private bool _isInAttackRecovery;
         private bool _externalAbortRequested;
@@ -191,6 +195,13 @@ namespace LostMemory.TestKhi
 
         private void Update()
         {
+            // Phase E: 비-owner 측에서 마우스 입력이 자체적으로 RequestAttack 발화 → AttackBroadcast 가
+            // 또 한 번 ServerRpc 발사하는 중복 패턴 차단. owner 1명만 입력 처리.
+            if (IsRemoteClone())
+            {
+                return;
+            }
+
             if (IsDownStateBlockingAttack())
             {
                 AbortCurrentAttack();
@@ -215,6 +226,12 @@ namespace LostMemory.TestKhi
 
         public void RequestAttack()
         {
+            // Phase E: 외부에서 RequestAttack 을 직접 호출하더라도 비-owner 측은 자체 공격 코루틴 시작 금지.
+            if (IsRemoteClone())
+            {
+                return;
+            }
+
             if (ExternalBlock || IsDownStateBlockingAttack())
             {
                 return;
@@ -422,6 +439,20 @@ namespace LostMemory.TestKhi
         private bool IsDownStateBlockingAttack()
         {
             return downController != null && (downController.IsDown || downController.IsDefeated);
+        }
+
+        /// <summary>
+        /// Phase E: 본 컨트롤러가 비-owner clone 인지 판정. NetworkObject 가 spawn 됐고 IsOwner 가 아니면 true.
+        /// 싱글 환경 (NetworkObject 없음) / NGO 미spawn 시점은 false 반환하여 정상 동작.
+        /// </summary>
+        private bool IsRemoteClone()
+        {
+            if (!_netObjResolved)
+            {
+                _cachedNetObj = GetComponentInParent<NetworkObject>();
+                _netObjResolved = true;
+            }
+            return _cachedNetObj != null && _cachedNetObj.IsSpawned && !_cachedNetObj.IsOwner;
         }
 
         private void TryBufferAttack()

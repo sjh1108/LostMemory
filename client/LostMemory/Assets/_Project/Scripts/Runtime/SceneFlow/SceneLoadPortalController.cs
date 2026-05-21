@@ -29,6 +29,10 @@ namespace LostMemory.SceneFlow
         [SerializeField] private GameObject visualRoot;
         [SerializeField] private bool debugLogging;
 
+        [Header("Multiplayer Gate (A-4)")]
+        [Tooltip("true: NGO 활성 시 연결된 플레이어가 모두 포탈 안에 있어야 LoadScene 가능.")]
+        [SerializeField] private bool requireAllPlayersInside = true;
+
         [Header("Dungeon Run Entry")]
         [SerializeField] private bool requestDungeonRunStart;
         [SerializeField, Min(0)] private int dungeonRouteNodeIndex;
@@ -38,6 +42,28 @@ namespace LostMemory.SceneFlow
         private readonly HashSet<Character> _candidates = new HashSet<Character>();
         private Collider2D _trigger;
         private bool _loadInProgress;
+
+        /// <summary>Q-3: UI "X/Y 대기 중" 표시 구독용. 인자: (validInside, required).</summary>
+        public event System.Action<int, int> PortalReadinessChanged;
+
+        public int ValidPlayersInsideCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (Character c in _candidates) if (CanUsePortal(c)) n++;
+                return n;
+            }
+        }
+
+        public int RequiredPlayerCount
+        {
+            get
+            {
+                NetworkManager nm = NetworkManager.Singleton;
+                return (nm != null && nm.IsListening) ? nm.ConnectedClientsIds.Count : 1;
+            }
+        }
 
         public void Configure(string sceneName, bool requireInput, KeyCode interactKey, string playerId)
         {
@@ -101,8 +127,27 @@ namespace LostMemory.SceneFlow
 
             if (selected != null && IsInteractPressedThisFrame(selected))
             {
+                // A-4: 4인 게이트 — 모두 모이지 않으면 LoadScene 보류.
+                if (!IsMultiplayerGateSatisfied()) return;
                 LoadTargetScene(selected);
             }
+        }
+
+        private bool IsMultiplayerGateSatisfied()
+        {
+            if (!requireAllPlayersInside) return true;
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening) return true;
+
+            int required = nm.ConnectedClientsIds.Count;
+            int validInside = 0;
+            foreach (Character c in _candidates) if (CanUsePortal(c)) validInside++;
+            if (validInside < required)
+            {
+                Log($"Multiplayer gate: {validInside}/{required} players on portal — waiting.");
+                return false;
+            }
+            return true;
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -113,7 +158,10 @@ namespace LostMemory.SceneFlow
                 return;
             }
 
-            _candidates.Add(character);
+            if (_candidates.Add(character))
+            {
+                PortalReadinessChanged?.Invoke(ValidPlayersInsideCount, RequiredPlayerCount);
+            }
 
             if (!requireInteractInput)
             {
@@ -124,9 +172,9 @@ namespace LostMemory.SceneFlow
         private void OnTriggerExit2D(Collider2D other)
         {
             Character character = other != null ? other.GetComponentInParent<Character>() : null;
-            if (character != null)
+            if (character != null && _candidates.Remove(character))
             {
-                _candidates.Remove(character);
+                PortalReadinessChanged?.Invoke(ValidPlayersInsideCount, RequiredPlayerCount);
             }
         }
 

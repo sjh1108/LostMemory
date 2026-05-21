@@ -19,7 +19,8 @@ namespace LostMemory.Networking.Player
     [AddComponentMenu("Lost Memory/Networking/Player Damage Relay")]
     public sealed class PlayerDamageRelay : NetworkBehaviour
     {
-        [SerializeField] private bool verboseLog = false;
+        [Tooltip("Phase D 진단: guest 공격 sync 추적용. 안정화 후 false 권장.")]
+        [SerializeField] private bool verboseLog = true;
 
         /// <summary>
         /// KhiMeleeHitbox / KhiArrowProjectile / KhiMeteor 등 player 측 damage source 가 호출.

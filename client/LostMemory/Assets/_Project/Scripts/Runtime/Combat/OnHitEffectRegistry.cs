@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using LostMemory.Data;
 using LostMemory.Enemies;
+using LostMemory.Networking.Common;
 using LostMemory.Relics;
 using LostMemory.TestKhi;
 using LostMemory.VFX;
@@ -102,7 +103,7 @@ namespace LostMemory.Combat
         [Tooltip("CL-202 디버깅: 0보다 크면 ApplyFreeze 호출 시 magnitudeSeconds 를 이 값으로 강제. 시각 검증 후 0으로 되돌릴 것.")]
         [SerializeField, Min(0f)] private float _debugFreezeOverrideSeconds = 0f;
 
-        private readonly IRelicEffectAuthority _authority = new NetworkRelicEffectAuthority();
+        // F-2: HostAuthority 로 일원화. 싱글 → true, 멀티 호스트 → true, 멀티 게스트 → false.
 
         private struct OnHitEntry
         {
@@ -155,7 +156,7 @@ namespace LostMemory.Combat
 
         private void HandleHit(KhiAttackRequest req, AttackStepData step, Health victim)
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             if (KhiPlayerActionGate.IsBlocked(downController)) return;
             if (victim == null) return;
 
@@ -314,6 +315,8 @@ namespace LostMemory.Combat
                 if (h.CurrentHealth <= 0f) continue;
                 Character ch = h.GetComponentInParent<Character>();
                 if (ch != null && ch.CharacterType == Character.CharacterTypes.Player) continue;
+                // 멀티 가드 — host 측 AI 변환된 게스트 player 제외.
+                if (CombatTargetable.IsAuthoritativePlayer(h)) continue;
 
                 h.Damage(bladeDamage, gameObject, 0f, 0f, Vector3.zero);
                 hitCount++;
@@ -487,6 +490,8 @@ namespace LostMemory.Combat
                 // Player 자신 제외 — Player Health 도 잡힐 수 있으니 Character.CharacterType 체크
                 Character ch = h.GetComponentInParent<Character>();
                 if (ch != null && ch.CharacterType == Character.CharacterTypes.Player) continue;
+                // 멀티 가드 — host 측 AI 변환된 게스트 player 제외 (B-2 의 convertNonOwnerToAi 우회).
+                if (CombatTargetable.IsAuthoritativePlayer(h)) continue;
 
                 float dSq = (h.transform.position - origin).sqrMagnitude;
                 candidates.Add((h, dSq));

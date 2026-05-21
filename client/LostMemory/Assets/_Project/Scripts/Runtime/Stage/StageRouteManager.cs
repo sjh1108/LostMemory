@@ -181,19 +181,70 @@ namespace LostMemory.Stage
             return true;
         }
 
+        // [DiagRoute] 라우트 advance 가 안 넘어가는 원인 추적용 throttle 로그.
+        // 1초에 한 번만 찍어서 Update-loop 스팸 방지. 사용처: route 가 또 안 넘어갈 때만 true 로.
+        [Header("Diagnostics (route advance trace)")]
+        [SerializeField] private bool _diagRouteLogging = false;
+        private float _diagNextLogTimeAdvance;
+        private float _diagNextLogTimeRpc;
+
         public bool RequestAdvanceRouteNode(string triggerId, Character requester)
         {
+            // [DiagRoute] entry — 진입 시점의 권위/스폰/loadInProgress 스냅샷.
+            if (_diagRouteLogging && Time.unscaledTime >= _diagNextLogTimeAdvance)
+            {
+                _diagNextLogTimeAdvance = Time.unscaledTime + 1f;
+                var nm = NetworkManager.Singleton;
+                Debug.Log(
+                    $"[DiagRoute] RequestAdvanceRouteNode ENTER triggerId='{triggerId}' " +
+                    $"sessionActive={HostAuthority.IsNetworkSessionActive} " +
+                    $"IsServer={IsServer} IsSpawned={IsSpawned} loadInProgress={loadInProgress} " +
+                    $"currentIndex={currentNodeIndex}/{(routeNodes != null ? routeNodes.Length : 0)} " +
+                    $"InstanceIsThis={(Instance == this)} " +
+                    $"NM(host={nm?.IsHost},listening={nm?.IsListening},localId={nm?.LocalClientId}) " +
+                    $"activeScene='{SceneManager.GetActiveScene().name}'",
+                    this);
+            }
+
             if (loadInProgress)
             {
                 Log("Advance request ignored because a route load is already in progress.");
                 return false;
             }
 
-            if (HostAuthority.IsNetworkSessionActive && !IsServer)
+            // [Fix-Route-DDOL] StageRouteManager 가 이전 씬에서 scene-placed → DDOL 된 케이스 대응.
+            //
+            // 증상: 진단 로그에서 host 임에도 `IsServer=False`, `IsSpawned=False` 로 잡혔다.
+            // 원인: manager 가 NGO 네트워크 씬 sync 대상이 아닌 곳에서 한 번도 spawn 안 된 채 DDOL.
+            //       → NetworkBehaviour.IsServer/IsSpawned 가 둘 다 false. ServerRpc 도 못 보냄.
+            //
+            // 호스트의 advance 는 manager 의 NetworkObject 가 아니라
+            // `NetworkManager.Singleton.SceneManager.LoadScene` 로 진행되므로,
+            // host 권위만 NetworkManager 레벨로 판정하면 spawn 여부 무관하게 동작한다.
+            // (NetworkSceneManager.LoadScene 이 자체적으로 모든 클라에 씬 sync 를 broadcast 함.)
+            bool isHostByNm = HostAuthority.IsHost; // NetworkManager.Singleton.IsHost (또는 싱글 fallback)
+            if (isHostByNm)
             {
+                return TryAdvanceRouteNode(triggerId, requester, null);
+            }
+
+            if (HostAuthority.IsNetworkSessionActive)
+            {
+                // 게스트: ServerRpc 필요. manager NetworkObject 가 spawn 되어 있어야 보낼 수 있다.
                 if (!IsSpawned)
                 {
-                    Debug.LogWarning("[StageRouteManager] Client cannot send route advance RPC because this manager is not spawned.", this);
+                    // 게스트는 호스트가 advance 할 때까지 조용히 대기. 진단 모드일 때만 로그.
+                    if (_diagRouteLogging && Time.unscaledTime >= _diagNextLogTimeRpc)
+                    {
+                        _diagNextLogTimeRpc = Time.unscaledTime + 1f;
+                        Debug.LogWarning(
+                            $"[StageRouteManager] Guest cannot send route advance RPC — manager not network-spawned. " +
+                            $"Host's portal touch will drive scene change. " +
+                            $"go='{gameObject.name}' scene='{gameObject.scene.name}' " +
+                            $"InstanceIsThis={(Instance == this)} " +
+                            $"Instance.IsSpawned={(Instance != null ? Instance.IsSpawned.ToString() : "no-instance")}",
+                            this);
+                    }
                     return false;
                 }
 
@@ -201,6 +252,7 @@ namespace LostMemory.Stage
                 return true;
             }
 
+            // 싱글
             return TryAdvanceRouteNode(triggerId, requester, null);
         }
 
@@ -483,17 +535,9 @@ namespace LostMemory.Stage
                 return;
             }
 
-            Character[] characters = FindObjectsOfType<Character>();
-            Character player = null;
-            for (int i = 0; i < characters.Length; i++)
-            {
-                Character c = characters[i];
-                if (c != null && c.CharacterType == Character.CharacterTypes.Player)
-                {
-                    player = c;
-                    break;
-                }
-            }
+            // 멀티: 자기 NGO LocalClient.PlayerObject 의 스냅샷만 캡처.
+            // 솔로/미할당이면 씬 안 첫 Player Character fallback.
+            Character player = ResolveLocalPlayerCharacter();
 
             if (player == null)
             {
@@ -541,6 +585,26 @@ namespace LostMemory.Stage
                 return;
             }
 
+            NetworkManager nm = NetworkManager.Singleton;
+            bool multi = nm != null && nm.IsListening;
+            if (multi)
+            {
+                // 멀티: 각 클라가 자기 local PlayerObject 만 spawn 으로 이동.
+                // owner-authoritative PlayerMovementSync 와 부합 — non-owner 측에서 이동시키면 다음 frame sync 로 race.
+                // offset 은 OwnerClientId 기반 deterministic — 모든 클라에서 동일 layout (4명이 살짝 stagger).
+                Character local = ResolveLocalPlayerCharacter();
+                if (local == null)
+                {
+                    Log($"PlacePlayersAtSpawn: local PlayerObject 미할당 — skip. spawnId='{spawnId}'");
+                    return;
+                }
+                int index = ResolveLocalPlayerSpawnIndex();
+                spawnPoint.Place(local, playerSpawnOffset * index);
+                Log($"Placed local player at spawnId '{spawnId}' index={index}.");
+                return;
+            }
+
+            // 솔로: 기존 동작 — 씬 안 모든 Player Character 를 stagger 배치.
             Character[] characters = FindObjectsOfType<Character>();
             int playerIndex = 0;
             for (int i = 0; i < characters.Length; i++)
@@ -556,6 +620,52 @@ namespace LostMemory.Stage
             }
 
             Log($"Placed {playerIndex} player(s) at spawnId '{spawnId}'.");
+        }
+
+        /// <summary>
+        /// 멀티: NGO LocalClient.PlayerObject 의 Character 컴포넌트 반환.
+        /// 솔로 또는 미할당 시 씬 안 첫 Player Character fallback.
+        /// </summary>
+        private static Character ResolveLocalPlayerCharacter()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening)
+            {
+                NetworkClient local = nm.LocalClient;
+                if (local != null && local.PlayerObject != null)
+                {
+                    Character c = local.PlayerObject.GetComponentInChildren<Character>(true);
+                    if (c == null) c = local.PlayerObject.GetComponent<Character>();
+                    if (c != null) return c;
+                }
+            }
+
+            Character[] characters = FindObjectsOfType<Character>();
+            for (int i = 0; i < characters.Length; i++)
+            {
+                Character c = characters[i];
+                if (c != null && c.CharacterType == Character.CharacterTypes.Player) return c;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// OwnerClientId 를 ConnectedClientsIds 비교 순서에 매핑해 0-based index 반환.
+        /// 모든 클라에서 동일 결과 → spawn offset stagger 일관.
+        /// </summary>
+        private static int ResolveLocalPlayerSpawnIndex()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening) return 0;
+            NetworkClient local = nm.LocalClient;
+            if (local == null) return 0;
+            ulong myId = local.ClientId;
+            int countBelow = 0;
+            foreach (ulong id in nm.ConnectedClientsIds)
+            {
+                if (id < myId) countBelow++;
+            }
+            return countBelow;
         }
 
         private static RouteNodeSpawnPoint ResolveSpawnPoint(string spawnId)

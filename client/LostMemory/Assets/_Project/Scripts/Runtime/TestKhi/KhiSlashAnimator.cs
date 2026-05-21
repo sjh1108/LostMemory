@@ -283,16 +283,20 @@ namespace LostMemory.TestKhi
 
             if (frames == null || frames.Length == 0)
             {
+                // [DiagVfx-Slash] H1 frames=null — 비-owner 측 weaponData 가 owner 와 다른 SO 일 때 자주 발생.
+                Debug.Log($"[DiagVfx-Slash] H1 frames=null comboStep={step.comboStep} weaponData={(weaponData != null ? weaponData.name : "NULL")} visualStep.frames={(visualStep.slashFrames == null ? "null" : "len=0")}", this);
                 return;
             }
 
             if (_slotRenderers == null || slotIndex >= _slotRenderers.Length)
             {
+                Debug.Log($"[DiagVfx-Slash] H5 slot index out of range _slotRenderers={(_slotRenderers == null ? "null" : _slotRenderers.Length.ToString())} slotIndex={slotIndex}", this);
                 return;
             }
             SpriteRenderer sr = _slotRenderers[slotIndex];
             if (sr == null || slashRig == null)
             {
+                Debug.Log($"[DiagVfx-Slash] H5 sr/rig null sr={(sr == null ? "null" : "OK")} slashRig={(slashRig == null ? "null" : slashRig.name)}", this);
                 return;
             }
 
@@ -319,6 +323,14 @@ namespace LostMemory.TestKhi
             slashRig.localScale = new Vector3(rigScaleX, 1f, 1f);
             // 회전 pivot은 플레이어 로컬 Y에 고정. 모든 슬래시가 동일 원형 궤도 위에서 스윕.
             slashRig.localPosition = new Vector3(0f, slashRigCenterY, 0f);
+
+            // [DiagVfx-Slash] OK 경로 진입 시 parent transform / sr 상태 1회 dump. H2/H4 (parent disable/transform issue) 검증.
+            // 비-owner 측에서 sr.enabled=true 인데도 visual 안 보이면 sr.gameObject.activeInHierarchy=false 또는 parent.localScale=(0,0,0) 의심.
+            if (Time.frameCount % 60 == 0 || step.comboStep == 1) // 1초 throttle + 콤보 1타 매번
+            {
+                Transform parent = slashRig.parent;
+                Debug.Log($"[DiagVfx-Slash] OK seq={request.SequenceId} comboStep={step.comboStep} slashRig.parent='{(parent != null ? parent.name : "null")}' parent.localScale={(parent != null ? parent.localScale.ToString() : "n/a")} parent.activeInHierarchy={(parent != null ? parent.gameObject.activeInHierarchy : false)} sr.enabled={sr.enabled} sr.activeInHierarchy={sr.gameObject.activeInHierarchy} sr.color.a={sr.color.a:F2}", this);
+            }
 
             // 슬래시 프레임 재생 시작.
             sr.color = tint;

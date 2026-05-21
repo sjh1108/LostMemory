@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using LostMemory.Networking.Player;
 using LostMemory.Relics;
 using LostMemory.Stage;
+using LostMemory.TestKhi;
 using LostMemory.UI;
 using TMPro;
 using UnityEngine;
@@ -66,23 +68,53 @@ namespace LostMemory.Shop
 
         private void OnEnable()
         {
-            if (inventory == null)
-            {
-                inventory = FindAnyObjectByType<PlayerRelicInventory>();
-            }
-            if (inventory == null)
-            {
-                Debug.LogWarning("[InventoryFullModal] PlayerRelicInventory not found — modal disabled.", this);
-                return;
-            }
-            inventory.OnTryAddRejected += HandleRejected;
-            Debug.Log($"[InventoryFullModal] Subscribed to OnTryAddRejected on '{inventory.name}'.", this);
+            // Phase E: NGO 환경에선 Bootstrap 시점에 Player GameObject 가 아직 spawn 되지 않아 FindAnyObjectByType 실패 →
+            // modal disable. LocalPlayerReady event 구독 + 매 시도마다 TryBind 로 lazy 재시도.
+            LocalPlayerResolver.LocalPlayerReady += HandleLocalPlayerReady;
+            TryBind();
         }
 
         private void OnDisable()
         {
+            LocalPlayerResolver.LocalPlayerReady -= HandleLocalPlayerReady;
             if (inventory != null) inventory.OnTryAddRejected -= HandleRejected;
             HideModal();
+        }
+
+        private void HandleLocalPlayerReady(KhiPlayerStateAggregator _) => TryBind();
+
+        /// <summary>
+        /// Phase E: PlayerRelicInventory 를 LocalPlayer 측에서 lazy resolve 후 OnTryAddRejected 구독.
+        /// 1) 인스펙터 inventory 우선
+        /// 2) LocalPlayerResolver 의 LocalCharacter 기반 (NGO 멀티 — 본인 player 보장)
+        /// 3) FindAnyObjectByType fallback (싱글환경 / LocalPlayerResolver 미초기화)
+        /// </summary>
+        private void TryBind()
+        {
+            if (inventory != null) return;
+
+            // 1) LocalPlayer 측 — 멀티 안전.
+            var localCharacter = LocalPlayerResolver.LocalCharacter;
+            if (localCharacter != null)
+            {
+                inventory = localCharacter.GetComponentInChildren<PlayerRelicInventory>(includeInactive: true);
+                if (inventory == null) inventory = localCharacter.GetComponentInParent<PlayerRelicInventory>();
+            }
+
+            // 2) fallback — 싱글환경.
+            if (inventory == null)
+            {
+                inventory = FindAnyObjectByType<PlayerRelicInventory>();
+            }
+
+            if (inventory == null)
+            {
+                // LocalPlayerReady 가 나중에 발화하면 그때 재시도. 지금은 조용히 대기.
+                return;
+            }
+
+            inventory.OnTryAddRejected += HandleRejected;
+            Debug.Log($"[InventoryFullModal] Bound to '{inventory.name}'.", this);
         }
 
         private void HandleRejected(RelicData relic, string reason)

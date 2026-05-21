@@ -80,6 +80,8 @@ namespace LostMemory.MagicalGirl
             }
 
             Health h = other.GetComponentInParent<Health>();
+            // CL-143 + 멀티 가드 통합: CanBeAutoTargetedEnemy 내부에서
+            // IsAuthoritativePlayer (host 측 AI 변환된 게스트 player 제외) 도 함께 처리.
             if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) return;
             _hasHit = true;
             h.Damage(_damage, gameObject, 0f, 0f, Vector3.zero);

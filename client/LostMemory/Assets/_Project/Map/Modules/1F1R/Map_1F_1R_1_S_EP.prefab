@@ -1540,8 +1540,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: north
-  _blockCollider: {fileID: 0}
-  _renderer: {fileID: 0}
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &1526086043126649584
 GameObject:
   m_ObjectHideFlags: 0
@@ -5802,8 +5802,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: south
-  _blockCollider: {fileID: 0}
-  _renderer: {fileID: 0}
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &3568645856167961564
 GameObject:
   m_ObjectHideFlags: 0
@@ -6722,8 +6722,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: east
-  _blockCollider: {fileID: 0}
-  _renderer: {fileID: 0}
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &4784362762908274528
 GameObject:
   m_ObjectHideFlags: 0
@@ -13316,10 +13316,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7567602114999337482}
+  - component: {fileID: 1267662145210860633}
   - component: {fileID: 1064848046441803028}
   - component: {fileID: 6226433339382925121}
   - component: {fileID: 2858573164609050546}
-  - component: {fileID: 1267662145210860633}
   m_Layer: 0
   m_Name: Map_1F_1R_1_S_EP
   m_TagString: Untagged
@@ -13369,6 +13369,31 @@ Transform:
   - {fileID: 8029570376139777547}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1267662145210860633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6418301402336183476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 4270338309
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &1064848046441803028
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13425,31 +13450,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b46f293a0f158ce49a5d805e46c54d34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.EnemyEncounterSpawner
---- !u!114 &1267662145210860633
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6418301402336183476}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 0
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!1 &7458939649686981023
 GameObject:
   m_ObjectHideFlags: 0
@@ -13742,8 +13742,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: west
-  _blockCollider: {fileID: 0}
-  _renderer: {fileID: 0}
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &8309308289899588917
 GameObject:
   m_ObjectHideFlags: 0

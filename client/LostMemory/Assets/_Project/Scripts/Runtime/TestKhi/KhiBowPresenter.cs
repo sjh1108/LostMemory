@@ -94,21 +94,23 @@ namespace LostMemory.TestKhi
         }
 
         /// <summary>
-        /// 회전 기준 = origin → 마우스 worldPos. 카메라 없으면 KhiPlayerAim fallback.
-        /// KhiBowController.ComputeAimFromOrigin 과 같은 패턴.
+        /// [Fix Bug #30 활 회전 sync]
+        /// 기존 구현은 Mouse.current 를 직접 읽어 non-owner 측에서 *로컬 사용자의* 마우스 좌표를 사용 → 잘못된 회전.
+        /// KhiStaffPresenter 와 동일하게 KhiPlayerAim.GetAimDirection() 으로 일원화:
+        ///   - owner: GetAimDirection 내부에서 mouse 위치 계산 + NetworkVariable write
+        ///   - non-owner: NetworkVariable read (owner 가 sync 한 값)
+        /// origin 인자는 미사용 — KhiPlayerAim 이 player transform 기준으로 계산. bow visual 의 offset 만큼
+        /// 작은 각도 오차가 있을 수 있으나 멀티 sync 정확성 트레이드오프상 acceptable.
         /// </summary>
         private Vector2 ComputeAimFromOrigin(Vector3 origin)
         {
-            Camera cam = aimCamera != null ? aimCamera : Camera.main;
-            Mouse mouse = Mouse.current;
-            if (cam == null || mouse == null)
+            if (playerAim == null)
             {
-                return playerAim != null ? playerAim.GetAimDirection() : Vector2.right;
+                playerAim = GetComponentInParent<KhiPlayerAim>();
+                if (playerAim == null) return Vector2.right;
             }
-            Vector2 screenPos = mouse.position.ReadValue();
-            Vector3 worldPos = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -cam.transform.position.z));
-            Vector2 dir = (Vector2)(worldPos - origin);
-            return dir.sqrMagnitude > Mathf.Epsilon ? dir.normalized : Vector2.right;
+            Vector2 dir = playerAim.GetAimDirection();
+            return dir.sqrMagnitude > Mathf.Epsilon ? dir : Vector2.right;
         }
     }
 }

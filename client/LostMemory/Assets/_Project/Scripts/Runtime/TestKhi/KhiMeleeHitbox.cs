@@ -4,6 +4,7 @@ using LostMemory.Data;
 using LostMemory.Networking.Player;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
+// LostMemory.Networking.Player 는 이미 import — PlayerHealthSync 동일 namespace.
 
 namespace LostMemory.TestKhi
 {
@@ -70,6 +71,13 @@ namespace LostMemory.TestKhi
             int hitCount = Physics2D.OverlapBoxNonAlloc(center, finalSize, aimAngleDeg, _overlapResults, targetLayers);
             int appliedHits = 0;
 
+            // Phase D 진단: guest 공격 sync 추적 — hit count 0 이면 guest hitbox 가 host enemy 와 collision 안 잡힘 (씬 차이 의심).
+            // damageRelay 의 verboseLog 와 짝지어 분석.
+            if (hitCount > 0)
+            {
+                Debug.Log($"[KhiMeleeHitbox] Sample combo={request.ComboStep} seq={request.SequenceId} → {hitCount} colliders found (center={center} size={finalSize})", this);
+            }
+
             for (int i = 0; i < hitCount; i++)
             {
                 Collider2D hitCollider = _overlapResults[i];
@@ -85,6 +93,11 @@ namespace LostMemory.TestKhi
 
                 Health health = hitCollider.GetComponentInParent<Health>();
                 if (health == null || alreadyHit.Contains(health) || IsOwnedByAttacker(health, request.Attacker))
+                {
+                    continue;
+                }
+                // Phase E: PvP 미상정 — 다른 player 도 friendly. PlayerHealthSync 컴포넌트 기준 일괄 skip.
+                if (health.GetComponentInParent<PlayerHealthSync>() != null)
                 {
                     continue;
                 }

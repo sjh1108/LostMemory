@@ -2,6 +2,7 @@ using LostMemory.Relics;
 using LostMemory.Stage;
 using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Shop
@@ -165,18 +166,48 @@ namespace LostMemory.Shop
         private void ResolveSceneLocalRefs()
         {
             UnityEngine.SceneManagement.Scene active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+
+            // A-2: 멀티 환경 — local NGO PlayerObject 의 자식 컴포넌트 우선 채택.
+            GameObject localPlayerRoot = ResolveLocalPlayerRoot();
+
             panel = ResolveInActiveScene<ShopPanelView>(panel, active);
             inventoryPanel = ResolveInActiveScene<InventoryPanelView>(inventoryPanel, active);
             shortcutBar = ResolveInActiveScene<ShortcutBarView>(shortcutBar, active);
-            playerRelicInventory = ResolveInActiveScene<PlayerRelicInventory>(playerRelicInventory, active);
-            playerConsumableInventory = ResolveInActiveScene<PlayerConsumableInventory>(playerConsumableInventory, active);
-            goldWallet = ResolveInActiveScene<GoldWallet>(goldWallet, active);
-            playerAim = ResolveInActiveScene<KhiPlayerAim>(playerAim, active);
-            playerMovement = ResolveInActiveScene<CharacterMovement>(playerMovement, active);
-            playerWeaponPresenter = ResolveInActiveScene<KhiWeaponPresenter>(playerWeaponPresenter, active);
-            playerMeleeCombo = ResolveInActiveScene<KhiMeleeComboController>(playerMeleeCombo, active);
-            playerDash = ResolveInActiveScene<KhiDashController>(playerDash, active);
-            playerParry = ResolveInActiveScene<KhiParryController>(playerParry, active);
+            playerRelicInventory = ResolvePreferringLocalPlayer<PlayerRelicInventory>(playerRelicInventory, active, localPlayerRoot);
+            playerConsumableInventory = ResolvePreferringLocalPlayer<PlayerConsumableInventory>(playerConsumableInventory, active, localPlayerRoot);
+            goldWallet = ResolvePreferringLocalPlayer<GoldWallet>(goldWallet, active, localPlayerRoot);
+            playerAim = ResolvePreferringLocalPlayer<KhiPlayerAim>(playerAim, active, localPlayerRoot);
+            playerMovement = ResolvePreferringLocalPlayer<CharacterMovement>(playerMovement, active, localPlayerRoot);
+            playerWeaponPresenter = ResolvePreferringLocalPlayer<KhiWeaponPresenter>(playerWeaponPresenter, active, localPlayerRoot);
+            playerMeleeCombo = ResolvePreferringLocalPlayer<KhiMeleeComboController>(playerMeleeCombo, active, localPlayerRoot);
+            playerDash = ResolvePreferringLocalPlayer<KhiDashController>(playerDash, active, localPlayerRoot);
+            playerParry = ResolvePreferringLocalPlayer<KhiParryController>(playerParry, active, localPlayerRoot);
+        }
+
+        private static GameObject ResolveLocalPlayerRoot()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening) return null;
+            NetworkClient local = nm.LocalClient;
+            if (local == null || local.PlayerObject == null) return null;
+            return local.PlayerObject.gameObject;
+        }
+
+        private static T ResolvePreferringLocalPlayer<T>(T current, UnityEngine.SceneManagement.Scene active, GameObject localPlayerRoot) where T : Component
+        {
+            // 1. local Player 자식 우선 검색.
+            if (localPlayerRoot != null)
+            {
+                T onPlayer = localPlayerRoot.GetComponentInChildren<T>(true);
+                if (onPlayer != null) return onPlayer;
+            }
+            // 2. 기존 ref 살아있고 활성 씬이면 사용.
+            if (current != null && current.gameObject.scene == active)
+            {
+                return current;
+            }
+            // 3. 활성 씬 fallback.
+            return ResolveInActiveScene<T>(current, active);
         }
 
         private static T ResolveInActiveScene<T>(T current, UnityEngine.SceneManagement.Scene active) where T : Component

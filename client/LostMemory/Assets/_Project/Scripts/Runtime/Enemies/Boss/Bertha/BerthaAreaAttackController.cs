@@ -3,6 +3,7 @@ using LostMemory.Combat.Telegraph;
 using LostMemory.Stage;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Enemies.Boss.Bertha
@@ -17,6 +18,10 @@ namespace LostMemory.Enemies.Boss.Bertha
         [SerializeField] private BossIntroSequenceController introSequenceController;
         [SerializeField] private Transform telegraphOrigin;
         [SerializeField] private AttackTelegraph2DView telegraphView;
+        [Tooltip("Multiplayer 시각 broadcast 채널 (Bug #31). 본 보스의 NetworkObject 와 같은 root 에 부착.")]
+        [SerializeField] private MonsterAttackBroadcast monsterAttackBroadcast;
+        [Tooltip("게스트 측 telegraph 시각 broadcast 지속 시간 추정 (sec). AI 가 attackState 로 전이하기 전까지의 평균.")]
+        [SerializeField, Min(0.1f)] private float estimatedTelegraphDuration = 1.5f;
         [SerializeField] private string telegraphStateName = "LightTelegraph";
         [SerializeField] private string attackStateName = "LightAttack1";
         [SerializeField] private string attackAnimationStateName = "LightAtk1";
@@ -132,6 +137,23 @@ namespace LostMemory.Enemies.Boss.Bertha
                 LockAttackFromFacing();
                 ApplyLockedFacing();
                 telegraphView?.Show(BuildTelegraphRequest());
+
+                // Bug #31 — 게스트 측 visual broadcast. 기존 telegraphView.Show 는 *호스트 측에만* 보이고
+                // 게스트 측에는 NetworkObject sync 없어 안 보였음. broadcast 로 게스트 화면도 보장.
+                // 호스트는 이미 telegraphView 로 보고 있어 *visual 중복* 가능 — 같은 위치/모양이라 시각상 별 차이 없음.
+                // 추후 정리 사이클에 telegraphView 직접 호출 제거 + broadcast 단일화 고려.
+                if (monsterAttackBroadcast != null)
+                {
+                    float diameter = ResolveCircleRadius(attackSize) * 2f;
+                    monsterAttackBroadcast.BroadcastTelegraph(
+                        AttackTelegraphShape2D.Circle,
+                        new Vector3(_lockedCenter.x, _lockedCenter.y, transform.position.z),
+                        new Vector2(diameter, diameter),
+                        Mathf.Atan2(_lockedDirection.y, _lockedDirection.x) * Mathf.Rad2Deg,
+                        estimatedTelegraphDuration,
+                        Mathf.Max(0f, impactTime > 0f ? impactTime : 0.5f),
+                        telegraphColor);
+                }
                 return;
             }
 
@@ -178,6 +200,11 @@ namespace LostMemory.Enemies.Boss.Bertha
             introSequenceController ??= GetComponent<BossIntroSequenceController>();
             telegraphView ??= GetComponent<AttackTelegraph2DView>();
             telegraphOrigin ??= transform;
+            if (monsterAttackBroadcast == null)
+            {
+                monsterAttackBroadcast = GetComponent<MonsterAttackBroadcast>();
+                if (monsterAttackBroadcast == null) monsterAttackBroadcast = GetComponentInParent<MonsterAttackBroadcast>();
+            }
 
             if (animator == null)
             {
@@ -352,6 +379,14 @@ namespace LostMemory.Enemies.Boss.Bertha
 
         private void ExecuteAttack()
         {
+            // Bug #31 — 멀티에서는 host 만 데미지 권위. 게스트 측 보스 인스턴스도 이 메서드가 호출될 수 있어
+            // double-hit 위험. 솔로(NM 비활성) 또는 host(IsServer) 만 통과.
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && !nm.IsServer)
+            {
+                return;
+            }
+
             EnsureBuffer();
             _hitTargetsThisAttack.Clear();
 

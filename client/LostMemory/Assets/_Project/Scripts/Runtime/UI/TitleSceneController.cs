@@ -54,8 +54,27 @@ namespace LostMemory.UI
             SetStatus("로그인 또는 회원가입을 진행하세요.");
         }
 
+        private void Start()
+        {
+            // L-1: Local Fallback 모드면 로그인 UI 자동 우회 → townSceneName 으로 직접 이동.
+            // forcePlayIntro / introSeen PlayerPrefs 무관. 빠른 테스트 진입.
+            if (RelaySession.UseLocalFallback)
+            {
+                SetStatus($"[LOCAL FALLBACK] 로그인 우회 → {townSceneName}");
+                SceneManager.LoadScene(townSceneName);
+            }
+        }
+
         private async void OnLoginClicked()
         {
+            // L-1: fallback 모드 — 입력 없이 버튼 눌러도 통과.
+            if (RelaySession.UseLocalFallback)
+            {
+                SetStatus("[LOCAL FALLBACK] 로그인 우회.");
+                LoadNextSceneAfterAuth("[LOCAL FALLBACK]");
+                return;
+            }
+
             string id = loginIdInput != null ? loginIdInput.text?.Trim() : null;
             string pw = passwordInput != null ? passwordInput.text : null;
 
@@ -103,6 +122,14 @@ namespace LostMemory.UI
 
         private async void OnSignupClicked()
         {
+            // L-1: fallback 모드 — 입력 없이 버튼 눌러도 통과.
+            if (RelaySession.UseLocalFallback)
+            {
+                SetStatus("[LOCAL FALLBACK] 회원가입 우회.");
+                LoadNextSceneAfterAuth("[LOCAL FALLBACK]");
+                return;
+            }
+
             string id = loginIdInput != null ? loginIdInput.text?.Trim() : null;
             string pw = passwordInput != null ? passwordInput.text : null;
             string nick = nicknameInput != null ? nicknameInput.text?.Trim() : null;

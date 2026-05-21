@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,16 +8,8 @@ namespace LostMemory.Networking.Session
 {
     /// <summary>
     /// Test_MultiLobby (또는 다른 멀티 씬) 의 진입 포탈 트리거.
-    /// 플레이어 trigger 진입 + interactKey 입력 시 **호스트만** NGO LoadScene 호출.
+    /// A-4: 4인 멀티 게이트 — 연결된 플레이어가 *모두* trigger 안에 들어와야 호스트의 interactKey 입력으로 LoadScene 발화.
     /// 게스트는 NGO scene sync 로 자동 따라옴.
-    ///
-    /// 사용:
-    ///   - 본 컴포넌트가 부착된 GameObject 에 IsTrigger 인 Collider2D 필요
-    ///   - `targetSceneName` 슬롯에 NGO LoadScene 대상 씬 이름 (Build Settings 등록 필수)
-    ///
-    /// MultiLobbyPortalTrigger 와 차이:
-    ///   - MultiLobbyPortalTrigger = 세션 UI 토글 (호스트/게스트 양쪽 가능)
-    ///   - HostOnlyLoadSceneTrigger = NGO LoadScene (호스트만, 게스트는 자동 sync)
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
     [AddComponentMenu("Lost Memory/Networking/Host Only Load Scene Trigger")]
@@ -35,10 +29,22 @@ namespace LostMemory.Networking.Session
         [SerializeField, Tooltip("진입 키.")]
         private Key interactKey = Key.E;
 
+        [Header("Multiplayer Gate")]
+        [SerializeField, Tooltip("true: NGO 활성 시 연결된 플레이어가 *모두* trigger 안에 있어야 LoadScene 가능.")]
+        private bool requireAllPlayersInside = true;
+
         [Header("Debug")]
         [SerializeField] private bool verboseLog = false;
 
-        private bool _playerInside;
+        // 4인 환경: NGO PlayerObject 가 모든 클라에서 sync 되어 trigger 이벤트 일관. root 단위로 set 관리.
+        private readonly HashSet<Transform> _playersInside = new HashSet<Transform>();
+
+        /// <summary>Q-3: UI "X/Y 대기 중" 표시 구독용. 인자: (currentInside, required).</summary>
+        public event Action<int, int> PortalReadinessChanged;
+
+        public int PlayersInsideCount => _playersInside.Count;
+        public int RequiredPlayerCount => GetRequiredCount();
+        public bool IsReadyToLoad => _playersInside.Count >= GetRequiredCount();
 
         private void Awake()
         {
@@ -53,25 +59,41 @@ namespace LostMemory.Networking.Session
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (!other.CompareTag(playerTag)) return;
-            _playerInside = true;
-            if (verboseLog) Debug.Log($"[HostOnlyLoadSceneTrigger] Player entered. Host can press {interactKey} to load '{targetSceneName}'.", this);
+            Transform root = other.transform.root;
+            if (_playersInside.Add(root))
+            {
+                if (verboseLog) Debug.Log($"[HostOnlyLoadSceneTrigger] Player entered ({root.name}). count={_playersInside.Count}/{GetRequiredCount()}.", this);
+                PortalReadinessChanged?.Invoke(_playersInside.Count, GetRequiredCount());
+            }
         }
 
         private void OnTriggerExit2D(Collider2D other)
         {
             if (!other.CompareTag(playerTag)) return;
-            _playerInside = false;
+            Transform root = other.transform.root;
+            if (_playersInside.Remove(root))
+            {
+                if (verboseLog) Debug.Log($"[HostOnlyLoadSceneTrigger] Player exited ({root.name}). count={_playersInside.Count}/{GetRequiredCount()}.", this);
+                PortalReadinessChanged?.Invoke(_playersInside.Count, GetRequiredCount());
+            }
         }
 
         private void Update()
         {
-            if (!_playerInside) return;
+            if (_playersInside.Count == 0) return;
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
             if (!keyboard[interactKey].wasPressedThisFrame) return;
 
             TryLoadScene();
+        }
+
+        private int GetRequiredCount()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening) return 1;
+            return nm.ConnectedClientsIds.Count;
         }
 
         private void TryLoadScene()
@@ -85,15 +107,24 @@ namespace LostMemory.Networking.Session
             NetworkManager nm = NetworkManager.Singleton;
             if (nm == null || !nm.IsListening)
             {
-                Debug.LogWarning($"[HostOnlyLoadSceneTrigger] NetworkManager 비활성. 솔로 환경에선 LoadScene 안 함.", this);
+                Debug.LogWarning($"[HostOnlyLoadSceneTrigger] NetworkManager 비활성.", this);
                 return;
             }
 
             if (!nm.IsServer)
             {
-                // 게스트가 trigger 안에서 키 눌러도 무시 — 호스트만 씬 전환 가능. NGO sync 로 자동 따라옴.
-                if (verboseLog) Debug.Log($"[HostOnlyLoadSceneTrigger] 게스트 입력 무시 — 호스트만 LoadScene 호출.", this);
+                if (verboseLog) Debug.Log($"[HostOnlyLoadSceneTrigger] 게스트 입력 무시.", this);
                 return;
+            }
+
+            if (requireAllPlayersInside)
+            {
+                int required = GetRequiredCount();
+                if (_playersInside.Count < required)
+                {
+                    Debug.Log($"[HostOnlyLoadSceneTrigger] 대기 — {_playersInside.Count}/{required} 명. LoadScene 보류.", this);
+                    return;
+                }
             }
 
             if (verboseLog) Debug.Log($"[HostOnlyLoadSceneTrigger] 호스트 LoadScene: {targetSceneName}", this);

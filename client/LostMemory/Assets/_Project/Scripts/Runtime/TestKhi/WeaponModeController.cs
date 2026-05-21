@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using LostMemory.Player;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,10 +21,15 @@ namespace LostMemory.TestKhi
     /// 비활성 모드의 컨트롤러는 입력을 무시하므로 좌/우 클릭이 동시에 두 모드를 발화하지 않음.
     /// 캐릭터 root 에 부착. 검·활 필드는 각각 정확한 타입으로 노출 — 사용자가 GameObject 드래그 시
     /// Unity 가 알아서 해당 타입 컴포넌트를 자동 매핑한다.
+    ///
+    /// 멀티 정책 (Phase B):
+    ///   - NetworkBehaviour 로 변경, <c>_syncedMode</c> NetworkVariable (Owner Write) 로 모드 sync.
+    ///   - Owner 만 입력으로 모드 변경 가능 (CycleMode/SetMode/Update). NGO 미활성 (싱글) 에선 모든 입력 허용.
+    ///   - Non-owner 는 NetworkVariable.OnValueChanged 로 ApplyMode 자동 호출 → host/guest 양쪽 캐릭터 visual 일치.
     /// </summary>
     [DefaultExecutionOrder(-50)]
     [AddComponentMenu("Lost Memory/Test Khi/Weapon Mode Controller")]
-    public class WeaponModeController : MonoBehaviour
+    public class WeaponModeController : NetworkBehaviour
     {
         [Header("Initial Mode")]
         [SerializeField] private WeaponMode initialMode = WeaponMode.Sword;
@@ -78,6 +84,12 @@ namespace LostMemory.TestKhi
         private WeaponMode _currentMode;
         private float _lastWheelSwitchTime;
 
+        // Phase B: Owner 만 write 가능, 모든 클라가 read. NGO 활성 시 OnValueChanged 로 non-owner 측 ApplyMode 트리거.
+        private readonly NetworkVariable<int> _syncedMode = new NetworkVariable<int>(
+            (int)WeaponMode.Sword,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
         public WeaponMode CurrentMode => _currentMode;
 
         /// <summary>모드가 바뀐 직후 발화. (newMode)</summary>
@@ -86,6 +98,42 @@ namespace LostMemory.TestKhi
         private void Awake()
         {
             ApplyMode(initialMode, fireEvent: false);
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            _syncedMode.OnValueChanged += HandleSyncedModeChanged;
+            if (IsOwner)
+            {
+                // Owner: 현재 로컬 모드를 sync 초기값에 write → 다른 클라에 broadcast.
+                _syncedMode.Value = (int)_currentMode;
+            }
+            else
+            {
+                // Non-owner: server 로부터 받은 sync 값으로 visual 적용.
+                ApplyMode((WeaponMode)_syncedMode.Value, fireEvent: false);
+            }
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            _syncedMode.OnValueChanged -= HandleSyncedModeChanged;
+            base.OnNetworkDespawn();
+        }
+
+        private void HandleSyncedModeChanged(int previous, int next)
+        {
+            if (IsOwner) return; // owner 는 이미 자기 ApplyMode 로 처리.
+            ApplyMode((WeaponMode)next, fireEvent: true);
+        }
+
+        /// <summary>입력으로 모드 변경 가능한지 판정. 싱글 (NGO 미활성) 은 항상 true. 멀티는 owner 만 true.</summary>
+        private bool IsAllowedToChangeMode()
+        {
+            var nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening) return true; // 솔로 / Editor 단일 씬
+            return IsOwner;
         }
 
         private void Start()
@@ -121,6 +169,9 @@ namespace LostMemory.TestKhi
 
         private void Update()
         {
+            // 멀티 가드 — Owner 만 입력 처리. 솔로 환경은 NGO 미활성이라 통과.
+            if (!IsAllowedToChangeMode()) return;
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard[switchKey].wasPressedThisFrame)
             {
@@ -155,6 +206,9 @@ namespace LostMemory.TestKhi
         /// <summary>다음/이전 모드로 순환. direction: +1 다음, -1 이전.</summary>
         public void CycleMode(int direction)
         {
+            // 외부 호출 (예: Relic 효과) 도 owner 만 허용. non-owner 의 모드 변경은 NetworkVariable.OnValueChanged 로만.
+            if (!IsAllowedToChangeMode()) return;
+
             int count = System.Enum.GetValues(typeof(WeaponMode)).Length;
             int next = ((int)_currentMode + direction + count) % count;
             ApplyMode((WeaponMode)next, fireEvent: true);
@@ -162,6 +216,7 @@ namespace LostMemory.TestKhi
 
         public void SetMode(WeaponMode mode)
         {
+            if (!IsAllowedToChangeMode()) return;
             if (_currentMode == mode) return;
             ApplyMode(mode, fireEvent: true);
         }
@@ -219,6 +274,13 @@ namespace LostMemory.TestKhi
             if (fireEvent)
             {
                 ModeChanged?.Invoke(mode);
+            }
+
+            // 멀티 sync — Owner 만 write. NGO 미활성 (싱글) 이면 IsSpawned=false 라 skip → 회귀 없음.
+            // NetworkVariable.Value 변경 시 non-owner 측 OnValueChanged 발화 → ApplyMode 호출 (HandleSyncedModeChanged).
+            if (IsSpawned && IsOwner && _syncedMode.Value != (int)mode)
+            {
+                _syncedMode.Value = (int)mode;
             }
         }
 

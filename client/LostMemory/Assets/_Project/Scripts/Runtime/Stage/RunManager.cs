@@ -443,10 +443,16 @@ namespace LostMemory.Stage
                 return false;
             }
 
-            if (!IsAuthority)
-            {
-                return false;
-            }
+            // [Fix Gold HUD guest] IsAuthority 게이트 제거.
+            // 이전 동작: 게스트가 이 메서드에서 early return → StateMachine 이 None 으로 잠겨
+            //   RefreshSceneSubscriptionsNextFrame 의 yield break 에 걸려 SubscribeAllRoomControllers 호출 자체가 안 됨.
+            //   → 게스트의 RunManager 가 RoomClearedBroadcast (per-client gold/memory 채널) 를 구독 못 함
+            //   → 게스트 측 HandleRoomClearedPerClient 미실행 → 게스트 GoldWallet 증가 안 됨 → HUD 0 유지.
+            // 변경 후: 게스트도 자기 측 StateMachine 을 Initializing → InRun 으로 진행시켜
+            //   SubscribeAllRoomControllers 실행 + RoomClearedBroadcast 구독 + HandleRoomClearedPerClient 의
+            //   `Current != InRun` 가드 통과. authority 권위 분기 (boss 포탈, restart 등) 는 그 함수 내부에서 별도 가드.
+            // 안전성: restartSceneLoadPending 블록은 HandleRestartRequested (IsAuthority 가드) 에서만 set 되므로 게스트는 skip.
+            //   BuildCurrentStage 호출 없음 — 본 함수는 *어댑션* 만 (이미 로드된 씬을 InRun 으로 인식). StartRun 만 BuildRun 호출.
 
             StageRouteManager routeManager = StageRouteManager.Instance;
             if (routeManager == null && !HasActiveDungeonRunRefs())
@@ -604,6 +610,8 @@ namespace LostMemory.Stage
             CurrentStageIndex = 0;
             bossClearPortalReady = false;
             ResetRunResultTracking();
+            // B-2: 새 런 시작 시 RunFailed broadcast guard 해제.
+            LostMemory.Networking.Player.PlayerHealthSync.ResetRunFailedBroadcastGuard();
             BuildCurrentStage();
         }
 
@@ -753,6 +761,10 @@ namespace LostMemory.Stage
             //   townScene 분기 (기존 솔로 town 로 복귀) → 기존 reset broadcast 유지 (회귀 차단).
             if (networkSessionActive)
             {
+                // B-2: 다음 런 broadcast guard 해제.
+                PlayerHealthSync.ResetRunFailedBroadcastGuard();
+                // F-3: 게이트 비활성 — 마을/로비에서는 모든 신규 입장 허용.
+                LostMemory.Networking.Session.ReconnectGatekeeper.SetRunInProgress(false);
                 if (useLobbyScene)
                 {
                     PlayerHealthSync.RespawnPlayersAfterSceneLoad();
@@ -886,6 +898,8 @@ namespace LostMemory.Stage
                 rewardController.SubscribeAllRoomControllers();
             }
             StateMachine.TryTransition(RunState.InRun);
+            // F-3: InRun 진입 — 신규 userId 입장 거부 활성.
+            LostMemory.Networking.Session.ReconnectGatekeeper.SetRunInProgress(true);
 
             // 기억 시스템 메타 보너스 적용 — 던전 진입 시점에 골드 보너스 / 시작 유물 추첨.
             // (조각 해금 시 MemoryPieceUnlockService 가 누적 저장 → 매 런 시작 시 여기서 소비/적용)
@@ -938,10 +952,15 @@ namespace LostMemory.Stage
                 {
                     continue;
                 }
+                // F-1: 호스트 권위 상태(boss 포탈) 는 RoomCleared, 각자 적립은 RoomClearedBroadcast.
                 c.RoomCleared += HandleRoomCleared;
+                c.RoomClearedBroadcast += HandleRoomClearedPerClient;
                 _subscribedControllers.Add(c);
             }
-            Debug.Log($"[RunManager] Subscribed to {_subscribedControllers.Count} room controllers.");
+            // [DiagGold-Subscribe] 골드 진단 (host/guest 어느 측 RunManager 가 구독했는지 확인용).
+            // 이전 사이클에서 게스트 측 HandleRoomClearedPerClient 가 호출 안 된 의심 → 본 로그가 게스트 측에도 떠야 정상.
+            var nmSub = Unity.Netcode.NetworkManager.Singleton;
+            Debug.Log($"[DiagGold-Subscribe] runManager subscribed {_subscribedControllers.Count} controllers IsHost={(nmSub != null ? nmSub.IsHost.ToString() : "no-NM")} IsListening={(nmSub != null && nmSub.IsListening)} localId={nmSub?.LocalClientId}");
         }
 
         private void UnsubscribeAllRoomControllers()
@@ -951,6 +970,7 @@ namespace LostMemory.Stage
                 if (c != null)
                 {
                     c.RoomCleared -= HandleRoomCleared;
+                    c.RoomClearedBroadcast -= HandleRoomClearedPerClient;
                 }
             }
             _subscribedControllers.Clear();
@@ -958,8 +978,7 @@ namespace LostMemory.Stage
 
         private void HandleRoomCleared(RoomClearedPayload payload)
         {
-            ResolveEconomyRefs();
-
+            // F-1: 호스트 권위 상태만 — boss 포탈 ready, kill count. gold/memory 는 HandleRoomClearedPerClient.
             if (StateMachine.Current != RunState.InRun)
             {
                 return;
@@ -969,20 +988,6 @@ namespace LostMemory.Stage
                 Debug.LogWarning("[RunManager] RoomCleared payload has null RoomData; ignoring.", this);
                 return;
             }
-            // CL-113: Combat 방 클리어 시 보상 골드 +50.
-            // CL-115 B: 의도 로그 — GoldWallet 자동 로그가 *왜* 는 안 알려주므로.
-            bool isRewardEligibleCombatRoom = payload.Data.RoomType == StageRoomType.Combat && payload.HasSpawnedEnemies;
-            if (isRewardEligibleCombatRoom && goldWallet != null)
-            {
-                Debug.Log("[RunManager] Combat clear reward gold +50.");
-                goldWallet.Add(50);
-            }
-            // 룸 타입/크기에 따른 파편 정산 카운트 기록. 영구 지급은 런 결과 정리 시점에 수행한다.
-            if (isRewardEligibleCombatRoom || payload.Data.RoomType == StageRoomType.Boss)
-            {
-                memoryProgressTracker?.RecordRoomClear(payload.Data);
-            }
-            // develop: 보스방 외 클리어는 런 흐름에 영향 X (다음 방 자연 진입).
             if (payload.Data.RoomType != StageRoomType.Boss)
             {
                 return;
@@ -993,6 +998,47 @@ namespace LostMemory.Stage
             if (logStageProgression)
             {
                 Debug.Log($"[RunManager] Boss room cleared. Boss clear portal is ready. Stage={CurrentStageNumber}/{TotalStageCount}.", this);
+            }
+        }
+
+        /// <summary>
+        /// F-1: 4인 멀티 — 각 클라가 자기 측 GoldWallet / MemoryProgressTracker 에 적립.
+        /// RoomClearedBroadcast 채널로 호스트+게스트 각자 발화.
+        /// </summary>
+        private void HandleRoomClearedPerClient(RoomClearedPayload payload)
+        {
+            // [DiagGold] 진입 시점 진단 — 게스트 측에서도 본 메서드가 호출되는지 1순위 확인.
+            // 이전 사이클에서 게스트 측 로그에 [DiagGold] 만 안 떴으면 그 자체로 구독 실패 확정.
+            var nmEnter = Unity.Netcode.NetworkManager.Singleton;
+            Debug.Log($"[DiagGold] HandleRoomClearedPerClient ENTER IsHost={(nmEnter != null ? nmEnter.IsHost.ToString() : "no-NM")} localId={nmEnter?.LocalClientId} state={StateMachine.Current} roomData={(payload.Data != null ? payload.Data.RoomId : "NULL")}", this);
+
+            ResolveEconomyRefs();
+
+            if (StateMachine.Current != RunState.InRun) return;
+            if (payload.Data == null) return;
+
+            bool isRewardEligibleCombatRoom = payload.Data.RoomType == StageRoomType.Combat && payload.HasSpawnedEnemies;
+
+            // [DiagGold] 골드 진단 — wallet wiring / Greed 활성 tier / multiplier 한 줄 dump.
+            // 와이어링 안 됐으면 wallet=NULL 로 즉시 보이고, multiplier 1.0 이면 탐욕 set 효과가 안 들어옴을 의미.
+            // 매 룸 클리어마다 한 번이라 스팸 없음.
+            {
+                LostMemory.Relics.BuildManager bmInst = FindFirstObjectByType<LostMemory.Relics.BuildManager>();
+                int greedTier = bmInst != null ? bmInst.GetActiveTier(LostMemory.Relics.RelicTag.Greed) : -1;
+                string walletDesc = goldWallet != null
+                    ? $"OK(Current={goldWallet.Current})"
+                    : "NULL — ResolveEconomyRefs 실패";
+                Debug.Log($"[DiagGold] HandleRoomClearedPerClient roomType={payload.Data.RoomType} reward={isRewardEligibleCombatRoom} wallet={walletDesc} greedActiveTier={greedTier} bm={(bmInst != null ? "OK" : "NULL")}", this);
+            }
+
+            if (isRewardEligibleCombatRoom && goldWallet != null)
+            {
+                Debug.Log("[RunManager] Combat clear reward gold +50 (per-client).");
+                goldWallet.Add(50);
+            }
+            if (isRewardEligibleCombatRoom || payload.Data.RoomType == StageRoomType.Boss)
+            {
+                memoryProgressTracker?.RecordRoomClear(payload.Data);
             }
         }
 
@@ -1147,23 +1193,49 @@ namespace LostMemory.Stage
 
         private void ResolveEconomyRefs()
         {
-            if (goldWallet == null)
+            goldWallet = ResolveEconomyComponent(goldWallet);
+            memoryProgressTracker = ResolveEconomyComponent(memoryProgressTracker);
+        }
+
+        /// <summary>
+        /// Q-1: 멀티 환경에서 컴포넌트가 Player prefab 측에 있을 수도 고려한 lookup.
+        ///   1) 기존 ref 유지  2) NGO LocalClient.PlayerObject 자식 검색
+        ///   3) RunManager 자체 GetComponent  4) AddComponent fallback
+        /// </summary>
+        private T ResolveEconomyComponent<T>(T current) where T : Component
+        {
+            if (current != null)
             {
-                goldWallet = GetComponent<GoldWallet>();
-                if (goldWallet == null)
+                // [DiagGold-Resolve] 기존 ref 유지 — wallet 인스턴스 ID 가시화. HUD presenter 와 같은 인스턴스인지 비교용.
+                Debug.Log($"[DiagGold-Resolve] {typeof(T).Name} kept existing ref host='{current.gameObject.name}' instanceId={current.GetInstanceID()} source=existing");
+                return current;
+            }
+
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm != null && nm.IsListening)
+            {
+                Unity.Netcode.NetworkClient local = nm.LocalClient;
+                if (local != null && local.PlayerObject != null)
                 {
-                    goldWallet = gameObject.AddComponent<GoldWallet>();
+                    T onPlayer = local.PlayerObject.GetComponentInChildren<T>(true);
+                    if (onPlayer != null)
+                    {
+                        Debug.Log($"[DiagGold-Resolve] {typeof(T).Name} resolved host='{onPlayer.gameObject.name}' instanceId={onPlayer.GetInstanceID()} source=playerObject");
+                        return onPlayer;
+                    }
                 }
             }
 
-            if (memoryProgressTracker == null)
+            T onSelf = GetComponent<T>();
+            if (onSelf != null)
             {
-                memoryProgressTracker = GetComponent<MemoryProgressTracker>();
-                if (memoryProgressTracker == null)
-                {
-                    memoryProgressTracker = gameObject.AddComponent<MemoryProgressTracker>();
-                }
+                Debug.Log($"[DiagGold-Resolve] {typeof(T).Name} resolved host='{onSelf.gameObject.name}' instanceId={onSelf.GetInstanceID()} source=runManagerSelf");
+                return onSelf;
             }
+
+            T added = gameObject.AddComponent<T>();
+            Debug.Log($"[DiagGold-Resolve] {typeof(T).Name} resolved host='{added.gameObject.name}' instanceId={added.GetInstanceID()} source=fallbackAddComponent");
+            return added;
         }
 
         private void LogStateChange(RunState prev, RunState current)

@@ -1553,6 +1553,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48985f1e1fa67034687e50bf854bc951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.RunResultPanelView
+--- !u!21 &783011857
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Sprites/Default
+  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - PixelSnap: 0
+    - _EnableExternalAlpha: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Flip: {r: 1, g: 1, b: 1, a: 1}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &870497414
 GameObject:
   m_ObjectHideFlags: 0
@@ -1701,6 +1742,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: 1F_BOSS
+      objectReference: {fileID: 0}
+    - target: {fileID: 7236145533889614756, guid: 56442276cc620cc4d9a1709452053652,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7236145533889614756, guid: 56442276cc620cc4d9a1709452053652,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7236145533889614756, guid: 56442276cc620cc4d9a1709452053652,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7567602114999337482, guid: 56442276cc620cc4d9a1709452053652,
         type: 3}
@@ -3457,11 +3513,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9053980675064386983, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 105331650
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2006321066}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
+--- !u!1 &1683277796 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1683277795}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1891704496
 GameObject:
   m_ObjectHideFlags: 0
@@ -3731,7 +3802,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1683277796}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
@@ -3743,7 +3814,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1683277796}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ce249ab02704ff4ab08dddf7901fad5, type: 3}
@@ -3755,12 +3826,25 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1683277795}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1683277796}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33c724ba75b7ffe42af7580044857e52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiDownController
+--- !u!114 &2006321066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1683277796}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce83eca692aa5bf4e9a549f25747346c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.EditorTestCharacterMarker
+  verboseLog: 1
 --- !u!1 &2092617967
 GameObject:
   m_ObjectHideFlags: 0
@@ -3800,11 +3884,15 @@ MonoBehaviour:
   memoryProgressTracker: {fileID: 0}
   autoStartOnAwake: 0
   resultingDelaySeconds: 2
+  failureResultingDelaySeconds: 5
   townSceneName: Town
   townScenePath: Assets/_Project/Scenes/Town/Town.unity
+  lobbySceneName: 
+  lobbyScenePath: 
   restartDungeonSceneName: Dungeon_1F_1R
   restartDungeonScenePath: Assets/_Project/Scenes/Dungeon/Dungeon_1F_1R.unity
   totalStageCount: 1
+  allowBossPortalStageAdvance: 0
   logStageProgression: 1
 --- !u!4 &2092617969
 Transform:

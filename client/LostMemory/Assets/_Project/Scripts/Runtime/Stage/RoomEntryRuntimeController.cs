@@ -70,8 +70,15 @@ namespace LostMemory.Stage
         public event Action<EnemySpawnedPayload> EnemySpawned;
         public event Action<WaveSpawnedPayload> WaveSpawned;
         public event Action<ExitDoorsLockRequestPayload> ExitDoorsLockRequested;
-        // CL-035: tracker 가 모든 wave + 모든 적 사망을 판정하면 1회 발행.
+        // CL-035: tracker 가 모든 wave + 모든 적 사망을 판정하면 1회 발행. 호스트 측에서만 발화.
+        // 호스트 단독 상태 변경 (보스 트래커 등) 구독자가 대상.
         public event Action<RoomClearedPayload> RoomCleared;
+
+        /// <summary>
+        /// A-3: 4인 멀티에서 모두에게 발화되는 클리어 브로드캐스트. 솔로/멀티 양쪽 안전.
+        /// 보상 UI / 시각 변경 등 각 클라에서 독립 실행되어야 하는 구독자가 대상.
+        /// </summary>
+        public event Action<RoomClearedPayload> RoomClearedBroadcast;
 
         private readonly StageRoomProgress progress = new StageRoomProgress();
         private IRoomClearConditionTracker clearTracker;
@@ -214,6 +221,8 @@ namespace LostMemory.Stage
             RoomInitContextSpec init = roomData.InitContext;
             if (init == null)
             {
+                // [DiagRoomSpawn] InitContext 가 asset 에 미설정 → 텔레포트 자체 발동 안 됨.
+                Debug.LogWarning($"[DiagRoomSpawn] Room '{roomData.RoomId}' InitContext is null → ApplyInitContext SKIP (텔레포트 불가). RoomData asset 의 InitContext 필드 확인 필요.", this);
                 return;
             }
 
@@ -223,10 +232,45 @@ namespace LostMemory.Stage
             if (initiator != null && !string.IsNullOrEmpty(init.PlayerSpawnAnchorTag))
             {
                 RoomEntryAnchor anchor = ResolveEntryAnchor(init.PlayerSpawnAnchorTag);
-                if (anchor != null)
+                if (anchor == null)
                 {
+                    // [DiagRoomSpawn] tag 미스매치 — 플레이어가 이전 위치 (RouteNodeSpawnPoint) 에 그대로 남음.
+                    // available anchors 와 requested tag 비교해 사용자가 asset / scene 어느 쪽 수정할지 결정 가능.
+                    string availableTags = "[]";
+                    if (entryAnchors != null && entryAnchors.Length > 0)
+                    {
+                        var sb = new System.Text.StringBuilder();
+                        sb.Append('[');
+                        for (int i = 0; i < entryAnchors.Length; i++)
+                        {
+                            if (entryAnchors[i] == null) continue;
+                            if (sb.Length > 1) sb.Append(", ");
+                            sb.Append("'").Append(entryAnchors[i].AnchorTag).Append("'");
+                        }
+                        sb.Append(']');
+                        availableTags = sb.ToString();
+                    }
+                    Debug.LogWarning(
+                        $"[DiagRoomSpawn] Room '{roomData.RoomId}' anchor NOT FOUND. requestedTag='{init.PlayerSpawnAnchorTag}' availableAnchors={availableTags} entryAnchorsCount={(entryAnchors != null ? entryAnchors.Length : 0)} " +
+                        $"→ 텔레포트 SKIP, 플레이어가 이전 위치 (RouteNodeSpawnPoint) 에 그대로 남음. " +
+                        $"픽스: RoomData asset 의 PlayerSpawnAnchorTag 를 availableAnchors 중 하나로 수정하거나, layout prefab 의 RoomEntryAnchor.anchorTag 를 RoomData 값으로 수정.", this);
+                }
+                else
+                {
+                    Debug.Log($"[DiagRoomSpawn] Room '{roomData.RoomId}' anchor='{init.PlayerSpawnAnchorTag}' resolved at {anchor.transform.position} → teleport.", this);
                     TeleportAllToAnchor(initiator, anchor.transform.position, init.Facing);
                 }
+            }
+            else if (initiator == null)
+            {
+                Debug.LogWarning($"[DiagRoomSpawn] Room '{roomData.RoomId}' initiator is null → 텔레포트 SKIP.", this);
+            }
+            else
+            {
+                // [DiagRoomSpawn] tag 가 빈 문자열 → asset 측 픽스 필요.
+                Debug.LogWarning(
+                    $"[DiagRoomSpawn] Room '{roomData.RoomId}' init.PlayerSpawnAnchorTag is empty → 텔레포트 SKIP, 플레이어 위치 유지. " +
+                    $"픽스: RoomData asset 의 InitContext.PlayerSpawnAnchorTag 에 값 입력 (1R/2R/3R 의 asset 값 복사 추천).", this);
             }
 
             if (init.LockExitDoors)
@@ -374,6 +418,20 @@ namespace LostMemory.Stage
 
         private void BeginEncounter()
         {
+            // [Fix Dungeon_1F_2R auto-advance]
+            // AllEnemiesDefeatedTracker.Begin 은 RoomData.Encounter == null || Waves.Count == 0 이면
+            // 즉시 OnRoomCleared 를 fire → 입장 직후 다음 방 진행으로 보임. 1F_2R 의 RoomData wiring 실수
+            // (Encounter 미할당) 또는 인코딩 의도와 무관한 빈 wave 가 원인. 본 가드가 안전망 —
+            // 데이터 측 픽스 (씬 Inspector 또는 mvpRoomDataSequence 에 valid Encounter 할당) 가 정공.
+            if (roomData == null || roomData.Encounter == null || roomData.Encounter.Waves == null || roomData.Encounter.Waves.Count == 0)
+            {
+                Debug.LogWarning(
+                    $"[RoomEntryRuntimeController] Room '{(roomData != null ? roomData.RoomId : "NULL")}' has no encounter waves — tracker skip (자동 클리어 차단). " +
+                    $"Encounter null={(roomData == null || roomData.Encounter == null)} waveCount={(roomData != null && roomData.Encounter != null && roomData.Encounter.Waves != null ? roomData.Encounter.Waves.Count : 0)}",
+                    this);
+                return;
+            }
+
             clearTracker = CreateTrackerFor(roomData.ClearCondition);
             clearTracker.OnNextWaveReady += HandleNextWaveReady;
             clearTracker.OnRoomCleared += HandleRoomCleared;
@@ -431,6 +489,13 @@ namespace LostMemory.Stage
 
         private void HandleRoomCleared(RoomClearedPayload payload)
         {
+            // [DiagPhaseF] reward panel 4인 sync 진단 — Log 1: host clearTracker 발화 path 추적.
+            var nmLog1 = NetworkManager.Singleton;
+            Debug.Log($"[RoomCtrl] HandleRoomCleared on '{name}' roomId={payload.RoomId} " +
+                      $"spawnedEnemies={payload.SpawnedEnemyCount} alreadyCleared={roomCleared} " +
+                      $"NM(host={nmLog1?.IsHost},srv={nmLog1?.IsServer},client={nmLog1?.IsClient},listening={nmLog1?.IsListening}," +
+                      $"localId={nmLog1?.LocalClientId}) IsSpawned={IsSpawned} IsAuthority={IsAuthority}", this);
+
             // CL-110: 옵트인. RewardController 가 관리하는 방은 false 로 두고 카드 선택 후 OpenExits() 호출.
             if (autoOpenExitsOnCleared)
             {
@@ -443,20 +508,48 @@ namespace LostMemory.Stage
         {
             if (roomCleared)
             {
+                // [DiagPhaseF] Log 2a — 중복 호출 가시화.
+                Debug.LogWarning($"[RoomCtrl] FireRoomCleared SKIP (already cleared) roomId={payload.RoomId} on '{name}'", this);
                 return;
             }
 
             roomCleared = true;
-            // develop 의 로그는 살림. 단 옵트인 시에는 *문이 닫힌 채로 이벤트 발화* 라
-            // "Disabling exit walls" 문구는 상태와 어긋남 → 메시지만 정리.
             Debug.Log($"[Controller] RoomCleared: roomId='{payload.RoomId}' on '{name}'.");
-            // develop 의 SetExitWallsActive(false) 제거 — HandleRoomCleared 의 옵트인이 이미 결정.
             RoomCleared?.Invoke(payload);
 
             if (bossTracker != null && !string.IsNullOrEmpty(payload.RoomId))
             {
                 bossTracker.TryMarkRoomCompleted(payload.RoomId);
             }
+
+            // A-3: 4인 멀티 — 보상 UI 등 클라 로컬 구독자들에게 브로드캐스트.
+            NetworkManager nm = NetworkManager.Singleton;
+            bool willBroadcast = IsSpawned && nm != null && nm.IsListening;
+            // [DiagPhaseF] Log 2b — ClientRpc 분기 진단. willBroadcast=false 면 guest 가 못 받는다는 의미.
+            Debug.Log($"[RoomCtrl] FireRoomCleared roomId={payload.RoomId} willBroadcastClientRpc={willBroadcast} " +
+                      $"IsSpawned={IsSpawned} IsListening={nm?.IsListening} localId={nm?.LocalClientId} on '{name}'", this);
+            if (willBroadcast)
+            {
+                RoomClearedBroadcastClientRpc(payload.SpawnedEnemyCount);
+            }
+            else
+            {
+                Debug.LogWarning($"[RoomCtrl] FireRoomCleared LOCAL-ONLY invoke (guest will NOT receive) roomId={payload.RoomId}", this);
+                RoomClearedBroadcast?.Invoke(payload);
+            }
+        }
+
+        [ClientRpc]
+        private void RoomClearedBroadcastClientRpc(int spawnedEnemyCount)
+        {
+            // 각 클라가 자기 인스턴스의 roomData 로 payload 재구성 — ScriptableObject 가 NGO 직렬화 불가.
+            string id = roomData != null ? roomData.RoomId : null;
+            // [DiagPhaseF] Log 3 — ClientRpc 가 양 클라에 도달했고 guest 측 roomData wiring 상태 확인. NULL 이면 reward STOP 의 1차 원인.
+            var nmLog3 = NetworkManager.Singleton;
+            Debug.Log($"[RoomCtrl] RoomClearedBroadcastClientRpc RECEIVED on '{name}' " +
+                      $"roomData={(roomData != null ? roomData.name : "NULL")} resolvedRoomId='{id}' " +
+                      $"spawnedEnemies={spawnedEnemyCount} localId={nmLog3?.LocalClientId} isHost={nmLog3?.IsHost}", this);
+            RoomClearedBroadcast?.Invoke(new RoomClearedPayload(id, roomData, spawnedEnemyCount));
         }
 
         /// <summary>CL-110: RewardController 가 보상 선택 후 호출. autoOpenExitsOnCleared=false 일 때 외부에서 문 열기 트리거.</summary>
