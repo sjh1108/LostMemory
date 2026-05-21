@@ -106,6 +106,33 @@ namespace LostMemory.Combat.Telegraph
             _visible = true;
             ApplyRequest();
             _previewObject.SetActive(true);
+
+            // Bug #31 진단 — telegraph 시각 보이지 않는 케이스 isolation.
+            //   sortingLayerId / sortingOrder 가 "Foreground" 매칭 실패 시 0 (Default) → 다른 sprite 에 묻혀 안 보일 수 있음.
+            //   previewObject.activeInHierarchy 가 false 면 부모 비활성 또는 SortingGroup race.
+            int sortLayerId = _previewRenderer != null ? _previewRenderer.sortingLayerID : 0;
+            int sortOrder = _previewRenderer != null ? _previewRenderer.sortingOrder : 0;
+            bool rendererEnabled = _previewRenderer != null && _previewRenderer.enabled;
+            bool previewActive = _previewObject != null && _previewObject.activeInHierarchy;
+            Debug.Log(
+                $"[DiagTelegraph-Show] shape={request.Shape} center={request.Center} size={request.Size} duration={request.Duration:F2} " +
+                $"sortingLayerId={sortLayerId} sortingOrder={sortOrder} rendererEnabled={rendererEnabled} previewActive={previewActive}", this);
+
+            // Bug #37: enemy 의 server-side controller 가 telegraphView.Show 호출 시 자동으로 게스트에 broadcast.
+            // 부모 chain 의 MonsterAttackBroadcast 컴포넌트 (AttachMonsterAttackBroadcastToEnemies Editor menu 가 모든 enemy 부착) 자동 검색.
+            //   - host 측: BroadcastTelegraph → ServerRpc 없이 직접 ClientRpc → 게스트 측 SpawnVisualClone.
+            //   - host 자기 자신의 ClientRpc 는 BroadcastTelegraphClientRpc 의 IsHost 가드로 skip → 본 Show 의 visual 만 표시.
+            //   - 게스트 측: 자기 Show 는 *호출 안 됨* (server-only AI). ClientRpc 의 SpawnVisualClone 가 새 GameObject + AttackTelegraph2DView 생성.
+            //     그 새 View 의 Show 도 본 broadcast path 진입하지만 GameObject 는 enemy parent 아님 → MonsterAttackBroadcast null → silent skip.
+            //   - MonsterAttackBroadcast 미부착 (player weapon telegraph 등) 도 null → skip → 영향 없음.
+            var broadcast = GetComponentInParent<LostMemory.Combat.Telegraph.MonsterAttackBroadcast>();
+            if (broadcast != null)
+            {
+                Vector2 dir = request.Direction.sqrMagnitude > 0.0001f ? request.Direction.normalized : Vector2.right;
+                float rotDeg = request.Shape == AttackTelegraphShape2D.Circle ? 0f : Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+                // impactHoldDuration 은 본 View 책임 외 — 0 전달. clone 시각 lifetime = warning duration 만.
+                broadcast.BroadcastTelegraph(request.Shape, request.Center, request.Size, rotDeg, request.Duration, 0f, request.Color);
+            }
         }
 
         public void Refresh(AttackTelegraphRequest2D request)

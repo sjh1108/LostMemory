@@ -191,6 +191,11 @@ namespace LostMemory.TestKhi
 
         public void HandleAttackActiveStarted(KhiAttackRequest request, AttackStepData step)
         {
+            // [DiagVfx-Weapon] H3/H4 진단 — weaponSprite/playerAim wiring 상태.
+            if (weaponSprite == null)
+            {
+                Debug.Log($"[DiagVfx-Weapon] H4 weaponSprite=NULL gameObject.activeInHierarchy={gameObject.activeInHierarchy} comboStep={step.comboStep}", this);
+            }
             if (hideWeaponDuringActive && weaponSprite != null)
             {
                 weaponSprite.enabled = false;
@@ -270,10 +275,19 @@ namespace LostMemory.TestKhi
             _swingCoroutine = null;
         }
 
+        // [DiagAim-Read] 1초 throttle 로 무기 회전 갱신 상태 dump (Update 끝).
+        private float _diagNextAimReadAt;
+
         private void Update()
         {
             if (weaponSprite == null || playerAim == null)
             {
+                // [DiagVfx-Weapon] H3 weaponPresenter.Update early-return — playerAim null 이면 무기 회전 갱신 자체 안 됨.
+                if (Time.unscaledTime >= _diagNextAimReadAt)
+                {
+                    _diagNextAimReadAt = Time.unscaledTime + 2f;
+                    Debug.Log($"[DiagVfx-Weapon] H3 Update early-return weaponSprite={(weaponSprite == null ? "null" : "OK")} playerAim={(playerAim == null ? "null" : "OK")} gameObject.activeInHierarchy={gameObject.activeInHierarchy}", this);
+                }
                 return;
             }
 
@@ -333,6 +347,15 @@ namespace LostMemory.TestKhi
             if (flipYWhenAimLeft)
             {
                 weaponSprite.flipY = aim.x < 0f;
+            }
+
+            // [DiagAim-Read] 1초 throttle 로 weaponSprite 회전 갱신 상태 dump. owner/non-owner 둘 다.
+            // non-owner 측에서 aim 값이 0 또는 stale 이면 KhiPlayerAim._syncedDirection NetworkVariable 전파 실패.
+            if (Time.unscaledTime >= _diagNextAimReadAt)
+            {
+                _diagNextAimReadAt = Time.unscaledTime + 1f;
+                bool isOwner = playerAim != null && playerAim.IsOwner;
+                Debug.Log($"[DiagAim-Read] aim={aim} finalAngle={finalAngle:F1} IsOwner={isOwner} weaponSprite.activeInHierarchy={weaponSprite.gameObject.activeInHierarchy} weaponSprite.enabled={weaponSprite.enabled}", this);
             }
         }
 

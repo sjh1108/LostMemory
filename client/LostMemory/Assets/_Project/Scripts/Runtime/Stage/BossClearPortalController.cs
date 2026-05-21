@@ -59,7 +59,8 @@ namespace LostMemory.Stage
 
             if (roomController != null)
             {
-                roomController.RoomCleared += HandleRoomCleared;
+                // Q-2: RoomClearedBroadcast 사용 — 게스트 화면에도 보스 포탈 시각 동기화.
+                roomController.RoomClearedBroadcast += HandleRoomCleared;
             }
         }
 
@@ -67,7 +68,7 @@ namespace LostMemory.Stage
         {
             if (roomController != null)
             {
-                roomController.RoomCleared -= HandleRoomCleared;
+                roomController.RoomClearedBroadcast -= HandleRoomCleared;
             }
         }
 

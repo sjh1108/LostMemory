@@ -2,6 +2,7 @@ using LostMemory.Relics;
 using LostMemory.Rewards;
 using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Shop
@@ -68,6 +69,8 @@ namespace LostMemory.Shop
         {
             if (!_playerInRange) return;
             if (KhiPlayerActionGate.IsBlocked(_playerInRangeCharacter)) return;
+            // A-2: 멀티 환경 — trigger 안 4명이 있어도 본 인스턴스에선 local Player 의 F 만 발화.
+            if (!IsLocalPlayerInRange()) return;
             if (Input.GetKeyDown(interactKey))
             {
                 if (shopController == null)
@@ -152,6 +155,24 @@ namespace LostMemory.Shop
         {
             if (string.IsNullOrEmpty(playerTag)) return true;
             return other.CompareTag(playerTag);
+        }
+
+        /// <summary>
+        /// A-2: trigger 안의 _playerInRangeCharacter 가 NGO LocalClient.PlayerObject 인지.
+        /// 솔로 (NetworkManager 미동작) 시 항상 true.
+        /// </summary>
+        private bool IsLocalPlayerInRange()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening) return true;
+            if (_playerInRangeCharacter == null) return false;
+
+            NetworkClient local = nm.LocalClient;
+            if (local == null || local.PlayerObject == null) return false;
+
+            Transform charRoot = _playerInRangeCharacter.transform.root;
+            Transform localRoot = local.PlayerObject.transform.root;
+            return charRoot == localRoot;
         }
     }
 }

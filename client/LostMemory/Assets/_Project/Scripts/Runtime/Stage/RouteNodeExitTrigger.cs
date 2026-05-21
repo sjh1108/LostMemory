@@ -373,6 +373,11 @@ namespace LostMemory.Stage
             RequestAdvanceImmediate(character);
         }
 
+        // [DiagRoute] trigger 측에서도 호출 시점의 routeManager 상태 1초 throttle 로 로깅.
+        [Header("Diagnostics (route advance trace)")]
+        [SerializeField] private bool _diagRouteLogging = false;
+        private float _diagNextLogTimeImmediate;
+
         private bool RequestAdvanceImmediate(Character character)
         {
             if (useLocalTeleport)
@@ -385,6 +390,22 @@ namespace LostMemory.Stage
             {
                 RequestRunCompletion(character);
                 return true;
+            }
+
+            // [DiagRoute] routeManager 참조 상태와 Instance 일치 여부 throttle 로깅.
+            if (_diagRouteLogging && Time.unscaledTime >= _diagNextLogTimeImmediate)
+            {
+                _diagNextLogTimeImmediate = Time.unscaledTime + 1f;
+                StageRouteManager singleton = StageRouteManager.Instance;
+                Debug.Log(
+                    $"[DiagRoute] RouteNodeExitTrigger.RequestAdvanceImmediate triggerId='{triggerId}' " +
+                    $"routeManager={(routeManager != null ? routeManager.gameObject.name : "NULL")} " +
+                    $"routeManagerIsSpawned={(routeManager != null ? routeManager.IsSpawned.ToString() : "n/a")} " +
+                    $"Instance={(singleton != null ? singleton.gameObject.name : "NULL")} " +
+                    $"refEqualsInstance={(routeManager == singleton)} " +
+                    $"character='{(character != null ? character.name : "null")}' " +
+                    $"requestInProgress={requestInProgress}",
+                    this);
             }
 
             if (routeManager == null)

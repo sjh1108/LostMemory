@@ -96,6 +96,15 @@ namespace LostMemory.Networking.Player
         // server 측 모든 PlayerHealthSync 추적 (host 만 등록). 멀티 환경 RunFailed 가드 (AnyPlayerAlive) 용도.
         private static readonly HashSet<PlayerHealthSync> _serverInstances = new HashSet<PlayerHealthSync>();
 
+        // B-2: 4인 동시 사망 race — BroadcastRunFailedUiClientRpc 중복 차단.
+        private static bool _runFailedBroadcastFired;
+
+        /// <summary>RunFailed 가드 리셋. RunManager.StartRun / ReturnToTown 에서 호출.</summary>
+        public static void ResetRunFailedBroadcastGuard()
+        {
+            _runFailedBroadcastFired = false;
+        }
+
         /// <summary>
         /// server 측 등록된 player 중 하나라도 살아있으면 true.
         /// 솔로 (NGO 미시작) 또는 server 인스턴스 0개면 false.
@@ -376,6 +385,16 @@ namespace LostMemory.Networking.Player
         {
             base.OnNetworkSpawn();
 
+            // scene-placed TestKhi Player 인스턴스가 NGO sweep 으로 NetworkObject register 되어 추가 player 처럼 보이는 문제 회피.
+            // 진짜 PlayerObject 는 SpawnAsPlayerObject 로 spawn 되어 IsPlayerObject=true.
+            // scene-placed 는 IsPlayerObject=false → host 측에서 즉시 Despawn (모든 client 자동 sync).
+            if (!NetworkObject.IsPlayerObject && IsServer)
+            {
+                Debug.LogWarning($"[PlayerHealthSync] scene-placed Player 가 PlayerObject 아님 — Despawn. {gameObject.name}", this);
+                NetworkObject.Despawn(destroy: true);
+                return;
+            }
+
             if (health == null)
             {
                 Debug.LogWarning($"[PlayerHealthSync] Health 컴포넌트 누락: {gameObject.name}", this);
@@ -541,12 +560,12 @@ namespace LostMemory.Networking.Player
 
                 // 팀 전체 사망 검사 — RunManager 는 local player 한 명만 hook 이라 다른 player 사망 경로가 직접 트리거되지 않음.
                 // 본 인스턴스가 막 _deathTriggered=true 가 됐으므로 다른 모든 인스턴스도 dead 면 팀 전멸.
-                if (!AnyPlayerAlive() && LostMemory.Stage.RunManager.Instance != null)
+                // B-2: 4인 race 가드 — broadcast 중복 차단.
+                if (!_runFailedBroadcastFired && !AnyPlayerAlive() && LostMemory.Stage.RunManager.Instance != null)
                 {
-                    if (verboseLog) Debug.Log($"[PlayerHealthSync] SERVER team defeated — RunManager.HandlePlayerDefeatedDirect 직접 호출 + broadcast RPC delay={runFailedUiDelaySeconds}", this);
+                    _runFailedBroadcastFired = true;
+                    if (verboseLog) Debug.Log($"[PlayerHealthSync] SERVER team defeated — broadcast RPC delay={runFailedUiDelaySeconds}", this);
                     LostMemory.Stage.RunManager.Instance.HandlePlayerDefeatedDirect();
-                    // 즉시 RPC 발화 + delay 인자 — server 측 GameObject 가 그 사이 TDE 가 inactive 시켜도 RPC 는 이미 전송됨.
-                    // client 측 (호스트 자기 포함) 이 자체 coroutine 으로 delay 후 ShowResultingUI 호출.
                     BroadcastRunFailedUiClientRpc(runFailedUiDelaySeconds);
                 }
             }

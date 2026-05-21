@@ -175,6 +175,9 @@ namespace LostMemory.Networking.Session
             }
 
             NetLog.Info("UI", $"멀티 로비 씬 이동: {multiLobbySceneName}", this);
+            // 안전: scene-placed NetworkManager 가 LoadScene(Single) 시 destroy 되어 NGO 가 끊기는 문제 방지.
+            // 호스트/게스트 양쪽에서 호출되지만 호스트 시점에 한 번이면 충분 (DDoL idempotent).
+            DontDestroyOnLoad(nm.gameObject);
             nm.SceneManager.LoadScene(multiLobbySceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
         }
 

@@ -1449,6 +1449,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f4ce3576440b914687d9906b97f17a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Rewards.RewardPanelView
+--- !u!21 &762199705
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Sprites/Default
+  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - PixelSnap: 0
+    - _EnableExternalAlpha: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Flip: {r: 1, g: 1, b: 1, a: 1}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1001 &786682089
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1501,10 +1542,19 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9053980675064386983, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3231830611
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1789113402}
   m_SourcePrefab: {fileID: 100100000, guid: 4d290d1fc0f84526999c421c61df5d8f, type: 3}
 --- !u!114 &786682090 stripped
 MonoBehaviour:
@@ -1512,7 +1562,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fe81ad80cb743b408fa90b048ad597f, type: 3}
@@ -1524,7 +1574,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ce249ab02704ff4ab08dddf7901fad5, type: 3}
@@ -1536,7 +1586,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
@@ -1548,12 +1598,18 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de088c31fad134e4ca9c7b7d65df81cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.BuildManager
+--- !u!1 &786682094 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1790328835693532, guid: 4d290d1fc0f84526999c421c61df5d8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 786682089}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &842408464
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2337,47 +2393,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!21 &1408708517
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Sprites/Default
-  m_Shader: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _AlphaTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - PixelSnap: 0
-    - _EnableExternalAlpha: 0
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Flip: {r: 1, g: 1, b: 1, a: 1}
-    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1001 &1432132221
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3228,7 +3243,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33c724ba75b7ffe42af7580044857e52, type: 3}
@@ -3240,7 +3255,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e91b5caa1ec5f7a428fe2e32f2b348d2, type: 3}
@@ -3252,7 +3267,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce4d96451ada47fd91066a50793a9f2f, type: 3}
@@ -3264,7 +3279,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f47b34d4ea84fbfba2cb67c6db59740, type: 3}
@@ -3276,12 +3291,25 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 786682089}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
+--- !u!114 &1789113402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786682094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce83eca692aa5bf4e9a549f25747346c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.EditorTestCharacterMarker
+  verboseLog: 1
 --- !u!1001 &1823617147
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -36,6 +36,16 @@ namespace LostMemory.Stage
         /// <summary>골드 변경 시 새 Current 값을 인자로 발화. UI sync 용.</summary>
         public event Action<int> Changed;
 
+        /// <summary>
+        /// CL-146 후속: 어떤 GoldWallet 인스턴스든 Awake 가 끝날 때 1회 발화.
+        /// SetEffectApplicator 처럼 player prefab 단계에서 wiring 불가능한
+        /// 늦은 구독자가 wallet 의 등장 시점을 잡기 위해 사용.
+        ///
+        /// 구독자 책임: 자기 OnDisable/destroy 에서 unsubscribe.
+        /// 1회 호출이라 누적 race 없음.
+        /// </summary>
+        public static event Action<GoldWallet> Spawned;
+
         /// <summary>CL-146: 탐욕 set 효과 — Add 시 amount 에 곱해질 multiplier (1.0 = 기본, 1.3 = +30% 획득).</summary>
         public void SetGainMultiplier(float mul)
         {
@@ -54,6 +64,15 @@ namespace LostMemory.Stage
                 Debug.Log($"[GoldWallet] Initialized. Current={Current}", this);
             }
             Changed?.Invoke(Current);
+
+            // CL-146 후속: 늦게 들어온 구독자(SetEffectApplicator 등)에게 등장 통지.
+            // 가입 시점이 Awake 이후라도 lazy-resolve 로직이 따로 잡아주므로
+            // 여기서 1회만 broadcast 하면 충분.
+            try { Spawned?.Invoke(this); }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GoldWallet] Spawned 구독자 예외: {e}", this);
+            }
         }
 
         public void Add(int amount)

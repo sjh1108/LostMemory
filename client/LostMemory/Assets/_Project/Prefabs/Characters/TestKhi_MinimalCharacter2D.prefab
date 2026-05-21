@@ -94,6 +94,12 @@ GameObject:
   - component: {fileID: 5949586602835016060}
   - component: {fileID: 177952739735989615}
   - component: {fileID: 5369219013406704252}
+  - component: {fileID: 4985978239026403171}
+  - component: {fileID: 6652774084417904644}
+  - component: {fileID: 8305984493616546294}
+  - component: {fileID: 2980106147108647586}
+  - component: {fileID: 861105950667537552}
+  - component: {fileID: 8162864988335434117}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -114,6 +120,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 126737197339998515}
   - {fileID: 4417269262889042}
   - {fileID: 4539632890920534}
   - {fileID: 6686641576278510502}
@@ -637,7 +644,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3650460580
+  GlobalObjectIdHash: 1850019513
   InScenePlacedSourceGlobalObjectIdHash: 3650460580
   DeferredDespawnTick: 0
   Ownership: 1
@@ -1062,6 +1069,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerHealthStatApplier
   health: {fileID: 8256579939838082894}
   container: {fileID: 1496170365699431617}
+  _logChanges: 1
 --- !u!114 &1736420558605640635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1239,6 +1247,7 @@ MonoBehaviour:
   playerAim: {fileID: 114910001000000001}
   downController: {fileID: 0}
   attackCatalog: {fileID: 11400000, guid: 29478b12ee5061e4681807b24f6d22c5, type: 2}
+  magicalGirlBroadcast: {fileID: 0}
   ringRadius: 1.5
   ultimateFadeSeconds: 0.3
   ultimateLaserBurstDuration: 5
@@ -1475,6 +1484,7 @@ MonoBehaviour:
   playerMana: {fileID: 0}
   arrowSpawnPoint: {fileID: 6125469900217745665}
   aimCamera: {fileID: 0}
+  attackBroadcast: {fileID: 0}
   arrowPrefab: {fileID: 114111111111111004, guid: ab6c914296b783345b180086bc278caf,
     type: 3}
   arrowSpeed: 12
@@ -1496,6 +1506,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d3082fa5e3ea0e41accf1b4fab23d68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.WeaponModeController
+  ShowTopMostFoldoutHeaderGroup: 1
   initialMode: 0
   swordCombo: {fileID: 114910001000000004}
   swordHitbox: {fileID: 114910001000000002}
@@ -1534,6 +1545,7 @@ MonoBehaviour:
   playerMana: {fileID: 0}
   projectileSpawnPoint: {fileID: 3059109095577102960}
   aimCamera: {fileID: 0}
+  attackBroadcast: {fileID: 0}
   boltPrefab: {fileID: 114111111111111004, guid: e9022165cc7b4fd5b6163adc6c26b403,
     type: 3}
   boltSpeed: 10
@@ -1684,6 +1696,152 @@ MonoBehaviour:
   mana: {fileID: 7404419025855381829}
   restoreMana: 1
   logResets: 1
+--- !u!114 &4985978239026403171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be77e0c21da81a04aa0e9ea4ff7ae8a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.PlayerMovementSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+  character: {fileID: 0}
+  stateAggregator: {fileID: 0}
+  convertNonOwnerToAi: 1
+  disableInputComponentsOnNonOwner: 1
+--- !u!114 &6652774084417904644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6edc758d6f60b94184e65f8bb735143, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.PlayerHealthSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  health: {fileID: 0}
+  minDelta: 0.01
+  syncHit: 1
+  hitAnimatorTrigger: Hit
+  syncDown: 1
+  downAnimatorTrigger: Down
+  syncDeath: 1
+  deathAnimatorTrigger: Down
+  inputComponentNamesToDisableOnDeath:
+  - KhiMeleeComboController
+  - KhiParryController
+  - KhiDashController
+  - KhiFinisherLunge
+  deathOverlayObject: {fileID: 0}
+  deathOverlayFallbackText: You Died
+  verboseLog: 0
+  defeatHideDelaySeconds: 5
+  runFailedUiDelaySeconds: 5
+--- !u!114 &8305984493616546294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7569c6350a2c35a4ba1c243add9359c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.PlayerNicknameLabel
+  ShowTopMostFoldoutHeaderGroup: 1
+  label: {fileID: 0}
+  fallback: Player
+--- !u!114 &2980106147108647586
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abf67513e586c8a4c80d91776601f7c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.AttackBroadcast
+  ShowTopMostFoldoutHeaderGroup: 1
+  comboController: {fileID: 0}
+  attackVisualPresenter: {fileID: 0}
+  slashAnimator: {fileID: 0}
+  weaponPresenter: {fileID: 0}
+  weaponData: {fileID: 0}
+  staffController: {fileID: 0}
+  bowController: {fileID: 0}
+  verboseLog: 1
+--- !u!114 &861105950667537552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a505a93a3cfd664eb84c71d248d4698, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Player.PlayerDamageRelay
+  ShowTopMostFoldoutHeaderGroup: 1
+  verboseLog: 0
+--- !u!114 &8162864988335434117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d5204e7d97d0434eba49a42945fdc14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.MagicalGirl.MagicalGirlBroadcast
+  ShowTopMostFoldoutHeaderGroup: 1
+  spawner: {fileID: 0}
+  verboseLog: 1
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0
@@ -6789,6 +6947,123 @@ MonoBehaviour:
   flipYWhenAimLeft: 1
   recoilDistance: 0.15
   recoilDuration: 0.08
+--- !u!1 &365406519989072889
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 126737197339998515}
+  - component: {fileID: 3403421040203714498}
+  - component: {fileID: 8730558259320544397}
+  - component: {fileID: 964661504788915254}
+  - component: {fileID: 2419929011667153686}
+  m_Layer: 5
+  m_Name: Canvas
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &126737197339998515
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 365406519989072889}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4319614708212260}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 1.5}
+  m_SizeDelta: {x: 1028.2858, y: 553}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!223 &3403421040203714498
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 365406519989072889}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 0
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 25
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: 0
+  m_SortingOrder: 0
+  m_TargetDisplay: 0
+--- !u!114 &8730558259320544397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 365406519989072889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
+  m_UiScaleMode: 0
+  m_ReferencePixelsPerUnit: 100
+  m_ScaleFactor: 1
+  m_ReferenceResolution: {x: 800, y: 600}
+  m_ScreenMatchMode: 0
+  m_MatchWidthOrHeight: 0
+  m_PhysicalUnit: 3
+  m_FallbackScreenDPI: 96
+  m_DefaultSpriteDPI: 96
+  m_DynamicPixelsPerUnit: 1
+  m_PresetInfoIsWorld: 1
+--- !u!114 &964661504788915254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 365406519989072889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
+  m_IgnoreReversedGraphics: 1
+  m_BlockingObjects: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &2419929011667153686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 365406519989072889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7569c6350a2c35a4ba1c243add9359c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.UI.PlayerNicknameLabel
+  ShowTopMostFoldoutHeaderGroup: 1
+  label: {fileID: 0}
+  fallback: Player
 --- !u!1 &995920850950652876
 GameObject:
   m_ObjectHideFlags: 0
@@ -12967,7 +13242,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiStaffPresenter
   staffSprite: {fileID: 7493414417318301317}
-  aimCamera: {fileID: 0}
+  playerAim: {fileID: 0}
   orbitRadius: 0.4
   orbitCenter: {x: 0, y: 0}
   spriteAngleOffsetDeg: 0

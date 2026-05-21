@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Combat;
 using LostMemory.Data;
+using LostMemory.Networking.Common;
 using LostMemory.TestKhi;
 using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
@@ -17,7 +18,7 @@ namespace LostMemory.Relics
     ///
     /// CL-109 변경:
     /// - 이름 RelicEffectApplier → RelicEffectRegistry (정식 격상)
-    /// - <see cref="IRelicEffectAuthority"/> 게이트 도입 (HandleAcquired + 모든 이벤트 핸들러 최상단)
+    /// - <see cref="HostAuthority"/> 게이트 도입 (HandleAcquired + 모든 이벤트 핸들러 최상단)
     /// - PlayerRelicInventory.OnCleared 구독 → Run 종료 시 container/shield 일괄 정리
     /// </summary>
     [DisallowMultipleComponent]
@@ -52,9 +53,7 @@ namespace LostMemory.Relics
         [Header("VFX Fade Out (CL-203)")]
         [SerializeField, Min(0f)] private float _vfxFadeOutSeconds = 0.25f;
 
-        // Phase B-1: NetworkRelicEffectAuthority 로 교체. 싱글 실행 시 NetworkManager 비활성 → true,
-        // 멀티 실행 시 호스트만 true. LocalRelicEffectAuthority 는 보존(롤백 또는 테스트 용).
-        private readonly IRelicEffectAuthority _authority = new NetworkRelicEffectAuthority();
+        // F-2: HostAuthority 로 일원화. 싱글 → true, 멀티 호스트 → true, 멀티 게스트 → false.
 
         private readonly List<OnKillSubscription> _onKillSubscriptions = new();
         private readonly List<TimedSubscription> _onParrySuccessSubscriptions = new();
@@ -79,7 +78,7 @@ namespace LostMemory.Relics
         private void Update()
         {
             // CL-203: 활성 VFX 만료 체크 — duration 도달 시 페이드아웃 코루틴 시작.
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
 
             if (_activeShieldVFX != null && Time.time >= _shieldVFXExpiresAt)
             {
@@ -109,7 +108,7 @@ namespace LostMemory.Relics
                 // 첫 게임 시작 시 OwnedRelics 는 비어 있으므로 무동작. PlayerWallet 패턴 결과로
                 // Player 가 매 씬 새로 스폰될 때 본 Registry 도 함께 새로 생성되므로 이 replay 가
                 // 없으면 영속 모디파이어가 모두 풀린 상태로 진입한다.
-                if (_authority.IsAuthority)
+                if (HostAuthority.IsHost)
                 {
                     IReadOnlyList<RelicData> owned = inventory.OwnedRelics;
                     for (int i = 0; i < owned.Count; i++)
@@ -138,7 +137,7 @@ namespace LostMemory.Relics
 
         private void HandleAcquired(RelicData relic)
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             if (relic == null || container == null) return;
             bool appliedAttackSpeedEffect = ApplyAttackSpeedPercentEffects(relic);
             bool appliedDefenseEffect = ApplyDefenseFlatEffects(relic);
@@ -259,7 +258,7 @@ namespace LostMemory.Relics
 
         private void HandleEnemyKilled(KhiAttackRequest req, AttackStepData step, Health victim)
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             if (container == null) return;
             float maxDuration = 0f;
             for (int i = 0; i < _onKillSubscriptions.Count; i++)
@@ -287,7 +286,7 @@ namespace LostMemory.Relics
 
         private void HandleParrySuccess()
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             if (playerShield == null || playerHealth == null) return;
             float maxHp = playerHealth.MaximumHealth;
             float maxDuration = 0f;
@@ -312,7 +311,7 @@ namespace LostMemory.Relics
 
         private void HandleDashEnded()
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             if (container == null) return;
             float maxDuration = 0f;
             for (int i = 0; i < _onDashEndSubscriptions.Count; i++)
@@ -343,7 +342,7 @@ namespace LostMemory.Relics
         /// </summary>
         private void HandleRunCleared()
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             if (container != null) container.ClearAll();
             if (playerShield != null) playerShield.ClearShield();
             _onKillSubscriptions.Clear();

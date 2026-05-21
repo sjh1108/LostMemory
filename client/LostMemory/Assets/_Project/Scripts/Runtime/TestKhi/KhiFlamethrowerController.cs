@@ -1,5 +1,6 @@
 using System;
 using LostMemory.Combat;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -55,6 +56,9 @@ namespace LostMemory.TestKhi
 
         private float _manaAccumulator;
         private FlameMode? _activeStreamMode;
+        // Phase E: 비-owner 측 자체 분사 차단.
+        private NetworkObject _cachedNetObj;
+        private bool _netObjResolved;
 
         public bool IsStreaming => _activeStreamMode.HasValue;
         public FlameMode? ActiveStreamMode => _activeStreamMode;
@@ -85,6 +89,13 @@ namespace LostMemory.TestKhi
 
         private void Update()
         {
+            // Phase E: 비-owner clone 은 자체 분사 금지. owner 만 입력 처리.
+            if (IsRemoteClone())
+            {
+                if (_activeStreamMode.HasValue) StopStreaming();
+                return;
+            }
+
             Mouse mouse = Mouse.current;
             if (mouse == null) return;
 
@@ -108,6 +119,17 @@ namespace LostMemory.TestKhi
             {
                 StopStreaming();
             }
+        }
+
+        /// <summary>Phase E: 비-owner clone 여부 (cached).</summary>
+        private bool IsRemoteClone()
+        {
+            if (!_netObjResolved)
+            {
+                _cachedNetObj = GetComponentInParent<NetworkObject>();
+                _netObjResolved = true;
+            }
+            return _cachedNetObj != null && _cachedNetObj.IsSpawned && !_cachedNetObj.IsOwner;
         }
 
         private bool HasManaForStream()

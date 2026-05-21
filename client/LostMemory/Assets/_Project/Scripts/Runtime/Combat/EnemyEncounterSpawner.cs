@@ -1,11 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Combat.Telegraph;
 using LostMemory.Enemies;
 using LostMemory.Enemies.AI;
 using LostMemory.Stage;
 using LostMemory.Stage.Data;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Combat
@@ -184,6 +186,31 @@ namespace LostMemory.Combat
                     HardenSpawnedInstance(instance);
                     EnsureDeathAnimationLock(instance);
                     RegisterHitAnimationRecovery(instance);
+
+                    // 멀티: 적 prefab 에 NetworkObject 부착되어 있고 NGO 가 활성이면 NGO Spawn 으로 게스트에 sync.
+                    // NetworkObject 없으면 그냥 호스트 측 Instantiate 만 (= 솔로 또는 적이 sync 필요 없는 경우).
+                    NetworkManager nm = NetworkManager.Singleton;
+                    if (nm != null && nm.IsListening && nm.IsServer)
+                    {
+                        NetworkObject netObj = instance.GetComponent<NetworkObject>();
+                        if (netObj != null && !netObj.IsSpawned)
+                        {
+                            netObj.Spawn(destroyWithScene: true);
+                        }
+
+                        // Bug #31 — 멀티 환경에서 enemy 가 telegraph 시각 broadcast 하려면 MonsterAttackBroadcast 가 prefab 에 부착 필수.
+                        // NGO 는 prefab 기반 sync 라 런타임 AddComponent<NetworkBehaviour> 불가 → 사전 부착 필요.
+                        // 미부착 시 안내: Tools > Lost Memory > Enemies > [APPLY] Attach MonsterAttackBroadcast To All Enemies 메뉴 실행.
+                        if (netObj != null && instance.GetComponent<MonsterAttackBroadcast>() == null)
+                        {
+                            Debug.LogWarning(
+                                $"[EnemyEncounterSpawner] Enemy prefab '{prefab.name}' 에 MonsterAttackBroadcast 미부착. " +
+                                $"멀티 환경에서 *게스트 측 telegraph 시각이 안 보일 수 있음*. " +
+                                $"픽스: Unity Editor 메뉴 'Tools > Lost Memory > Enemies > [APPLY] Attach MonsterAttackBroadcast To All Enemies' 실행 — " +
+                                $"또는 해당 prefab root 에 수동으로 MonsterAttackBroadcast 컴포넌트 추가.", instance);
+                        }
+                    }
+
                     spawnedEnemies.Add(instance);
                     spawnedCount++;
                     Spawned?.Invoke(new EnemySpawnedPayload(roomId, waveIndex, instance));

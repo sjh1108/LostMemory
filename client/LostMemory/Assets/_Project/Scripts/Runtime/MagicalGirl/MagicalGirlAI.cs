@@ -161,6 +161,8 @@ namespace LostMemory.MagicalGirl
                 Collider2D col = _searchBuf[i];
                 if (col == null) continue;
                 Health h = col.GetComponentInParent<Health>();
+                // CL-143 + 멀티 가드 통합: CanBeAutoTargetedEnemy 내부에서
+                // IsAuthoritativePlayer (host 측 AI 변환된 게스트 player 제외) 도 함께 처리.
                 if (!CombatTargetable.CanBeAutoTargetedEnemy(h)) continue;
 
                 Vector2 to = h.transform.position - transform.position;

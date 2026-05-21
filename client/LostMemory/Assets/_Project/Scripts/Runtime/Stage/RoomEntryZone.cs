@@ -1,11 +1,11 @@
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Stage
 {
     // 플레이어가 BoxCollider2D trigger 안에 들어오면 controller.BeginRoomEntry 를 호출.
     // 1회 보장은 controller 가 책임 — zone 은 단순 wrapper.
-    // CL-036 이 zone 을 우회하고 controller 를 직접 호출해도 동일 흐름.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider2D))]
     [AddComponentMenu("Lost Memory/Stage/Room Entry Zone")]
@@ -35,13 +35,21 @@ namespace LostMemory.Stage
                 Debug.Log($"[Zone] skip: no Character on '{other.name}'");
                 return;
             }
-            if (character.CharacterType != Character.CharacterTypes.Player)
+
+            // 멀티: PlayerMovementSync.convertNonOwnerToAi=true 면 게스트 player 가 호스트 측에선 AI 로 변환됨.
+            // CharacterType 만 보면 게스트 player skip → BeginRoomEntry 미발동.
+            // NetworkObject.IsPlayerObject 로 보강 — NGO PlayerObject 도 player 로 인식.
+            bool isPlayerType = character.CharacterType == Character.CharacterTypes.Player;
+            NetworkObject netObj = other.GetComponentInParent<NetworkObject>();
+            bool isNetworkedPlayer = netObj != null && netObj.IsPlayerObject;
+
+            if (!isPlayerType && !isNetworkedPlayer)
             {
-                Debug.Log($"[Zone] skip: '{character.name}' type={character.CharacterType} (not Player)");
+                Debug.Log($"[Zone] skip: '{character.name}' type={character.CharacterType} netPlayer={isNetworkedPlayer}");
                 return;
             }
 
-            Debug.Log($"[Zone] forward to controller.BeginRoomEntry");
+            Debug.Log($"[Zone] forward to controller.BeginRoomEntry (player={isPlayerType} netPlayer={isNetworkedPlayer})");
             controller.BeginRoomEntry(character);
         }
     }

@@ -1,11 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Memory;
+using LostMemory.Networking.Player;
 using LostMemory.Relics;
 using LostMemory.Rewards;
 using LostMemory.Shop;
 using LostMemory.TestKhi;
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LostMemory.Stage
 {
@@ -42,7 +45,8 @@ namespace LostMemory.Stage
         private float rewardShowDelay = 0.5f;
 
         [Header("Debug")]
-        [SerializeField] private bool logRewardFlow = false;
+        [Tooltip("Phase B 진단: 멀티에서 guest 보상 패널 미표시 문제 추적. 안정화 후 false 권장.")]
+        [SerializeField] private bool logRewardFlow = true;
 
         private float _savedTimeScale = 1f;
 
@@ -65,10 +69,18 @@ namespace LostMemory.Stage
             {
                 rewardPanelView.RewardSelected += HandleRewardSelected;
             }
+            // [PhaseF fix] guest 측 RewardController 가 RoomCleared 이벤트를 못 받는 문제 fix.
+            // RunManager.HandleDungeonBuilt 는 host 측만 호출되므로 SubscribeAllRoomControllers 도 host 만 호출됨.
+            // → guest 의 RewardController 가 RoomEntryRuntimeController.RoomClearedBroadcast 를 구독 안 함.
+            // 자체적으로 SceneManager.sceneLoaded 구독해서 양측 모두 던전 씬 진입 후 자동 구독.
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            // 이미 활성 씬에 RoomEntryRuntimeController 가 spawn 되어 있을 수도 있음 (씬 로드 후 OnEnable 인 케이스) → 즉시 1회 시도.
+            StartCoroutine(SubscribeNextFrame());
         }
 
         private void OnDisable()
         {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnsubscribeAllRoomControllers();
             if (rewardPanelView != null)
             {
@@ -81,6 +93,29 @@ namespace LostMemory.Stage
                 if (playerAim != null) playerAim.enabled = true;
                 SetCombatInputsBlocked(false);
                 _isShowingReward = false;
+            }
+        }
+
+        /// <summary>
+        /// [PhaseF fix] 씬 로드 후 1 frame 뒤 SubscribeAllRoomControllers 호출.
+        /// host 는 RunManager 가 별도로도 호출하므로 idempotent (SubscribeAllRoomControllers 진입부에서 Unsubscribe 후 재구독).
+        /// guest 는 RunManager.HandleDungeonBuilt 가 호출 안 되므로 이게 유일한 구독 경로.
+        /// </summary>
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            StartCoroutine(SubscribeNextFrame());
+        }
+
+        private IEnumerator SubscribeNextFrame()
+        {
+            // RoomEntryRuntimeController 가 OnNetworkSpawn 으로 완전 초기화되기 전에 FindObjectsOfType 가 empty 일 수 있음.
+            // 1 frame 대기 → NGO scene sweep 후 보장.
+            yield return null;
+            SubscribeAllRoomControllers();
+            if (logRewardFlow)
+            {
+                var nm = NetworkManager.Singleton;
+                Debug.Log($"[RewardController] HandleSceneLoaded → SubscribeAllRoomControllers triggered. scene='{SceneManager.GetActiveScene().name}' localId={nm?.LocalClientId}", this);
             }
         }
 
@@ -100,7 +135,8 @@ namespace LostMemory.Stage
                 if (c == null) continue;
                 RoomEntryRuntimeController captured = c;
                 System.Action<RoomClearedPayload> handler = payload => HandleRoomClearedFromController(captured, payload);
-                captured.RoomCleared += handler;
+                // A-3: RoomClearedBroadcast (4인 모두) 사용 — 보상 UI 가 각 클라에서 독립 발화.
+                captured.RoomClearedBroadcast += handler;
                 _subscribed[captured] = handler;
             }
             if (logRewardFlow)
@@ -113,7 +149,7 @@ namespace LostMemory.Stage
         {
             foreach (var kvp in _subscribed)
             {
-                if (kvp.Key != null) kvp.Key.RoomCleared -= kvp.Value;
+                if (kvp.Key != null) kvp.Key.RoomClearedBroadcast -= kvp.Value;
             }
             _subscribed.Clear();
         }
@@ -124,30 +160,48 @@ namespace LostMemory.Stage
         /// </summary>
         private void HandleRoomClearedFromController(RoomEntryRuntimeController source, RoomClearedPayload payload)
         {
+            // Phase B 진단: NGO 컨텍스트 (host/guest 구분) + payload 내용 로깅 — guest 측 패널 미표시 원인 추적.
+            if (logRewardFlow)
+            {
+                var nm = NetworkManager.Singleton;
+                string ngoCtx = nm == null ? "NM=null"
+                    : $"NM(host={nm.IsHost},server={nm.IsServer},client={nm.IsClient},listening={nm.IsListening},localId={nm.LocalClientId})";
+                Debug.Log($"[RewardController] RoomCleared event arrived. source='{(source != null ? source.name : "null")}' " +
+                          $"roomId={payload.RoomId} dataNull={payload.Data == null} " +
+                          $"roomType={(payload.Data != null ? payload.Data.RoomType.ToString() : "?")} " +
+                          $"hasSpawnedEnemies={payload.HasSpawnedEnemies} " +
+                          $"isShowingReward={_isShowingReward} " +
+                          $"{ngoCtx}", this);
+            }
+
+            // [DiagPhaseF] Log 4 — 각 STOP 가드에서 localId 와 가드 사유 명시. host vs guest 어느 측에서 어느 가드가 막는지 분석.
+            var nmLog4 = NetworkManager.Singleton;
             if (payload.Data == null)
             {
-                Debug.LogWarning("[RewardController] RoomCleared payload has null RoomData; ignoring.", this);
+                Debug.LogError($"[RewardController] STOP — payload.Data NULL. roomId={payload.RoomId} " +
+                               $"source='{(source != null ? source.name : "null")}' localId={nmLog4?.LocalClientId}", this);
                 return;
             }
             // Boss/Shop/Event 등은 보상 X (CL-110 결정 #2).
             if (payload.Data.RoomType != StageRoomType.Combat)
             {
-                if (logRewardFlow) Debug.Log($"[RewardController] Skip non-Combat room: {payload.RoomId} type={payload.Data.RoomType}");
+                Debug.Log($"[RewardController] STOP — non-Combat room {payload.RoomId} type={payload.Data.RoomType} localId={nmLog4?.LocalClientId}");
                 return;
             }
 
             if (!payload.HasSpawnedEnemies)
             {
-                if (logRewardFlow) Debug.Log($"[RewardController] Skip empty Combat room reward: {payload.RoomId}");
+                Debug.Log($"[RewardController] STOP — no spawned enemies. {payload.RoomId} localId={nmLog4?.LocalClientId}");
                 return;
             }
 
             // 동시 다중 클리어 보호 (cl110_plan 결정 #6 / 위험 #5).
             if (_isShowingReward)
             {
-                if (logRewardFlow) Debug.LogWarning($"[RewardController] Already showing reward; ignoring room {payload.RoomId}.");
+                Debug.LogWarning($"[RewardController] STOP — already showing reward, ignoring room {payload.RoomId} localId={nmLog4?.LocalClientId}", this);
                 return;
             }
+            Debug.Log($"[RewardController] PASS all gates — scheduling DelayedShowReward in {rewardShowDelay}s. roomId={payload.RoomId} localId={nmLog4?.LocalClientId}");
 
             _pendingController = source;
             // 가드 선점 — delay 동안 다른 방 클리어가 끼어들어 reward 가 큐잉되지 않도록 _isShowingReward 즉시 true.
@@ -180,9 +234,26 @@ namespace LostMemory.Stage
             ResolveRewardPanelView();
             ResolvePlayerRelicInventory();
 
+            // [DiagPhaseF] Log 5 — ShowReward 진입 시 panel/inventory + Canvas 활성 상태까지 진단. SetActive(true) 직전 hierarchy 점검.
+            var nmLog5 = NetworkManager.Singleton;
+            string panelActive = rewardPanelView != null
+                ? $"goActive={rewardPanelView.gameObject.activeSelf} hier={rewardPanelView.gameObject.activeInHierarchy} parent={(rewardPanelView.transform.parent != null ? rewardPanelView.transform.parent.name : "ROOT")}"
+                : "panel=null";
+            string canvasState = "no-canvas";
+            if (rewardPanelView != null)
+            {
+                var canvas = rewardPanelView.GetComponentInParent<Canvas>(true);
+                if (canvas != null) canvasState = $"canvas='{canvas.name}' enabled={canvas.enabled} hier={canvas.gameObject.activeInHierarchy}";
+            }
+            Debug.Log($"[RewardController] ShowReward entered. localId={nmLog5?.LocalClientId} " +
+                      $"panelResolved={rewardPanelView != null} inventoryResolved={playerRelicInventory != null} " +
+                      $"inventoryHost='{(playerRelicInventory != null ? playerRelicInventory.gameObject.name : "null")}' " +
+                      $"localChar='{(LocalPlayerResolver.LocalCharacter != null ? LocalPlayerResolver.LocalCharacter.gameObject.name : "null")}' " +
+                      $"panel({panelActive}) {canvasState}", this);
+
             if (rewardPanelView == null || playerRelicInventory == null)
             {
-                Debug.LogError("[RewardController] rewardPanelView 또는 playerRelicInventory 가 null. wiring 확인.", this);
+                Debug.LogError($"[RewardController] ShowReward STOP — rewardPanelView or inventory null. localId={nmLog5?.LocalClientId}", this);
                 return;
             }
             // 외부 직접 호출 (HandleRoomClearedFromController 미경유) 시에도 가드가 켜지도록 idempotent.
@@ -359,10 +430,45 @@ namespace LostMemory.Stage
             return rewardPanelView;
         }
 
+        /// <summary>
+        /// 멀티 환경에서 host & guest 두 PlayerObject 가 동시에 존재 → 각자의 PlayerRelicInventory 도 두 개.
+        /// FindAnyObjectByType 은 어느 인스턴스를 잡을지 비결정적 → guest 측에서 host 인벤토리를 잡으면
+        /// reward 패널이 host inventory 를 가리키게 되어 게스트 화면에 표시가 깨짐.
+        ///
+        /// 우선순위:
+        ///   1. LocalPlayerResolver.LocalCharacter 의 자식에서 PlayerRelicInventory — 본인 인벤토리 보장.
+        ///   2. fallback — FindAnyObjectByType (싱글환경 / LocalPlayerResolver 미초기화 시).
+        /// </summary>
         private PlayerRelicInventory ResolvePlayerRelicInventory()
         {
             if (playerRelicInventory != null) return playerRelicInventory;
-            playerRelicInventory = FindAnyObjectByType<PlayerRelicInventory>();
+
+            // 1) 로컬 플레이어 우선 — 멀티에서 host/guest 본인 인벤토리만 잡음.
+            var localCharacter = LocalPlayerResolver.LocalCharacter;
+            if (localCharacter != null)
+            {
+                playerRelicInventory = localCharacter.GetComponentInChildren<PlayerRelicInventory>(includeInactive: true);
+                if (playerRelicInventory == null)
+                {
+                    // 같은 GameObject 가 아니라 root 위쪽일 가능성 — 위로도 탐색.
+                    playerRelicInventory = localCharacter.GetComponentInParent<PlayerRelicInventory>();
+                }
+                if (logRewardFlow && playerRelicInventory != null)
+                {
+                    Debug.Log($"[RewardController] ResolvePlayerRelicInventory via LocalPlayerResolver → '{playerRelicInventory.gameObject.name}'", this);
+                }
+            }
+
+            // 2) fallback — LocalPlayerResolver 가 아직 초기화 안 됐거나 싱글환경.
+            if (playerRelicInventory == null)
+            {
+                playerRelicInventory = FindAnyObjectByType<PlayerRelicInventory>();
+                if (logRewardFlow && playerRelicInventory != null)
+                {
+                    Debug.LogWarning($"[RewardController] ResolvePlayerRelicInventory fallback (LocalPlayer null) → '{playerRelicInventory.gameObject.name}'", this);
+                }
+            }
+
             return playerRelicInventory;
         }
 

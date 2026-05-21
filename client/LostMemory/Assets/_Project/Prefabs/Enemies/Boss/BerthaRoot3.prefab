@@ -454,6 +454,12 @@ GameObject:
   - component: {fileID: 6853899682402686452}
   - component: {fileID: 7739037187583321875}
   - component: {fileID: 1537914052336638469}
+  - component: {fileID: 8597818710945415266}
+  - component: {fileID: 8360983184949632244}
+  - component: {fileID: 8967018218091374771}
+  - component: {fileID: 4055549971331204783}
+  - component: {fileID: 3298166052916693339}
+  - component: {fileID: 8892286381382043938}
   m_Layer: 0
   m_Name: BerthaRoot3
   m_TagString: Boss
@@ -1470,7 +1476,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MoreMountains.TopDownEngine::MoreMountains.TopDownEngine.Health
   Model: {fileID: 0}
-  CurrentHealth: 500
+  CurrentHealth: 1400
   Invulnerable: 0
   InitialHealth: 1400
   MaximumHealth: 1400
@@ -1892,6 +1898,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 8749221807566480916}
   telegraphOrigin: {fileID: 5232939591042715630}
   telegraphView: {fileID: 7397258050787355162}
+  monsterAttackBroadcast: {fileID: 8892286381382043938}
+  estimatedTelegraphDuration: 1.5
   telegraphStateName: LightTelegraph
   attackStateName: LightAttack1
   attackAnimationStateName: LightAtk1
@@ -2052,6 +2060,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 8749221807566480916}
   telegraphOrigin: {fileID: 5232939591042715630}
   telegraphView: {fileID: 7397258050787355162}
+  monsterAttackBroadcast: {fileID: 8892286381382043938}
+  estimatedTelegraphDuration: 1.5
   telegraphStateName: Light2Telegraph
   attackStateName: LightAttack2
   attackAnimationStateName: LightAtk2
@@ -2094,6 +2104,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 8749221807566480916}
   telegraphOrigin: {fileID: 5232939591042715630}
   telegraphView: {fileID: 7397258050787355162}
+  monsterAttackBroadcast: {fileID: 8892286381382043938}
+  estimatedTelegraphDuration: 1.5
   telegraphStateName: HeavyTelegraph
   attackStateName: HeavyAttack
   attackAnimationStateName: HeavyAtk
@@ -2136,6 +2148,8 @@ MonoBehaviour:
   introSequenceController: {fileID: 8749221807566480916}
   telegraphOrigin: {fileID: 5232939591042715630}
   telegraphView: {fileID: 7397258050787355162}
+  monsterAttackBroadcast: {fileID: 8892286381382043938}
+  estimatedTelegraphDuration: 1.5
   telegraphStateName: FullTelegraph
   attackStateName: FullComboAttack
   attackAnimationStateName: FullCombo
@@ -3291,6 +3305,152 @@ MonoBehaviour:
   Label: ProjectileStormRecoverDuration
   AfterTimeMin: 0.6
   AfterTimeMax: 0.6
+--- !u!114 &8597818710945415266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8384635405403100115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1054178222
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &8360983184949632244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8384635405403100115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 573cbbffe1b3dbe43a9ac95004e00d78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Monster.MonsterHealthSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  health: {fileID: 0}
+  minDelta: 0.01
+  deathDespawnDelay: 2
+  verboseLog: 0
+--- !u!114 &8967018218091374771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8384635405403100115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095fde1737311e54bbd8284bf96a54a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Monster.MonsterNetSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  disableCharacterOnNonServer: 1
+  additionalDisableComponentNames:
+  - CharacterMovement
+  - CharacterOrientation2D
+  - CharacterHandleWeapon
+  - AIBrain
+  disableAllAIActions: 1
+  disableAllAIDecisions: 1
+  syncFacingDirection: 1
+  verboseLog: 0
+--- !u!114 &4055549971331204783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8384635405403100115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 0
+  m_Animator: {fileID: 961775079447532972}
+  TransitionStateInfoList: []
+  AnimatorParameterEntries:
+    ParameterEntries: []
+  AnimatorParametersExpanded: 0
+--- !u!114 &3298166052916693339
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8384635405403100115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &8892286381382043938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8384635405403100115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d21240348f3b58c428af48fc531aa447, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.MonsterAttackBroadcast
+  ShowTopMostFoldoutHeaderGroup: 1
+  telegraphVisualPrefab: {fileID: 0}
+  verboseLog: 1
 --- !u!1001 &1843692276639817046
 PrefabInstance:
   m_ObjectHideFlags: 0

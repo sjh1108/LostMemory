@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4067358023085436}
   - component: {fileID: 212797044214329334}
   - component: {fileID: 95175321394988512}
+  - component: {fileID: 2916414293296775680}
   m_Layer: 13
   m_Name: ChobombModel
   m_TagString: Untagged
@@ -117,6 +118,54 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &2916414293296775680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1089166889239254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 0
+  m_Animator: {fileID: 95175321394988512}
+  TransitionStateInfoList: []
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Walking
+      NameHash: 1744665739
+      Synchronize: 1
+      ParameterType: 4
+    - name: Attack
+      NameHash: 1080829965
+      Synchronize: 1
+      ParameterType: 4
+    - name: Damage
+      NameHash: 375673178
+      Synchronize: 1
+      ParameterType: 9
+    - name: Death
+      NameHash: 646380074
+      Synchronize: 1
+      ParameterType: 9
+    - name: FacingDirection2D
+      NameHash: 1939664770
+      Synchronize: 1
+      ParameterType: 1
+    - name: HorizontalDirection
+      NameHash: -1277717585
+      Synchronize: 1
+      ParameterType: 1
+    - name: VerticalDirection
+      NameHash: -330024648
+      Synchronize: 1
+      ParameterType: 1
+  AnimatorParametersExpanded: 0
 --- !u!1 &1561694053617324
 GameObject:
   m_ObjectHideFlags: 0
@@ -154,6 +203,11 @@ GameObject:
   - component: {fileID: 1584939113666801430}
   - component: {fileID: 5135858870438520978}
   - component: {fileID: 7365274999224186521}
+  - component: {fileID: 3359560476510922982}
+  - component: {fileID: 5877369030927777334}
+  - component: {fileID: 2623965423706544597}
+  - component: {fileID: 238327540727312895}
+  - component: {fileID: 5012173324447829735}
   m_Layer: 13
   m_Name: Chobomb_CL212
   m_TagString: Enemy
@@ -967,11 +1021,17 @@ MonoBehaviour:
   sortingReference: {fileID: 212145249918404048}
   sortingOrderOffset: -5
   renderOutsideSortingGroup: 1
+  useFixedTelegraphSorting: 1
+  telegraphSortingLayerName: Foreground
+  telegraphSortingOrder: 50
   sortingGroupReference: {fileID: 0}
   defaultColor: {r: 1, g: 0.33, b: 0.08, a: 0.32}
   pulseSpeed: 8
   pulseAlphaStrength: 0.18
   positionOffset: {x: 0, y: 0.02, z: 0}
+  timingMarkerObjectName: AttackTelegraphTimingMarker
+  timingMarkerDefaultColor: {r: 1, g: 0.92, b: 0.55, a: 0.75}
+  timingMarkerThickness: 0.055
 --- !u!114 &5088777435156499506
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1131,6 +1191,132 @@ MonoBehaviour:
   useBodyColliderClearance: 1
   obstacleClearancePadding: 0.08
   fallbackClearanceRadius: 0.25
+--- !u!114 &3359560476510922982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &5877369030927777334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 573cbbffe1b3dbe43a9ac95004e00d78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Monster.MonsterHealthSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  health: {fileID: 0}
+  minDelta: 0.01
+  deathDespawnDelay: 2
+  verboseLog: 0
+--- !u!114 &2623965423706544597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095fde1737311e54bbd8284bf96a54a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Networking.Monster.MonsterNetSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  disableCharacterOnNonServer: 1
+  additionalDisableComponentNames:
+  - CharacterMovement
+  - CharacterOrientation2D
+  - CharacterHandleWeapon
+  - AIBrain
+  disableAllAIActions: 1
+  disableAllAIDecisions: 1
+  syncFacingDirection: 1
+  verboseLog: 0
+--- !u!114 &238327540727312895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &5012173324447829735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561694053617324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d21240348f3b58c428af48fc531aa447, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.MonsterAttackBroadcast
+  ShowTopMostFoldoutHeaderGroup: 1
+  telegraphVisualPrefab: {fileID: 0}
+  verboseLog: 1
 --- !u!1 &1671905898232590
 GameObject:
   m_ObjectHideFlags: 0
@@ -10983,7 +11169,7 @@ SpriteRenderer:
   m_Size: {x: 0.8, y: 0.1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
 --- !u!1 &278138783316840189
 GameObject:

@@ -1,5 +1,6 @@
 using LostMemory.Combat;
 using LostMemory.MagicalGirl;
+using LostMemory.Networking.Common;
 using LostMemory.Stage;
 using LostMemory.Tarot;
 using UnityEngine;
@@ -50,7 +51,7 @@ namespace LostMemory.Relics
         [SerializeField] private bool _logEffectDispatch = false;
 
         // RelicEffectRegistry / BuildManager 와 동일 패턴.
-        private readonly IRelicEffectAuthority _authority = new NetworkRelicEffectAuthority();
+        // F-2: HostAuthority 로 일원화 — RelicEffectRegistry / BuildManager 와 동일 패턴.
 
         private void OnEnable()
         {
@@ -64,6 +65,18 @@ namespace LostMemory.Relics
                 Debug.LogError($"[SetEffectApplicator] statContainer null. Inspector wiring 필요. host={gameObject.name}", this);
                 return;
             }
+
+            // CL-146 후속 (gold lazy-resolve):
+            // goldWallet 은 Player prefab 단계에서 인스펙터 와이어링이 불가능하다
+            // (wallet 은 Run 진입 시 DungeonRunBootstrap 단계에서 비로소 생성).
+            // OnEnable 시점에 null 이면 씬 안에 이미 떠 있는지 1회 확인 → 정적 Spawned 이벤트 구독.
+            // 자세한 배경은 client/docs/khi/gold_wallet_set_effect_wiring_fix_plan.md 참고.
+            if (goldWallet == null)
+            {
+                goldWallet = FindFirstObjectByType<GoldWallet>();
+            }
+            GoldWallet.Spawned += HandleGoldWalletSpawned;
+
             // CL-142 진단: OnHit wiring 상태 즉시 표시
             string onHitWiring = onHitRegistry != null
                 ? $"OK (host={onHitRegistry.gameObject.name})"
@@ -71,7 +84,9 @@ namespace LostMemory.Relics
             string girlWiring = magicalGirlSpawner != null
                 ? $"OK (host={magicalGirlSpawner.gameObject.name})"
                 : "❌ NULL (미소녀 동작 안 함)";
-            string goldWiring = goldWallet != null ? "OK" : "⚠ NULL (탐욕 적용 X)";
+            string goldWiring = goldWallet != null
+                ? "OK"
+                : "lazy (wallet 미존재 — 등장 시 Spawned 이벤트로 자동 wire)";
             string invWiring = playerRelicInventory != null ? "OK" : "⚠ NULL (행운 슬롯 적용 X)";
             string tarotWiring = tarotSystem != null ? "OK" : "⚠ NULL (타로 적용 X)";
             Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}, magicalGirlSpawner={girlWiring}, goldWallet={goldWiring}, playerRelicInventory={invWiring}, tarotSystem={tarotWiring}", this);
@@ -80,13 +95,44 @@ namespace LostMemory.Relics
 
         private void OnDisable()
         {
+            GoldWallet.Spawned -= HandleGoldWalletSpawned;
             if (buildManager == null) return;
             buildManager.OnSetTierChanged -= HandleSetTierChanged;
         }
 
+        // CL-146 후속: wallet 이 늦게 생긴 케이스 — 등장 즉시 wire 하고
+        // 이미 활성인 탐욕(Greed) tier 의 multiplier 를 재적용해 누락분을 보정한다.
+        private void HandleGoldWalletSpawned(GoldWallet wallet)
+        {
+            if (wallet == null) return;
+            // 이미 다른 wallet 으로 wire 되어 있고 그게 살아있다면 swap 하지 않음.
+            // (멀티 인스턴스 race 방지 — 첫 wallet 의 권위 보존.)
+            if (goldWallet != null && goldWallet != wallet) return;
+
+            goldWallet = wallet;
+            Debug.Log($"[SetEffectApplicator] GoldWallet.Spawned 수신 — lazy-wire 완료. wallet='{wallet.gameObject.name}'", this);
+
+            // 호스트 권위에서만 set 효과 routing 하므로 동일 가드.
+            if (!HostAuthority.IsHost) return;
+            if (buildManager == null) return;
+
+            // 현재 활성 탐욕 tier 가 있으면 즉시 multiplier 재적용.
+            int activeTier = buildManager.GetActiveTier(RelicTag.Greed);
+            if (activeTier < 0) return;
+
+            BuildSetData set = buildManager.GetSetForTag(RelicTag.Greed);
+            if (set == null || activeTier >= set.Tiers.Count) return;
+            // SetTier 는 struct 라 null 체크 불필요. EffectType 만 확인.
+            SetTier tier = set.Tiers[activeTier];
+            if (tier.EffectType != RelicEffectType.GoldGainPercent) return;
+
+            goldWallet.SetGainMultiplier(1f + tier.Magnitude);
+            Debug.Log($"[SetEffectApplicator] 활성 탐욕 t{activeTier} 재적용 → multiplier={1f + tier.Magnitude:F2}", this);
+        }
+
         private void HandleSetTierChanged(RelicTag tag, int oldTier, int newTier)
         {
-            if (!_authority.IsAuthority) return;
+            if (!HostAuthority.IsHost) return;
             BuildSetData set = buildManager.GetSetForTag(tag);
             if (set == null) return;
 
@@ -171,10 +217,12 @@ namespace LostMemory.Relics
                     break;
                 // ── CL-146 시스템 hook ──
                 case RelicEffectType.GoldGainPercent:
+                    // CL-146 후속: tier 변경 시점에 wallet null 이면 마지막으로 한 번 더 lazy-resolve.
+                    if (goldWallet == null) goldWallet = FindFirstObjectByType<GoldWallet>();
                     if (goldWallet != null)
                         goldWallet.SetGainMultiplier(1f + tier.Magnitude);
                     else
-                        Debug.LogWarning("[SetEffectApplicator] goldWallet null — GoldGainPercent 적용 X. Inspector wiring 필요.");
+                        Debug.LogWarning("[SetEffectApplicator] goldWallet null — GoldGainPercent 적용 보류. wallet 등장 시 Spawned 이벤트로 자동 재적용 예정.");
                     break;
                 case RelicEffectType.LuckPoints:
                 case RelicEffectType.LuckLegendaryGuarantee:
@@ -237,8 +285,13 @@ namespace LostMemory.Relics
 
             // CL-146: GoldGainPercent 비활성화 — multiplier 1.0 (기본) 으로 복구.
             // 다른 tier 가 동시 활성이면 ApplyTierEffect 가 즉시 새 multiplier 적용 → 안전.
-            if (tier.EffectType == RelicEffectType.GoldGainPercent && goldWallet != null)
-                goldWallet.SetGainMultiplier(1f);
+            // CL-146 후속: wallet null 일 때도 lazy-resolve 한 번 시도. 그래도 없으면 no-op
+            // (애초에 적용된 적도 없으므로 복구 대상 없음).
+            if (tier.EffectType == RelicEffectType.GoldGainPercent)
+            {
+                if (goldWallet == null) goldWallet = FindFirstObjectByType<GoldWallet>();
+                if (goldWallet != null) goldWallet.SetGainMultiplier(1f);
+            }
 
             // CL-146: LuckSlotExpand 비활성화 — 보너스 슬롯 -1.
             if (tier.EffectType == RelicEffectType.LuckSlotExpand && playerRelicInventory != null)

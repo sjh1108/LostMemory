@@ -1,5 +1,7 @@
 using System;
 using LostMemory.Combat;
+using LostMemory.Networking.Player;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -26,6 +28,8 @@ namespace LostMemory.TestKhi
         [SerializeField] private Transform arrowSpawnPoint;
         [Tooltip("화살 방향 계산에 쓰는 카메라. 비어있으면 Camera.main 사용.")]
         [SerializeField] private Camera aimCamera;
+        [Tooltip("Multiplayer 시각 broadcast 채널 (Bug #30). 부모 계층에서 자동 검색.")]
+        [SerializeField] private AttackBroadcast attackBroadcast;
 
         [Header("Arrow")]
         [Tooltip("KhiArrowProjectile 컴포넌트가 부착된 화살 prefab.")]
@@ -47,6 +51,9 @@ namespace LostMemory.TestKhi
         private float _nextSingleShotAllowedAt;
         private float _nextRapidShotAt;
         private int _sequenceId;
+        // Bug #30 — non-owner clone 자체 발사 차단용. KhiStaffController 와 동일 패턴.
+        private NetworkObject _cachedNetObj;
+        private bool _netObjResolved;
 
         /// <summary>화살 발사 직전 발화. (request, isRapid)</summary>
         public event Action<KhiAttackRequest, bool> ArrowFired;
@@ -59,6 +66,7 @@ namespace LostMemory.TestKhi
                 ?? GetComponentInParent<PlayerStatModifierContainer>()
                 ?? GetComponentInChildren<PlayerStatModifierContainer>(true);
             if (arrowSpawnPoint == null) arrowSpawnPoint = transform;
+            if (attackBroadcast == null) attackBroadcast = GetComponentInParent<AttackBroadcast>();
 
             if (arrowPrefab == null)
             {
@@ -69,6 +77,10 @@ namespace LostMemory.TestKhi
 
         private void Update()
         {
+            // Bug #30 — 비-owner clone 은 자체 발사 금지. owner 만 입력 처리.
+            // (이전에는 가드 없어서 게스트 화면에서 *상대 player* 의 활도 게스트 로컬 마우스 입력으로 발사될 위험.)
+            if (IsRemoteClone()) return;
+
             Mouse mouse = Mouse.current;
             if (mouse == null) return;
 
@@ -171,6 +183,56 @@ namespace LostMemory.TestKhi
             {
                 Debug.Log($"[KhiBow] {(isRapid ? "Rapid" : "Single")} shot seq={request.SequenceId} dmg={damage:F1}");
             }
+
+            // Bug #30 + #33 — non-owner 측 visual-only clone broadcast + owner kill 시 동기 destroy 위한 ID 발급.
+            if (attackBroadcast != null)
+            {
+                int projectileId = KhiArrowProjectile.AllocateProjectileId();
+                projectile.SetProjectileId(projectileId);
+                projectile.SetDespawnBroadcaster(attackBroadcast);
+                attackBroadcast.RelayArrowProjectileSpawn(spawnPos, aimDirection, isRapid, projectileId);
+            }
+        }
+
+        /// <summary>
+        /// Bug #30 — non-owner 측에서 AttackBroadcast.BroadcastArrowProjectileSpawnClientRpc 가 호출.
+        /// owner spawn 과 같은 prefab Instantiate + visual-only 마킹 + ArrowFired 이벤트 fire.
+        /// KhiBowAnimator (Draw/Release frame) 와 KhiBowPresenter (recoil) 가 이 이벤트 구독 →
+        /// non-owner 측에서도 발사 시각 효과 자연스럽게 재생.
+        /// damage=0 + attacker=null + SetVisualOnly(true) → collider disable + Health.Damage 호출 차단.
+        /// </summary>
+        public void SpawnVisualOnlyArrow(Vector3 spawnPos, Vector2 direction, bool isRapid, int projectileId)
+        {
+            if (arrowPrefab == null) return;
+
+            KhiArrowProjectile clone = Instantiate(arrowPrefab, spawnPos, Quaternion.identity);
+            clone.SetVisualOnly(true);
+            clone.SetProjectileId(projectileId);  // visualOnly 이미 true → dictionary 등록 (owner hit broadcast 매칭).
+            clone.Launch(direction, arrowSpeed, 0f, null);
+
+            // owner 의 ArrowFired 와 동일 시그니처로 fire → animator/presenter 가 같은 코루틴 재생.
+            KhiAttackRequest request = new KhiAttackRequest
+            {
+                SequenceId = ++_sequenceId,
+                ComboStep = 1,
+                AimDirection = direction,
+                AimAngleDegrees = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg,
+                Origin = spawnPos,
+                StartedAt = Time.time,
+                Attacker = gameObject
+            };
+            ArrowFired?.Invoke(request, isRapid);
+        }
+
+        /// <summary>Bug #30 — 비-owner clone 여부 (cached). KhiStaffController.IsRemoteClone 과 동일 패턴.</summary>
+        private bool IsRemoteClone()
+        {
+            if (!_netObjResolved)
+            {
+                _cachedNetObj = GetComponentInParent<NetworkObject>();
+                _netObjResolved = true;
+            }
+            return _cachedNetObj != null && _cachedNetObj.IsSpawned && !_cachedNetObj.IsOwner;
         }
 
         /// <summary>

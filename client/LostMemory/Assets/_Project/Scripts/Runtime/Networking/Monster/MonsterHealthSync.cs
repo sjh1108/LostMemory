@@ -45,6 +45,14 @@ namespace LostMemory.Networking.Monster
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
 
+        // Bug #36: MaximumHealth 도 NetworkVariable sync — server-side controller (EnemyDataRuntimeAdapter,
+        // Skeleton*/Slime/Bat/Assassin/Bertha/Rena 등) 가 runtime 에 MaximumHealth 변경 시 client prefab default
+        // 와 어긋남 → 체력바 비율 (CurrentHealth/MaximumHealth) 불일치.
+        private readonly NetworkVariable<float> _syncedMaxHealth = new(
+            0f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
         private bool _deathScheduled;
 
         private void Awake()
@@ -63,27 +71,37 @@ namespace LostMemory.Networking.Monster
             }
 
             _syncedHealth.OnValueChanged += HandleSyncedHealthChanged;
+            _syncedMaxHealth.OnValueChanged += HandleSyncedMaxHealthChanged;
 
             if (IsServer)
             {
                 _syncedHealth.Value = health.CurrentHealth;
-                if (verboseLog) Debug.Log($"[MonsterHealthSync] OnNetworkSpawn SERVER {gameObject.name} initial={health.CurrentHealth}", this);
+                _syncedMaxHealth.Value = health.MaximumHealth;
+                if (verboseLog) Debug.Log($"[MonsterHealthSync] OnNetworkSpawn SERVER {gameObject.name} initial={health.CurrentHealth} max={health.MaximumHealth}", this);
             }
             else
             {
                 // 비-server: 자체 Damage 호출 차단 + 현재 sync 값 즉시 적용
                 health.DamageDisabled();
+                // Bug #36: MaximumHealth 우선 적용 — server-side controller 가 runtime scaling 한 경우 client prefab
+                // default 와 다름. CurrentHealth sync 이전에 max 부터 적용해야 체력바 비율 (Cur/Max) 정확.
+                if (_syncedMaxHealth.Value > 0f)
+                {
+                    health.MaximumHealth = _syncedMaxHealth.Value;
+                    health.InitialHealth = _syncedMaxHealth.Value;
+                }
                 if (_syncedHealth.Value > 0f)
                 {
                     health.SetHealth(_syncedHealth.Value);
                 }
-                if (verboseLog) Debug.Log($"[MonsterHealthSync] OnNetworkSpawn CLIENT {gameObject.name} synced={_syncedHealth.Value}", this);
+                if (verboseLog) Debug.Log($"[MonsterHealthSync] OnNetworkSpawn CLIENT {gameObject.name} synced={_syncedHealth.Value} max={_syncedMaxHealth.Value}", this);
             }
         }
 
         public override void OnNetworkDespawn()
         {
             _syncedHealth.OnValueChanged -= HandleSyncedHealthChanged;
+            _syncedMaxHealth.OnValueChanged -= HandleSyncedMaxHealthChanged;
             base.OnNetworkDespawn();
         }
 
@@ -96,6 +114,15 @@ namespace LostMemory.Networking.Monster
             {
                 if (verboseLog) Debug.Log($"[MonsterHealthSync] SERVER write {gameObject.name} {_syncedHealth.Value} -> {current}", this);
                 _syncedHealth.Value = current;
+            }
+
+            // Bug #36: MaximumHealth 도 runtime 변경 감지 → sync. controller 가 spawn 후 scaling 하는 시점이
+            // OnNetworkSpawn 보다 늦은 경우 (race) 대응 + 후속 buff/debuff 도 sync.
+            float maxNow = health.MaximumHealth;
+            if (Mathf.Abs(maxNow - _syncedMaxHealth.Value) >= minDelta)
+            {
+                if (verboseLog) Debug.Log($"[MonsterHealthSync] SERVER write max {gameObject.name} {_syncedMaxHealth.Value} -> {maxNow}", this);
+                _syncedMaxHealth.Value = maxNow;
             }
 
             // 사망 시각 sync — server 측 CurrentHealth=0 후:
@@ -128,6 +155,20 @@ namespace LostMemory.Networking.Monster
 
             // 체력바 가시화 — Health.SetHealth 안의 UpdateHealthBar(false) 는 _showBar 를 켜지 않아
             // AlwaysVisible=false 인 MMHealthBar 가 게스트 측에서 자동 표시되지 않음. show=true 로 한 번 더 호출.
+            health.UpdateHealthBar(true);
+        }
+
+        private void HandleSyncedMaxHealthChanged(float previous, float current)
+        {
+            // server 는 자체 Health 처리. NetworkVariable 은 write 용.
+            if (IsServer) return;
+            if (health == null) return;
+            if (current <= 0f) return;
+
+            if (verboseLog) Debug.Log($"[MonsterHealthSync] CLIENT MaxHealth {gameObject.name} {previous} -> {current}", this);
+            // Bug #36: server-side runtime scaling 결과를 client 에 적용. CurrentHealth 는 그대로 둠 — _syncedHealth 가 별도 sync.
+            health.MaximumHealth = current;
+            health.InitialHealth = current;
             health.UpdateHealthBar(true);
         }
 
