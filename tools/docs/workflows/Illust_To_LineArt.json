@@ -1,5 +1,5 @@
 {
-  "id": "8d2f9b1e-2345-5678-90bc-lostmemoryitem2",
+  "id": "illust-to-lineart",
   "revision": 0,
   "last_node_id": 33,
   "last_link_id": 20,
@@ -241,8 +241,8 @@
       },
       "widgets_values": [
         "pixel_art_style_z_image_turbo.safetensors",
-        0.85,
-        0.85
+        0.0,
+        0.0
       ]
     },
     {
@@ -469,7 +469,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Pixel art game icon style. a single < NEW ITEM HERE - 예: golden key, magic scroll, blue gem >, isolated, centered, plain white background, clean black outline, simple flat shading, muted vintage colors with subtle red and pink accents, no gradient, no anti-aliasing, sharp pixel edges, game inventory icon\n"
+        "Line art illustration, clean black lineart, anime line drawing style, < CHARACTER MODIFIER HERE >, clean bold black outlines, simple flat shading, minimal color, white background, no gradient, no realistic shading, no painterly rendering, isolated, centered, high contrast line drawing"
       ]
     },
     {
@@ -517,7 +517,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "realistic, 3d render, photo, smooth shading, anti-aliased, blurry, gradient, detailed background, noisy background, text, watermark, low quality, multiple objects, cluster, deformed\n"
+        "realistic shading, photorealistic, photo, 3d render, hdr, full color rendering, complex shading, painterly, watercolor, oil painting, smooth gradient, soft shadows, ambient occlusion, blurry, jpeg artifacts, detailed background, noisy background, complex background, text, watermark, low quality, multiple characters, group, crowd, deformed face, malformed limbs, nsfw, suggestive, side view, back view"
       ]
     },
     {
@@ -634,7 +634,7 @@
         1.8,
         "euler",
         "simple",
-        0.6
+        0.55
       ]
     },
     {
@@ -716,7 +716,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "LostMemory_Img2Img"
+        "LineArt"
       ]
     },
     {
@@ -737,7 +737,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "## LostMemory 아이템 img2img (자동 양자화 포함)\n\n사용법:\n1. 노드 20 (LoadImage) Upload 또는 input/ 폴더의 파일 선택\n2. 노드 4 (positive prompt)에서 만들고 싶은 아이템 설명\n3. 노드 6 (KSampler) denoise:\n   - 0.3~0.5: 원본 거의 그대로, 색 일부만 변경\n   - 0.5~0.7: 구도 유지하면서 내용 변경 (권장)\n   - 0.8~0.95: 거의 새로 생성, 레퍼런스는 약하게만 참고\n4. Queue Prompt\n\n결과 두 가지 동시 저장:\n  - LostMemory_Img2Img_*.png       원본 512x512\n  - LostMemory_Img2Img_pixel_*.png 게임 32색 + 48x48 RGBA"
+        "## LostMemory 일러스트 -> 라인 일러스트 변환 (단순/안정 워크플로)\n\n용도: 임의 일러스트를 깔끔한 라인 아트(외곽선 강조 + 단순 색) 톤으로 변환.\nSD/chibi 비율 변환 같은 형태 변형은 X — 그림체만 lineart 스타일로.\n결과 가장 안정적 (SD 비율 변환보다 모델이 잘 처리).\n\n흐름:\n  LoadImage(20) -> ImageScale(22) -> VAEEncode\n    -> KSampler(6, LoRA 0, denoise 0.55, lineart prompt) -> VAEDecode(7)\n    -> 3 갈래:\n       - SaveImage(8) [LostMemory_LineArt_*.png] 라인 일러스트 원본\n       - LostMemoryPixelize(30, 16x16 adaptive 16색) -> SaveImage(31)\n       - LostMemoryBgRemove(32, isnet-anime) -> SaveImageRGBA(33)\n\n핵심: LoRA strength 0 (pixel_art LoRA 끔) — lineart 와 pixel_art 는 다른 스타일.\n\n출력 3장:\n  - LostMemory_LineArt_*.png             라인 일러스트 (원본 해상도)\n  - LostMemory_LineArt_pixel16_*.png     16x16 픽셀 (lineart -> 도트)\n  - LostMemory_LineArt_bgremove_*.png    RGBA 배경 투명\n\n사용:\n1. 일러스트 PNG 를 tools/ComfyUI/input/ 에 저장\n2. 노드 20 (LoadImage) 에서 선택\n3. 노드 4 (positive prompt) < CHARACTER MODIFIER HERE > 채우기 (선택)\n   placeholder 안 채워도 reference 윤곽이 강해서 결과 OK\n4. Queue Prompt\n\n튜닝:\n  - 라인이 너무 약함 -> denoise 0.55 -> 0.65\n  - 원본 디테일 너무 잃음 -> denoise 0.55 -> 0.4\n  - 색이 너무 많이 남음 -> negative 에 'full color, colored shading' 추가\n  - 픽셀 톤 살짝 섞고 싶음 -> 노드 3 LoraLoader strength 0 -> 0.3\n\n비교:\n  - LostMemory_Illust_To_SD: SD/2등신 비율 변환 시도 (결과 변이성 큼)\n  - LostMemory_Illust_To_LineArt: 그림체만 lineart 변환 (결과 안정) ← 추천\n  - LostMemory_Illust_To_PixelArt: 일반 픽셀 아트 그림체"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -829,10 +829,10 @@
         "Node name for S&R": "LostMemoryPixelize"
       },
       "widgets_values": [
-        "game-item48",
+        "game-item16",
         0,
-        "preset",
-        32,
+        "adaptive",
+        16,
         "preset",
         30
       ]
@@ -871,7 +871,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "LostMemory_Img2Img_pixel"
+        "LineArt_pixel16"
       ]
     },
     {
@@ -963,7 +963,7 @@
         "Node name for S&R": "LostMemoryBgRemove"
       },
       "widgets_values": [
-        "u2net",
+        "isnet-anime",
         "no",
         240,
         10,
@@ -1012,7 +1012,7 @@
         "Node name for S&R": "LostMemorySaveImageRGBA"
       },
       "widgets_values": [
-        "LostMemory_Item_bgremove"
+        "LineArt_bgremove"
       ]
     }
   ],
