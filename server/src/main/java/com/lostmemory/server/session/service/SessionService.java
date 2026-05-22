@@ -44,11 +44,10 @@ public class SessionService {
         User host = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 이전 세션 멤버십이 잔존(좀비)하면 정리 후 진행 — 비정상 종료(크래시·네트워크 단절·
-        // refresh 만료)로 DELETE/leave 호출이 누락된 케이스 복구. 게임 흐름상 한 유저는 동시에
-        // 한 세션에만 속하므로, 충돌 = 잔존 좀비로 간주하고 정리한다 (2차 방어).
+        // 같은 유저가 다른 active 세션의 멤버이면 신규 세션 생성 차단
+        // (런 종료 시 같은 유저가 두 endRun 의 적립 대상이 되는 race 자체를 봉쇄)
         if (sessionJoinRepository.existsByUserId(userId)) {
-            cleanupStaleMembership(userId);
+            throw new BusinessException(ErrorCode.USER_ALREADY_IN_SESSION);
         }
 
         if (sessionRepository.existsByPrivateCode(request.privateCode())) {
@@ -75,10 +74,10 @@ public class SessionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 이전 세션 멤버십이 잔존(좀비)하면 정리 후 진행 — 비정상 종료로 DELETE/leave 가 누락된
-        // 케이스 복구. 한 유저 = 한 세션 원칙이므로 충돌 = 잔존 좀비로 간주하고 정리한다 (2차 방어).
+        // 같은 유저가 다른 active 세션의 멤버이면 join 차단
+        // (런 종료 시 같은 유저가 두 endRun 의 적립 대상이 되는 race 자체를 봉쇄)
         if (sessionJoinRepository.existsByUserId(userId)) {
-            cleanupStaleMembership(userId);
+            throw new BusinessException(ErrorCode.USER_ALREADY_IN_SESSION);
         }
 
         Session session = sessionRepository.findByIdForUpdate(sessionId)
@@ -153,25 +152,6 @@ public class SessionService {
         sessionJoinRepository
                 .findBySessionIdAndUserId(sessionId, userId)
                 .ifPresent(sessionJoinRepository::delete);
-    }
-
-    /**
-     * lazy cleanup (좀비 세션 정리 — 2차 방어).
-     * 비정상 종료로 DELETE/leave 가 누락돼 잔존한 이전 세션 멤버십을 제거한다.
-     *  - 호스트였으면 세션 자체 삭제 (FK ON DELETE CASCADE 로 session_joins/runs 동반 정리)
-     *  - 게스트였으면 본인 session_join 만 삭제 (정원 카운트 회복)
-     * 정리 결과를 새 create/join 쿼리가 일관되게 보도록 즉시 flush 한다.
-     */
-    private void cleanupStaleMembership(Long userId) {
-        for (SessionJoin join : sessionJoinRepository.findAllByUserId(userId)) {
-            Session session = join.getSession();
-            if (session.getHost().getId().equals(userId)) {
-                sessionRepository.delete(session);
-            } else {
-                sessionJoinRepository.delete(join);
-            }
-        }
-        sessionJoinRepository.flush();
     }
 
     /** 응답 조립 — 호스트/게스트 둘 다 멤버 목록 + 본인 sessionToken 을 받는다. */

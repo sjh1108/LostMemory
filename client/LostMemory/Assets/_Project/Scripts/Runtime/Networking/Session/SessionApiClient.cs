@@ -2,7 +2,6 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using LostMemory.Networking.Common;
 using Newtonsoft.Json;
@@ -41,14 +40,10 @@ namespace LostMemory.Networking.Session
         };
 
         public static string AccessToken { get; private set; }
-        public static string RefreshToken { get; private set; }
         public static long MyUserId { get; private set; }
         public static string MyNickname { get; private set; }
 
         public static bool IsLoggedIn => !string.IsNullOrEmpty(AccessToken) && MyUserId != 0;
-
-        /// <summary>동시 401 → 동시 refresh 방지. rotation+reuse 감지 정책상 동시 refresh 는 family 전체 revoke 위험.</summary>
-        private static readonly SemaphoreSlim _refreshLock = new SemaphoreSlim(1, 1);
 
         // ============================================================
         // 인증
@@ -72,7 +67,6 @@ namespace LostMemory.Networking.Session
                 return false;
             }
             AccessToken = resp.data.accessToken;
-            RefreshToken = resp.data.refreshToken;
             return true;
         }
 
@@ -246,51 +240,36 @@ namespace LostMemory.Networking.Session
         // HTTP helpers
         // ============================================================
 
-        // 각 helper 는 HttpRequestMessage 를 '재생성하는 factory' 를 넘긴다.
-        // HttpRequestMessage 는 한 번 SendAsync 하면 재사용 불가 → 401 재시도 시 새로 빌드해야 하므로.
-
-        private static Task<ApiEnvelope<T>> PostAsync<T>(string path, object body, bool requireAuth = true)
+        private static async Task<ApiEnvelope<T>> PostAsync<T>(string path, object body, bool requireAuth = true)
         {
-            return SendWithAuthRetryAsync<T>(() =>
-            {
-                var json = JsonConvert.SerializeObject(body, jsonSettings);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var req = new HttpRequestMessage(HttpMethod.Post, BaseUrl + path) { Content = content };
-                if (requireAuth) AddAuth(req);
-                return req;
-            }, requireAuth);
+            var json = JsonConvert.SerializeObject(body, jsonSettings);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var req = new HttpRequestMessage(HttpMethod.Post, BaseUrl + path) { Content = content };
+            if (requireAuth) AddAuth(req);
+            return await SendAndParseAsync<T>(req);
         }
 
-        private static Task<ApiEnvelope<T>> GetAsync<T>(string path)
+        private static async Task<ApiEnvelope<T>> GetAsync<T>(string path)
         {
-            return SendWithAuthRetryAsync<T>(() =>
-            {
-                var req = new HttpRequestMessage(HttpMethod.Get, BaseUrl + path);
-                AddAuth(req);
-                return req;
-            }, requireAuth: true);
+            using var req = new HttpRequestMessage(HttpMethod.Get, BaseUrl + path);
+            AddAuth(req);
+            return await SendAndParseAsync<T>(req);
         }
 
         private static async Task DeleteAsync(string path)
         {
-            await SendWithAuthRetryAsync<object>(() =>
-            {
-                var req = new HttpRequestMessage(HttpMethod.Delete, BaseUrl + path);
-                AddAuth(req);
-                return req;
-            }, requireAuth: true);
+            using var req = new HttpRequestMessage(HttpMethod.Delete, BaseUrl + path);
+            AddAuth(req);
+            await SendAndParseAsync<object>(req);
         }
 
-        private static Task<ApiEnvelope<T>> PutAsync<T>(string path, object body)
+        private static async Task<ApiEnvelope<T>> PutAsync<T>(string path, object body)
         {
-            return SendWithAuthRetryAsync<T>(() =>
-            {
-                var json = JsonConvert.SerializeObject(body, jsonSettings);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var req = new HttpRequestMessage(HttpMethod.Put, BaseUrl + path) { Content = content };
-                AddAuth(req);
-                return req;
-            }, requireAuth: true);
+            var json = JsonConvert.SerializeObject(body, jsonSettings);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var req = new HttpRequestMessage(HttpMethod.Put, BaseUrl + path) { Content = content };
+            AddAuth(req);
+            return await SendAndParseAsync<T>(req);
         }
 
         private static void AddAuth(HttpRequestMessage req)
@@ -301,94 +280,22 @@ namespace LostMemory.Networking.Session
             }
         }
 
-        /// <summary>
-        /// 요청 전송. requireAuth 요청이 401(토큰 만료/무효)을 받으면 refresh 토큰으로 access 토큰을
-        /// 재발급한 뒤 같은 요청을 1회 재시도한다. refresh 실패 시 원래 401 응답 그대로 반환.
-        /// </summary>
-        private static async Task<ApiEnvelope<T>> SendWithAuthRetryAsync<T>(
-            Func<HttpRequestMessage> requestFactory, bool requireAuth)
+        private static async Task<ApiEnvelope<T>> SendAndParseAsync<T>(HttpRequestMessage req)
         {
-            var (env, status) = await SendOnceAsync<T>(requestFactory());
-
-            if (requireAuth && status == 401)
-            {
-                bool refreshed = await TryRefreshAccessTokenAsync();
-                if (refreshed)
-                {
-                    NetLog.Info("API", "401 감지 → 토큰 refresh 성공 → 재시도");
-                    (env, status) = await SendOnceAsync<T>(requestFactory());
-                }
-                else
-                {
-                    NetLog.Warn("API", "401 감지 → 토큰 refresh 실패 → 재로그인 필요");
-                }
-            }
-            return env;
-        }
-
-        /// <summary>요청 1회 전송 + 파싱. HTTP status code 를 함께 반환 (401 판별용).</summary>
-        private static async Task<(ApiEnvelope<T> env, int status)> SendOnceAsync<T>(HttpRequestMessage req)
-        {
-            using (req)
-            {
-                try
-                {
-                    using var resp = await http.SendAsync(req);
-                    int status = (int)resp.StatusCode;
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ApiEnvelope<T> env = string.IsNullOrEmpty(text)
-                        ? new ApiEnvelope<T> { success = resp.IsSuccessStatusCode }
-                        : JsonConvert.DeserializeObject<ApiEnvelope<T>>(text, jsonSettings);
-                    return (env, status);
-                }
-                catch (Exception ex)
-                {
-                    NetLog.Error("API", $"{req.Method} {req.RequestUri?.AbsolutePath} 실패: {ex.Message}");
-                    return (null, 0);
-                }
-            }
-        }
-
-        /// <summary>
-        /// refresh 토큰으로 access 토큰 재발급. rotation 이라 refresh 토큰도 새 값으로 갱신.
-        /// 동시 401 이 와도 SemaphoreSlim 으로 직렬화 + lock 대기 중 이미 갱신됐으면 스킵 —
-        /// 동시 refresh 시 백엔드 reuse 감지로 family 전체 revoke 되는 것을 방지.
-        /// </summary>
-        private static async Task<bool> TryRefreshAccessTokenAsync()
-        {
-            if (string.IsNullOrEmpty(RefreshToken)) return false;
-
-            string tokenBeforeWait = AccessToken;
-            await _refreshLock.WaitAsync();
             try
             {
-                // lock 대기 중 다른 호출이 이미 refresh 완료했으면 그 결과 재사용 (중복 refresh 방지)
-                if (!string.Equals(AccessToken, tokenBeforeWait, StringComparison.Ordinal))
+                using var resp = await http.SendAsync(req);
+                var text = await resp.Content.ReadAsStringAsync();
+                if (string.IsNullOrEmpty(text))
                 {
-                    return true;
+                    return new ApiEnvelope<T> { success = resp.IsSuccessStatusCode };
                 }
-
-                var body = new { refreshToken = RefreshToken };
-                var json = JsonConvert.SerializeObject(body, jsonSettings);
-                // req/content 의 dispose 는 SendOnceAsync 의 using(req) 가 책임 (req.Dispose 가 Content 도 정리)
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var req = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/auth/refresh") { Content = content };
-
-                // refresh 요청 자체는 인증 불요 + 재시도 안 함 (무한 루프 방지) → SendOnceAsync 직접 호출
-                var (env, _) = await SendOnceAsync<TokenData>(req);
-                if (env == null || !env.success || env.data == null)
-                {
-                    NetLog.Warn("API", $"토큰 refresh 실패: code={env?.error?.code}");
-                    return false;
-                }
-
-                AccessToken = env.data.accessToken;
-                RefreshToken = env.data.refreshToken;   // rotation — 새 refresh 토큰으로 교체
-                return true;
+                return JsonConvert.DeserializeObject<ApiEnvelope<T>>(text, jsonSettings);
             }
-            finally
+            catch (Exception ex)
             {
-                _refreshLock.Release();
+                NetLog.Error("API", $"{req.Method} {req.RequestUri.AbsolutePath} 실패: {ex.Message}");
+                return null;
             }
         }
 
