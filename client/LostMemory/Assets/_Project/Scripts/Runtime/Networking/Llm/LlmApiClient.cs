@@ -37,8 +37,15 @@ namespace LostMemory.Networking.Llm
 
 #if UNITY_EDITOR
         // Editor Play 모드 임시 인증 — 로그인 기능 완성되면 제거 예정.
-        // ⚠️ 이 문자열은 절대 깃허브에 커밋 금지. dev 환경에서만 작동하지만 노출 시 우회 가능.
-        public static string DevBypassToken = "REPLACE-WITH-DEV-BYPASS-TOKEN";
+        // 토큰은 EditorPrefs 에 저장 → Unity Editor 메뉴
+        // "LostMemory/LLM/Dev Bypass Token" 에서 입력. 깃 추적 X.
+        // 주의: LlmDevBypassTokenWindow.PrefsKey 와 반드시 동일해야 함.
+        private const string DevBypassPrefsKey = "LostMemory.LlmDevBypass.Token";
+
+        /// <summary>
+        /// EditorPrefs 에 저장된 X-Dev-Bypass 토큰. 빈 값이면 백엔드 401 발생.
+        /// </summary>
+        public static string DevBypassToken => UnityEditor.EditorPrefs.GetString(DevBypassPrefsKey, "");
 #endif
 
         // LLM 응답은 느릴 수 있어 60초 타임아웃 (SessionApiClient 는 10초)

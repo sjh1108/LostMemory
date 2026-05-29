@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using LostMemory.Combat;
 using LostMemory.Data;
 using LostMemory.Memory;
+using LostMemory.Networking.Player;
 using LostMemory.Networking.Session;
 using TMPro;
 using UnityEngine;
@@ -150,7 +151,12 @@ namespace LostMemory.Talents
         /// </summary>
         private void ApplyStatsImmediately()
         {
-            PlayerStatModifierContainer container = FindAnyObjectByType<PlayerStatModifierContainer>(FindObjectsInactive.Include);
+            // 멀티 fix: FindAnyObjectByType 는 호스트/게스트 race (씬에 양쪽 player 존재 시 잘못된 container 잡힘).
+            // LocalPlayer 측 container 명시 조회 — TalentStartupApplier 와 동일 패턴으로 일관성.
+            // 솔로/Editor 단일 씬은 LocalPlayerResolver 가 fallback 으로 첫 Character 잡음.
+            PlayerStatModifierContainer container =
+                LocalPlayerResolver.GetComponentOnLocalPlayer<PlayerStatModifierContainer>()
+                ?? FindAnyObjectByType<PlayerStatModifierContainer>(FindObjectsInactive.Include);
             if (container == null)
             {
                 Debug.LogWarning("[TalentPanelView] PlayerStatModifierContainer 가 씬에 없음 — 즉시 적용 불가.", this);

@@ -20923,7 +20923,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 40, y: 13, z: 0}
@@ -20938,7 +20938,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 34, y: 14, z: 0}
@@ -24270,6 +24270,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryZone
   controller: {fileID: 1064848046441803028}
+  verboseLog: 0
 --- !u!1 &3974123551545951203
 GameObject:
   m_ObjectHideFlags: 0
@@ -30786,6 +30787,9 @@ MonoBehaviour:
   - {fileID: 8540125889707950233}
   bossTracker: {fileID: 0}
   autoOpenExitsOnCleared: 0
+  roomEntryBgmClip: {fileID: 0}
+  roomEntryBgmId: 1201
+  roomEntryBgmVolume: 1
 --- !u!114 &6226433339382925121
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38106,7 +38110,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 34, y: 5, z: 0}
@@ -38166,7 +38170,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 42, y: 5, z: 0}
@@ -38241,7 +38245,7 @@ Tilemap:
       - {fileID: -1977390862, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 300962902, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 596744238, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 48, y: 5, z: 0}
@@ -38256,7 +38260,7 @@ Tilemap:
       - {fileID: -209369834, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1625146880, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -299249553, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 30, y: 6, z: 0}
@@ -38316,7 +38320,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 34, y: 6, z: 0}
@@ -38466,7 +38470,7 @@ Tilemap:
       - {fileID: -236951880, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1212795407, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1214142489, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 34, y: 7, z: 0}
@@ -38841,7 +38845,7 @@ Tilemap:
       - {fileID: -1977390862, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 300962902, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 596744238, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 34, y: 10, z: 0}
@@ -38946,7 +38950,7 @@ Tilemap:
       - {fileID: -1578144655, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: -1526048408, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1329161141, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 33, y: 11, z: 0}
@@ -39006,7 +39010,7 @@ Tilemap:
       - {fileID: 2143235014, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 621134849, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
       - {fileID: 1864056854, guid: 48ef27c8eeb9d7147add7d1d6c9322e8, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: 31, y: 12, z: 0}
@@ -45883,6 +45887,9 @@ MonoBehaviour:
   localTeleportTargetRootName: 
   localTeleportAnchorTag: default
   localTeleportOffset: {x: 0, y: 0, z: 0}
+  localTeleportBgmClip: {fileID: 0}
+  localTeleportBgmId: 1201
+  localTeleportBgmVolume: 1
   portalAnimator: {fileID: 0}
   portalAnimationDurationOverride: 0
   postAnimationDelay: 0.5

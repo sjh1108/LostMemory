@@ -70,7 +70,7 @@ namespace LostMemory.MagicalGirl
         [SerializeField] private bool _showLaserLine = false;
 
         [Header("Debug")]
-        [SerializeField] private bool _logFusion = true;
+        [SerializeField] private bool _logFusion = false;
 
         private bool _burstActive;
         private float _nextReadyAt;          // Time.time 기준, 초기값 0 = 즉시 사용 가능

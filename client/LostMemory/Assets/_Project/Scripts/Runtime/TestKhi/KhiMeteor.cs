@@ -1,4 +1,6 @@
 using System.Collections;
+using LostMemory.Combat;
+using LostMemory.Networking.Player;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -74,6 +76,10 @@ namespace LostMemory.TestKhi
         [SerializeField] private bool logMeteorEvents = false;
 
         private GameObject _attacker;
+        // 멀티: 게스트 owner 측에서 호스트로 데미지 위임. attacker (player) 의 PlayerDamageRelay 를 Detonate 에서 1회 캐시.
+        private PlayerDamageRelay _cachedRelay;
+        // 크리티컬 — Detonate 시 1회 판정. AOE 전체가 같은 결과 (평타와 동일 패턴).
+        private bool _wasCritical;
         private bool _detonated;
         private bool _warningActive;
         private Vector3 _warningBaseScale = Vector3.one;
@@ -166,6 +172,13 @@ namespace LostMemory.TestKhi
             if (damageOverride > 0f) damage = damageOverride;
             if (radiusOverride > 0f) damageRadius = radiusOverride;
             _attacker = attacker;
+            _cachedRelay = attacker != null ? attacker.GetComponentInParent<PlayerDamageRelay>() : null;
+            // 발동 시 1회 크리티컬 판정 — AOE 전체에 동일 적용.
+            PlayerStatModifierContainer stats = attacker != null
+                ? attacker.GetComponentInParent<PlayerStatModifierContainer>() : null;
+            // AttackPower 적용 — 평타 패턴 통일. 이전 누락분 fix.
+            float meteorAttackMul = stats != null ? stats.GetTotalMultiplier(StatId.AttackPower) : 1f;
+            damage = LostMemory.Combat.CriticalRoller.Roll(stats, damage * meteorAttackMul, out _wasCritical);
             StartCoroutine(Sequence());
         }
 
@@ -249,6 +262,8 @@ namespace LostMemory.TestKhi
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius, targetLayers);
             if (logMeteorEvents) Debug.Log($"[Meteor] pos={transform.position} radius={damageRadius} → {hits.Length} colliders");
 
+            // 같은 적이 collider 여러 개로 잡힐 때 이중 hit 방지 (몸 + hitbox 자식 등).
+            System.Collections.Generic.HashSet<Health> appliedTargets = new System.Collections.Generic.HashSet<Health>();
             int applied = 0;
             for (int i = 0; i < hits.Length; i++)
             {
@@ -262,18 +277,44 @@ namespace LostMemory.TestKhi
                     if (logMeteorEvents) Debug.Log($"  hit {c.name}(L:{lname}) → no Health");
                     continue;
                 }
+                if (!appliedTargets.Add(health))
+                {
+                    if (logMeteorEvents) Debug.Log($"  hit {c.name}(L:{lname}) → already applied to '{health.name}' this detonation, skip");
+                    continue;
+                }
                 if (_attacker != null && IsOwnedByAttacker(health, _attacker))
                 {
                     if (logMeteorEvents) Debug.Log($"  hit {c.name}(L:{lname}) → owned by attacker");
                     continue;
                 }
-                if (!health.CanTakeDamageThisFrame())
+                // PvP 미상정 — 다른 player 도 친아군 skip.
+                if (CombatTargetable.IsFriendlyPlayer(health))
+                {
+                    if (logMeteorEvents) Debug.Log($"  hit {c.name}(L:{lname}) → friendly player skip");
+                    continue;
+                }
+                // 게스트가 ServerRpc 로 호스트에 위임할 경로면 자체 CanTakeDamageThisFrame 가드 우회 — 비-server 측 target Health 는
+                // MonsterHealthSync 가 DamageDisabled() 호출했기 때문에 항상 false 가 되어 RelayDamage 도달 전에 차단된다.
+                bool willRelayToServer = _cachedRelay != null && _cachedRelay.IsSpawned && !_cachedRelay.IsServer;
+                if (!willRelayToServer && !health.CanTakeDamageThisFrame())
                 {
                     if (logMeteorEvents) Debug.Log($"  hit {c.name}(L:{lname}) → CanTakeDamageThisFrame=false");
                     continue;
                 }
-                health.Damage(damage, _attacker, targetFlickerDuration, targetInvincibilityDuration, Vector2.up);
-                if (logMeteorEvents) Debug.Log($"  hit {c.name}(L:{lname}) → damage {damage} APPLIED");
+                if (_cachedRelay != null)
+                {
+                    _cachedRelay.RelayDamage(health, damage, _attacker, targetFlickerDuration, targetInvincibilityDuration, Vector2.up);
+                }
+                else
+                {
+                    health.Damage(damage, _attacker, targetFlickerDuration, targetInvincibilityDuration, Vector2.up);
+                }
+                // 본인 발동 메테오 → popup. Detonate 시 결정된 _wasCritical 적용.
+                if (LostMemory.UI.DamagePopupSpawner.Instance != null)
+                {
+                    LostMemory.UI.DamagePopupSpawner.Instance.NotifyMeleeDamage(health, damage, _wasCritical);
+                }
+                if (logMeteorEvents) Debug.Log($"  hit {c.name}(L:{lname}) → damage {damage} APPLIED crit={_wasCritical}");
                 applied++;
             }
 

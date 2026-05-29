@@ -30,6 +30,9 @@ namespace LostMemory.Combat
         [Tooltip("회피/방어 적용 로그 — 디버그용.")]
         [SerializeField] private bool _logDamageMod = true;
 
+        [Tooltip("OnEnable wiring 진단 로그 ([PlayerDamageReceiver] OnEnable — wiring: ...). 평소 OFF, wiring 누락 의심 시만 ON.")]
+        [SerializeField] private bool verboseLog = false;
+
         private void Awake()
         {
             if (health == null)
@@ -50,9 +53,12 @@ namespace LostMemory.Combat
                 Debug.LogError($"[PlayerDamageReceiver] container null. Inspector wiring 필요. host={gameObject.name}", this);
                 return;
             }
-            string healthInfo = $"OK (host={health.gameObject.name})";
-            string containerInfo = $"OK (host={container.gameObject.name})";
-            Debug.Log($"[PlayerDamageReceiver] OnEnable — wiring: health={healthInfo}, container={containerInfo}", this);
+            if (verboseLog)
+            {
+                string healthInfo = $"OK (host={health.gameObject.name})";
+                string containerInfo = $"OK (host={container.gameObject.name})";
+                Debug.Log($"[PlayerDamageReceiver] OnEnable — wiring: health={healthInfo}, container={containerInfo}", this);
+            }
             health.OnHit += HandleHit;
         }
 

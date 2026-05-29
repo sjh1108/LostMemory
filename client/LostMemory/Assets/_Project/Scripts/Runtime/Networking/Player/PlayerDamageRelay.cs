@@ -1,3 +1,4 @@
+using LostMemory.Combat;
 using MoreMountains.TopDownEngine;
 using Unity.Netcode;
 using UnityEngine;
@@ -20,7 +21,7 @@ namespace LostMemory.Networking.Player
     public sealed class PlayerDamageRelay : NetworkBehaviour
     {
         [Tooltip("Phase D 진단: guest 공격 sync 추적용. 안정화 후 false 권장.")]
-        [SerializeField] private bool verboseLog = true;
+        [SerializeField] private bool verboseLog = false;
 
         /// <summary>
         /// KhiMeleeHitbox / KhiArrowProjectile / KhiMeteor 등 player 측 damage source 가 호출.
@@ -31,6 +32,13 @@ namespace LostMemory.Networking.Player
         public void RelayDamage(Health target, float damage, GameObject attacker, float flickerDuration, float invincibilityDuration, Vector2 damageDirection)
         {
             if (target == null) return;
+
+            // PvP 미상정 — 모든 player(자기/팀원 무관) 차단. 4인까지 자동 확장.
+            if (CombatTargetable.IsFriendlyPlayer(target))
+            {
+                if (verboseLog) Debug.Log($"[PlayerDamageRelay] FriendlyFire blocked at RelayDamage — target={target.gameObject.name}", this);
+                return;
+            }
 
             if (!IsSpawned)
             {
@@ -82,6 +90,13 @@ namespace LostMemory.Networking.Player
             if (targetHealth == null)
             {
                 if (verboseLog) Debug.LogWarning($"[PlayerDamageRelay] ServerRpc — target NetworkObject 에 Health 없음: {targetNo.name}", this);
+                return;
+            }
+
+            // PvP 미상정 — 서버 측에서도 다시 검증 (게스트 보낸 ServerRpc 가 우회 가능성 차단).
+            if (CombatTargetable.IsFriendlyPlayer(targetHealth))
+            {
+                if (verboseLog) Debug.LogWarning($"[PlayerDamageRelay] FriendlyFire blocked at ServerRpc — target={targetNo.name} requester={gameObject.name}", this);
                 return;
             }
 

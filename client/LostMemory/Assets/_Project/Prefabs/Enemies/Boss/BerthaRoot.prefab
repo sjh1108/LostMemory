@@ -536,6 +536,9 @@ MonoBehaviour:
   bossTargetable: {fileID: 0}
   makeBossUntargetableDuringIntro: 1
   protectBossBeforeIntroStarts: 1
+  bossStartBgmClip: {fileID: 0}
+  bossStartBgmId: 1202
+  bossStartBgmVolume: 1
   debugLogging: 0
 --- !u!114 &912364736138903878
 MonoBehaviour:
@@ -1258,6 +1261,7 @@ MonoBehaviour:
   timingMarkerObjectName: AttackTelegraphTimingMarker
   timingMarkerDefaultColor: {r: 1, g: 0.92, b: 0.55, a: 0.75}
   timingMarkerThickness: 0.055
+  verboseLog: 0
 --- !u!114 &6782437660636743853
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1299,6 +1303,7 @@ MonoBehaviour:
   telegraphStateName: NormalDashTelegraph
   chargeStateName: NormalDashCharge
   useLastKnownTargetPosition: 1
+  telegraphStateExpectedDuration: 1
 --- !u!114 &1093519577850685883
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2362,6 +2367,7 @@ MonoBehaviour:
   telegraphStateName: DashTelegraph
   chargeStateName: DashCharge
   useLastKnownTargetPosition: 1
+  telegraphStateExpectedDuration: 1
 --- !u!114 &7437588138773926653
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3061,7 +3067,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.Telegraph.MonsterAttackBroadcast
   ShowTopMostFoldoutHeaderGroup: 1
   telegraphVisualPrefab: {fileID: 0}
-  verboseLog: 1
+  verboseLog: 0
 --- !u!1 &3513095212431674849
 GameObject:
   m_ObjectHideFlags: 0

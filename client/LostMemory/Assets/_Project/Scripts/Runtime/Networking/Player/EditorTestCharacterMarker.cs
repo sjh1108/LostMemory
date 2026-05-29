@@ -20,7 +20,7 @@ namespace LostMemory.Networking.Player
     public sealed class EditorTestCharacterMarker : MonoBehaviour
     {
         [SerializeField, Tooltip("디버그 로그 출력 여부")]
-        private bool verboseLog = true;
+        private bool verboseLog = false;
 
         private NetworkManager _subscribedManager;
 

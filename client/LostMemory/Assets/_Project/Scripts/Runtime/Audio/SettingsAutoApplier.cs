@@ -36,6 +36,10 @@ namespace LostMemory.Audio
 
         private static SettingsAutoApplier _instance;
 
+        // 진단 로그 토글. 씬 전환마다 2~3회 출력되는 정보 로그 — 콘솔 도배 방지 위해 default OFF.
+        // 사운드 적용 안 되는 문제 진단 시만 true. 경고/에러 로그는 가드 영향 없이 항상 출력.
+        private static bool VerboseLog = false;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
@@ -95,7 +99,7 @@ namespace LostMemory.Audio
 
         private IEnumerator ApplyWhenMMReady()
         {
-            Debug.Log("[SettingsAutoApplier] ApplyWhenMMReady 시작 — MMSoundManager 대기.", this);
+            if (VerboseLog) Debug.Log("[SettingsAutoApplier] ApplyWhenMMReady 시작 — MMSoundManager 대기.", this);
 
             // MMSoundManager 인스턴스 + settingsSo 준비될 때까지 최대 5초 (300프레임 @60fps) wait.
             // 씬 안 MMSoundManager 가 Awake 늦거나, settingsSo Initialization 코루틴이 늦을 수 있음.
@@ -135,7 +139,7 @@ namespace LostMemory.Audio
 
             MMSoundManager.Current.SetTrackVolume(MMSoundManager.MMSoundManagerTracks.Music, bgm);
             MMSoundManager.Current.SetTrackVolume(MMSoundManager.MMSoundManagerTracks.Sfx,   sfx);
-            Debug.Log($"[SettingsAutoApplier] 적용 완료 — BGM={bgm:F2} SFX={sfx:F2}", this);
+            if (VerboseLog) Debug.Log($"[SettingsAutoApplier] 적용 완료 — BGM={bgm:F2} SFX={sfx:F2}", this);
         }
     }
 }

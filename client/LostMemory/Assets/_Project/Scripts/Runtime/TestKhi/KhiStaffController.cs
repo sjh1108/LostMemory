@@ -191,7 +191,10 @@ namespace LostMemory.TestKhi
             Vector2 aimDir = ComputeAimFromOrigin(spawnPos);
 
             KhiArrowProjectile bolt = Instantiate(boltPrefab, spawnPos, Quaternion.identity);
-            bolt.Launch(aimDir, boltSpeed, boltDamage, gameObject);
+            // AttackPower 적용 — 평타 패턴 통일. 이전 누락분 fix.
+            float boltAttackMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.AttackPower) : 1f;
+            float boltFinal = LostMemory.Combat.CriticalRoller.Roll(statContainer, boltDamage * boltAttackMul, out bool boltCrit);
+            bolt.Launch(aimDir, boltSpeed, boltFinal, gameObject, boltCrit);
             if (boltHomingTurnRate > 0f && boltHomingRadius > 0f)
             {
                 bolt.SetHoming(boltHomingTurnRate, boltHomingRadius);
@@ -222,7 +225,10 @@ namespace LostMemory.TestKhi
             Vector2 aimDir = ComputeAimFromOrigin(spawnPos);
 
             KhiArrowProjectile fireball = Instantiate(fireballPrefab, spawnPos, Quaternion.identity);
-            fireball.Launch(aimDir, fireballSpeed, fireballDamage, gameObject);
+            // AttackPower 적용 — 평타 패턴 통일.
+            float fireAttackMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.AttackPower) : 1f;
+            float fireFinal = LostMemory.Combat.CriticalRoller.Roll(statContainer, fireballDamage * fireAttackMul, out bool fireCrit);
+            fireball.Launch(aimDir, fireballSpeed, fireFinal, gameObject, fireCrit);
 
             _nextFireballAt = Time.time + fireballCooldown;
 

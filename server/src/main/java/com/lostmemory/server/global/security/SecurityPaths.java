@@ -10,13 +10,14 @@ public final class SecurityPaths {
     private SecurityPaths() {
     }
 
-    /** 인증 없이 접근 가능한 경로(공개 API + Swagger + 헬스체크 + favicon) */
+    /** 인증 없이 접근 가능한 경로(공개 API + Swagger + 헬스체크 + Prometheus scrape + favicon) */
     public static final String[] WHITELIST = {
             "/auth/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
             "/actuator/health",
+            "/actuator/prometheus",
             "/favicon.ico"
     };
 }

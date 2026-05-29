@@ -277,6 +277,8 @@ namespace LostMemory.TestKhi
 
         // [DiagAim-Read] 1초 throttle 로 무기 회전 갱신 상태 dump (Update 끝).
         private float _diagNextAimReadAt;
+        // 진단 토글 — 재진단 필요 시 true. 평시 false (콘솔 노이즈 차단).
+        private const bool _diagAimLogEnabled = false;
 
         private void Update()
         {
@@ -351,7 +353,8 @@ namespace LostMemory.TestKhi
 
             // [DiagAim-Read] 1초 throttle 로 weaponSprite 회전 갱신 상태 dump. owner/non-owner 둘 다.
             // non-owner 측에서 aim 값이 0 또는 stale 이면 KhiPlayerAim._syncedDirection NetworkVariable 전파 실패.
-            if (Time.unscaledTime >= _diagNextAimReadAt)
+            // 진단 종료 — _diagAimLogEnabled = true 로 바꾸면 다시 활성화.
+            if (_diagAimLogEnabled && Time.unscaledTime >= _diagNextAimReadAt)
             {
                 _diagNextAimReadAt = Time.unscaledTime + 1f;
                 bool isOwner = playerAim != null && playerAim.IsOwner;

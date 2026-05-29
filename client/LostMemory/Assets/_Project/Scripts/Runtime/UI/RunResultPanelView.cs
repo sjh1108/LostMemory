@@ -22,6 +22,12 @@ namespace LostMemory.UI
         [SerializeField] private Button _restartButton;
         [SerializeField] private Button _lobbyButton;
 
+        [Header("Auto Return")]
+        [Tooltip("4명 사망 자동 마을 복귀 모드 — Restart/Lobby 버튼 자동 hide. " +
+                 "RunManager.AutoReturnAfterResult 가 timeout 후 자동 ReturnToTown 호출. " +
+                 "false 로 두면 기존 버튼 클릭 흐름 복구.")]
+        [SerializeField] private bool hideButtonsForAutoReturn = true;
+
         public event Action OnRestart;
         public event Action OnLobby;
 
@@ -30,10 +36,14 @@ namespace LostMemory.UI
             if (_restartButton != null)
             {
                 _restartButton.onClick.AddListener(() => OnRestart?.Invoke());
+                // [Auto Return] 자동 마을 복귀 모드 — 버튼 hide.
+                // listener 는 등록 그대로 (토글 OFF 시 즉시 부활 가능).
+                if (hideButtonsForAutoReturn) _restartButton.gameObject.SetActive(false);
             }
             if (_lobbyButton != null)
             {
                 _lobbyButton.onClick.AddListener(() => OnLobby?.Invoke());
+                if (hideButtonsForAutoReturn) _lobbyButton.gameObject.SetActive(false);
             }
         }
 

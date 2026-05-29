@@ -1,5 +1,7 @@
+using LostMemory.Networking.Common;
 using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Friend
@@ -43,9 +45,22 @@ namespace LostMemory.Friend
         [SerializeField] private KhiParryController playerParry;
 
         [Header("Debug")]
-        [SerializeField] private bool logFlow = true;
+        [SerializeField] private bool logFlow = false;
 
         public bool IsOpen { get; private set; }
+
+        private void Awake()
+        {
+            // 멀티에서 host 만 채팅 가능. guest 는 컨트롤러 자체를 비활성화해
+            // OnEnable/Update 가 호출되지 않게 한다.
+            // HostAuthority.IsHost — NetworkManager 가 없거나 비활성(=싱글 실행) 이면 true.
+            if (!HostAuthority.IsHost)
+            {
+                if (logFlow) Debug.Log("[FriendChatController] guest — 비활성화.");
+                enabled = false;
+                return;
+            }
+        }
 
         private void OnEnable()
         {
@@ -81,12 +96,57 @@ namespace LostMemory.Friend
                 return;
             }
 
+            // 멀티: 인스펙터에 플레이어 컴포넌트가 비어 있으면 런타임에 host 의 PlayerObject 에서 찾는다.
+            // 싱글/Town.unity: 인스펙터로 이미 채워져 있으면 skip — 기존 동작 보존.
+            ResolvePlayerComponentsIfNeeded();
+
             IsOpen = true;
             panel.gameObject.SetActive(true);
             panel.OnOpen();
             SuppressPlayerControls();
 
             if (logFlow) Debug.Log("[FriendChatController] Opened.");
+        }
+
+        /// <summary>
+        /// 인스펙터로 와이어된 플레이어 컴포넌트가 없으면 NGO LocalClient.PlayerObject 에서 찾아 채운다.
+        /// 멀티 환경에서 플레이어가 런타임에 스폰되는 경우를 위한 lazy 바인딩.
+        /// 한 번 채워지면 이후 호출에서는 skip.
+        /// </summary>
+        private void ResolvePlayerComponentsIfNeeded()
+        {
+            // 이미 인스펙터로 채워졌으면 skip (싱글/Town 회귀 안전).
+            if (playerMovement != null) return;
+
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening)
+            {
+                // 싱글 실행인데 인스펙터도 비어 있으면 봉쇄 동작이 안 되지만 패널 자체는 열림.
+                if (logFlow) Debug.LogWarning("[FriendChatController] 싱글 실행 + 인스펙터 플레이어 ref 비어있음 — 플레이어 봉쇄 skip.");
+                return;
+            }
+
+            NetworkClient local = nm.LocalClient;
+            Transform root = local?.PlayerObject?.transform;
+            if (root == null)
+            {
+                Debug.LogWarning("[FriendChatController] LocalClient.PlayerObject 미스폰 — 플레이어 컴포넌트 바인딩 실패.");
+                return;
+            }
+
+            playerMovement       = root.GetComponentInChildren<CharacterMovement>(true);
+            playerAim            = root.GetComponentInChildren<KhiPlayerAim>(true);
+            playerWeaponPresenter = root.GetComponentInChildren<KhiWeaponPresenter>(true);
+            playerMeleeCombo     = root.GetComponentInChildren<KhiMeleeComboController>(true);
+            playerDash           = root.GetComponentInChildren<KhiDashController>(true);
+            playerParry          = root.GetComponentInChildren<KhiParryController>(true);
+
+            if (logFlow)
+            {
+                Debug.Log($"[FriendChatController] 런타임 바인딩 — move={playerMovement != null} " +
+                          $"aim={playerAim != null} weapon={playerWeaponPresenter != null} " +
+                          $"melee={playerMeleeCombo != null} dash={playerDash != null} parry={playerParry != null}");
+            }
         }
 
         public void Close()

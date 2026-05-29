@@ -163,6 +163,29 @@ namespace LostMemory.Combat
             return n;
         }
 
+        /// <summary>
+        /// 외부 (UI / 디버그 패널) 가 modifier 스냅샷을 읽기 위한 API.
+        /// outBuf 를 Clear 한 뒤 영구 / 임시 / 조건부 modifier 를 평가 무관 모두 채워 넣는다.
+        /// presenter 가 List 재사용으로 heap alloc 회피 가능. private struct 노출 회피.
+        /// </summary>
+        public void CollectActive(List<ActiveStatSnapshot> outBuf)
+        {
+            if (outBuf == null) return;
+            outBuf.Clear();
+            foreach (PermanentMod m in _permanent)
+            {
+                outBuf.Add(new ActiveStatSnapshot(m.Stat, m.Magnitude, -1f, false, m.Source));
+            }
+            foreach (TimedMod m in _timed)
+            {
+                outBuf.Add(new ActiveStatSnapshot(m.Stat, m.Magnitude, m.ExpiresAt, false, m.Source));
+            }
+            foreach (ConditionalMod m in _conditional)
+            {
+                outBuf.Add(new ActiveStatSnapshot(m.Stat, m.Magnitude, -1f, true, m.Source));
+            }
+        }
+
         // ── 임시 만료 처리 ─────────────────────────────────
 
         private void Update()
@@ -220,6 +243,28 @@ namespace LostMemory.Combat
             if (logModifierChanges)
             {
                 Debug.Log($"[StatModifier] {log}");
+            }
+        }
+
+        /// <summary>
+        /// CollectActive 가 외부로 노출하는 read-only 스냅샷.
+        /// ExpiresAtOrNeg1 = -1 인 경우 영구 또는 조건부 (만료 없음).
+        /// </summary>
+        public readonly struct ActiveStatSnapshot
+        {
+            public readonly StatId Stat;
+            public readonly float Magnitude;
+            public readonly float ExpiresAtOrNeg1;
+            public readonly bool IsConditional;
+            public readonly object Source;
+
+            public ActiveStatSnapshot(StatId stat, float magnitude, float expiresAtOrNeg1, bool isConditional, object source)
+            {
+                Stat = stat;
+                Magnitude = magnitude;
+                ExpiresAtOrNeg1 = expiresAtOrNeg1;
+                IsConditional = isConditional;
+                Source = source;
             }
         }
 

@@ -111,7 +111,38 @@ namespace LostMemory.Enemies.Boss.Rena
                 animator.Play(deathStateName, 0, 0f);
             }
 
+            BroadcastDeathIfHost();
             Log("Rena encounter ended by death.");
+        }
+
+        /// <summary>게스트 측 ClientRpc 수신 시 호출 — 자기 측 보스 animator 에 death state 재생.</summary>
+        public void ApplyRemoteDeath()
+        {
+            _isDead = true;
+            IsEncounterStarted = false;
+            SetCombatActive(false);
+
+            if (animator != null && !string.IsNullOrWhiteSpace(deathStateName))
+            {
+                animator.Play(deathStateName, 0, 0f);
+            }
+        }
+
+        private void BroadcastDeathIfHost()
+        {
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+            var syncs = UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                var sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossDeathClientRpc();
+                    return;
+                }
+            }
         }
 
         private void SetCombatActive(bool isActive)

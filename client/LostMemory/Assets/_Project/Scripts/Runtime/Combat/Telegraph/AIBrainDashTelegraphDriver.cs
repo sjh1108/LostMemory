@@ -36,6 +36,9 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private string telegraphStateName = "Telegraph";
         [SerializeField] private string chargeStateName = "Charge";
         [SerializeField] private bool useLastKnownTargetPosition = true;
+        // 게스트 측 1회 broadcast clone 의 visual 유지 시간. Telegraph state 평균 체류 길이로 튜닝.
+        // 0 이면 MonsterAttackBroadcast.SpawnVisualClone 의 effectiveWarning clamp(0.01)로 한 프레임만 깜빡임.
+        [SerializeField, Min(0.05f)] private float telegraphStateExpectedDuration = 1.0f;
 
         private Vector2 _previewDirection = Vector2.right;
         private float _previewDashDistance = 0.01f;
@@ -387,7 +390,7 @@ namespace LostMemory.Combat.Telegraph
                     dashDistance + (halfExtentAlongDash * 2f) + telegraphLengthPadding,
                     (halfExtentAcrossDash * 2f) + telegraphWidthPadding),
                 Color = telegraphColor,
-                Duration = 0f
+                Duration = telegraphStateExpectedDuration
             };
         }
 

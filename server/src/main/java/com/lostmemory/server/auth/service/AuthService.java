@@ -1,10 +1,15 @@
 package com.lostmemory.server.auth.service;
 
 import com.lostmemory.server.auth.entity.AuthRefreshToken;
+import com.lostmemory.server.auth.dto.EmailResendRequest;
+import com.lostmemory.server.auth.dto.EmailVerifyRequest;
 import com.lostmemory.server.auth.dto.LoginRequest;
 import com.lostmemory.server.auth.dto.LogoutRequest;
+import com.lostmemory.server.auth.dto.PasswordResetConfirmRequest;
+import com.lostmemory.server.auth.dto.PasswordResetRequest;
 import com.lostmemory.server.auth.dto.RefreshRequest;
 import com.lostmemory.server.auth.dto.SignupRequest;
+import com.lostmemory.server.auth.dto.SignupResponse;
 import com.lostmemory.server.auth.dto.TokenResponse;
 import com.lostmemory.server.auth.repository.AuthRefreshTokenRepository;
 import com.lostmemory.server.global.exception.BusinessException;
@@ -19,6 +24,7 @@ import com.lostmemory.server.memory.repository.UserMemoryProgressRepository;
 import com.lostmemory.server.user.entity.User;
 import com.lostmemory.server.user.entity.UserCurrency;
 import com.lostmemory.server.user.entity.UserRecord;
+import com.lostmemory.server.user.entity.UserStatus;
 import com.lostmemory.server.user.entity.UserTalentAllocation;
 import com.lostmemory.server.user.repository.UserCurrencyRepository;
 import com.lostmemory.server.user.repository.UserRecordRepository;
@@ -57,33 +63,89 @@ public class AuthService {
     private final UserWeaponUnlockRepository userWeaponUnlockRepository;
     private final UserTalentAllocationRepository userTalentAllocationRepository;
     private final UserWeaponSelectionRepository userWeaponSelectionRepository;
+    private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
 
     /** 회원가입 시 default 장착 무기 ID — 검(weapon_id=1). */
     private static final long DEFAULT_SELECTED_WEAPON_ID = 1L;
 
     /**
-     * 회원가입: loginId/nickname 중복 검증 후 BCrypt 해시한 비밀번호로 User 저장 +
-     * 본 유저의 도메인 default 초기화 — 모두 한 트랜잭션 (실패 시 rollback).
-     *  - user_currencies: memory_shards=0
-     *  - user_record: cleared_chapter=0, cleared_stage=0
-     *  - user_memory_progress: 모든 frame 에 대해 unlocked_mask=0 (Locked)
-     *  - user_weapon_unlocks: 트리 루트 무기(parent IS NULL) 자동 해금 — 검·활·스태프
-     *  - user_talent_allocations: 5개 slot 분배 모두 0 (총량/잔여는 백엔드 미관리 — 클라가 보유)
-     *  - user_weapon_selection: 검(weapon_id=1) default 장착
+     * 회원가입(요청 단계): loginId/email/nickname 중복 검증 후 BCrypt 해시한 비밀번호와 함께
+     * Redis 에 가입 정보를 staging 만 한다. 인증 코드 메일 발송 후 종료.
+     *
+     * 이 시점엔 DB 에 user row 를 만들지 않는다 — verify 통과 시점에 비로소 INSERT.
+     * 사용자가 가입 도중 이탈하거나 코드 만료 / 시도 초과로 invalidate 되면 Redis TTL 로 자동 정리된다.
      */
-    @Transactional
-    public void signup(SignupRequest request) {
+    @Transactional(readOnly = true)
+    public SignupResponse signup(SignupRequest request) {
         if (userRepository.existsByLoginId(request.loginId())) {
             throw new BusinessException(ErrorCode.USER_LOGIN_ID_DUPLICATED);
+        }
+        if (userRepository.existsByEmail(request.email())) {
+            throw new BusinessException(ErrorCode.USER_EMAIL_DUPLICATED);
         }
         if (userRepository.existsByNickname(request.nickname())) {
             throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATED);
         }
 
-        String passwordHash = passwordEncoder.encode(request.password());
-        User user = userRepository.save(User.create(request.loginId(), passwordHash, request.nickname()));
+        // 비밀번호가 loginId·이메일 로컬파트·닉네임과 동일하면 거부 (cross-field — Bean Validation 으로 못 잡음)
+        PasswordIdentityChecker.assertNotIdentifierLookalike(
+                request.password(), request.loginId(), request.email(), request.nickname());
 
+        String passwordHash = passwordEncoder.encode(request.password());
+        StagedSignup staged = new StagedSignup(request.loginId(), passwordHash, request.nickname());
+        emailVerificationService.sendCodeForSignup(request.email(), staged);
+
+        return new SignupResponse(null, "pending");
+    }
+
+    /**
+     * 이메일 인증 코드 검증 = 회원가입 확정.
+     * 코드 통과 → Redis staging 조회 → uniqueness 재검증 → User row INSERT (ACTIVE) + 도메인 default 초기화 +
+     * staging 정리 + 토큰 발급. 모두 한 트랜잭션.
+     *
+     * staging 만료/없음 → AUTH_VERIFICATION_CODE_EXPIRED.
+     */
+    @Transactional
+    public TokenResponse verifyEmail(EmailVerifyRequest request) {
+        // 1. 코드 검증부터 (실패 시 try 카운터 증가, 5회 초과 시 staging 도 같이 무효화됨)
+        emailVerificationService.verifyCode(request.email(), request.code());
+
+        // 2. staging 조회 — 정상 흐름이면 반드시 존재. 동시 만료 이중 안전망.
+        StagedSignup staged = emailVerificationService.readStagedSignup(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_VERIFICATION_CODE_EXPIRED));
+
+        // 3. uniqueness 재검증 — staging 사이에 다른 ACTIVE 가 생겼을 수 있다 (다른 유저의 가입 동시 진행)
+        if (userRepository.existsByLoginId(staged.loginId())) {
+            throw new BusinessException(ErrorCode.USER_LOGIN_ID_DUPLICATED);
+        }
+        if (userRepository.existsByEmail(request.email())) {
+            throw new BusinessException(ErrorCode.USER_EMAIL_DUPLICATED);
+        }
+        if (userRepository.existsByNickname(staged.nickname())) {
+            throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATED);
+        }
+
+        // 4. User 생성 (ACTIVE 시작) + 도메인 default 초기화
+        User user = userRepository.save(
+                User.create(staged.loginId(), request.email(), staged.passwordHash(), staged.nickname()));
         initializeUserDomainDefaults(user);
+
+        // 5. staging 정리 + 토큰 발급
+        emailVerificationService.clearStagedSignup(request.email());
+        user.markLoggedIn();
+        return issueTokens(user);
+    }
+
+    /**
+     * 인증 코드 재발송. staging 이 살아있어야만 가능 — 없으면 가입을 다시 진행해야 한다.
+     * 재발송 시 새 코드 생성·발송, staging TTL 도 재시작.
+     */
+    @Transactional(readOnly = true)
+    public void resendVerificationCode(EmailResendRequest request) {
+        StagedSignup staged = emailVerificationService.readStagedSignup(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_VERIFICATION_CODE_EXPIRED));
+        emailVerificationService.sendCodeForSignup(request.email(), staged);
     }
 
     private void initializeUserDomainDefaults(User user) {
@@ -105,7 +167,7 @@ public class AuthService {
             userWeaponUnlockRepository.save(UserWeaponUnlock.of(user, weapon.getId()));
         }
 
-        // 5. 재능 분배 초기값 — 5개 slot 모두 0 (총량/잔여는 클라 관리)
+        // 5. 재능 분배 초기값 — 4 slot 모두 0
         userTalentAllocationRepository.save(UserTalentAllocation.create(user));
 
         // 6. default 장착 무기 — 검(weapon_id=1)
@@ -113,13 +175,22 @@ public class AuthService {
                 UserWeaponSelection.create(user, DEFAULT_SELECTED_WEAPON_ID));
     }
 
-    /** 로그인: 비밀번호 검증 후 access/refresh 발급, refresh 해시 DB 저장, lastLoginAt 갱신 */
+    /**
+     * 로그인: loginId 로 유저 조회 후 비밀번호 검증 → access/refresh 발급, refresh 해시 DB 저장, lastLoginAt 갱신.
+     * PENDING 계정은 이메일 인증을 먼저 요구. SUSPENDED/DELETED 등 비활성 계정은 AUTH_INVALID_CREDENTIALS 로 동일 응답.
+     */
     @Transactional
     public TokenResponse login(LoginRequest request) {
         User user = userRepository.findByLoginId(request.loginId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+        }
+        if (user.getStatus() == UserStatus.PENDING) {
+            throw new BusinessException(ErrorCode.AUTH_EMAIL_NOT_VERIFIED);
+        }
+        if (user.getStatus() != UserStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
         }
 
@@ -154,6 +225,43 @@ public class AuthService {
         stored.revoke();
 
         return issueTokens(stored.getUser());
+    }
+
+    /**
+     * 비밀번호 재설정 코드 발송 요청.
+     * 계정 열거 방지를 위해 결과는 항상 동일 — 존재하지 않는 이메일 / ACTIVE 가 아닌 계정은 조용히 종료.
+     * 실제 메일은 ACTIVE 사용자에게만 발송된다.
+     */
+    @Transactional(readOnly = true)
+    public void requestPasswordReset(PasswordResetRequest request) {
+        Optional<User> user = userRepository.findByEmail(request.email());
+        if (user.isEmpty() || user.get().getStatus() != UserStatus.ACTIVE) {
+            return;
+        }
+        passwordResetService.sendCode(user.get().getEmail());
+    }
+
+    /**
+     * 비밀번호 재설정 확정.
+     * 식별자(이메일·닉네임)와 동일한 새 비번은 거부한다. 코드 검증 성공 시 비밀번호를 갱신하고
+     * 해당 user 의 active refresh 토큰 패밀리를 전체 revoke — 다른 디바이스의 세션을 강제 종료.
+     *
+     * 식별자/정책 위반은 코드를 소비하지 않아 같은 코드로 재시도 가능 (UX 측면).
+     */
+    @Transactional
+    public void confirmPasswordReset(PasswordResetConfirmRequest request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_PASSWORD_RESET_CODE_EXPIRED));
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.AUTH_PASSWORD_RESET_CODE_EXPIRED);
+        }
+        PasswordIdentityChecker.assertNotIdentifierLookalike(
+                request.newPassword(), user.getLoginId(), request.email(), user.getNickname());
+
+        passwordResetService.verifyCode(request.email(), request.code());
+
+        user.changePassword(passwordEncoder.encode(request.newPassword()));
+        refreshTokenRepository.revokeAllActiveByUserId(user.getId(), Instant.now());
     }
 
     /**

@@ -12,6 +12,8 @@ namespace LostMemory.Stage
     public sealed class RoomEntryZone : MonoBehaviour
     {
         [SerializeField] private RoomEntryRuntimeController controller;
+        [Tooltip("[Zone] 진단 로그 — 매 trigger (모든 적/투사체/마법소녀 입장) 마다 발화 → 콘솔 도배. 평소엔 OFF.")]
+        [SerializeField] private bool verboseLog = false;
 
         private void Reset()
         {
@@ -22,17 +24,17 @@ namespace LostMemory.Stage
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            Debug.Log($"[Zone] OnTriggerEnter2D on '{name}' by '{(other != null ? other.name : "null")}'");
+            if (verboseLog) Debug.Log($"[Zone] OnTriggerEnter2D on '{name}' by '{(other != null ? other.name : "null")}'");
             if (controller == null || other == null)
             {
-                Debug.Log($"[Zone] skip: controller={controller != null} other={other != null}");
+                if (verboseLog) Debug.Log($"[Zone] skip: controller={controller != null} other={other != null}");
                 return;
             }
 
             Character character = other.GetComponentInParent<Character>();
             if (character == null)
             {
-                Debug.Log($"[Zone] skip: no Character on '{other.name}'");
+                if (verboseLog) Debug.Log($"[Zone] skip: no Character on '{other.name}'");
                 return;
             }
 
@@ -45,11 +47,11 @@ namespace LostMemory.Stage
 
             if (!isPlayerType && !isNetworkedPlayer)
             {
-                Debug.Log($"[Zone] skip: '{character.name}' type={character.CharacterType} netPlayer={isNetworkedPlayer}");
+                if (verboseLog) Debug.Log($"[Zone] skip: '{character.name}' type={character.CharacterType} netPlayer={isNetworkedPlayer}");
                 return;
             }
 
-            Debug.Log($"[Zone] forward to controller.BeginRoomEntry (player={isPlayerType} netPlayer={isNetworkedPlayer})");
+            if (verboseLog) Debug.Log($"[Zone] forward to controller.BeginRoomEntry (player={isPlayerType} netPlayer={isNetworkedPlayer})");
             controller.BeginRoomEntry(character);
         }
     }

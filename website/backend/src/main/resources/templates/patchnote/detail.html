@@ -10,7 +10,7 @@
     Release date: <span th:text="${#temporals.format(patchNote.releaseDate, 'yyyy-MM-dd')}">날짜</span>
   </div>
   <p th:if="${patchNote.downloadUrl != null and !patchNote.downloadUrl.isBlank()}" style="margin-top:1rem">
-    <a class="header-download" th:href="${patchNote.downloadUrl}" target="_blank" rel="noopener noreferrer">
+    <a class="header-download" th:href="@{'/downloads/' + ${patchNote.id}}" target="_blank" rel="noopener noreferrer">
       이 버전 다운로드 (Windows) ↓
     </a>
   </p>

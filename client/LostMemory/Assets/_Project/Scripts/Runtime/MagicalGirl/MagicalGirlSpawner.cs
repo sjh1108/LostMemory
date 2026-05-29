@@ -6,6 +6,7 @@ using LostMemory.Relics;
 using LostMemory.TestKhi;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace LostMemory.MagicalGirl
 {
@@ -67,6 +68,9 @@ namespace LostMemory.MagicalGirl
 
         [Tooltip("spawn / despawn / 시각 변화 / fusion 진입·종료 로그.")]
         [SerializeField] private bool _logSpawn = false;
+
+        [Tooltip("진단용 — 씬 전환 시 중복 spawn 추적. OnEnable 의 DDoL alive vs dict count 비교 + AddGirlByVisual 진입/spawn 로그.")]
+        [SerializeField] private bool _logSceneTransitionAudit = false;
 
         [Header("Follow Polish (CL-204)")]
         [Tooltip("미소녀가 Player 를 따라가는 부드러움 (초). 작을수록 즉각, 클수록 lag.")]
@@ -213,6 +217,19 @@ namespace LostMemory.MagicalGirl
 
         private void OnEnable()
         {
+            // 2026-05-28 fix: scene-placed 캐릭터 위 Spawner 의 pre-destroy replay 차단.
+            // 흐름:
+            //   - EditorTestCharacterMarker.Awake 는 NGO 활성 시 Destroy(gameObject) 호출하지만 Destroy 는 frame 끝에 발효.
+            //   - 같은 frame 의 OnEnable 이 그 사이 ReplayOwnedRelics → 2명 spawn → 그 미소녀들 anchor = 곧 죽을 transform → stuck.
+            //   - 추가로 활성 NGO PlayerObject 의 persistent Spawner 가 activeSceneChanged 로 또 spawn → 4명 + stuck 2명.
+            // 따라서: NGO 활성 + EditorTestCharacterMarker 부착 = 곧 destroy → 본 Spawner 는 inert. 구독/replay 전부 skip.
+            if (IsDoomedSceneCharacter())
+            {
+                if (_logSpawn || _logSceneTransitionAudit)
+                    Debug.Log($"[MagicalGirl] OnEnable — scene-placed 캐릭터(곧 EditorTestCharacterMarker 가 destroy) 위 Spawner. 구독/replay skip. host='{gameObject.name}'", this);
+                return;
+            }
+
             ResolveDownController();
             if (magicalGirlBroadcast == null)
             {
@@ -221,14 +238,32 @@ namespace LostMemory.MagicalGirl
                 if (magicalGirlBroadcast == null) magicalGirlBroadcast = GetComponentInChildren<MagicalGirlBroadcast>(true);
             }
 
-            string anchorWiring = anchor != null ? "OK" : "self";
-            string statWiring = playerStat != null ? "OK" : "❌ NULL";
-            string combatWiring = playerCombat != null ? "OK" : "❌ NULL";
-            string inventoryWiring = inventory != null ? "OK" : "❌ NULL (visual hook 동작 X)";
-            string aimWiring = playerAim != null ? "OK" : "⚠ NULL (ultimate 레이저 fallback=right)";
-            string catalogWiring = attackCatalog != null ? "OK" : "⚠ NULL (placeholder 즉시 데미지)";
-            string broadcastWiring = magicalGirlBroadcast != null ? "OK" : "⚠ NULL (멀티 sync 안 됨, 자기 클라만 보임)";
-            Debug.Log($"[MagicalGirlSpawner] OnEnable — wiring: anchor={anchorWiring}, playerStat={statWiring}, playerCombat={combatWiring}, inventory={inventoryWiring}, playerAim={aimWiring}, catalog={catalogWiring}, broadcast={broadcastWiring}", this);
+            if (_logSpawn)
+            {
+                string anchorWiring = anchor != null ? "OK" : "self";
+                string statWiring = playerStat != null ? "OK" : "❌ NULL";
+                string combatWiring = playerCombat != null ? "OK" : "❌ NULL";
+                string inventoryWiring = inventory != null ? "OK" : "❌ NULL (visual hook 동작 X)";
+                string aimWiring = playerAim != null ? "OK" : "⚠ NULL (ultimate 레이저 fallback=right)";
+                string catalogWiring = attackCatalog != null ? "OK" : "⚠ NULL (placeholder 즉시 데미지)";
+                string broadcastWiring = magicalGirlBroadcast != null ? "OK" : "⚠ NULL (멀티 sync 안 됨, 자기 클라만 보임)";
+                Debug.Log($"[MagicalGirlSpawner] OnEnable — wiring: anchor={anchorWiring}, playerStat={statWiring}, playerCombat={combatWiring}, inventory={inventoryWiring}, playerAim={aimWiring}, catalog={catalogWiring}, broadcast={broadcastWiring}", this);
+            }
+
+            // 진단 — 씬 전환 시 새 Spawner 인스턴스가 DDoL 로 보존된 기존 미소녀를 못 보는 가설 확인용.
+            // 결과: dict=0 인데 DDoL alive>0 이면 root cause 확정.
+            if (_logSceneTransitionAudit)
+            {
+                var existingGirls = UnityEngine.Object.FindObjectsByType<MagicalGirlAI>(FindObjectsSortMode.None);
+                Debug.Log($"[MagicalGirl-Audit] OnEnable — Spawner#{GetInstanceID()} host='{gameObject.name}' | DDoL alive girls in scene: {existingGirls.Length}, this dict count: {_girlsByVisual.Count}, OwnedRelics: {(inventory != null ? inventory.OwnedRelics.Count : 0)}", this);
+                for (int i = 0; i < existingGirls.Length; i++)
+                {
+                    var g = existingGirls[i];
+                    if (g == null) continue;
+                    bool inThisDict = _girlsByVisual.ContainsValue(g);
+                    Debug.Log($"  [MagicalGirl-Audit] alive girl#{i}: name='{g.gameObject.name}' visual={g.Visual} aiID={g.GetInstanceID()} inThisDict={inThisDict}", g);
+                }
+            }
 
             if (inventory != null)
             {
@@ -239,13 +274,16 @@ namespace LostMemory.MagicalGirl
                 // 씬 전환 시 Player 가 새로 스폰되어 본 Spawner 도 함께 새로 생성되므로,
                 // PlayerRunState 로 복구된 인벤토리에 이미 들어있는 미소녀 유물에 대해 visual 재 spawn.
                 // 첫 게임 시작 시 OwnedRelics 가 비어 있으면 무동작.
-                IReadOnlyList<RelicData> owned = inventory.OwnedRelics;
-                for (int i = 0; i < owned.Count; i++)
-                {
-                    RelicData r = owned[i];
-                    if (r != null) HandleRelicAcquired(r);
-                }
+                ReplayOwnedRelics();
             }
+
+            // 2026-05-28: 씬 전환 후 replay 트리거 — NGO 활성/비활성 따라 분기.
+            //   - NGO 비활성 (솔로/Editor 단일 씬): SceneManager.activeSceneChanged (즉시 발화). broadcast 무관.
+            //   - NGO 활성 (멀티): NetworkManager.SceneManager.OnLoadEventCompleted — *모든* client sync 완료 후 발화.
+            //     이유: activeSceneChanged 는 host 자기 씬 active 즉시 발화 → ClientRpc broadcast 가 게스트의 미준비
+            //     receiver 로 도착해 visual clone 누락. OnLoadEventCompleted 까지 기다리면 모든 client receiver 준비됨.
+            //     (PlayerHealthSync 가 같은 이벤트로 respawn 처리 — 동일 패턴.)
+            SubscribeSceneTransitionTrigger();
         }
 
         private void OnDisable()
@@ -254,6 +292,81 @@ namespace LostMemory.MagicalGirl
             {
                 inventory.OnRelicAcquired -= HandleRelicAcquired;
                 inventory.OnCleared -= HandleInventoryCleared;
+            }
+            UnsubscribeSceneTransitionTrigger();
+        }
+
+        private bool _ngoLoadEventHooked;
+
+        private void SubscribeSceneTransitionTrigger()
+        {
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && nm.SceneManager != null)
+            {
+                nm.SceneManager.OnLoadEventCompleted += HandleNgoLoadEventCompleted;
+                _ngoLoadEventHooked = true;
+            }
+            else
+            {
+                // 솔로 — Unity SceneManager 의 activeSceneChanged 로 즉시 트리거.
+                SceneManager.activeSceneChanged += HandleActiveSceneChangedForReplay;
+            }
+        }
+
+        private void UnsubscribeSceneTransitionTrigger()
+        {
+            if (_ngoLoadEventHooked)
+            {
+                var nm = Unity.Netcode.NetworkManager.Singleton;
+                if (nm != null && nm.SceneManager != null)
+                    nm.SceneManager.OnLoadEventCompleted -= HandleNgoLoadEventCompleted;
+                _ngoLoadEventHooked = false;
+            }
+            SceneManager.activeSceneChanged -= HandleActiveSceneChangedForReplay;
+        }
+
+        // NGO 활성 시 — 모든 client 씬 sync 완료 시점에 replay → broadcast 가 안전한 timing.
+        private void HandleNgoLoadEventCompleted(string sceneName, LoadSceneMode loadMode, System.Collections.Generic.List<ulong> clientsCompleted, System.Collections.Generic.List<ulong> clientsTimedOut)
+        {
+            if (inventory == null) return;
+            if (_logSceneTransitionAudit)
+                Debug.Log($"[MagicalGirl-Audit] OnLoadEventCompleted scene={sceneName} clientsCompleted={clientsCompleted.Count} — replay 트리거. Spawner#{GetInstanceID()} OwnedRelics={inventory.OwnedRelics.Count} dictCount={_girlsByVisual.Count}", this);
+            ReplayOwnedRelics();
+        }
+
+        /// <summary>
+        /// 본 Spawner 가 EditorTestCharacterMarker (scene-placed 캐릭터) 위에 부착됐고 NGO 가 활성인지.
+        /// True 면 같은 frame 안에 Destroy 예약돼 있음 → OnEnable replay / 이벤트 구독 모두 무의미 + 유해.
+        /// (anchor 가 곧 죽을 transform 이라 spawn 된 미소녀는 stuck. 또 다른 persistent Spawner 의 replay 와 중복.)
+        /// </summary>
+        private bool IsDoomedSceneCharacter()
+        {
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening) return false;
+            var marker = GetComponent<LostMemory.Networking.Player.EditorTestCharacterMarker>();
+            if (marker == null) marker = GetComponentInParent<LostMemory.Networking.Player.EditorTestCharacterMarker>();
+            return marker != null;
+        }
+
+        // 매 씬 전환 시 OwnedRelics 기반 미소녀 재spawn. 솔로/NGO 멀티 모두 idempotent.
+        // - 솔로: 새 Spawner.OnEnable 이 이미 replay → 본 hook 은 같은 인스턴스 두 번째 호출이라 dedup 으로 no-op
+        // - NGO multi: Spawner persist → OnEnable 재발화 X → 본 hook 이 유일한 replay 트리거 (미소녀 GameObject 는 이전 씬에서 자동 destroy 됐으므로 fresh spawn)
+        private void HandleActiveSceneChangedForReplay(Scene previous, Scene current)
+        {
+            if (inventory == null) return;
+            if (_logSceneTransitionAudit)
+                Debug.Log($"[MagicalGirl-Audit] activeSceneChanged ({previous.name} -> {current.name}) — replay 트리거. Spawner#{GetInstanceID()} OwnedRelics={inventory.OwnedRelics.Count} dictCount={_girlsByVisual.Count}", this);
+            ReplayOwnedRelics();
+        }
+
+        private void ReplayOwnedRelics()
+        {
+            if (inventory == null) return;
+            IReadOnlyList<RelicData> owned = inventory.OwnedRelics;
+            for (int i = 0; i < owned.Count; i++)
+            {
+                RelicData r = owned[i];
+                if (r != null) HandleRelicAcquired(r);
             }
         }
 
@@ -336,7 +449,30 @@ namespace LostMemory.MagicalGirl
         public void AddGirlByVisual(MagicalGirlVisual visual)
         {
             if (visual == MagicalGirlVisual.Default) return;
-            if (_girlsByVisual.ContainsKey(visual)) return;
+            // 진단 — 씬 전환 replay 가 같은 visual 을 다시 spawn 하려 할 때 dedup 우회 여부 추적.
+            if (_logSceneTransitionAudit)
+                Debug.Log($"[MagicalGirl-Audit] AddGirlByVisual ENTER visual={visual} dictHas={_girlsByVisual.ContainsKey(visual)} dictCount={_girlsByVisual.Count} Spawner#{GetInstanceID()}", this);
+            // D: scene-placed Spawner 인스턴스 spawn 차단 — IsPlayerObject 아닌 경우 (PlayerHealthSync 패턴).
+            // scene-placed Player 의 Spawner 가 새 씬에 활성화되어 옛 PlayerObject 의 미소녀와 중복 spawn 방지.
+            var ownNetObj = GetComponentInParent<Unity.Netcode.NetworkObject>();
+            if (ownNetObj != null && ownNetObj.IsSpawned && !ownNetObj.IsPlayerObject)
+            {
+                if (_logSpawn) Debug.Log($"[MagicalGirl] scene-placed Spawner — spawn 차단 visual={visual} go={gameObject.name}");
+                return;
+            }
+
+            // 중복 / stale 처리 — DDoL 로 미소녀 살아있으면 skip, dictionary 만 stale 이면 cleanup.
+            if (_girlsByVisual.TryGetValue(visual, out var existingAi))
+            {
+                if (existingAi != null && existingAi.gameObject != null)
+                {
+                    if (_logSpawn) Debug.Log($"[MagicalGirl] {visual} 이미 spawn 됨, skip 중복");
+                    return;
+                }
+                // stale entry — destroyed GameObject. 제거 후 새로 spawn.
+                _girlsByVisual.Remove(visual);
+            }
+
             if (_girlsByVisual.Count >= MaxGirls)
             {
                 if (_logSpawn) Debug.Log($"[MagicalGirl] cap={MaxGirls} reached, skip {visual}");
@@ -355,13 +491,18 @@ namespace LostMemory.MagicalGirl
                 return;
             }
 
+            // 진단 — 모든 가드 통과해 실제로 새 GameObject 만드는 시점. 씬 전환 후 두 번째 이상 발화면 중복.
+            if (_logSceneTransitionAudit)
+                Debug.Log($"[MagicalGirl-Audit] >>> SPAWN NEW visual={visual} count_before={_girlsByVisual.Count} Spawner#{GetInstanceID()}", this);
+
             var go = new GameObject($"MagicalGirl_{visual}");
             // CL-204 Follow Polish: 부모-자식 parenting 제거 — world space 독립.
             // 위치는 MagicalGirlFollower 가 매 LateUpdate 에서 SmoothDamp 로 anchor + offset 따라감.
             Transform anchorT = anchor != null ? anchor : transform;
             go.transform.position = anchorT.position;  // 첫 프레임 즉시 점프 회피용 초기 위치
             var ai = go.AddComponent<MagicalGirlAI>();
-            ai.Init(playerStat, playerCombat, attackCatalog, ResolveDownController());
+            // 멀티 sync (2026-05-28): broadcast 전달 → AI.SpawnProjectile 가 자기 owner 측에서 broadcast 호출 가능.
+            ai.Init(playerStat, playerCombat, attackCatalog, ResolveDownController(), magicalGirlBroadcast);
             ai.SetVisual(visual);
             ai.SetSetBonusActive(_setBonusActive);
             ai.SetEnhanced(_enhancedVisuals.Contains(visual));
@@ -385,6 +526,11 @@ namespace LostMemory.MagicalGirl
 
             if (_logSpawn) Debug.Log($"[MagicalGirl] +{visual} (count={_girlsByVisual.Count})");
 
+            // 씬 전환 시 자동 destroy → 새 씬의 Spawner.OnEnable 가 OwnedRelics replay 로 재생성.
+            // (2026-05-28: 이전엔 DontDestroyOnLoad 였으나, 새 Spawner 인스턴스의 per-instance dict
+            //  와 DDoL-persist 된 미소녀 GameObject 의 lifetime mismatch 로 중복 spawn 유발.
+            //  Option B 채택 — DDoL 제거하면 매 씬 fresh state 로 재생성되어 dedup 패턴이 의도대로 작동.)
+
             // Bug #32 — 다른 클라에 visual-only clone broadcast. 본 메서드는 owner 측에서만 도달.
             // (위쪽 owner-aware 가드가 non-owner 를 차단 → 본 호출은 owner 한 명만 실행 → 중복 ClientRpc 없음.)
             if (magicalGirlBroadcast != null)
@@ -401,6 +547,14 @@ namespace LostMemory.MagicalGirl
         public void SpawnVisualOnlyClone(MagicalGirlVisual visual)
         {
             if (visual == MagicalGirlVisual.Default) return;
+
+            // D: scene-placed Spawner 인스턴스 spawn 차단.
+            var ownNetObj = GetComponentInParent<Unity.Netcode.NetworkObject>();
+            if (ownNetObj != null && ownNetObj.IsSpawned && !ownNetObj.IsPlayerObject)
+            {
+                if (_logSpawn) Debug.Log($"[MagicalGirl] scene-placed Spawner — visual-only clone 차단 visual={visual} go={gameObject.name}");
+                return;
+            }
 
             var go = new GameObject($"MagicalGirl_{visual}_VisualClone");
             Transform anchorT = anchor != null ? anchor : transform;
@@ -461,6 +615,34 @@ namespace LostMemory.MagicalGirl
             //   - _girlsByVisual dictionary: 본체 cap 관리용. clone 은 cap 외 — visual 한정.
 
             if (_logSpawn) Debug.Log($"[MagicalGirl] visual-only clone spawned visual={visual} sprite={(sprite != null ? "OK" : "FALLBACK")} (non-owner 측 시각 sync)");
+
+            // 씬 전환 시 자동 destroy — owner 본체가 새 씬에서 다시 broadcast → non-owner 도 재clone.
+            // (2026-05-28: 본체와 동일 사유로 DDoL 제거. 본체 L438 주석 참고.)
+        }
+
+        /// <summary>
+        /// 멀티 sync (2026-05-28) — non-owner client 가 broadcast.ClientRpc 로 호출.
+        /// owner 측 MagicalGirlAI.SpawnProjectile 의 시각을 재현 — catalog entry lookup → vfxPrefab Instantiate →
+        /// MagicalGirlProjectile.SetVisualOnly(true) + Init (damage 0, hit VFX prefab 전달) + SetProjectileId.
+        /// </summary>
+        public void SpawnVisualOnlyProjectile(MagicalGirlVisual visual, Vector3 spawnPos, Vector2 direction, float speed, float lifetime, int projectileId)
+        {
+            if (visual == MagicalGirlVisual.Default) return;
+            if (attackCatalog == null)
+            {
+                if (_logSpawn) Debug.LogWarning($"[MagicalGirl] visual-only projectile — catalog null. visual={visual} id={projectileId}", this);
+                return;
+            }
+            if (!attackCatalog.TryGet(visual, out var entry) || entry.vfxPrefab == null) return;
+            GameObject go = Instantiate(entry.vfxPrefab, spawnPos, Quaternion.identity);
+            VFXSpawner.ApplyGameplayEffectSorting(go);
+            var proj = go.GetComponent<MagicalGirlProjectile>();
+            if (proj == null) proj = go.AddComponent<MagicalGirlProjectile>();
+            proj.SetVisualOnly(true);
+            // damage 0 — non-owner clone 은 데미지 권위 없음. hitVfxPrefab 은 owner hit broadcast 도착 시 DespawnVisualOnlyCloneById 에서 spawn.
+            proj.Init(direction, 0f, speed, lifetime, entry.hitVfxPrefab, null);
+            proj.SetProjectileId(projectileId);
+            if (_logSpawn) Debug.Log($"[MagicalGirl] visual-only projectile spawned visual={visual} id={projectileId} pos={spawnPos}");
         }
 
         /// <summary>CL-204: Type=27 강화 적용. visual 미소녀가 spawn 되어 있으면 즉시 반영, 없어도 플래그 보관 후 spawn 시 적용.</summary>

@@ -48,6 +48,29 @@ public class PatchNoteService {
     }
 
     @Transactional
+    public String recordDownload(Long id) {
+        PatchNote pn = findPublishedById(id);
+        String url = pn.getDownloadUrl();
+        if (url == null || url.isBlank()) {
+            throw new IllegalArgumentException("patch note has no download url: " + id);
+        }
+        repository.incrementDownloadCount(id);
+        return url;
+    }
+
+    @Transactional
+    public String recordLatestDownload() {
+        PatchNote pn = findLatestPublished()
+            .orElseThrow(() -> new IllegalArgumentException("no published patch note"));
+        String url = pn.getDownloadUrl();
+        if (url == null || url.isBlank()) {
+            throw new IllegalArgumentException("latest patch note has no download url");
+        }
+        repository.incrementDownloadCount(pn.getId());
+        return url;
+    }
+
+    @Transactional
     public Long create(PatchNoteForm form, Long authorId) {
         PatchNote pn = new PatchNote(form.getVersion(), form.getReleaseDate(), form.getBody(),
                                      authorId, form.isPublished(), form.getDownloadUrl());

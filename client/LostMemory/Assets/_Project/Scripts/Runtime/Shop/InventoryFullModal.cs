@@ -4,6 +4,7 @@ using LostMemory.Relics;
 using LostMemory.Stage;
 using LostMemory.TestKhi;
 using LostMemory.UI;
+using MoreMountains.TopDownEngine;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -57,9 +58,24 @@ namespace LostMemory.Shop
         /// 씬 로드 후 InventoryFullModal 이 씬에 배치되지 않았으면 자동 spawn.
         /// PlayerRelicInventory 가 있는 씬(던전/마을)에서만 의미 있고,
         /// 없는 씬에서는 OnEnable 의 자동 탐색이 실패해 조용히 disable 된다.
+        ///
+        /// 멀티 fix: RuntimeInitializeOnLoadMethod 는 앱 시작 시 한 번만 실행 → 타이틀 씬에서 modal 생성 후
+        /// 던전 LoadScene 시 GameObject 소멸 → modal 사라짐. sceneLoaded 이벤트도 같이 구독해서 매 씬마다 확인.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
+        {
+            EnsureExists();
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoaded;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoaded;
+        }
+
+        private static void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            EnsureExists();
+        }
+
+        private static void EnsureExists()
         {
             if (FindAnyObjectByType<InventoryFullModal>() != null) return;
             GameObject go = new GameObject("InventoryFullModal_Auto");
@@ -68,6 +84,11 @@ namespace LostMemory.Shop
 
         private void OnEnable()
         {
+            // 멀티 fix: 씬 전환 시 modal 이 destroy 되면 재bind 못 함 → DontDestroyOnLoad 로 영속화.
+            //   - 씬마다 새 PlayerRelicInventory 가 생성됨 → TryBind 의 validation 이 self-heal 로 재bind.
+            //   - 솔로/Editor 단일 씬에서도 무해 (modal 은 invisible idle 상태).
+            if (transform.parent == null) DontDestroyOnLoad(gameObject);
+
             // Phase E: NGO 환경에선 Bootstrap 시점에 Player GameObject 가 아직 spawn 되지 않아 FindAnyObjectByType 실패 →
             // modal disable. LocalPlayerReady event 구독 + 매 시도마다 TryBind 로 lazy 재시도.
             LocalPlayerResolver.LocalPlayerReady += HandleLocalPlayerReady;
@@ -91,17 +112,32 @@ namespace LostMemory.Shop
         /// </summary>
         private void TryBind()
         {
-            if (inventory != null) return;
-
-            // 1) LocalPlayer 측 — 멀티 안전.
             var localCharacter = LocalPlayerResolver.LocalCharacter;
+
+            // 잘못된 binding 검증 — 기존 inventory 가 현재 LocalCharacter 의 child 아니면 unsubscribe + 재bind.
+            // 멀티에서 Spawn race 시 호스트 inventory 가 잡혔다가 LocalPlayerReady 발화 후 게스트 inventory 로 재bind 되는 self-heal.
+            if (inventory != null && localCharacter != null)
+            {
+                bool isLocalInventory = inventory.transform.IsChildOf(localCharacter.transform)
+                                     || inventory.GetComponentInParent<Character>() == localCharacter;
+                if (!isLocalInventory)
+                {
+                    Debug.Log($"[InventoryFullModal] Rebind — 이전 binding '{inventory.name}' 가 LocalCharacter '{localCharacter.name}' 의 child 아님. 재bind.", this);
+                    inventory.OnTryAddRejected -= HandleRejected;
+                    inventory = null;
+                }
+            }
+
+            if (inventory != null) return; // 이미 올바른 binding
+
+            // 1) LocalPlayer 측 — 멀티 안전. (NGO 활성 시 LocalCharacter 가 null 이면 LocalPlayerReady 대기.)
             if (localCharacter != null)
             {
                 inventory = localCharacter.GetComponentInChildren<PlayerRelicInventory>(includeInactive: true);
                 if (inventory == null) inventory = localCharacter.GetComponentInParent<PlayerRelicInventory>();
             }
 
-            // 2) fallback — 싱글환경.
+            // 2) fallback — 싱글환경. (LocalPlayerResolver.LocalCharacter 가 NGO 활성 시 null 반환하므로 멀티에선 진입 안 됨.)
             if (inventory == null)
             {
                 inventory = FindAnyObjectByType<PlayerRelicInventory>();
@@ -114,7 +150,7 @@ namespace LostMemory.Shop
             }
 
             inventory.OnTryAddRejected += HandleRejected;
-            Debug.Log($"[InventoryFullModal] Bound to '{inventory.name}'.", this);
+            Debug.Log($"[InventoryFullModal] Bound to '{inventory.name}' (LocalCharacter='{(localCharacter != null ? localCharacter.name : "null")}').", this);
         }
 
         private void HandleRejected(RelicData relic, string reason)
@@ -381,7 +417,22 @@ namespace LostMemory.Shop
             t.fontStyle  = style;
             t.color      = Color.white;
             t.enableWordWrapping = true;
+
+            // 한글 폰트: 씬의 다른 TMP_Text 에서 복사. (기본 LiberationSans 에는 한글 글리프 없음 → □□□ 표시)
+            TMP_FontAsset borrowed = BorrowSceneFont();
+            if (borrowed != null) t.font = borrowed;
             return t;
+        }
+
+        private static TMP_FontAsset BorrowSceneFont()
+        {
+            TMP_Text[] existing = FindObjectsByType<TMP_Text>(FindObjectsSortMode.None);
+            foreach (TMP_Text txt in existing)
+            {
+                if (txt != null && txt.font != null && txt.font.name != "LiberationSans SDF")
+                    return txt.font;
+            }
+            return null;
         }
 
         private Image AddIcon(Transform parent, string n, float size)

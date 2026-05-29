@@ -57,6 +57,9 @@ namespace LostMemory.Stage
             (RunState.RunCleared, RunState.Resulting),
             (RunState.RunFailed, RunState.Resulting),
 
+            // RunFailed → InRun (delay 중 협력/기억 부활 성공으로 회복)
+            (RunState.RunFailed, RunState.InRun),
+
             // Resulting → None (메인 메뉴 복귀 / 다시하기)
             (RunState.Resulting, RunState.None),
 

@@ -78,18 +78,21 @@ namespace LostMemory.Relics
             GoldWallet.Spawned += HandleGoldWalletSpawned;
 
             // CL-142 진단: OnHit wiring 상태 즉시 표시
-            string onHitWiring = onHitRegistry != null
-                ? $"OK (host={onHitRegistry.gameObject.name})"
-                : "❌ NULL (Slow/Freeze/Chain 동작 안 함)";
-            string girlWiring = magicalGirlSpawner != null
-                ? $"OK (host={magicalGirlSpawner.gameObject.name})"
-                : "❌ NULL (미소녀 동작 안 함)";
-            string goldWiring = goldWallet != null
-                ? "OK"
-                : "lazy (wallet 미존재 — 등장 시 Spawned 이벤트로 자동 wire)";
-            string invWiring = playerRelicInventory != null ? "OK" : "⚠ NULL (행운 슬롯 적용 X)";
-            string tarotWiring = tarotSystem != null ? "OK" : "⚠ NULL (타로 적용 X)";
-            Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}, magicalGirlSpawner={girlWiring}, goldWallet={goldWiring}, playerRelicInventory={invWiring}, tarotSystem={tarotWiring}", this);
+            if (_logEffectDispatch)
+            {
+                string onHitWiring = onHitRegistry != null
+                    ? $"OK (host={onHitRegistry.gameObject.name})"
+                    : "❌ NULL (Slow/Freeze/Chain 동작 안 함)";
+                string girlWiring = magicalGirlSpawner != null
+                    ? $"OK (host={magicalGirlSpawner.gameObject.name})"
+                    : "❌ NULL (미소녀 동작 안 함)";
+                string goldWiring = goldWallet != null
+                    ? "OK"
+                    : "lazy (wallet 미존재 — 등장 시 Spawned 이벤트로 자동 wire)";
+                string invWiring = playerRelicInventory != null ? "OK" : "⚠ NULL (행운 슬롯 적용 X)";
+                string tarotWiring = tarotSystem != null ? "OK" : "⚠ NULL (타로 적용 X)";
+                Debug.Log($"[SetEffectApplicator] OnEnable — wiring: buildManager=OK, statContainer=OK, onHitRegistry={onHitWiring}, magicalGirlSpawner={girlWiring}, goldWallet={goldWiring}, playerRelicInventory={invWiring}, tarotSystem={tarotWiring}", this);
+            }
             buildManager.OnSetTierChanged += HandleSetTierChanged;
         }
 

@@ -43,7 +43,7 @@ namespace LostMemory.Events
         [SerializeField] private RoomEntryRuntimeController roomController;
 
         [Header("Debug")]
-        [SerializeField] private bool logFlow = true;
+        [SerializeField] private bool logFlow = false;
 
         public bool IsOpen { get; private set; }
 

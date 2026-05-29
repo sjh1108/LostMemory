@@ -50,6 +50,9 @@ namespace LostMemory.Combat.Telegraph
         [Tooltip("World-space width of the timing marker.")]
         [SerializeField] [Range(0.01f, 0.25f)] private float timingMarkerThickness = 0.055f;
 
+        [Tooltip("[DiagTelegraph-Show] 진단 로그. Bug #31 진단용 — 평소엔 OFF (모든 enemy 공격마다 발화 → 콘솔 도배).")]
+        [SerializeField] private bool verboseLog = false;
+
         private const int TelegraphTextureSize = 64;
 
         private static Sprite _boxTelegraphSprite;
@@ -110,13 +113,16 @@ namespace LostMemory.Combat.Telegraph
             // Bug #31 진단 — telegraph 시각 보이지 않는 케이스 isolation.
             //   sortingLayerId / sortingOrder 가 "Foreground" 매칭 실패 시 0 (Default) → 다른 sprite 에 묻혀 안 보일 수 있음.
             //   previewObject.activeInHierarchy 가 false 면 부모 비활성 또는 SortingGroup race.
-            int sortLayerId = _previewRenderer != null ? _previewRenderer.sortingLayerID : 0;
-            int sortOrder = _previewRenderer != null ? _previewRenderer.sortingOrder : 0;
-            bool rendererEnabled = _previewRenderer != null && _previewRenderer.enabled;
-            bool previewActive = _previewObject != null && _previewObject.activeInHierarchy;
-            Debug.Log(
-                $"[DiagTelegraph-Show] shape={request.Shape} center={request.Center} size={request.Size} duration={request.Duration:F2} " +
-                $"sortingLayerId={sortLayerId} sortingOrder={sortOrder} rendererEnabled={rendererEnabled} previewActive={previewActive}", this);
+            if (verboseLog)
+            {
+                int sortLayerId = _previewRenderer != null ? _previewRenderer.sortingLayerID : 0;
+                int sortOrder = _previewRenderer != null ? _previewRenderer.sortingOrder : 0;
+                bool rendererEnabled = _previewRenderer != null && _previewRenderer.enabled;
+                bool previewActive = _previewObject != null && _previewObject.activeInHierarchy;
+                Debug.Log(
+                    $"[DiagTelegraph-Show] shape={request.Shape} center={request.Center} size={request.Size} duration={request.Duration:F2} " +
+                    $"sortingLayerId={sortLayerId} sortingOrder={sortOrder} rendererEnabled={rendererEnabled} previewActive={previewActive}", this);
+            }
 
             // Bug #37: enemy 의 server-side controller 가 telegraphView.Show 호출 시 자동으로 게스트에 broadcast.
             // 부모 chain 의 MonsterAttackBroadcast 컴포넌트 (AttachMonsterAttackBroadcastToEnemies Editor menu 가 모든 enemy 부착) 자동 검색.

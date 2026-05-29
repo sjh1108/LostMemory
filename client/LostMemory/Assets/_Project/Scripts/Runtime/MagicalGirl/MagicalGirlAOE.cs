@@ -118,7 +118,19 @@ namespace LostMemory.MagicalGirl
                 if (!_hitTargetsThisTick.Add(h)) continue;
 
                 if (_damagePerTick > 0f)
-                    h.Damage(_damagePerTick, gameObject, 0f, 0f, Vector3.zero);
+                {
+                    // 동료 AOE 도 주인의 stat 으로 크리티컬 판정 — 매 tick / 대상별 roll (도트 특성).
+                    LostMemory.Combat.PlayerStatModifierContainer stats = _ownerDownController != null
+                        ? _ownerDownController.GetComponentInParent<LostMemory.Combat.PlayerStatModifierContainer>() : null;
+                    // AttackPower 적용 — 평타 패턴 통일. 이전 누락분 fix.
+                    float aoeAttackMul = stats != null ? stats.GetTotalMultiplier(LostMemory.Combat.StatId.AttackPower) : 1f;
+                    float appliedDmg = LostMemory.Combat.CriticalRoller.Roll(stats, _damagePerTick * aoeAttackMul, out bool aoeCrit);
+                    h.Damage(appliedDmg, gameObject, 0f, 0f, Vector3.zero);
+                    if (LostMemory.UI.DamagePopupSpawner.Instance != null)
+                    {
+                        LostMemory.UI.DamagePopupSpawner.Instance.NotifySubEffectDamage(h, appliedDmg, aoeCrit);
+                    }
+                }
 
                 // CL-204: Slow status (sprite 푸르게 + 이속 감소). CL-202 EnemyStatusEffect 위임.
                 if (_slowMagnitude > 0f && _slowDuration > 0f)

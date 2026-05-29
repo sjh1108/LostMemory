@@ -48,6 +48,10 @@ namespace LostMemory.TestKhi
         [Tooltip("회전 pivot의 Y 좌표 (플레이어 로컬). 플레이어 가슴 높이로 두면 모든 방향 슬래시가 자연스러운 원형 스윕을 그림. aim.x=0 가로지를 때 시각적 중심 흔들림 방지.")]
         [SerializeField] private float slashRigCenterY = 0.6f;
 
+        [Header("Debug")]
+        [Tooltip("[DiagVfx-Slash] 진단 로그 — OK/H1/H5 모두 포함. 평소엔 OFF (콤보 1타마다 발화 → 콘솔 도배). 시각 버그 isolation 시만 ON.")]
+        [SerializeField] private bool verboseLog = false;
+
         private readonly Coroutine[] _playingCoroutines = new Coroutine[3];
         private readonly SpriteRenderer[] _slotRenderers = new SpriteRenderer[3];
 
@@ -284,19 +288,19 @@ namespace LostMemory.TestKhi
             if (frames == null || frames.Length == 0)
             {
                 // [DiagVfx-Slash] H1 frames=null — 비-owner 측 weaponData 가 owner 와 다른 SO 일 때 자주 발생.
-                Debug.Log($"[DiagVfx-Slash] H1 frames=null comboStep={step.comboStep} weaponData={(weaponData != null ? weaponData.name : "NULL")} visualStep.frames={(visualStep.slashFrames == null ? "null" : "len=0")}", this);
+                if (verboseLog) Debug.Log($"[DiagVfx-Slash] H1 frames=null comboStep={step.comboStep} weaponData={(weaponData != null ? weaponData.name : "NULL")} visualStep.frames={(visualStep.slashFrames == null ? "null" : "len=0")}", this);
                 return;
             }
 
             if (_slotRenderers == null || slotIndex >= _slotRenderers.Length)
             {
-                Debug.Log($"[DiagVfx-Slash] H5 slot index out of range _slotRenderers={(_slotRenderers == null ? "null" : _slotRenderers.Length.ToString())} slotIndex={slotIndex}", this);
+                if (verboseLog) Debug.Log($"[DiagVfx-Slash] H5 slot index out of range _slotRenderers={(_slotRenderers == null ? "null" : _slotRenderers.Length.ToString())} slotIndex={slotIndex}", this);
                 return;
             }
             SpriteRenderer sr = _slotRenderers[slotIndex];
             if (sr == null || slashRig == null)
             {
-                Debug.Log($"[DiagVfx-Slash] H5 sr/rig null sr={(sr == null ? "null" : "OK")} slashRig={(slashRig == null ? "null" : slashRig.name)}", this);
+                if (verboseLog) Debug.Log($"[DiagVfx-Slash] H5 sr/rig null sr={(sr == null ? "null" : "OK")} slashRig={(slashRig == null ? "null" : slashRig.name)}", this);
                 return;
             }
 
@@ -326,7 +330,7 @@ namespace LostMemory.TestKhi
 
             // [DiagVfx-Slash] OK 경로 진입 시 parent transform / sr 상태 1회 dump. H2/H4 (parent disable/transform issue) 검증.
             // 비-owner 측에서 sr.enabled=true 인데도 visual 안 보이면 sr.gameObject.activeInHierarchy=false 또는 parent.localScale=(0,0,0) 의심.
-            if (Time.frameCount % 60 == 0 || step.comboStep == 1) // 1초 throttle + 콤보 1타 매번
+            if (verboseLog && (Time.frameCount % 60 == 0 || step.comboStep == 1)) // 1초 throttle + 콤보 1타 매번
             {
                 Transform parent = slashRig.parent;
                 Debug.Log($"[DiagVfx-Slash] OK seq={request.SequenceId} comboStep={step.comboStep} slashRig.parent='{(parent != null ? parent.name : "null")}' parent.localScale={(parent != null ? parent.localScale.ToString() : "n/a")} parent.activeInHierarchy={(parent != null ? parent.gameObject.activeInHierarchy : false)} sr.enabled={sr.enabled} sr.activeInHierarchy={sr.gameObject.activeInHierarchy} sr.color.a={sr.color.a:F2}", this);

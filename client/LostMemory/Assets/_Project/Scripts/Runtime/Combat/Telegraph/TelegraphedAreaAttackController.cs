@@ -1006,7 +1006,9 @@ namespace LostMemory.Combat.Telegraph
                 Direction = direction,
                 Size = ResolveShapeDisplaySize(attackSize, attackShape),
                 Color = telegraphColor,
-                Duration = 0f
+                // 게스트 측 1회 broadcast clone 의 visual 유지 시간 = warning → impact 까지 시간.
+                // impactTime < 0 (impact 미사용) 이면 fallback 1.0s. 0 이면 한 프레임만 깜빡이는 버그 방지.
+                Duration = impactTime > 0f ? impactTime : 1.0f
             };
         }
 
@@ -1019,7 +1021,8 @@ namespace LostMemory.Combat.Telegraph
                 Direction = Vector2.right,
                 Size = ResolveShapeDisplaySize(followUpAreaSize, followUpAreaShape),
                 Color = followUpAreaTelegraphColor,
-                Duration = 0f
+                // 기존 inspector 필드 followUpAreaTelegraphDuration 재활용 (기본값 0.6s).
+                Duration = followUpAreaTelegraphDuration > 0f ? followUpAreaTelegraphDuration : 1.0f
             };
         }
 

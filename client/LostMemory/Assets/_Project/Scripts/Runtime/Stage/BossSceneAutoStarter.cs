@@ -1,4 +1,5 @@
 using System.Collections;
+using LostMemory.Audio;
 using UnityEngine;
 
 namespace LostMemory.Stage
@@ -15,6 +16,12 @@ namespace LostMemory.Stage
         [SerializeField] private string bossRoomId = "Boss";
         [SerializeField] private string bossEntryPointId = "Boss";
         [SerializeField] private string bossSceneName = string.Empty;
+
+        [Header("Boss Start BGM (optional)")]
+        [SerializeField] private AudioClip bossStartBgmClip;
+        [SerializeField] private int bossStartBgmId = StageBgmPlayer.Stage2BossBgmId;
+        [SerializeField, Range(0f, 2f)] private float bossStartBgmVolume = 1f;
+
         [SerializeField] private bool debugLogging;
 
         private Coroutine _startRoutine;
@@ -95,10 +102,26 @@ namespace LostMemory.Stage
             bool started = transitionDriver.TryStartRouteEntry(bossRoomId, bossEntryPointId, bossSceneName);
             if (started)
             {
+                PlayBossStartBgm();
                 Log("Boss encounter route entry started.");
             }
 
             return started;
+        }
+
+        private void PlayBossStartBgm()
+        {
+            if (bossStartBgmClip == null)
+            {
+                return;
+            }
+
+            StageBgmPlayer.PlayLoop(
+                bossStartBgmClip,
+                bossStartBgmId,
+                bossStartBgmVolume,
+                this,
+                bossRoomId);
         }
 
         private void ResolveTransitionDriver()

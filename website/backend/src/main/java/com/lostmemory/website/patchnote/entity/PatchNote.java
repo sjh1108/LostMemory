@@ -40,6 +40,9 @@ public class PatchNote extends BaseTimeEntity {
     @Column(name = "download_url", length = 1024)
     private String downloadUrl;
 
+    @Column(name = "download_count", nullable = false)
+    private long downloadCount;
+
     public PatchNote(String version, LocalDate releaseDate, String body, Long authorId, boolean published, String downloadUrl) {
         this.version = version;
         this.releaseDate = releaseDate;

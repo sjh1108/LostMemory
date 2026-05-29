@@ -283,4 +283,143 @@ namespace LostMemory.Audio
             return Mathf.Log10(linear01) * 20f;
         }
     }
+
+    /// <summary>
+    /// Small runtime bridge for project-owned stage BGM cues.
+    /// Plays through MMSoundManager's Music track so the existing BGM slider still controls output.
+    /// </summary>
+    public static class StageBgmPlayer
+    {
+        public const int TownBgmId = 1002;
+        public const int Stage1DungeonBgmId = 1101;
+        public const int Stage1BossBgmId = 1102;
+        public const int Stage2DungeonBgmId = 1201;
+        public const int Stage2BossBgmId = 1202;
+
+        private static readonly int[] KnownMusicIds =
+        {
+            TownBgmId,
+            Stage1DungeonBgmId,
+            Stage1BossBgmId,
+            Stage2DungeonBgmId,
+            Stage2BossBgmId
+        };
+
+        private static AudioSource fallbackSource;
+
+        public static void PlayLoop(AudioClip clip, int id, float volume, UnityEngine.Object context = null, string label = null)
+        {
+            if (clip == null)
+            {
+                Debug.LogWarning($"[StageBgmPlayer] Missing BGM clip for '{label ?? "cue"}'.", context);
+                return;
+            }
+
+            float clampedVolume = Mathf.Clamp(volume, 0f, 2f);
+
+            if (MMSoundManager.HasInstance && MMSoundManager.Current != null)
+            {
+                AudioSource current = MMSoundManager.Current.FindByID(id);
+                if (current != null && current.clip == clip && current.isPlaying)
+                {
+                    StopKnownMusicExcept(id);
+                    current.volume = clampedVolume;
+                    return;
+                }
+
+                StopKnownMusic();
+
+                MMSoundManagerPlayOptions options = MMSoundManagerPlayOptions.Default;
+                options.ID = id;
+                options.Loop = true;
+                options.Volume = clampedVolume;
+                options.Location = Vector3.zero;
+                options.MmSoundManagerTrack = MMSoundManager.MMSoundManagerTracks.Music;
+                options.Persistent = true;
+
+                MMSoundManagerSoundPlayEvent.Trigger(clip, options);
+                return;
+            }
+
+            PlayFallback(clip, clampedVolume);
+        }
+
+        public static void StopKnownMusic()
+        {
+            StopFallback();
+
+            if (!MMSoundManager.HasInstance || MMSoundManager.Current == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < KnownMusicIds.Length; i++)
+            {
+                FreeSoundById(KnownMusicIds[i]);
+            }
+        }
+
+        private static void FreeSoundById(int id)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                AudioSource source = MMSoundManager.Current.FindByID(id);
+                if (source == null)
+                {
+                    return;
+                }
+
+                MMSoundManager.Current.FreeSound(source);
+            }
+        }
+
+        private static void StopKnownMusicExcept(int idToKeep)
+        {
+            StopFallback();
+
+            if (!MMSoundManager.HasInstance || MMSoundManager.Current == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < KnownMusicIds.Length; i++)
+            {
+                int id = KnownMusicIds[i];
+                if (id == idToKeep)
+                {
+                    continue;
+                }
+
+                FreeSoundById(id);
+            }
+        }
+
+        private static void PlayFallback(AudioClip clip, float volume)
+        {
+            if (fallbackSource == null)
+            {
+                GameObject host = new GameObject("StageBgmPlayer Fallback Audio");
+                UnityEngine.Object.DontDestroyOnLoad(host);
+                fallbackSource = host.AddComponent<AudioSource>();
+                fallbackSource.playOnAwake = false;
+                fallbackSource.spatialBlend = 0f;
+            }
+
+            fallbackSource.clip = clip;
+            fallbackSource.volume = volume;
+            fallbackSource.loop = true;
+            fallbackSource.Play();
+        }
+
+        private static void StopFallback()
+        {
+            if (fallbackSource == null)
+            {
+                return;
+            }
+
+            fallbackSource.Stop();
+            fallbackSource.clip = null;
+        }
+    }
 }

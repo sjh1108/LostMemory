@@ -22,6 +22,9 @@ namespace LostMemory.Combat.Telegraph
         [SerializeField] private float startOffset = 0.1f;
         [SerializeField] private bool useLastKnownTargetPosition = true;
         [SerializeField] private bool lockDirectionOnTelegraphStart;
+        // 게스트 측 1회 broadcast clone 의 visual 유지 시간. AimReady state 평균 체류 길이로 튜닝.
+        // 0 이면 MonsterAttackBroadcast.SpawnVisualClone 의 effectiveWarning clamp(0.01)로 한 프레임만 깜빡임.
+        [SerializeField, Min(0.05f)] private float aimStateExpectedDuration = 1.0f;
 
         private Vector2 _lockedDirection = Vector2.right;
         private float _lockedLength;
@@ -196,7 +199,7 @@ namespace LostMemory.Combat.Telegraph
                 Direction = safeDirection,
                 Size = new Vector2(safeLength, safeWidth),
                 Color = telegraphColor,
-                Duration = 0f
+                Duration = aimStateExpectedDuration
             };
         }
 

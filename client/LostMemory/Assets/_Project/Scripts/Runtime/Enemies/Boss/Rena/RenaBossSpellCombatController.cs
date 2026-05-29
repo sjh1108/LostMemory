@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Combat.Telegraph;
 using LostMemory.Rendering;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace LostMemory.Enemies.Boss.Rena
     [AddComponentMenu("Lost Memory/Enemies/Boss/Rena/Rena Boss Spell Combat Controller")]
     public sealed class RenaBossSpellCombatController : MonoBehaviour
     {
-        private enum CastKind
+        public enum CastKind
         {
             Fireball,
             Inferno,
@@ -213,6 +214,9 @@ namespace LostMemory.Enemies.Boss.Rena
         [Header("Debug")]
         [SerializeField] private bool debugLogging;
 
+        private MonsterAttackBroadcast _attackBroadcast;
+        private bool _attackBroadcastResolved;
+
         private Transform _target;
         private Health _targetHealth;
         private Vector2 _lastFacingDirection = Vector2.right;
@@ -248,6 +252,10 @@ namespace LostMemory.Enemies.Boss.Rena
         private readonly List<SpriteRenderer> _iceSweepRowWarnings = new List<SpriteRenderer>();
 
         private const int IceSweepWarningTextureSize = 16;
+        private const float IceSweepWarningEdgeHeight = 0.08f;
+        private const float IceSweepWarningCenterRailHeight = 0.12f;
+        private const float IceSweepWarningCenterGlowHeight = 0.34f;
+        private const float IceSweepWarningSweepWidth = 0.26f;
         private const int IceSweepHealthThresholdCount = 3;
         private static Sprite _iceSweepWarningSprite;
 
@@ -448,7 +456,78 @@ namespace LostMemory.Enemies.Boss.Rena
             SetWanderEnabled(false);
             FaceTarget();
             PlayAnimation(ResolveCastStateName(kind));
+            // Cast telegraph (빨간 장판) 제거 — host/guest 양쪽에서 안 보이게.
+            // BroadcastCastTelegraph 메서드 본체는 dead code 로 남김 (시연 후 정리).
             Log(kind + " cast started.");
+        }
+
+        private MonsterAttackBroadcast ResolveAttackBroadcast()
+        {
+            if (_attackBroadcastResolved)
+            {
+                return _attackBroadcast;
+            }
+
+            _attackBroadcast = GetComponent<MonsterAttackBroadcast>();
+            if (_attackBroadcast == null)
+            {
+                _attackBroadcast = GetComponentInParent<MonsterAttackBroadcast>();
+            }
+            _attackBroadcastResolved = true;
+            return _attackBroadcast;
+        }
+
+        private void BroadcastCastTelegraph(CastKind kind, float castDuration, float releaseDelay)
+        {
+            MonsterAttackBroadcast broadcast = ResolveAttackBroadcast();
+            if (broadcast == null)
+            {
+                return;
+            }
+
+            AttackTelegraphShape2D shape;
+            Vector2 size;
+            float rotationDeg = 0f;
+            Color color;
+            Vector3 worldPos = transform.position;
+            // warning = release delay 까지 (실제 공격 발사 시점까지의 시간). cast 끝나면 자동 hide.
+            float warning = Mathf.Max(0.15f, releaseDelay);
+            float impact = 0.15f;
+
+            switch (kind)
+            {
+                case CastKind.Fireball:
+                    shape = AttackTelegraphShape2D.Circle;
+                    size = new Vector2(1.6f, 1.6f);
+                    color = new Color(1f, 0.45f, 0.15f, 0.38f);
+                    break;
+                case CastKind.Inferno:
+                    shape = AttackTelegraphShape2D.Circle;
+                    size = new Vector2(2.2f, 2.2f);
+                    color = new Color(1f, 0.3f, 0.1f, 0.45f);
+                    break;
+                case CastKind.IceSweep:
+                    shape = AttackTelegraphShape2D.Box;
+                    Vector2 sweepCenter = ResolveIceSweepAreaCenter();
+                    worldPos = new Vector3(sweepCenter.x, sweepCenter.y, transform.position.z);
+                    size = new Vector2(Mathf.Max(0.5f, iceSweepAreaSize.x), Mathf.Max(0.5f, iceSweepAreaSize.y));
+                    color = new Color(0.3f, 0.85f, 1f, 0.32f);
+                    break;
+                case CastKind.ThunderStrike:
+                    shape = AttackTelegraphShape2D.Circle;
+                    size = new Vector2(2.2f, 2.2f);
+                    color = new Color(1f, 0.92f, 0.25f, 0.4f);
+                    break;
+                case CastKind.Thunderbolt:
+                    shape = AttackTelegraphShape2D.Box;
+                    size = new Vector2(Mathf.Max(1.5f, thunderboltLength * 0.5f), Mathf.Max(0.8f, thunderboltWidth * 1.2f));
+                    color = new Color(1f, 0.85f, 0.3f, 0.4f);
+                    break;
+                default:
+                    return;
+            }
+
+            broadcast.BroadcastTelegraph(shape, worldPos, size, rotationDeg, warning, impact, color);
         }
 
         private void ConsumePendingIceSweepIfNeeded(CastKind kind)
@@ -842,7 +921,14 @@ namespace LostMemory.Enemies.Boss.Rena
             float warningDuration,
             float pillarSpawnInterval)
         {
-            List<SpriteRenderer> warnings = SpawnIceSweepRowWarnings(areaCenter, bottom, cellHeight, damageRowSize, rowCount, safeRow);
+            List<SpriteRenderer> warnings = SpawnIceSweepRowWarnings(
+                areaCenter,
+                bottom,
+                cellHeight,
+                damageRowSize,
+                rowCount,
+                safeRow,
+                sweepLeftToRight);
             Coroutine thunderStrikeWarningRoutine = null;
             if (spawnWarningThunderStrikes && warningDuration > 0f)
             {
@@ -917,7 +1003,8 @@ namespace LostMemory.Enemies.Boss.Rena
             float cellHeight,
             Vector2 damageRowSize,
             int rowCount,
-            int safeRow)
+            int safeRow,
+            bool sweepLeftToRight)
         {
             DestroyIceSweepRowWarnings(_iceSweepRowWarnings);
             List<SpriteRenderer> warnings = _iceSweepRowWarnings;
@@ -936,20 +1023,250 @@ namespace LostMemory.Enemies.Boss.Rena
                 }
 
                 float y = bottom + row * cellHeight;
-                GameObject warningObject = new GameObject("RenaIceSweepRowWarning");
-                warningObject.transform.position = new Vector3(areaCenter.x, y, transform.position.z);
-                warningObject.transform.localScale = new Vector3(warningSize.x, warningSize.y, 1f);
+                GameObject warningRoot = new GameObject("RenaIceSweepRowWarning");
+                Transform warningTransform = warningRoot.transform;
+                warningTransform.position = new Vector3(areaCenter.x, y, transform.position.z);
+                warningTransform.localScale = new Vector3(warningSize.x, warningSize.y, 1f);
 
-                SpriteRenderer renderer = warningObject.AddComponent<SpriteRenderer>();
-                RuntimeSpriteMaterialUtility.ApplySpriteMaterial(renderer);
-                renderer.sprite = GetOrCreateIceSweepWarningSprite();
-                renderer.sortingLayerName = sortingLayer;
-                renderer.sortingOrder = iceSweepSortingOrder - 2;
-                warnings.Add(renderer);
+                Sprite warningSprite = GetOrCreateIceSweepWarningSprite();
+                float edgeHeight = Mathf.Min(0.18f, IceSweepWarningEdgeHeight / warningSize.y);
+                float centerRailHeight = Mathf.Min(0.24f, IceSweepWarningCenterRailHeight / warningSize.y);
+                float centerGlowHeight = Mathf.Min(0.5f, IceSweepWarningCenterGlowHeight / warningSize.y);
+                float sweepWidth = Mathf.Min(0.24f, IceSweepWarningSweepWidth / warningSize.x);
+
+                warnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningFill",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 5,
+                    Vector3.zero,
+                    Vector3.one));
+                warnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningCenterGlow",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 4,
+                    Vector3.zero,
+                    new Vector3(1f, centerGlowHeight, 1f)));
+                warnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningEdgeTop",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 2,
+                    new Vector3(0f, 0.5f, 0f),
+                    new Vector3(1f, edgeHeight, 1f)));
+                warnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningEdgeBottom",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 2,
+                    new Vector3(0f, -0.5f, 0f),
+                    new Vector3(1f, edgeHeight, 1f)));
+                warnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningCenterRail",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 2,
+                    Vector3.zero,
+                    new Vector3(1f, centerRailHeight, 1f)));
+                warnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    sweepLeftToRight ? "RenaIceSweepRowWarningSweepLTR" : "RenaIceSweepRowWarningSweepRTL",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 1,
+                    new Vector3(sweepLeftToRight ? -0.48f : 0.48f, 0f, 0f),
+                    new Vector3(sweepWidth, 1f, 1f)));
             }
 
             UpdateIceSweepRowWarnings(warnings, 0f);
+
+            // 게스트 측 visual-only 동일 row warning broadcast.
+            BroadcastIceSweepRowWarningsIfHost(
+                new Vector3(areaCenter.x, areaCenter.y, transform.position.z),
+                bottom,
+                cellHeight,
+                damageRowSize,
+                rowCount,
+                safeRow,
+                Mathf.Max(0f, iceSweepWarningDuration),
+                sweepLeftToRight);
+
             return warnings;
+        }
+
+        public void SpawnVisualOnlyIceSweepRowWarnings(
+            Vector3 areaCenter,
+            float bottom,
+            float cellHeight,
+            Vector2 damageRowSize,
+            int rowCount,
+            int safeRow,
+            float warningDuration,
+            bool sweepLeftToRight)
+        {
+            // Guest 도 host 와 동일한 6-child hierarchy 생성 → UpdateIceSweepRowWarnings 의 name
+            // 기반 분기 (Fill / CenterGlow / Edge / CenterRail / Sweep) 가 동일하게 적용 → 시각 일치.
+            Vector2 warningSize = new Vector2(
+                Mathf.Max(0.01f, damageRowSize.x),
+                Mathf.Max(0.01f, damageRowSize.y));
+            string sortingLayer = string.IsNullOrWhiteSpace(iceSweepSortingLayerName)
+                ? projectileSortingLayerName
+                : iceSweepSortingLayerName;
+
+            List<SpriteRenderer> visualWarnings = new List<SpriteRenderer>();
+
+            for (int row = 0; row < rowCount; row++)
+            {
+                if (row == safeRow) continue;
+
+                float y = bottom + row * cellHeight;
+                GameObject warningRoot = new GameObject("VisualOnly_RenaIceSweepRowWarning");
+                Transform warningTransform = warningRoot.transform;
+                warningTransform.position = new Vector3(areaCenter.x, y, transform.position.z);
+                warningTransform.localScale = new Vector3(warningSize.x, warningSize.y, 1f);
+
+                Sprite warningSprite = GetOrCreateIceSweepWarningSprite();
+                float edgeHeight = Mathf.Min(0.18f, IceSweepWarningEdgeHeight / warningSize.y);
+                float centerRailHeight = Mathf.Min(0.24f, IceSweepWarningCenterRailHeight / warningSize.y);
+                float centerGlowHeight = Mathf.Min(0.5f, IceSweepWarningCenterGlowHeight / warningSize.y);
+                float sweepWidth = Mathf.Min(0.24f, IceSweepWarningSweepWidth / warningSize.x);
+
+                visualWarnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningFill",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 5,
+                    Vector3.zero,
+                    Vector3.one));
+                visualWarnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningCenterGlow",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 4,
+                    Vector3.zero,
+                    new Vector3(1f, centerGlowHeight, 1f)));
+                visualWarnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningEdgeTop",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 2,
+                    new Vector3(0f, 0.5f, 0f),
+                    new Vector3(1f, edgeHeight, 1f)));
+                visualWarnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningEdgeBottom",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 2,
+                    new Vector3(0f, -0.5f, 0f),
+                    new Vector3(1f, edgeHeight, 1f)));
+                visualWarnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    "RenaIceSweepRowWarningCenterRail",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 2,
+                    Vector3.zero,
+                    new Vector3(1f, centerRailHeight, 1f)));
+                visualWarnings.Add(CreateIceSweepWarningRenderer(
+                    warningTransform,
+                    sweepLeftToRight ? "RenaIceSweepRowWarningSweepLTR" : "RenaIceSweepRowWarningSweepRTL",
+                    warningSprite,
+                    sortingLayer,
+                    iceSweepSortingOrder - 1,
+                    new Vector3(sweepLeftToRight ? -0.48f : 0.48f, 0f, 0f),
+                    new Vector3(sweepWidth, 1f, 1f)));
+            }
+
+            UpdateIceSweepRowWarnings(visualWarnings, 0f);
+            StartCoroutine(RunVisualOnlyIceSweepRowWarnings(visualWarnings, warningDuration));
+        }
+
+        private IEnumerator RunVisualOnlyIceSweepRowWarnings(List<SpriteRenderer> warnings, float warningDuration)
+        {
+            if (warnings.Count == 0 || warningDuration <= 0f)
+            {
+                yield break;
+            }
+
+            // host/guest 동일 startedAt 기준이 RTT 만큼 차이 있지만, 진행 속도는 같음.
+            // pulse cycle 은 NetworkTime 기준이라 깜빡임 동기화됨.
+            double startedAt = GetSyncedTime();
+            while (GetSyncedTime() - startedAt < warningDuration)
+            {
+                float progress = Mathf.Clamp01((float)((GetSyncedTime() - startedAt) / warningDuration));
+                UpdateIceSweepRowWarnings(warnings, progress);
+                yield return null;
+            }
+
+            UpdateIceSweepRowWarnings(warnings, 1f);
+
+            // 게스트 측 자동 destroy (host 와 다르게 SequenceInterrupted 가드 없음 — lifetime 만료까지 진행).
+            for (int i = 0; i < warnings.Count; i++)
+            {
+                SpriteRenderer renderer = warnings[i];
+                if (renderer != null)
+                {
+                    UnityEngine.Object.Destroy(renderer.gameObject);
+                }
+            }
+        }
+
+        private void BroadcastIceSweepRowWarningsIfHost(
+            Vector3 areaCenter,
+            float bottom,
+            float cellHeight,
+            Vector2 damageRowSize,
+            int rowCount,
+            int safeRow,
+            float warningDuration,
+            bool sweepLeftToRight)
+        {
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+            var syncs = UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                var sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossIceSweepRowWarningsClientRpc(areaCenter, bottom, cellHeight, damageRowSize, rowCount, safeRow, warningDuration, sweepLeftToRight);
+                    return;
+                }
+            }
+        }
+
+        private static SpriteRenderer CreateIceSweepWarningRenderer(
+            Transform parent,
+            string objectName,
+            Sprite sprite,
+            string sortingLayer,
+            int sortingOrder,
+            Vector3 localPosition,
+            Vector3 localScale)
+        {
+            GameObject warningObject = new GameObject(objectName);
+            Transform warningTransform = warningObject.transform;
+            warningTransform.SetParent(parent, false);
+            warningTransform.localPosition = localPosition;
+            warningTransform.localScale = localScale;
+
+            SpriteRenderer renderer = warningObject.AddComponent<SpriteRenderer>();
+            RuntimeSpriteMaterialUtility.ApplySpriteMaterial(renderer);
+            renderer.sprite = sprite;
+            renderer.sortingLayerName = sortingLayer;
+            renderer.sortingOrder = sortingOrder;
+            return renderer;
         }
 
         private IEnumerator RunIceSweepRowWarnings(List<SpriteRenderer> warnings, float warningDuration)
@@ -975,30 +1292,108 @@ namespace LostMemory.Enemies.Boss.Rena
             UpdateIceSweepRowWarnings(warnings, 1f);
         }
 
+        /// <summary>
+        /// NetworkManager 활성 시 ServerTime.Time, 아니면 Time.time. host/guest 동일 pulse 시점 보장.
+        /// </summary>
+        private static double GetSyncedTime()
+        {
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm != null && nm.IsListening)
+            {
+                return nm.ServerTime.Time;
+            }
+            return Time.time;
+        }
+
         private static void UpdateIceSweepRowWarnings(List<SpriteRenderer> warnings, float progress)
         {
-            float pulse = (Mathf.Sin(Time.time * 18f) + 1f) * 0.5f;
-            float alpha = Mathf.Lerp(0.18f, 0.62f, progress) * Mathf.Lerp(0.72f, 1f, pulse);
-            Color color = new Color(0.25f, 0.85f, 1f, alpha);
+            // host/guest pulse 동기화 — Time.time 대신 GetSyncedTime() 사용해서 모든 client 가 같은 시점 pulse.
+            // preview 의 시각 효과 변수 그대로 (sweep/rail/glow/edge/fill 분기에서 사용).
+            float syncedTime = (float)GetSyncedTime();
+            float pulse = (Mathf.Sin(syncedTime * 14f) + 1f) * 0.5f;
+            float fastPulse = (Mathf.Sin(syncedTime * 36f) + 1f) * 0.5f;
+            float finalFlash = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.72f, 1f, progress));
+            float railExpand = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.04f, 0.58f, progress));
+            float railFade = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.32f, 0.62f, progress));
 
             for (int i = 0; i < warnings.Count; i++)
             {
                 SpriteRenderer renderer = warnings[i];
                 if (renderer != null)
                 {
-                    renderer.color = color;
+                    string rendererName = renderer.gameObject.name;
+                    bool isEdge = rendererName.IndexOf("Edge", StringComparison.Ordinal) >= 0;
+                    bool isSweep = rendererName.IndexOf("WarningSweep", StringComparison.Ordinal) >= 0;
+                    bool isCenterGlow = rendererName.IndexOf("CenterGlow", StringComparison.Ordinal) >= 0;
+                    bool isCenterRail = rendererName.IndexOf("CenterRail", StringComparison.Ordinal) >= 0;
+                    bool isFill = rendererName.IndexOf("WarningFill", StringComparison.Ordinal) >= 0;
+
+                    if (isSweep)
+                    {
+                        bool leftToRight = rendererName.IndexOf("LTR", StringComparison.Ordinal) >= 0;
+                        float sweepProgress = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.62f, 1f, progress));
+                        float localX = Mathf.Lerp(leftToRight ? -0.48f : 0.48f, leftToRight ? 0.48f : -0.48f, sweepProgress);
+                        renderer.transform.localPosition = new Vector3(localX, 0f, 0f);
+
+                        float sweepReveal = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.56f, 0.68f, progress));
+                        float sweepAlpha = Mathf.Lerp(0.16f, 0.46f, progress) * sweepReveal * Mathf.Lerp(0.65f, 1f, pulse);
+                        renderer.color = new Color(0.72f, 0.96f, 1f, Mathf.Clamp01(sweepAlpha));
+                    }
+                    else if (isCenterRail)
+                    {
+                        float railAlpha = Mathf.Lerp(0.32f, 0.62f, progress) * railFade * Mathf.Lerp(0.78f, 1f, pulse);
+                        renderer.color = new Color(0.78f, 0.97f, 1f, Mathf.Clamp01(railAlpha));
+                    }
+                    else if (isCenterGlow)
+                    {
+                        float glowAlpha = Mathf.Lerp(0.08f, 0.2f, progress) * Mathf.Lerp(0.72f, 1f, pulse);
+                        glowAlpha *= Mathf.Lerp(1f, 0.35f, railExpand);
+                        glowAlpha += finalFlash * 0.025f * fastPulse;
+                        renderer.color = new Color(0.22f, 0.72f, 1f, Mathf.Clamp01(glowAlpha));
+                    }
+                    else if (isEdge)
+                    {
+                        bool isTopEdge = rendererName.IndexOf("EdgeTop", StringComparison.Ordinal) >= 0;
+                        float edgeY = Mathf.Lerp(0.08f, 0.5f, railExpand);
+                        renderer.transform.localPosition = new Vector3(0f, isTopEdge ? edgeY : -edgeY, 0f);
+
+                        float edgeAlpha = Mathf.Lerp(0.22f, 0.58f, progress) * Mathf.Lerp(0.78f, 1f, pulse);
+                        edgeAlpha += finalFlash * Mathf.Lerp(0.06f, 0.18f, fastPulse);
+                        renderer.color = new Color(0.58f, 0.94f, 1f, Mathf.Clamp01(edgeAlpha));
+                    }
+                    else
+                    {
+                        if (isFill)
+                        {
+                            float fillHeight = Mathf.Lerp(0.16f, 1f, railExpand);
+                            renderer.transform.localScale = new Vector3(1f, fillHeight, 1f);
+                        }
+
+                        float fillAlpha = Mathf.Lerp(0.05f, 0.18f, progress) * Mathf.Lerp(0.8f, 1f, pulse);
+                        fillAlpha += finalFlash * 0.05f * fastPulse;
+                        renderer.color = new Color(0.18f, 0.62f, 0.95f, Mathf.Clamp01(fillAlpha));
+                    }
                 }
             }
         }
 
         private static void DestroyIceSweepRowWarnings(List<SpriteRenderer> warnings)
         {
+            HashSet<GameObject> destroyedRoots = new HashSet<GameObject>();
             for (int i = 0; i < warnings.Count; i++)
             {
                 SpriteRenderer renderer = warnings[i];
                 if (renderer != null)
                 {
-                    UnityEngine.Object.Destroy(renderer.gameObject);
+                    Transform rendererTransform = renderer.transform;
+                    GameObject target = rendererTransform.parent != null
+                        ? rendererTransform.parent.gameObject
+                        : renderer.gameObject;
+
+                    if (destroyedRoots.Add(target))
+                    {
+                        UnityEngine.Object.Destroy(target);
+                    }
                 }
             }
 
@@ -1056,6 +1451,51 @@ namespace LostMemory.Enemies.Boss.Rena
                 string.IsNullOrWhiteSpace(iceSweepSortingLayerName) ? projectileSortingLayerName : iceSweepSortingLayerName,
                 iceSweepSortingOrder,
                 debugLogging);
+
+            // 게스트 측 visual-only broadcast.
+            BroadcastIcePillarCellIfHost(new Vector3(center.x, center.y, transform.position.z), size, showVisual);
+        }
+
+        public void SpawnVisualOnlyIcePillarCell(Vector3 center, Vector2 size, bool showVisual)
+        {
+            GameObject areaObject = new GameObject("VisualOnly_IcePillarArea");
+            RenaBossIcePillarArea area = areaObject.AddComponent<RenaBossIcePillarArea>();
+            area.Configure(
+                gameObject,
+                health,
+                0,  // layerMask=0 → 데미지 처리 skip (visual-only)
+                new Vector2(center.x, center.y),
+                size,
+                0f,  // damage=0
+                iceSweepCellDamageDelay,
+                iceSweepCellDamageActiveDuration,
+                targetInvincibilityDuration,
+                ResolveIceSweepPillarVisualOffset(size),
+                iceSweepPillarVisualRows,
+                iceSweepVisualScale,
+                showVisual,
+                iceSweepFrames,
+                iceSweepAnimationFrameRate,
+                string.IsNullOrWhiteSpace(iceSweepSortingLayerName) ? projectileSortingLayerName : iceSweepSortingLayerName,
+                iceSweepSortingOrder,
+                false);
+        }
+
+        private void BroadcastIcePillarCellIfHost(Vector3 center, Vector2 size, bool showVisual)
+        {
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+            var syncs = UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                var sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossIcePillarCellClientRpc(center, size, showVisual);
+                    return;
+                }
+            }
         }
 
         private Vector2 ResolveIceSweepPillarVisualOffset(Vector2 damageSize)
@@ -1439,6 +1879,8 @@ namespace LostMemory.Enemies.Boss.Rena
             Log("Phase 2 transition started.");
 
             PlayPhaseTwoIntroAnimationState();
+            BroadcastPhaseTransitionStartIfHost();
+
             if (phaseTwoAnimatorIntroDuration > 0f)
             {
                 yield return new WaitForSeconds(phaseTwoAnimatorIntroDuration);
@@ -1454,8 +1896,54 @@ namespace LostMemory.Enemies.Boss.Rena
             RestorePhaseTransitionProtection();
             SchedulePhaseTwoOpening();
             PlayAnimation(idleStateName);
+            BroadcastPhaseTransitionEndIfHost();
             SetWanderEnabled(true);
             Log("Phase 2 transition completed.");
+        }
+
+        public void ApplyRemotePhaseTransitionStart()
+        {
+            PlayPhaseTwoIntroAnimationState();
+        }
+
+        public void ApplyRemotePhaseTransitionEnd()
+        {
+            _isPhaseTwo = true;
+            PlayAnimation(idleStateName);
+        }
+
+        private void BroadcastPhaseTransitionStartIfHost()
+        {
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+            var syncs = UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                var sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossPhaseTransitionStartClientRpc();
+                    return;
+                }
+            }
+        }
+
+        private void BroadcastPhaseTransitionEndIfHost()
+        {
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+            var syncs = UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                var sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossPhaseTransitionEndClientRpc();
+                    return;
+                }
+            }
         }
 
         private bool IsHealthAtOrBelowPhaseTwoThreshold()
@@ -1703,6 +2191,49 @@ namespace LostMemory.Enemies.Boss.Rena
                 debugLogging,
                 resolvedApplyHitStun,
                 resolvedHitStunDuration);
+
+            BroadcastThunderStrikeAreaIfHost(new Vector3(position.x, position.y, transform.position.z), resolvedWarningDuration);
+        }
+
+        public void SpawnVisualOnlyThunderStrikeArea(Vector3 position, float warningDuration)
+        {
+            GameObject areaObject = new GameObject("VisualOnly_ThunderStrikeArea");
+            RenaBossThunderStrikeArea area = areaObject.AddComponent<RenaBossThunderStrikeArea>();
+            area.Configure(
+                gameObject,
+                health,
+                0,  // layerMask=0 → 데미지 skip
+                new Vector2(position.x, position.y),
+                thunderStrikeRadius,
+                0f,  // damage=0
+                warningDuration,
+                targetInvincibilityDuration,
+                thunderStrikeVisualScale,
+                ResolveThunderStrikeFrames(),
+                ResolveThunderStrikeGlowFrames(),
+                thunderStrikeAnimationFrameRate,
+                projectileSortingLayerName,
+                projectileSortingOrder + 6,
+                false,
+                false,
+                0f);
+        }
+
+        private void BroadcastThunderStrikeAreaIfHost(Vector3 position, float warningDuration)
+        {
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+            var syncs = UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                var sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossThunderStrikeAreaClientRpc(position, warningDuration);
+                    return;
+                }
+            }
         }
 
         private Sprite[] ResolveThunderStrikeFrames()
@@ -1823,6 +2354,53 @@ namespace LostMemory.Enemies.Boss.Rena
                 projectileSortingLayerName,
                 projectileSortingOrder + sortingOrderOffset,
                 debugLogging);
+
+            BroadcastThunderboltBeamIfHost(new Vector3(origin.x, origin.y, transform.position.z), direction, duration, rotationDegrees, sortingOrderOffset);
+        }
+
+        public void SpawnVisualOnlyThunderboltBeam(Vector3 origin, Vector2 direction, float duration, float rotationDegrees, int sortingOrderOffset)
+        {
+            GameObject beamObject = new GameObject("VisualOnly_ThunderboltBeam");
+            beamObject.transform.position = origin;
+
+            RenaBossThunderboltBeam beam = beamObject.AddComponent<RenaBossThunderboltBeam>();
+            beam.Configure(
+                gameObject,
+                health,
+                projectileSpawnOrigin != null ? projectileSpawnOrigin : transform,
+                0,  // layerMask=0 → 데미지 skip
+                direction,
+                0f,  // damage=0
+                thunderboltBuildDuration,
+                duration,
+                thunderboltLength,
+                thunderboltWidth,
+                rotationDegrees,
+                targetInvincibilityDuration,
+                thunderboltDamageInterval,
+                thunderboltFrames,
+                thunderboltGlowFrames,
+                thunderboltAnimationFrameRate,
+                projectileSortingLayerName,
+                projectileSortingOrder + sortingOrderOffset,
+                false);
+        }
+
+        private void BroadcastThunderboltBeamIfHost(Vector3 origin, Vector2 direction, float duration, float rotationDegrees, int sortingOrderOffset)
+        {
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+            var syncs = UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                var sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossThunderboltClientRpc(origin, direction, duration, rotationDegrees, sortingOrderOffset);
+                    return;
+                }
+            }
         }
 
         private float ResolveThunderboltCastDuration()
@@ -1983,6 +2561,7 @@ namespace LostMemory.Enemies.Boss.Rena
                 projectileGlowScaleMultiplier,
                 debugLogging);
 
+            ulong homingTargetNoId = 0UL;
             if (homingTarget != null && homingTurnRateDegrees > 0f)
             {
                 projectile.ConfigureHoming(
@@ -1991,9 +2570,208 @@ namespace LostMemory.Enemies.Boss.Rena
                     homingTurnRateDegrees,
                     homingStartDelay,
                     homingEndDistance);
+
+                // homing target 의 NetworkObjectId 추출 — 게스트 측에서 같은 player 찾기 위함.
+                Unity.Netcode.NetworkObject targetNo = homingTarget.GetComponentInParent<Unity.Netcode.NetworkObject>();
+                if (targetNo != null && targetNo.IsSpawned)
+                {
+                    homingTargetNoId = targetNo.NetworkObjectId;
+                }
             }
 
+            // 게스트 측에 visual-only clone spawn broadcast. homing 정보 + host NetworkTime 포함 (시점 catch-up).
+            BroadcastVisualSpawnIfHost(
+                _currentCast,
+                new Vector3(spawnPosition.x, spawnPosition.y, transform.position.z),
+                direction,
+                homingTargetNoId,
+                homingTargetOffset,
+                GetSyncedTime());
+
             Log("Spawned " + objectName + ".");
+        }
+
+        private void BroadcastVisualSpawnIfHost(CastKind kind, Vector3 spawnPos, Vector2 direction, ulong homingTargetNoId, Vector2 homingTargetOffset, double hostStartedNetworkTime)
+        {
+            Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer)
+            {
+                return;
+            }
+
+            // PlayerMovementSync 인스턴스 통해 ClientRpc 발사 — 첫 spawned 인스턴스 1개만.
+            LostMemory.Networking.Player.PlayerMovementSync[] syncs =
+                UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                var sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossProjectileSpawnClientRpc((int)kind, spawnPos, direction, homingTargetNoId, homingTargetOffset, hostStartedNetworkTime);
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 게스트 측 ClientRpc 수신 진입점 — 같은 cast kind 데이터로 visual-only 투사체 생성.
+        /// data lookup 은 자기 인스턴스 필드 (host/guest 양쪽 prefab 동일 가정).
+        /// Fireball / Inferno 만 지원 — Thunderbolt/ThunderStrike/IceSweep 는 다른 spawn 시스템.
+        /// </summary>
+        public void SpawnVisualOnlyProjectile(int kindIndex, Vector3 spawnPos, Vector2 direction, ulong homingTargetNoId, Vector2 homingTargetOffset, double hostStartedNetworkTime)
+        {
+            CastKind kind = (CastKind)kindIndex;
+
+            Vector2 dir = direction;
+            if (dir.sqrMagnitude <= 0.0001f) dir = Vector2.right;
+            dir.Normalize();
+
+            Sprite[] castedFrames, frames, hitFrames;
+            Sprite[] castedGlowFrames, glowFrames, hitGlowFrames;
+            float configuredSpeed, configuredLifetime, configuredHitRadius, configuredVisualScale;
+            bool configuredDestroyOnHit;
+            int configuredMaximumHits;
+            float configuredHomingTurnRate = 0f;
+            float configuredHomingStartDelay = 0f;
+            float configuredHomingEndDistance = 0f;
+            bool configuredHomingEnabled = false;
+            bool rotateVisualToDirection;
+            bool moveDuringCastedAnimation;
+
+            switch (kind)
+            {
+                case CastKind.Fireball:
+                    castedFrames = fireballCastedFrames;
+                    frames = fireballFrames;
+                    hitFrames = fireballHitFrames;
+                    castedGlowFrames = fireballCastedGlowFrames;
+                    glowFrames = fireballGlowFrames;
+                    hitGlowFrames = fireballHitGlowFrames;
+                    configuredSpeed = fireballSpeed;
+                    configuredLifetime = fireballLifetime;
+                    configuredHitRadius = fireballHitRadius;
+                    configuredVisualScale = fireballVisualScale;
+                    configuredMaximumHits = fireballMaximumHits;
+                    configuredDestroyOnHit = fireballDestroyOnHit;
+                    configuredHomingEnabled = fireballHomingEnabled;
+                    configuredHomingTurnRate = fireballHomingTurnRateDegrees;
+                    configuredHomingStartDelay = fireballHomingStartDelay;
+                    configuredHomingEndDistance = fireballHomingEndDistance;
+                    // Fireball: SpawnFireball 의 SpawnProjectileFan 호출 시 인자와 동일.
+                    rotateVisualToDirection = true;
+                    moveDuringCastedAnimation = true;
+                    break;
+                case CastKind.Inferno:
+                    castedFrames = infernoCastedFrames;
+                    frames = infernoFrames;
+                    hitFrames = infernoHitFrames;
+                    castedGlowFrames = infernoCastedGlowFrames;
+                    glowFrames = infernoGlowFrames;
+                    hitGlowFrames = infernoHitGlowFrames;
+                    configuredSpeed = infernoSpeed;
+                    configuredLifetime = infernoLifetime;
+                    configuredHitRadius = infernoHitRadius;
+                    configuredVisualScale = infernoVisualScale;
+                    configuredMaximumHits = infernoMaximumHits;
+                    configuredDestroyOnHit = infernoDestroyOnHit;
+                    // Inferno: SpawnInferno 의 SpawnProjectileFan 호출 시 false — fan spread 라 sprite 회전 X.
+                    rotateVisualToDirection = false;
+                    moveDuringCastedAnimation = false;
+                    break;
+                default:
+                    return;  // Thunderbolt, ThunderStrike, IceSweep 는 별도 spawn — 본 함수 미지원.
+            }
+
+            GameObject projectileObject = new GameObject("VisualOnly_" + kind);
+            projectileObject.transform.position = spawnPos;
+
+            SpriteRenderer projectileRenderer = projectileObject.AddComponent<SpriteRenderer>();
+            RuntimeSpriteMaterialUtility.ApplySpriteMaterial(projectileRenderer);
+            projectileRenderer.sprite = frames != null && frames.Length > 0 ? frames[0] : null;
+            projectileRenderer.sortingLayerName = projectileSortingLayerName;
+            projectileRenderer.sortingOrder = projectileSortingOrder;
+
+            SpriteRenderer glowRenderer = CreateGlowRenderer(projectileObject.transform, castedGlowFrames, glowFrames, hitGlowFrames);
+
+            RenaBossProjectile projectile = projectileObject.AddComponent<RenaBossProjectile>();
+
+            // 시점 보정 — 게스트 측이 host 의 진행 상태로 즉시 catch-up (animation frame + position).
+            float elapsedSinceHostSpawn = (float)(GetSyncedTime() - hostStartedNetworkTime);
+            projectile.SetStartedTimeOffset(elapsedSinceHostSpawn);
+            projectile.SetVisualOnly(true);
+
+            projectile.Configure(
+                gameObject,
+                projectileRenderer,
+                dir,
+                targetLayerMask,
+                obstacleLayerMask,
+                configuredSpeed,
+                configuredLifetime,
+                0f,  // damage 0 — visual-only
+                0f,
+                configuredHitRadius,
+                configuredMaximumHits,
+                configuredDestroyOnHit,
+                rotateVisualToDirection,  // cast kind 별 host 인자와 동일 — Inferno=false 라 fan 회전 안 함.
+                moveDuringCastedAnimation,
+                castedFrames,
+                frames,
+                hitFrames,
+                projectileAnimationFrameRate,
+                configuredVisualScale,
+                glowRenderer,
+                castedGlowFrames,
+                glowFrames,
+                hitGlowFrames,
+                projectileGlowScaleMultiplier,
+                false);
+
+            // 호밍 target sync — homingTargetNoId 로 자기 측 NetworkObject 찾아 ConfigureHoming.
+            if (configuredHomingEnabled && homingTargetNoId != 0UL && configuredHomingTurnRate > 0f)
+            {
+                Unity.Netcode.NetworkManager nm = Unity.Netcode.NetworkManager.Singleton;
+                if (nm != null && nm.SpawnManager.SpawnedObjects.TryGetValue(homingTargetNoId, out Unity.Netcode.NetworkObject targetNo) && targetNo != null)
+                {
+                    projectile.ConfigureHoming(
+                        targetNo.transform,
+                        homingTargetOffset,
+                        configuredHomingTurnRate,
+                        configuredHomingStartDelay,
+                        configuredHomingEndDistance);
+                }
+            }
+        }
+
+        /// <summary>
+        /// [Multi sync] Guest 측 ClientRpc 도착 시 호출 — 폭발 위치 가장 가까운 visual clone 의 hit 애니메이션 trigger.
+        /// 거리 threshold 1m (host 와 guest 의 lifetime/position 미세 desync 허용).
+        /// PlayerMovementSync.BroadcastBossProjectileExplosionClientRpc 에서 호출됨.
+        /// </summary>
+        public void TriggerProjectileExplosionVisual(Vector3 explosionPos, int visualPhaseIndex)
+        {
+            var projectiles = UnityEngine.Object.FindObjectsByType<RenaBossProjectile>(FindObjectsSortMode.None);
+
+            RenaBossProjectile best = null;
+            float bestDistSqr = float.MaxValue;
+            const float MaxMatchDistance = 1.0f; // 1m 안의 visual clone 만 매칭
+
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                var proj = projectiles[i];
+                if (proj == null) continue;
+                float dSqr = (proj.transform.position - explosionPos).sqrMagnitude;
+                if (dSqr < bestDistSqr && dSqr <= MaxMatchDistance * MaxMatchDistance)
+                {
+                    bestDistSqr = dSqr;
+                    best = proj;
+                }
+            }
+
+            if (best != null)
+            {
+                best.TriggerExplosionAnimation();
+            }
         }
 
         private SpriteRenderer CreateGlowRenderer(

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using LostMemory.Audio;
 using LostMemory.Combat;
 using LostMemory.Networking.Common;
 using LostMemory.Networking.Player;
@@ -64,6 +65,12 @@ namespace LostMemory.Stage
         [Header("Reward Integration (CL-110)")]
         [Tooltip("true 면 클리어 시 자동으로 출구 벽 비활성화 (기존 동작). RewardController 가 관리하는 Combat 방은 false 로 두고 RewardController 가 OpenExits() 호출.")]
         [SerializeField] private bool autoOpenExitsOnCleared = true;
+
+        [Header("Room Entry BGM (optional)")]
+        [Tooltip("방 진입 시 재생할 BGM. 같은 클립이 이미 같은 ID 로 재생 중이면 재시작 없이 유지 (StageBgmPlayer 가 처리).")]
+        [SerializeField] private AudioClip roomEntryBgmClip;
+        [SerializeField] private int roomEntryBgmId = StageBgmPlayer.Stage2DungeonBgmId;
+        [SerializeField, Range(0f, 2f)] private float roomEntryBgmVolume = 1f;
 
         public event Action<RoomEnteredPayload> RoomEntered;
         public event Action<RoomCombatStartedPayload> RoomCombatStarted;
@@ -283,6 +290,23 @@ namespace LostMemory.Stage
             {
                 Debug.Log($"[RoomEntryRuntimeController] BGM stub: roomId='{roomData.RoomId}' cue='{init.BgmCueId}'", this);
             }
+
+            PlayRoomEntryBgm();
+        }
+
+        private void PlayRoomEntryBgm()
+        {
+            if (roomEntryBgmClip == null)
+            {
+                return;
+            }
+
+            StageBgmPlayer.PlayLoop(
+                roomEntryBgmClip,
+                roomEntryBgmId,
+                roomEntryBgmVolume,
+                this,
+                roomData != null ? roomData.RoomId : "RoomEntry");
         }
 
         private RoomEntryAnchor ResolveEntryAnchor(string tag)
@@ -515,6 +539,7 @@ namespace LostMemory.Stage
 
             roomCleared = true;
             Debug.Log($"[Controller] RoomCleared: roomId='{payload.RoomId}' on '{name}'.");
+
             RoomCleared?.Invoke(payload);
 
             if (bossTracker != null && !string.IsNullOrEmpty(payload.RoomId))

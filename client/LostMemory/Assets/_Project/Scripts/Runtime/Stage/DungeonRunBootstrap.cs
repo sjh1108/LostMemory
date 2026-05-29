@@ -153,36 +153,67 @@ namespace LostMemory.Stage
                 return;
             }
 
-            // 1차 — *spawn 된 첫 module 중 RoomEntryRuntimeController 가 있는 것* 의 EntryAnchor 위치로 player 정렬.
-            // 추후 RoomData.RoomType (Start/Combat/Boss) 또는 그래프 메타데이터 기반 정확한 식별로 보강 가능.
+            // 시작 module 선택 — 2-pass.
+            // Pass 1: 이름에 "_EP" suffix 포함된 module 우선 선택 (Entry Point 마커 명명 규칙).
+            //         Dungeon_1F_2R 에서 spawn 순서가 hierarchy 와 다르게 [_2_NWE_Hall, _1_E_EP] 로 뒤집혀 있어
+            //         첫 module 이 의도된 시작 방 (_1_E_EP) 가 아닌 문제 fix.
+            // Pass 2: EP 마커 없으면 기존 동작 (첫 controller 가진 module) — 다른 던전 회귀 0.
+            GameObject startModule = null;
+            RoomEntryRuntimeController startController = null;
+
+            // Pass 1 — EP suffix 우선.
             for (int i = 0; i < spawnedManagedObjects.Length; i++)
             {
                 GameObject moduleInstance = spawnedManagedObjects[i];
-                if (moduleInstance == null)
-                {
-                    continue;
-                }
+                if (moduleInstance == null) continue;
 
                 RoomEntryRuntimeController controller = moduleInstance.GetComponentInChildren<RoomEntryRuntimeController>(includeInactive: true);
-                if (controller == null)
+                if (controller == null) continue;
+
+                // _EP suffix (Entry Point 마커 — _1_E_EP, _N_NW_EP 등). 대소문자 무시.
+                if (moduleInstance.name.IndexOf("_EP", System.StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    continue;
+                    startModule = moduleInstance;
+                    startController = controller;
+                    Debug.Log($"[DungeonRunBootstrap] Entry Point module selected (Pass 1, _EP suffix): '{moduleInstance.name}'.");
+                    break;
                 }
+            }
 
-                RoomEntryAnchor anchor = moduleInstance.GetComponentInChildren<RoomEntryAnchor>(includeInactive: true);
-                Vector3 targetPosition = anchor != null ? anchor.transform.position : moduleInstance.transform.position;
+            // Pass 2 — fallback (기존 동작): 첫 controller 가진 module.
+            if (startModule == null)
+            {
+                for (int i = 0; i < spawnedManagedObjects.Length; i++)
+                {
+                    GameObject moduleInstance = spawnedManagedObjects[i];
+                    if (moduleInstance == null) continue;
 
-                WarpPlayer(targetPosition);
-                Debug.Log($"[DungeonRunBootstrap] Warped player to first room '{controller.name}' at {targetPosition}.");
+                    RoomEntryRuntimeController controller = moduleInstance.GetComponentInChildren<RoomEntryRuntimeController>(includeInactive: true);
+                    if (controller == null) continue;
 
-                // OnTriggerEnter2D 가 *이미 trigger 안에 있는 상태* 에서는 발동하지 않으므로,
-                // 본 bootstrap 이 controller 의 BeginRoomEntry 를 *직접* 호출해 첫 방 시작을 보장.
-                controller.BeginRoomEntry(player);
-                Debug.Log($"[DungeonRunBootstrap] Called BeginRoomEntry on first room controller.");
+                    startModule = moduleInstance;
+                    startController = controller;
+                    Debug.Log($"[DungeonRunBootstrap] Fallback module selected (Pass 2, no _EP found): '{moduleInstance.name}'.");
+                    break;
+                }
+            }
+
+            if (startModule == null || startController == null)
+            {
+                Debug.LogWarning("[DungeonRunBootstrap] No module with RoomEntryRuntimeController found among spawned objects. Player not warped.", this);
                 return;
             }
 
-            Debug.LogWarning("[DungeonRunBootstrap] No module with RoomEntryRuntimeController found among spawned objects. Player not warped.", this);
+            RoomEntryAnchor anchor = startModule.GetComponentInChildren<RoomEntryAnchor>(includeInactive: true);
+            Vector3 targetPosition = anchor != null ? anchor.transform.position : startModule.transform.position;
+
+            WarpPlayer(targetPosition);
+            Debug.Log($"[DungeonRunBootstrap] Warped player to first room '{startController.name}' at {targetPosition}.");
+
+            // OnTriggerEnter2D 가 *이미 trigger 안에 있는 상태* 에서는 발동하지 않으므로,
+            // 본 bootstrap 이 controller 의 BeginRoomEntry 를 *직접* 호출해 첫 방 시작을 보장.
+            startController.BeginRoomEntry(player);
+            Debug.Log($"[DungeonRunBootstrap] Called BeginRoomEntry on first room controller.");
         }
 
         // CL-112: DA spawn 결과의 controller-가진 module 들을 *순서대로* mvpRoomDataSequence 의 RoomData 와 매핑.

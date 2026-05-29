@@ -70,6 +70,9 @@ namespace LostMemory.TestKhi
         private ButtonInputSource _lastLoggedAttackSource = ButtonInputSource.None;
         private ButtonInputSource _lastLoggedDashSource = ButtonInputSource.None;
         private Transform _followTarget;
+        // 관전 모드 — Defeated 시 SpectatorCameraController 가 다른 alive 팀원 transform 으로 set.
+        // null 이면 본인 _followTarget 추적 (기본 동작).
+        private Transform _cameraOverrideTarget;
         private Camera _mainCamera;
         private Vector3 _cameraVelocity;
         private bool _cameraSnappedToTarget;
@@ -89,6 +92,18 @@ namespace LostMemory.TestKhi
             BindActions();
             LinkPlayerCharacters();
             ConfigureMovementScene();
+            EnsureSpectatorCameraController();
+        }
+
+        // 17개 던전 씬마다 SpectatorCameraController 를 수동 부착하는 부담 회피.
+        // 본 input manager 와 동일 GameObject 에 자동 추가. 이미 있으면 noop.
+        // 솔로/네트워크 비활성 환경에선 SpectatorCameraController 가 AnyPlayerDefeated 만 listen 하므로 무동작.
+        private void EnsureSpectatorCameraController()
+        {
+            if (GetComponent<SpectatorCameraController>() == null)
+            {
+                gameObject.AddComponent<SpectatorCameraController>();
+            }
         }
 
         protected override void Update()
@@ -660,9 +675,28 @@ namespace LostMemory.TestKhi
             }
         }
 
+        /// <summary>
+        /// 관전 카메라 override. null 로 호출하면 기본 follow (_followTarget) 으로 복귀.
+        /// SpectatorCameraController 가 본인 Defeated 시 호출.
+        /// </summary>
+        public void SetCameraOverrideTarget(Transform target)
+        {
+            _cameraOverrideTarget = target;
+            _cameraSnappedToTarget = false; // 새 target 으로 잘 lerp 되도록 snap 한번 재유도.
+        }
+
+        public Transform CameraOverrideTarget => _cameraOverrideTarget;
+
         private void FollowMainCamera()
         {
-            if (!followPlayerWithMainCamera || _followTarget == null)
+            if (!followPlayerWithMainCamera)
+            {
+                return;
+            }
+
+            // override 가 있으면 우선. 없으면 본인 _followTarget.
+            Transform effectiveTarget = _cameraOverrideTarget != null ? _cameraOverrideTarget : _followTarget;
+            if (effectiveTarget == null)
             {
                 return;
             }
@@ -679,15 +713,15 @@ namespace LostMemory.TestKhi
 
             if (_overrideCamera != null)
             {
-                if (_overrideCamera.FollowTarget != _followTarget)
+                if (_overrideCamera.FollowTarget != effectiveTarget)
                 {
-                    _overrideCamera.SetFollowTarget(_followTarget);
+                    _overrideCamera.SetFollowTarget(effectiveTarget);
                 }
 
                 return;
             }
 
-            Vector3 targetPosition = _followTarget.position + cameraOffset;
+            Vector3 targetPosition = effectiveTarget.position + cameraOffset;
             if (!_cameraSnappedToTarget)
             {
                 _mainCamera.transform.position = targetPosition;

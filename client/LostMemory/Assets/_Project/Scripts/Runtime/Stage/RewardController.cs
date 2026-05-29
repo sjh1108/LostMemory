@@ -46,7 +46,7 @@ namespace LostMemory.Stage
 
         [Header("Debug")]
         [Tooltip("Phase B 진단: 멀티에서 guest 보상 패널 미표시 문제 추적. 안정화 후 false 권장.")]
-        [SerializeField] private bool logRewardFlow = true;
+        [SerializeField] private bool logRewardFlow = false;
 
         private float _savedTimeScale = 1f;
 
@@ -62,6 +62,25 @@ namespace LostMemory.Stage
 
         /// <summary>CL-115: 보상 패널 표시 중 여부. InventoryToggleController 가 I 키 가드에 사용.</summary>
         public bool IsShowing => _isShowingReward;
+
+        /// <summary>
+        /// 시연 안전망 — Emergency 복구 시스템이 호출. _isShowingReward 가 어떤 이유로 stale 인 경우
+        /// timeScale + aim + input 강제 복원. OnDisable 의 panic restore 와 동일 로직이지만 외부 진입점.
+        /// </summary>
+        public void PanicRestore()
+        {
+            if (!_isShowingReward) return;
+
+            if (logRewardFlow) Debug.LogWarning("[RewardController] PanicRestore 호출 — _isShowingReward 강제 reset");
+            Time.timeScale = _savedTimeScale > 0.001f ? _savedTimeScale : 1f;
+            if (playerAim != null) playerAim.enabled = true;
+            SetCombatInputsBlocked(false);
+            _isShowingReward = false;
+            if (rewardPanelView != null && rewardPanelView.gameObject.activeSelf)
+            {
+                rewardPanelView.gameObject.SetActive(false);
+            }
+        }
 
         private void OnEnable()
         {

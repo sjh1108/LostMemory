@@ -139,121 +139,132 @@ namespace LostMemory.Relics
         {
             if (!HostAuthority.IsHost) return;
             if (relic == null || container == null) return;
-            bool appliedAttackSpeedEffect = ApplyAttackSpeedPercentEffects(relic);
-            bool appliedDefenseEffect = ApplyDefenseFlatEffects(relic);
-            switch (relic.EffectType)
+
+            // CL-138 V0.4 다중 효과 스키마: relic.Effects[] 가 한 개 이상이면 각 entry 를 순회 dispatch.
+            // 이전엔 legacy switch 가 _effects[0].Type 하나만 처리하고 secondary effect 는 AttackSpeed/Defense
+            // 두 타입의 special helper 로만 살았기에 (사냥꾼의 표적의 AttackPower secondary 같은) 다른 모든
+            // stat secondary 효과가 통째로 드롭되던 버그가 있었음. 본 패치는 array 우선 일괄 dispatch 로 통일.
+            IReadOnlyList<EffectEntry> effects = relic.Effects;
+            if (effects != null && effects.Count > 0)
+            {
+                for (int i = 0; i < effects.Count; i++)
+                {
+                    EffectEntry e = effects[i];
+                    ApplyEffect(e.Type, e.Magnitude, e.Duration, e.Threshold, relic);
+                }
+                return;
+            }
+
+            // Legacy 단일 효과 fallback (마이그레이션 끝나지 않은 자산 호환). _effectTypeLegacy 가 None
+            // 이면 자연스럽게 default 로 빠져 no-op.
+#pragma warning disable CS0618
+            ApplyEffect(relic.EffectType, relic.Magnitude, relic.Duration, relic.Threshold, relic);
+#pragma warning restore CS0618
+        }
+
+        // 단일 효과 entry 1건을 적합한 시스템 (container / on-kill / on-parry / on-dash) 으로 라우팅.
+        // OnHit 계열(SlowOnHit/ChainOnHit/...) 과 세트 전용(CriticalDamagePercent/GoldGainPercent/...) 은
+        // SetEffectApplicator + OnHitEffectRegistry 가 BuildManager.OnSetTierChanged 경로로 처리하므로
+        // 본 RelicEffectRegistry 는 *개별 유물 효과로서의 stat modifier* 만 책임진다 (no-op for 세트 전용).
+        private void ApplyEffect(RelicEffectType type, float magnitude, float duration, float threshold, RelicData source)
+        {
+            switch (type)
             {
                 case RelicEffectType.AttackPowerPercent:
-                    container.AddPermanent(StatId.AttackPower, relic.Magnitude, relic);
+                    container.AddPermanent(StatId.AttackPower, magnitude, source);
                     break;
                 case RelicEffectType.AttackSpeedPercent:
-                    if (!appliedAttackSpeedEffect)
-                    {
-                        container.AddPermanent(StatId.AttackSpeed, relic.Magnitude, relic);
-                    }
+                    container.AddPermanent(StatId.AttackSpeed, magnitude, source);
                     break;
                 case RelicEffectType.FinisherDamagePercent:
-                    container.AddPermanent(StatId.FinisherDamage, relic.Magnitude, relic);
+                    container.AddPermanent(StatId.FinisherDamage, magnitude, source);
                     break;
                 case RelicEffectType.AttackPowerConditional:
-                    float threshold = relic.Threshold;
+                    float thresholdLocal = threshold;
                     container.AddConditional(
-                        StatId.AttackPower, relic.Magnitude,
+                        StatId.AttackPower, magnitude,
                         () => playerHealth != null && playerHealth.MaximumHealth > 0f
-                              && playerHealth.CurrentHealth / playerHealth.MaximumHealth >= threshold,
-                        relic);
+                              && playerHealth.CurrentHealth / playerHealth.MaximumHealth >= thresholdLocal,
+                        source);
                     break;
                 case RelicEffectType.MoveSpeedPercent:
-                    container.AddPermanent(StatId.MoveSpeed, relic.Magnitude, relic);
+                    container.AddPermanent(StatId.MoveSpeed, magnitude, source);
                     break;
                 case RelicEffectType.MaxHealthPercent:
-                    container.AddPermanent(StatId.MaxHealth, relic.Magnitude, relic);
+                    container.AddPermanent(StatId.MaxHealth, magnitude, source);
                     break;
                 case RelicEffectType.DefenseFlat:
-                    if (!appliedDefenseEffect)
-                    {
-                        container.AddPermanent(StatId.Defense, relic.Magnitude, relic);
-                    }
+                    container.AddPermanent(StatId.Defense, magnitude, source);
                     break;
                 case RelicEffectType.AttackSpeedOnKillTimed:
                     _onKillSubscriptions.Add(new OnKillSubscription
                     {
-                        Magnitude = relic.Magnitude,
-                        Duration = relic.Duration,
-                        Source = relic,
+                        Magnitude = magnitude,
+                        Duration = duration,
+                        Source = source,
                     });
                     break;
-
-                // CL-108 Wave C
                 case RelicEffectType.ShieldOnParry:
                     _onParrySuccessSubscriptions.Add(new TimedSubscription
                     {
-                        Magnitude = relic.Magnitude,
-                        Duration = relic.Duration,
-                        Source = relic,
+                        Magnitude = magnitude,
+                        Duration = duration,
+                        Source = source,
                     });
                     break;
                 case RelicEffectType.HealReceivedPercent:
-                    container.AddPermanent(StatId.HealReceived, relic.Magnitude, relic);
+                    container.AddPermanent(StatId.HealReceived, magnitude, source);
                     break;
                 case RelicEffectType.DashCooldownPercent:
                     // 음수 magnitude (-0.12) 정상. PlayerStatModifierContainer 합산 정책상 1 + (-0.12) = 0.88.
-                    container.AddPermanent(StatId.DashCooldown, relic.Magnitude, relic);
+                    container.AddPermanent(StatId.DashCooldown, magnitude, source);
                     break;
                 case RelicEffectType.MoveSpeedAfterDashTimed:
                     _onDashEndSubscriptions.Add(new TimedSubscription
                     {
-                        Magnitude = relic.Magnitude,
-                        Duration = relic.Duration,
-                        Source = relic,
+                        Magnitude = magnitude,
+                        Duration = duration,
+                        Source = source,
                     });
                     break;
                 case RelicEffectType.HealConsumablePercent:
-                    // CL-108 옵션 C: 회복약은 인벤토리 보관만. 사용 트리거는 PlayerHealing.UseConsumable
-                    // (후속 CL 의 사용 UI 또는 본 CL 의 디버그 ContextMenu). 여기 case 는 no-op.
+                    // 회복약: 인벤토리 보관만. 사용 트리거는 별도 — 여기 case 는 no-op.
                     break;
-                // None: Wave A 시점 미구현 효과 (비-MVP, 랜덤박스 등). 후속 ticket 분담.
+                // ─── CL-138 set 효과 stat 들 — 개별 유물에서도 등장 가능 (사냥꾼의 표적의 Critical 등) ───
+                case RelicEffectType.CriticalChancePercent:
+                    container.AddPermanent(StatId.Critical, magnitude, source);
+                    break;
+                case RelicEffectType.CriticalDamagePercent:
+                    container.AddPermanent(StatId.CriticalDamage, magnitude, source);
+                    break;
+                case RelicEffectType.CooldownReductionPercent:
+                    container.AddPermanent(StatId.Cooldown, -magnitude, source);
+                    break;
+                case RelicEffectType.AttackRangePercent:
+                    container.AddPermanent(StatId.Range, magnitude, source);
+                    break;
+                case RelicEffectType.DodgeChancePercent:
+                    container.AddPermanent(StatId.Dodge, magnitude, source);
+                    break;
+                // ─── 세트 전용 / OnHit / 미소녀 / 시스템 hook — 본 Registry 책임 외 (SetEffectApplicator 가 set tier 단위로 처리) ───
+                case RelicEffectType.SlowOnHit:
+                case RelicEffectType.FreezeOnHit:
+                case RelicEffectType.ChainOnHit:
+                case RelicEffectType.BurnOnHit:
+                case RelicEffectType.WindAOE:
+                case RelicEffectType.GoldGainPercent:
+                case RelicEffectType.LuckPoints:
+                case RelicEffectType.LuckSlotExpand:
+                case RelicEffectType.LuckLegendaryGuarantee:
+                case RelicEffectType.MagicalGirlSummon:
+                case RelicEffectType.MagicalGirlFusion:
+                case RelicEffectType.MagicalGirlElementalAttack:
+                case RelicEffectType.MagicalGirlElementalEnhanced:
+                case RelicEffectType.TarotProc:
+                case RelicEffectType.TarotEffectMultiplier:
+                case RelicEffectType.None:
+                    break;
             }
-        }
-
-        private bool ApplyAttackSpeedPercentEffects(RelicData relic)
-        {
-            IReadOnlyList<EffectEntry> effects = relic.Effects;
-            bool applied = false;
-            if (effects != null && effects.Count > 0)
-            {
-                for (int i = 0; i < effects.Count; i++)
-                {
-                    EffectEntry effect = effects[i];
-                    if (effect.Type == RelicEffectType.AttackSpeedPercent)
-                    {
-                        container.AddPermanent(StatId.AttackSpeed, effect.Magnitude, relic);
-                        applied = true;
-                    }
-                }
-            }
-
-            return applied;
-        }
-
-        private bool ApplyDefenseFlatEffects(RelicData relic)
-        {
-            IReadOnlyList<EffectEntry> effects = relic.Effects;
-            bool applied = false;
-            if (effects != null && effects.Count > 0)
-            {
-                for (int i = 0; i < effects.Count; i++)
-                {
-                    EffectEntry effect = effects[i];
-                    if (effect.Type == RelicEffectType.DefenseFlat)
-                    {
-                        container.AddPermanent(StatId.Defense, effect.Magnitude, relic);
-                        applied = true;
-                    }
-                }
-            }
-
-            return applied;
         }
 
         private void HandleEnemyKilled(KhiAttackRequest req, AttackStepData step, Health victim)

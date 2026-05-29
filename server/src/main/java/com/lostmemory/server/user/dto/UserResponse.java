@@ -13,10 +13,13 @@ public record UserResponse(
         @Schema(description = "로그인 ID", example = "testuser")
         String loginId,
 
+        @Schema(description = "연동 이메일", example = "tester@example.com")
+        String email,
+
         @Schema(description = "인게임 닉네임", example = "테스터1")
         String nickname,
 
-        @Schema(description = "계정 상태 (ACTIVE / SUSPENDED / DELETED)", example = "ACTIVE")
+        @Schema(description = "계정 상태 (PENDING / ACTIVE / SUSPENDED / DELETED)", example = "ACTIVE")
         UserStatus status,
 
         @Schema(description = "가입 시각 (UTC)", example = "2026-04-30T08:00:00Z")
@@ -31,6 +34,7 @@ public record UserResponse(
         return new UserResponse(
                 user.getId(),
                 user.getLoginId(),
+                user.getEmail(),
                 user.getNickname(),
                 user.getStatus(),
                 user.getCreatedAt(),

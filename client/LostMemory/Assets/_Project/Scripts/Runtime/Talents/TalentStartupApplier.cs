@@ -1,8 +1,10 @@
 using LostMemory.Combat;
 using LostMemory.Data;
 using LostMemory.Memory;
+using LostMemory.Networking.Player;
 using LostMemory.Relics;
 using LostMemory.Stage;
+using LostMemory.TestKhi;
 using UnityEngine;
 
 namespace LostMemory.Talents
@@ -60,6 +62,11 @@ namespace LostMemory.Talents
 
             // 재능 저장 직후 즉시 stat 반영 — 마을에서 HP 늘려도 HUD/캐릭터에 곧바로 적용.
             TalentSaveService.Saved += HandleTalentSaved;
+
+            // 멀티 fix: 게스트는 dungeon scene 로드 직후 LocalPlayer spawn 이 늦을 수 있고,
+            // inspector-wire 된 scene-placed Player 의 _container 는 NGO 활성 시 EditorTestCharacterMarker 가 destroy.
+            // LocalPlayerReady 발화 시 정확한 player 측 container 로 재bind + 재적용.
+            LocalPlayerResolver.LocalPlayerReady += HandleLocalPlayerReady;
         }
 
         private void OnDisable()
@@ -67,11 +74,21 @@ namespace LostMemory.Talents
             if (_bootstrap != null)
                 _bootstrap.DungeonBuilt -= Apply;
             TalentSaveService.Saved -= HandleTalentSaved;
+            LocalPlayerResolver.LocalPlayerReady -= HandleLocalPlayerReady;
         }
 
         private void HandleTalentSaved()
         {
             Debug.Log("[TalentStartupApplier] TalentSaveService.Saved 수신 → 즉시 재적용", this);
+            Apply();
+        }
+
+        private void HandleLocalPlayerReady(KhiPlayerStateAggregator _)
+        {
+            // refs 무효화 → 다음 Apply 의 ResolveRefsIfNeeded 가 LocalPlayer 측 새 container/inventory 조회.
+            _container = null;
+            _relicInventory = null;
+            Debug.Log("[TalentStartupApplier] LocalPlayerReady 수신 → refs 재조회 + 재적용", this);
             Apply();
         }
 
@@ -87,21 +104,39 @@ namespace LostMemory.Talents
         /// <summary>
         /// Inspector 에 직접 할당되지 않은 참조를 씬에서 자동 검색.
         /// 던전 씬마다 수동 와이어링 부담을 줄임 (할당돼 있으면 그것 우선).
+        ///
+        /// 멀티 fix: dungeon scene 에 inspector-wire 된 _container 는 scene-placed Player 의 컴포넌트인데,
+        /// NGO 활성 시 EditorTestCharacterMarker 가 즉시 Destroy 함 → Unity pseudo-null →
+        /// FindAnyObjectByType 의 owner 비구분으로 host/guest race. LocalPlayer 측에서 명시 조회.
         /// </summary>
         private void ResolveRefsIfNeeded()
         {
-            if (_container == null)
+            // player-side: LocalPlayer 의 컴포넌트 우선. 솔로/Editor 단일 씬은 LocalPlayerResolver 가
+            // fallback 으로 첫 Character 잡아 기존 동작 유지. LocalPlayer 가 아직 spawn 전이면 null —
+            // OnEnable 의 LocalPlayerReady 구독이 spawn 후 재시도.
+            if (_container == null || !IsLocalPlayerComponent(_container))
             {
-                _container = FindAnyObjectByType<PlayerStatModifierContainer>(FindObjectsInactive.Include);
+                _container = LocalPlayerResolver.GetComponentOnLocalPlayer<PlayerStatModifierContainer>();
             }
+            if (_relicInventory == null || !IsLocalPlayerComponent(_relicInventory))
+            {
+                _relicInventory = LocalPlayerResolver.GetComponentOnLocalPlayer<PlayerRelicInventory>();
+            }
+
+            // DungeonRunBootstrap 은 scene-level singleton (player 측 아님) — 기존 fallback 유지.
             if (_bootstrap == null)
             {
                 _bootstrap = FindAnyObjectByType<DungeonRunBootstrap>(FindObjectsInactive.Include);
             }
-            if (_relicInventory == null)
-            {
-                _relicInventory = FindAnyObjectByType<PlayerRelicInventory>(FindObjectsInactive.Include);
-            }
+        }
+
+        /// <summary>주어진 컴포넌트가 현재 LocalCharacter 의 자식(또는 본체)인지 확인. 잘못된 player 잡혔는지 self-heal 가드.</summary>
+        private static bool IsLocalPlayerComponent(Component c)
+        {
+            if (c == null) return false;
+            var localChar = LocalPlayerResolver.LocalCharacter;
+            if (localChar == null) return false;
+            return c.transform == localChar.transform || c.transform.IsChildOf(localChar.transform);
         }
 
         // ── 적용 진입점 ──────────────────────────────────────

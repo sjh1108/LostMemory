@@ -21,7 +21,7 @@
     </span>
     <a th:if="${latestDownloadUrl != null and !latestDownloadUrl.isBlank()}"
        class="header-download"
-       th:href="${latestDownloadUrl}"
+       th:href="@{/downloads/latest}"
        target="_blank" rel="noopener noreferrer">최신 버전 다운로드 ↓</a>
   </nav>
 </header>

@@ -42,6 +42,10 @@ namespace LostMemory.Networking.Player
         [SerializeField, Tooltip("게스트 측 down 모션용 Animator Trigger 이름. Hero_Animator 에는 'Down' 정의됨.")]
         private string downAnimatorTrigger = "Down";
 
+        [SerializeField, Tooltip("부활 시 모든 클라(특히 mirror)에서 호출할 Animator Trigger 이름. Hero_Animator 에 'Revive' 정의됨. " +
+            "KhiDownController.reviveAnimatorTriggerName 과 일치시켜야 호스트 본인 + mirror 양쪽 흐름 sync.")]
+        private string reviveAnimatorTrigger = "Revive";
+
         [SerializeField, Tooltip("사망 시 모든 클라에서 Animator SetTrigger + Collider2D disable + 입력 컴포넌트 disable.")]
         private bool syncDeath = true;
 
@@ -99,10 +103,63 @@ namespace LostMemory.Networking.Player
         // B-2: 4인 동시 사망 race — BroadcastRunFailedUiClientRpc 중복 차단.
         private static bool _runFailedBroadcastFired;
 
-        /// <summary>RunFailed 가드 리셋. RunManager.StartRun / ReturnToTown 에서 호출.</summary>
+        /// <summary>RunFailed 가드 리셋. RunManager.StartRun / ReturnToTown / 부활 성공 시 호출.</summary>
         public static void ResetRunFailedBroadcastGuard()
         {
             _runFailedBroadcastFired = false;
+        }
+
+        /// <summary>
+        /// 결과창의 Lobby 버튼 핸들러 진입점 — 솔로/호스트/게스트 어느 측에서 호출돼도 정상 동작.
+        /// 솔로/호스트: 즉시 RunManager.ReturnToTown() (saveRunRewards=true).
+        /// 게스트: 자기 LocalPlayerObject 의 PlayerHealthSync 를 찾아 ServerRpc 발사 → 호스트에서 실제 전환 수행.
+        /// </summary>
+        public static void RequestReturnFromAnyClient()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening)
+            {
+                // 솔로 — 직접 호출.
+                LostMemory.Stage.RunManager.Instance?.ReturnToTown();
+                return;
+            }
+            if (nm.IsServer)
+            {
+                // 호스트 — 직접 호출. NGO LoadScene 으로 게스트도 sync.
+                LostMemory.Stage.RunManager.Instance?.ReturnToTown();
+                return;
+            }
+            // 게스트 — 자기 LocalPlayerObject 의 PlayerHealthSync 를 찾아 ServerRpc.
+            NetworkObject localPlayer = nm.LocalClient?.PlayerObject;
+            if (localPlayer == null)
+            {
+                Debug.LogWarning("[PlayerHealthSync] RequestReturnFromAnyClient: LocalClient.PlayerObject 없음 — 게스트 요청 무시.");
+                return;
+            }
+            PlayerHealthSync sync = localPlayer.GetComponent<PlayerHealthSync>();
+            if (sync == null)
+            {
+                Debug.LogWarning("[PlayerHealthSync] RequestReturnFromAnyClient: LocalPlayerObject 에 PlayerHealthSync 없음.");
+                return;
+            }
+            sync.RequestReturnServerRpc();
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestReturnServerRpc(ServerRpcParams rpcParams = default)
+        {
+            // server-side only — 게스트가 결과창에서 Lobby 버튼 누를 때 호출됨.
+            LostMemory.Stage.RunManager rm = LostMemory.Stage.RunManager.Instance;
+            if (rm == null)
+            {
+                if (verboseLog) Debug.Log("[PlayerHealthSync] RequestReturnServerRpc — RunManager null. ignore.");
+                return;
+            }
+            // Resulting 상태(정상 사망 결과) → saveRunRewards=true.
+            // 그 외 상태(예: ESC abandon 미구현 게이트 우회) → 그래도 saveRunRewards=true 로 동일 처리.
+            // 실제 분기는 RunManager 측에서 결정.
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] RequestReturnServerRpc 수신 (from clientId={rpcParams.Receive.SenderClientId}). ReturnToTown 호출.");
+            rm.ReturnToTown();
         }
 
         /// <summary>
@@ -468,6 +525,13 @@ namespace LostMemory.Networking.Player
             if (!IsSpawned) return;
             if (health == null) return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // GodMode enforce — server 측만, 매 프레임 모든 player.Health.Invulnerable=true 강제.
+            // CompleteRevive 가 false 로 set 해도 다음 프레임에 복원.
+            // 인스턴스마다 호출되지만 EnforceGodModeOnAllServerInstances 가 static 이라 한 번만 작동.
+            if (IsServer && GodModeActive) EnforceGodModeOnAllServerInstances();
+#endif
+
             // Down / Defeated state 매 프레임 강제. 매 프레임 컴포넌트 disable 재강제 + Animator.Play(target) 강제.
             KhiDownState state = (KhiDownState)_syncedDownState.Value;
             if (state == KhiDownState.Normal) return;
@@ -517,9 +581,85 @@ namespace LostMemory.Networking.Player
             }
         }
 
+        private static int _lastGodModeToggleFrame = -1;
+        // 시연 디버그 — F6 토글 상태. static 이라 모든 인스턴스 공유. CompleteRevive 가 Invulnerable=false 로 set 해도
+        // 매 프레임 server LateUpdate 가 다시 true 로 강제 enforce 함.
+        // KhiParryHealth.Damage 도 이 flag 보고 진입 가드 (TDE Invulnerable 우회 경로 차단 안전망).
+        public static bool GodModeActive { get; private set; }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static bool IsF6PressedThisFrame()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.f6Key.wasPressedThisFrame) return true;
+#endif
+            try { if (Input.GetKeyDown(KeyCode.F6)) return true; }
+            catch (System.InvalidOperationException) { }
+            return false;
+        }
+
+        /// <summary>
+        /// server 측에서만 호출 — God Mode toggle.
+        /// </summary>
+        private static void ToggleGodModeForAllOnServer()
+        {
+            GodModeActive = !GodModeActive;
+            EnforceGodModeOnAllServerInstances();
+            Debug.Log($"[PlayerHealthSync] DEBUG F6 — God Mode {(GodModeActive ? "ON" : "OFF")} applied to {_serverInstances.Count} player(s)");
+        }
+
+        /// <summary>
+        /// 매 프레임 LateUpdate 에서 호출 — GodMode ON 이면 모든 server 측 player.Health.Invulnerable=true 강제.
+        /// CompleteRevive 등에서 false 로 set 해도 다음 프레임에 복원.
+        /// </summary>
+        private static void EnforceGodModeOnAllServerInstances()
+        {
+            foreach (var p in _serverInstances)
+            {
+                if (p == null || p.health == null) continue;
+                if (GodModeActive)
+                {
+                    if (!p.health.Invulnerable) p.health.Invulnerable = true;
+                }
+            }
+        }
+#endif
+
+        /// <summary>
+        /// 게스트가 F6 누르면 ServerRpc 발사 → host 측에서 모든 player 무적 토글.
+        /// RequireOwnership=false — owner 인 자기 인스턴스에서 호출하지만 안전을 위해 명시.
+        /// </summary>
+        [ServerRpc(RequireOwnership = false)]
+        public void RequestToggleGodModeServerRpc()
+        {
+            if (!IsServer) return;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ToggleGodModeForAllOnServer();
+#endif
+        }
+
         private void Update()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // F6 폴링 — 호스트면 직접 토글, 게스트면 ServerRpc.
+            // 매 인스턴스 (호스트 측 자기 + 게스트 mirror 등) 가 Update 호출되므로 static frame guard 로 중복 차단.
+            if (Time.frameCount != _lastGodModeToggleFrame && IsF6PressedThisFrame())
+            {
+                _lastGodModeToggleFrame = Time.frameCount;
+                if (IsServer)
+                {
+                    ToggleGodModeForAllOnServer();
+                }
+                else if (IsOwner) // 게스트는 자기 인스턴스에서만 한 번 ServerRpc 발사
+                {
+                    RequestToggleGodModeServerRpc();
+                }
+            }
+#endif
+
             if (!IsServer || health == null) return;
+
 
             float current = health.CurrentHealth;
             if (Mathf.Abs(current - _syncedHealth.Value) >= minDelta)
@@ -571,23 +711,78 @@ namespace LostMemory.Networking.Player
             }
         }
 
-        [SerializeField, Tooltip("팀 전멸 시 결과 UI 표시까지 대기. RunManager.failureResultingDelaySeconds (=5f) 와 동일하게 둬서 호스트/게스트 동시에 뜨도록.")]
-        private float runFailedUiDelaySeconds = 5f;
+        [SerializeField, Tooltip("팀 전멸 시 결과 UI 표시까지 대기. RunManager.failureResultingDelaySeconds (=10f) 와 동일하게 둬서 호스트/게스트 동시에 뜨도록. " +
+            "이 wait 중에는 협력/기억 부활 가능 — wait 종료 시 AnyPlayerAlive 검사하여 부활 성공이면 결과창 abort.")]
+        private float runFailedUiDelaySeconds = 10f;
+
+        // 부활 race 동기화 플래그 — 서버가 wait 중 부활 감지 시 CancelRunFailedUiClientRpc 로 모든 클라에 abort 신호.
+        // 각 클라의 ShowRunFailedUiAfterDelayCoroutine 가 wait 종료 후 본 플래그를 검사.
+        private static bool _runFailedUiAborted;
 
         [ClientRpc]
         private void BroadcastRunFailedUiClientRpc(float delaySeconds)
         {
             // 호스트도 게스트도 같은 RPC 받음 — 단일 시간 출처 (호스트 측 코루틴 vs RPC 의 frame skew 제거).
-            // server 측에서 코루틴을 돌리지 않고 즉시 RPC 발화 → client 측이 자체 coroutine 으로 delay 후 ShowResultingUI 호출.
-            // 호스트 자기 player GameObject 가 TDE 의 defeatObjectDisableDelay 로 inactive 되어도 RPC 는 이미 전송됨.
-            // 게스트 측 player GameObject 는 active 유지 (NGO 가 SetActive sync 안 함) — coroutine 정상 작동.
+            // 새 broadcast 시작 — 이전 abort 플래그 reset.
+            _runFailedUiAborted = false;
             if (verboseLog) Debug.Log($"[PlayerHealthSync] RunFailed UI RPC received delay={delaySeconds}s. IsServer={IsServer} IsOwner={IsOwner} {gameObject.name}", this);
             StartCoroutine(ShowRunFailedUiAfterDelayCoroutine(delaySeconds));
+            // server 측 — wait 중 부활 폴링 코루틴 병행 시작. 감지 시 CancelRunFailedUiClientRpc broadcast.
+            if (IsServer)
+            {
+                StartCoroutine(ServerPollReviveDuringWaitCoroutine(delaySeconds));
+            }
+        }
+
+        /// <summary>
+        /// 서버 측 wait 중 부활 폴링 — 0.5s 간격으로 AnyPlayerAlive 검사.
+        /// 부활 감지 시 CancelRunFailedUiClientRpc 발화 + ResetRunFailedBroadcastGuard.
+        /// wait 다 소비될 때까지 부활 없으면 그냥 종료 (client coroutine 들이 정상적으로 UI 표시).
+        /// </summary>
+        private IEnumerator ServerPollReviveDuringWaitCoroutine(float duration)
+        {
+            float elapsed = 0f;
+            const float pollInterval = 0.5f;
+            while (elapsed < duration)
+            {
+                yield return new WaitForSeconds(pollInterval);
+                elapsed += pollInterval;
+                if (!IsServer) yield break;  // 호스트 이탈 등
+                if (AnyPlayerAlive())
+                {
+                    if (verboseLog) Debug.Log("[PlayerHealthSync] SERVER 부활 감지 (wait 중) — CancelRunFailedUiClientRpc broadcast.", this);
+                    CancelRunFailedUiClientRpc();
+                    ResetRunFailedBroadcastGuard();
+                    yield break;
+                }
+            }
+        }
+
+        [ClientRpc]
+        private void CancelRunFailedUiClientRpc()
+        {
+            _runFailedUiAborted = true;
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] CancelRunFailedUi RPC 수신 — 결과창 표시 abort 예약. IsServer={IsServer} {gameObject.name}", this);
         }
 
         private IEnumerator ShowRunFailedUiAfterDelayCoroutine(float delay)
         {
             if (delay > 0f) yield return new WaitForSeconds(delay);
+
+            // 부활 race 가드 — 서버의 ServerPollReviveDuringWaitCoroutine 가 wait 중 cancel RPC 보냈으면 abort.
+            if (_runFailedUiAborted)
+            {
+                if (verboseLog) Debug.Log($"[PlayerHealthSync] ShowRunFailedUi — abort 플래그 set, 결과창 표시 skip. {gameObject.name}", this);
+                yield break;
+            }
+            // server 추가 안전망 — 서버에선 최종 alive 검사 한 번 더 (poll 간격 사이 부활 캐치).
+            if (IsServer && AnyPlayerAlive())
+            {
+                if (verboseLog) Debug.Log($"[PlayerHealthSync] ShowRunFailedUi — server 최종 검사에서 부활 감지, abort + broadcast cancel.", this);
+                CancelRunFailedUiClientRpc();
+                ResetRunFailedBroadcastGuard();
+                yield break;
+            }
             if (LostMemory.Stage.RunManager.Instance != null)
             {
                 if (verboseLog) Debug.Log($"[PlayerHealthSync] ShowRunFailedUi after delay — RunManager.ShowResultingUI 호출. IsServer={IsServer} {gameObject.name}", this);
@@ -693,6 +888,7 @@ namespace LostMemory.Networking.Player
             DisableInputComponentsOnDeath();
 
             // owner 측 — 사망 UI 표시.
+            // (player_died analytics 발화는 RunManager 가 KhiDownController.Defeated* 이벤트 구독으로 처리 — 여기서는 박지 않음.)
             if (IsOwner)
             {
                 if (deathOverlayObject != null)
@@ -725,6 +921,14 @@ namespace LostMemory.Networking.Player
             KhiDownState newState = (KhiDownState)current;
 
             if (verboseLog) Debug.Log($"[PlayerHealthSync] DownState changed {prevState} -> {newState}. IsServer={IsServer} IsOwner={IsOwner} {gameObject.name}", this);
+
+            // CRITICAL: mirror (non-owner) 측 KhiDownController._state 도 sync —
+            // 그래야 동료가 R hold 시 FindNearestDownAlly 가 IsDown=true 로 발견.
+            // 호스트 측 자기 인스턴스는 KhiDownController 가 이미 EnterDown/ForceRevive 로 _state 변경했으므로 idempotent.
+            if (_downController != null)
+            {
+                _downController.ApplyDownStateFromNetwork(newState);
+            }
 
             if (newState == KhiDownState.Down)
             {
@@ -818,6 +1022,30 @@ namespace LostMemory.Networking.Player
 
         private void ClearDownVisualsOnClient()
         {
+            // 부활 sync — 호스트 본인 측은 KhiDownController.CompleteRevive 가 직접 "Revive" trigger 발동.
+            // mirror (게스트 화면의 호스트 / 호스트 화면의 게스트) 측은 OnValueChanged 흐름이 별도라 여기서 trigger 발동 필요.
+            // 안 그러면 Animator 가 Down state 에 그대로 멈춰서 시각적으로 부활 안 됨.
+            Animator animator = ResolveTargetAnimator();
+            if (animator != null && animator.isActiveAndEnabled)
+            {
+                if (!string.IsNullOrWhiteSpace(downAnimatorTrigger))
+                {
+                    animator.ResetTrigger(downAnimatorTrigger);
+                }
+                if (!string.IsNullOrWhiteSpace(deathAnimatorTrigger))
+                {
+                    animator.ResetTrigger(deathAnimatorTrigger);
+                }
+                if (!string.IsNullOrWhiteSpace(reviveAnimatorTrigger))
+                {
+                    animator.SetTrigger(reviveAnimatorTrigger);
+                }
+
+                // Animator Controller 에 "Down → ... " 의 Revive transition 이 wireup 안 됐을 때 stuck 방지 fallback.
+                // 호스트 본인 측은 KhiDownController.EnsureNotStuckInDownAnimationCoroutine 으로 동일 처리. mirror 측은 별도 처리 필요.
+                if (isActiveAndEnabled) StartCoroutine(EnsureMirrorRevivedNotStuckCoroutine());
+            }
+
             // 부활 케이스 — 모든 인스턴스에서 컴포넌트 reenable.
             if (_ownerComponentsDisabledForDown)
             {
@@ -826,6 +1054,41 @@ namespace LostMemory.Networking.Player
                 ReenableComponentsByName(new[] { "KhiAnimatorMovementBinder", "KhiSpriteFlipBinder" });
                 _ownerComponentsDisabledForDown = false;
             }
+
+            // Collider2D 도 reenable (ApplyDefeatedVisualsOnClient 가 disable 했을 가능성 — 시각적 잔재 차단).
+            Collider2D[] cols = GetComponentsInChildren<Collider2D>(true);
+            for (int i = 0; i < cols.Length; i++) if (cols[i] != null) cols[i].enabled = true;
+
+            // 부활 후 Renderer 가 ApplyHidePlayerVisual 로 disable 된 상태면 복구 (Down→Normal 가 가능성 적지만 안전망).
+            if (_visualHiddenAfterDefeat)
+            {
+                _visualHiddenAfterDefeat = false;
+                Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < renderers.Length; i++) if (renderers[i] != null) renderers[i].enabled = true;
+            }
+        }
+
+        private IEnumerator EnsureMirrorRevivedNotStuckCoroutine()
+        {
+            // Animator transition 평가 시간 확보.
+            yield return new WaitForSeconds(0.4f);
+            Animator a = ResolveTargetAnimator();
+            if (a == null || !a.isActiveAndEnabled) yield break;
+            // 부활 sync 후 다시 Down 으로 갔으면 (예: 또 죽음) 손대지 않음.
+            if ((KhiDownState)_syncedDownState.Value != KhiDownState.Normal) yield break;
+
+            var cur = a.GetCurrentAnimatorStateInfo(0);
+            bool stuck = cur.IsName("Down") || cur.IsName("Dead");
+            if (!stuck) yield break;
+
+            if (verboseLog) Debug.Log($"[PlayerHealthSync] Mirror revive — Animator stuck (state hash={cur.shortNameHash}), force Rebind. {gameObject.name}", this);
+            // KhiAnimatorMovementBinder 등은 이미 reenable. Rebind → Idle/default state 자연 복귀.
+            if (!string.IsNullOrWhiteSpace(downAnimatorTrigger)) a.ResetTrigger(downAnimatorTrigger);
+            if (!string.IsNullOrWhiteSpace(deathAnimatorTrigger)) a.ResetTrigger(deathAnimatorTrigger);
+            a.Rebind();
+            a.Update(0f);
+            a.Play(0, 0, 0f);
+            a.Update(0f);
         }
 
         // KhiDownController.DefeatedByTimeout / DefeatedSolo event 핸들러 (server only).
@@ -903,6 +1166,21 @@ namespace LostMemory.Networking.Player
             shadow.normal.textColor = Color.black;
             GUI.Label(new Rect(rect.x + 3f, rect.y + 3f, rect.width, rect.height), deathOverlayFallbackText, shadow);
             GUI.Label(rect, deathOverlayFallbackText, style);
+        }
+
+        /// <summary>
+        /// 협력 부활 차징 progress 를 모든 client 에 broadcast.
+        /// host 가 호출 — 자기 측 KhiDownController (호스트가 살리는 경우) 또는
+        /// 게스트의 PlayerMovementSync.SubmitCoopReviveProgressServerRpc 가 host 측에서 호출.
+        /// 받는 쪽: 자기 측 target.KhiDownController.ApplyCoopReviveProgressFromNetwork → bar fill.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastCoopReviveProgressClientRpc(float ratio)
+        {
+            if (_downController != null)
+            {
+                _downController.ApplyCoopReviveProgressFromNetwork(Mathf.Clamp01(ratio));
+            }
         }
 
         private void DisableInputComponentsOnDeath()

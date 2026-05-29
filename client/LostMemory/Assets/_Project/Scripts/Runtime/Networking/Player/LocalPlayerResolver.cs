@@ -94,7 +94,13 @@ namespace LostMemory.Networking.Player
                     if (_localCharacter != null) return _localCharacter;
                 }
 
-                // 2. Editor 단일 씬 fallback — 첫 번째 Character 검색
+                // 2. NGO 활성 시 fallback 차단 — Spawn race 시 게스트가 host Character 잡는 버그 방지.
+                //    호출 측은 LocalPlayerReady 이벤트 대기 필요.
+                //    솔로 / Editor 단일 씬은 IsListening=false 라 기존 fallback 진입.
+                var nm = Unity.Netcode.NetworkManager.Singleton;
+                if (nm != null && nm.IsListening) return null;
+
+                // 3. 솔로 / Editor 단일 씬 fallback — 첫 번째 Character 검색
                 _localCharacter = UnityEngine.Object.FindFirstObjectByType<Character>();
                 return _localCharacter;
             }

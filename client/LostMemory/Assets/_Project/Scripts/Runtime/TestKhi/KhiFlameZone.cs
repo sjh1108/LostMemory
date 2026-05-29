@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using LostMemory.Combat;
 using LostMemory.Enemies;
+using LostMemory.Networking.Player;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -67,6 +69,9 @@ namespace LostMemory.TestKhi
         private ModeParams _primary;
         private ModeParams _secondary;
         private GameObject _instigator;
+        // 멀티: 게스트 owner 측에서 호스트로 데미지 위임. Initialize 시점에 instigator 의 PlayerDamageRelay 1회 캐시.
+        // burn DOT 는 EnemyStatusEffect 자체 tick 이므로 본 경로로 sync 안 됨 — 별도 follow-up 필요.
+        private PlayerDamageRelay _cachedRelay;
 
         private bool _streaming;
         private FlameMode _activeMode;
@@ -98,6 +103,7 @@ namespace LostMemory.TestKhi
                 burnDuration = secondaryBurnDuration,
             };
             _instigator = instigator;
+            _cachedRelay = instigator != null ? instigator.GetComponentInParent<PlayerDamageRelay>() : null;
             _hitBuffer = new Collider2D[maxTargetsPerTick];
         }
 
@@ -155,6 +161,8 @@ namespace LostMemory.TestKhi
                 Health victim = col.GetComponent<Health>() ?? col.GetComponentInParent<Health>();
                 if (victim == null || victim.CurrentHealth <= 0f) continue;
                 if (victim.gameObject == _instigator) continue;
+                // PvP 미상정 — 다른 player 친아군 skip.
+                if (CombatTargetable.IsFriendlyPlayer(victim)) continue;
                 if (!_appliedThisTick.Add(victim)) continue; // 다중 콜라이더 중복 방지
 
                 // 박스 내부 → 각도 필터로 부채꼴 정확도 향상.
@@ -164,7 +172,14 @@ namespace LostMemory.TestKhi
 
                 if (directDamage > 0f)
                 {
-                    victim.Damage(directDamage, _instigator, 0f, 0f, Vector3.zero);
+                    if (_cachedRelay != null)
+                    {
+                        _cachedRelay.RelayDamage(victim, directDamage, _instigator, 0f, 0f, Vector2.zero);
+                    }
+                    else
+                    {
+                        victim.Damage(directDamage, _instigator, 0f, 0f, Vector3.zero);
+                    }
                 }
 
                 if (burnDps > 0f && burnSec > 0f)

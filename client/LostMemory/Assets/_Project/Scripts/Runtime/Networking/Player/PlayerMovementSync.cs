@@ -1,7 +1,10 @@
+using System.Collections;
 using LostMemory.Networking.Common;
+using LostMemory.Rewards;
 using LostMemory.Stage;
 using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -155,6 +158,352 @@ namespace LostMemory.Networking.Player
             }
             Debug.Log($"[PlayerMovementSync] AlignToSpawnPoint via Tag 'Respawn' @ {spawnPoint.transform.position} (was {transform.position}) IsOwner={IsOwner} {gameObject.name}", this);
             transform.position = spawnPoint.transform.position;
+        }
+
+        /// <summary>
+        /// 게스트(non-server) 측 BossCurrentPositionStartTrigger 진입 시 호출.
+        /// owner-authoritative NetworkTransform 특성상 host 가 직접 게스트 transform 옮길 수 없어,
+        /// host 권위로 BeginEncounter 결정 + 모든 player 에 TeleportPlayerClientRpc 발송 패턴 사용.
+        ///
+        /// 호출자 = owner client 의 자기 player. ServerRpc 도착 시 host 측에서 매칭하는
+        /// BossCurrentPositionStartTrigger 인스턴스의 StartBossAtCurrentPositions 호출.
+        /// 씬에 여러 trigger 가 있으면 첫 번째 인스턴스 사용 (현 시점 시연 씬은 1개).
+        /// </summary>
+        [ServerRpc]
+        public void RequestBossStartServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (!IsServer) return;
+
+            Debug.Log($"[BossEntry] Request received from clientId={rpcParams.Receive.SenderClientId} via netId={NetworkObjectId}", this);
+
+            BossCurrentPositionStartTrigger trigger = Object.FindFirstObjectByType<BossCurrentPositionStartTrigger>();
+            if (trigger == null)
+            {
+                NetLog.Warn("Player", "RequestBossStartServerRpc — scene 에 BossCurrentPositionStartTrigger 없음.", this);
+                return;
+            }
+
+            Character initiator = GetComponentInParent<Character>();
+            trigger.StartBossAtCurrentPositions(initiator);
+        }
+
+        /// <summary>
+        /// 게스트 측 cooperative revive 차징 완료 시 호출. host 권위로 target.ForceRevive 처리.
+        ///
+        /// RequireOwnership=true (default) — reviver(나) 가 자기 PlayerMovementSync 의 ServerRpc 호출.
+        /// 따라서 host 측 this.transform.position == reviver 측 host 가 보는 reviver position.
+        ///
+        /// 검증 흐름:
+        /// 1. target NetworkObjectId → NetworkObject 해결
+        /// 2. target.IsPlayerObject 확인 (몬스터/씬오브젝트 차단)
+        /// 3. self 부활 차단 (this NetworkObjectId == targetNetObjId)
+        /// 4. 거리 재검증 (client 1.5m × 2 = 3.0m tolerance — lag 보정 + 변조 차단)
+        /// 5. target KhiDownController.IsDown 확인
+        /// 6. 통과 → ForceRevive. PlayerHealthSync NetworkVariable sync → 모든 client OK.
+        /// </summary>
+        [ServerRpc]
+        public void RequestCooperativeReviveServerRpc(ulong targetNetObjId)
+        {
+            if (!IsServer) return;
+
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null) return;
+
+            // 1. target 해결.
+            if (!nm.SpawnManager.SpawnedObjects.TryGetValue(targetNetObjId, out var targetNo))
+            {
+                Debug.LogWarning($"[PlayerMovementSync] Coop revive — target {targetNetObjId} 찾기 실패", this);
+                return;
+            }
+
+            // 2. target 이 player.
+            if (!targetNo.IsPlayerObject)
+            {
+                Debug.LogWarning($"[PlayerMovementSync] Coop revive — target {targetNo.name} not player", this);
+                return;
+            }
+
+            // 3. self 부활 차단.
+            if (NetworkObject != null && NetworkObject.NetworkObjectId == targetNetObjId)
+            {
+                Debug.LogWarning($"[PlayerMovementSync] Coop revive — self target 거부 (no={targetNetObjId})", this);
+                return;
+            }
+
+            // 4. 거리 재검증 (anti-cheat + lag tolerance).
+            const float hostDistanceTolerance = 3.0f; // client side 1.5m × 2
+            float distSqr = (targetNo.transform.position - transform.position).sqrMagnitude;
+            if (distSqr > hostDistanceTolerance * hostDistanceTolerance)
+            {
+                Debug.LogWarning($"[PlayerMovementSync] Coop revive — 거리 초과 거부 dist={Mathf.Sqrt(distSqr):F2}m tolerance={hostDistanceTolerance}m", this);
+                return;
+            }
+
+            // 5. KhiDownController 해결 + Down 상태 확인.
+            var dc = targetNo.GetComponent<LostMemory.TestKhi.KhiDownController>()
+                  ?? targetNo.GetComponentInChildren<LostMemory.TestKhi.KhiDownController>();
+            if (dc == null)
+            {
+                Debug.LogWarning($"[PlayerMovementSync] Coop revive — target KhiDownController 없음 ({targetNo.name})", this);
+                return;
+            }
+            if (!dc.IsDown)
+            {
+                Debug.Log($"[PlayerMovementSync] Coop revive — target 이미 state={dc.CurrentState}, 무시", this);
+                return;
+            }
+
+            // 6. 통과 — host 권위로 ForceRevive. NetworkVariable sync → 모든 client.
+            Debug.Log($"[PlayerMovementSync] Coop revive 승인 — reviver={NetworkObjectId} target={targetNetObjId} dist={Mathf.Sqrt(distSqr):F2}m", this);
+            dc.ForceRevive();
+        }
+
+        /// <summary>
+        /// 게스트가 협력 부활 차징 중일 때 progress (0~1) 를 host 에 전달.
+        /// host 가 target.PlayerHealthSync.BroadcastCoopReviveProgressClientRpc 발사 →
+        /// 모든 client 가 target 머리 위 차징바 fill 갱신.
+        ///
+        /// RequireOwnership=true — 자기 PlayerMovementSync 에 호출하므로 reviver 측만 가능.
+        /// 검증: target 존재 / IsPlayerObject / ratio clamp. 거리/Down 상태는 RequestCooperativeReviveServerRpc 에서 검증.
+        /// throttle 0.1s 는 caller (KhiDownController) 측에서.
+        /// </summary>
+        [ServerRpc]
+        public void SubmitCoopReviveProgressServerRpc(ulong targetNetObjId, float ratio)
+        {
+            if (!IsServer) return;
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null) return;
+            if (!nm.SpawnManager.SpawnedObjects.TryGetValue(targetNetObjId, out var targetNo)) return;
+            if (!targetNo.IsPlayerObject) return;
+
+            var targetHs = targetNo.GetComponent<PlayerHealthSync>();
+            if (targetHs == null) return;
+            targetHs.BroadcastCoopReviveProgressClientRpc(Mathf.Clamp01(ratio));
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 SpawnProjectile 시점에 모든 client 에 broadcast.
+        /// 게스트 측에서 자기 RenaBossSpellCombatController 인스턴스에 SpawnVisualOnlyProjectile 호출 → 시각만 재현.
+        /// 데미지/충돌 처리는 host 권위 — visual-only clone 은 RenaBossProjectile.SetVisualOnly(true) 로 hit 처리 skip.
+        /// kindIndex 는 RenaBossSpellCombatController.CastKind enum 의 int 값.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossProjectileSpawnClientRpc(int kindIndex, Vector3 spawnPos, Vector2 direction, ulong homingTargetNoId, Vector2 homingTargetOffset, double hostStartedNetworkTime)
+        {
+            // host 는 이미 자기 측에서 SpawnProjectile 호출됨 — 중복 spawn 방지.
+            if (IsHost) return;
+
+            LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController spellCtrl =
+                UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController>();
+            if (spellCtrl == null) return;
+            spellCtrl.SpawnVisualOnlyProjectile(kindIndex, spawnPos, direction, homingTargetNoId, homingTargetOffset, hostStartedNetworkTime);
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 fireball 폭발 시점 broadcast.
+        /// 게스트 측 visual-only clone 중 위치가 가장 가까운 것을 찾아 hit 애니메이션 trigger.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossProjectileExplosionClientRpc(Vector3 explosionPos, int visualPhaseIndex)
+        {
+            // Host 는 이미 local 에서 폭발 처리됨 — 중복 skip
+            if (IsHost) return;
+
+            var spellCtrl = UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController>();
+            if (spellCtrl == null) return;
+            spellCtrl.TriggerProjectileExplosionVisual(explosionPos, visualPhaseIndex);
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 SpawnThunderboltBeam 시점 broadcast. 게스트 측 visual-only beam 생성.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossThunderboltClientRpc(Vector3 origin, Vector2 direction, float duration, float rotationDegrees, int sortingOrderOffset)
+        {
+            if (IsHost) return;
+
+            var spellCtrl = UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController>();
+            if (spellCtrl == null) return;
+            spellCtrl.SpawnVisualOnlyThunderboltBeam(origin, direction, duration, rotationDegrees, sortingOrderOffset);
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 SpawnThunderStrikeArea 시점 broadcast. 게스트 측 visual-only area 생성.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossThunderStrikeAreaClientRpc(Vector3 position, float warningDuration)
+        {
+            if (IsHost) return;
+
+            var spellCtrl = UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController>();
+            if (spellCtrl == null) return;
+            spellCtrl.SpawnVisualOnlyThunderStrikeArea(position, warningDuration);
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 사망 시 broadcast. 게스트 측 보스 death animator state 재생.
+        /// NetworkAnimator 가 비활성이라 직접 trigger 전송 필요.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossDeathClientRpc()
+        {
+            if (IsHost) return;
+
+            var encounterCtrl = UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossEncounterController>();
+            if (encounterCtrl == null) return;
+            encounterCtrl.ApplyRemoteDeath();
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 PhaseTwoTransitionRoutine 시작 시 broadcast. 게스트 측 보스 phase 2 intro animation 재생.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossPhaseTransitionStartClientRpc()
+        {
+            if (IsHost) return;
+
+            var spellCtrl = UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController>();
+            if (spellCtrl == null) return;
+            spellCtrl.ApplyRemotePhaseTransitionStart();
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 PhaseTwoTransitionRoutine 종료 시 broadcast. 게스트 측 보스 idle state 진입 + _isPhaseTwo=true.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossPhaseTransitionEndClientRpc()
+        {
+            if (IsHost) return;
+
+            var spellCtrl = UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController>();
+            if (spellCtrl == null) return;
+            spellCtrl.ApplyRemotePhaseTransitionEnd();
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 SpawnIceSweepRowWarnings 시점 broadcast. 게스트 측 visual-only row warning 생성.
+        /// pulse 깜빡임은 NetworkTime 기준이라 host/guest 동기화.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossIceSweepRowWarningsClientRpc(Vector3 areaCenter, float bottom, float cellHeight, Vector2 damageRowSize, int rowCount, int safeRow, float warningDuration, bool sweepLeftToRight)
+        {
+            if (IsHost) return;
+
+            var spellCtrl = UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController>();
+            if (spellCtrl == null) return;
+            spellCtrl.SpawnVisualOnlyIceSweepRowWarnings(areaCenter, bottom, cellHeight, damageRowSize, rowCount, safeRow, warningDuration, sweepLeftToRight);
+        }
+
+        /// <summary>
+        /// host 측 Rena 보스 SpawnIcePillarCell 시점 broadcast. 게스트 측 visual-only pillar 생성.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossIcePillarCellClientRpc(Vector3 center, Vector2 size, bool showVisual)
+        {
+            if (IsHost) return;
+
+            var spellCtrl = UnityEngine.Object.FindFirstObjectByType<LostMemory.Enemies.Boss.Rena.RenaBossSpellCombatController>();
+            if (spellCtrl == null) return;
+            spellCtrl.SpawnVisualOnlyIcePillarCell(center, size, showVisual);
+        }
+
+        /// <summary>
+        /// host 측 BossIntroSequenceController.UnfreezeCachedPlayers 시점에 모든 client 에 broadcast.
+        /// 각 owner client 가 자기 측 Character.UnFreeze 호출 → 게스트 입력 복구.
+        /// Freeze 는 GatherPlayers 의 TeleportPlayerClientRpc(freeze=true) 가 이미 broadcast 처리하므로
+        /// 본 ClientRpc 는 Unfreeze 만 담당. owner-auth 라 owner client 측 호출만 의미 있음.
+        /// </summary>
+        [ClientRpc]
+        public void UnfreezePlayerClientRpc()
+        {
+            // 견고성 — IsOwner 가드 제거. Character.UnFreeze 는 idempotent (Frozen state 만 체크 후 복구) 라
+            // 모든 client 가 자기 인스턴스 unfreeze 호출해도 안전. 이전엔 IsOwner 가드로 막혀서
+            // ownership 변경/타이밍 race 시 영구 freeze 가능성 있었음.
+            Debug.Log($"[Unfreeze] recv netId={NetworkObjectId} owner={IsOwner} local={IsLocalPlayer} server={IsServer} go={gameObject.name}", this);
+
+            Character ch = GetComponentInParent<Character>();
+            if (ch == null)
+            {
+                Debug.LogWarning($"[Unfreeze] Character not found on parent. netId={NetworkObjectId} go={gameObject.name}", this);
+                return;
+            }
+            ch.UnFreeze();
+            Debug.Log($"[Unfreeze] Character.UnFreeze 호출 완료. condition={ch.ConditionState?.CurrentState}", this);
+        }
+
+        /// <summary>
+        /// host 측 BossIntroSequenceController 의 SetIntroVisibility 호출 시 broadcast.
+        /// 모든 client 가 자기 측 BossIntroSequenceController 찾아 visibility 적용 → Visual reveal/hide sync.
+        /// RunIntroSequence 가 host 측에서만 진행되어 게스트 측 보스 invisible 문제 fix.
+        /// ClientRpc 는 owner 무관 모든 client 수신 — 어느 PlayerMovementSync 인스턴스에서 호출하든 동일.
+        /// </summary>
+        [ClientRpc]
+        public void BroadcastBossIntroVisibilityClientRpc(bool isVisible)
+        {
+            BossIntroSequenceController controller = UnityEngine.Object.FindFirstObjectByType<BossIntroSequenceController>();
+            if (controller == null)
+            {
+                return;
+            }
+            controller.ApplyRemoteIntroVisibility(isVisible);
+        }
+
+        /// <summary>
+        /// host 가 BeginEncounter 시점에 모든 player 의 본 ClientRpc 호출 — 각 owner client 가
+        /// 자기 측에서 자기 player 를 worldPosition 으로 텔레포트.
+        /// owner-auth NetworkTransform 이라 owner 측 transform 변경만이 정상 sync 됨.
+        ///
+        /// Reward panel 떠있으면 닫힐 때까지 대기 후 텔레포트 — 보상 선택 누락 방지.
+        /// 다른 player 가 trigger 밟아도 자기 reward 못 받고 끌려가는 일 없음.
+        /// </summary>
+        [ClientRpc]
+        public void TeleportPlayerClientRpc(Vector3 worldPosition, bool freezeAfter)
+        {
+            Debug.Log($"[Freeze][Teleport] recv netId={NetworkObjectId} owner={IsOwner} freeze={freezeAfter} pos={worldPosition} go={gameObject.name}", this);
+
+            if (!IsOwner) return;
+
+            RewardPanelView rewardPanel = Object.FindFirstObjectByType<RewardPanelView>(FindObjectsInactive.Exclude);
+            if (rewardPanel != null && rewardPanel.gameObject.activeInHierarchy)
+            {
+                StartCoroutine(WaitForRewardCloseThenTeleport(worldPosition, freezeAfter, rewardPanel));
+                return;
+            }
+
+            PerformBossEntryTeleport(worldPosition, freezeAfter);
+            Debug.Log($"[Freeze][Teleport] PerformBossEntryTeleport 완료 netId={NetworkObjectId} freezeAfter={freezeAfter}", this);
+        }
+
+        private IEnumerator WaitForRewardCloseThenTeleport(Vector3 worldPosition, bool freezeAfter, RewardPanelView rewardPanel)
+        {
+            // reward panel 이 비활성될 때까지 polling. 카드 선택 후 RewardPanelView.OnCardSelected 가 SetActive(false) 호출.
+            while (rewardPanel != null && rewardPanel.gameObject.activeInHierarchy)
+            {
+                yield return null;
+            }
+            PerformBossEntryTeleport(worldPosition, freezeAfter);
+        }
+
+        private void PerformBossEntryTeleport(Vector3 worldPosition, bool freezeAfter)
+        {
+            Character ch = GetComponentInParent<Character>();
+            if (ch == null) return;
+
+            TopDownController controller = ch.GetComponent<TopDownController>();
+            if (controller != null)
+            {
+                controller.SetMovement(Vector3.zero);
+                controller.MovePosition(worldPosition, true);
+            }
+            else
+            {
+                ch.transform.position = worldPosition;
+            }
+
+            if (freezeAfter)
+            {
+                ch.Freeze();
+            }
         }
 
         private void DisableInputComponentsForNonOwner()

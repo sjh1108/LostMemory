@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
+using LostMemory.Audio;
 using LostMemory.Combat;
+using LostMemory.Networking.Player;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Stage
@@ -30,6 +33,12 @@ namespace LostMemory.Stage
         [SerializeField] private CombatTargetable bossTargetable;
         [SerializeField] private bool makeBossUntargetableDuringIntro = true;
         [SerializeField] private bool protectBossBeforeIntroStarts = true;
+
+        [Header("Boss Start BGM (optional)")]
+        [SerializeField] private AudioClip bossStartBgmClip;
+        [SerializeField] private int bossStartBgmId = StageBgmPlayer.Stage2BossBgmId;
+        [SerializeField, Range(0f, 2f)] private float bossStartBgmVolume = 1f;
+
         [SerializeField] private bool debugLogging;
 
         private Coroutine _introRoutine;
@@ -110,7 +119,10 @@ namespace LostMemory.Stage
             ApplyIntroInvulnerability();
             ApplyIntroTargetability();
             IntroStarted?.Invoke(context);
+            Debug.Log($"[BossIntro] step=Start t={Time.time:F2} cachedPlayers={_cachedPlayers?.Length ?? 0}", this);
             Log("Boss intro sequence started.");
+
+            PlayBossStartBgm();
 
             BossIntroSequenceData data = sequenceData;
             bool shouldLockPlayers = data == null || data.LockPlayersDuringIntro;
@@ -388,6 +400,7 @@ namespace LostMemory.Stage
 
         private void CompleteIntro(BossRoomTransitionCompletedContext context, bool shouldUnlockPlayers)
         {
+            Debug.Log($"[BossIntro] step=CompleteIntro t={Time.time:F2} shouldUnlock={shouldUnlockPlayers}", this);
             CompleteEntryMotion();
 
             if (shouldUnlockPlayers)
@@ -401,6 +414,7 @@ namespace LostMemory.Stage
             _isIntroRunning = false;
             _introCompleted = true;
             IntroCompleted?.Invoke(context);
+            Debug.Log($"[BossIntro] step=End t={Time.time:F2}", this);
             Log("Boss intro sequence completed.");
         }
 
@@ -633,6 +647,24 @@ namespace LostMemory.Stage
 
         private void SetIntroVisibility(bool isVisible)
         {
+            ApplyIntroVisibilityLocal(isVisible);
+
+            // 멀티 환경: host 측에서 visibility 변경 시 모든 client 에 broadcast.
+            // RunIntroSequence 가 host 측에서만 진행되어 게스트 측 Visual 이 reveal 안 되는 문제 fix.
+            // OnEnable/OnDisable 의 hide 도 모든 client 에서 자체 호출되므로 broadcast 가 dup 이어도 무해 (활성 상태 비교 후 같으면 skip).
+            BroadcastIntroVisibilityIfHost(isVisible);
+        }
+
+        /// <summary>
+        /// 다른 client 의 ClientRpc 수신 시 호출 — local 적용만 (재broadcast 방지).
+        /// </summary>
+        public void ApplyRemoteIntroVisibility(bool isVisible)
+        {
+            ApplyIntroVisibilityLocal(isVisible);
+        }
+
+        private void ApplyIntroVisibilityLocal(bool isVisible)
+        {
             if (introVisibilityTargets == null || introVisibilityTargets.Length == 0)
             {
                 return;
@@ -648,27 +680,143 @@ namespace LostMemory.Stage
             }
         }
 
+        private void BroadcastIntroVisibilityIfHost(bool isVisible)
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer)
+            {
+                return;
+            }
+
+            // 첫 번째 spawned PlayerMovementSync 인스턴스 통해 broadcast.
+            // ClientRpc 는 owner 무관 모든 client 가 수신.
+            PlayerMovementSync[] syncs = UnityEngine.Object.FindObjectsByType<PlayerMovementSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                PlayerMovementSync sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.BroadcastBossIntroVisibilityClientRpc(isVisible);
+                    return;
+                }
+            }
+        }
+
         private void FreezeCachedPlayers()
         {
+            int count = 0;
             for (int i = 0; i < _cachedPlayers.Length; i++)
             {
                 Character player = _cachedPlayers[i];
                 if (player != null)
                 {
                     player.Freeze();
+                    count++;
                 }
             }
+            Debug.Log($"[Freeze] FreezeCachedPlayers — {count}/{_cachedPlayers.Length} players frozen (host side).", this);
         }
 
         private void UnfreezeCachedPlayers()
         {
+            int count = 0;
             for (int i = 0; i < _cachedPlayers.Length; i++)
             {
                 Character player = _cachedPlayers[i];
                 if (player != null)
                 {
                     player.UnFreeze();
+                    count++;
                 }
+            }
+            Debug.Log($"[Unfreeze] UnfreezeCachedPlayers — {count}/{_cachedPlayers.Length} host-side characters UnFreeze 호출.", this);
+
+            // 멀티 환경: host 측에서만 _cachedPlayers 의 UnFreeze 호출됨 (host 측 mirror 만 영향).
+            // 게스트 측 actual player 는 owner-auth 라 자기 client 에서 UnFreeze 호출 필요 → ClientRpc broadcast.
+            // Freeze 는 GatherPlayers 의 TeleportPlayerClientRpc(freeze=true) 가 이미 처리, 본 fix 는 Unfreeze 만 담당.
+            BroadcastUnfreezeIfHost();
+
+            // 견고성 — host 측에서만 시작. 0.5s 재송신 (NetworkObject IsSpawned race 대응) + 5s watchdog 발동.
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && nm.IsServer && isActiveAndEnabled)
+            {
+                StartCoroutine(ResendUnfreezeAfterDelayCoroutine(0.5f));
+                StartCoroutine(UnfreezeWatchdogCoroutine(5f));
+            }
+        }
+
+        private void BroadcastUnfreezeIfHost()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer)
+            {
+                return;
+            }
+
+            // 모든 player NetworkBehaviour 인스턴스에 ClientRpc 발사 — 각 NB 의 owner client 측에서 자기 player UnFreeze.
+            // IsOwner 가드는 PlayerMovementSync.UnfreezePlayerClientRpc 에서 제거됨 (idempotent).
+            PlayerMovementSync[] syncs = UnityEngine.Object.FindObjectsByType<PlayerMovementSync>(FindObjectsSortMode.None);
+            int sent = 0;
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                PlayerMovementSync sync = syncs[i];
+                if (sync != null && sync.IsSpawned)
+                {
+                    sync.UnfreezePlayerClientRpc();
+                    sent++;
+                }
+            }
+            Debug.Log($"[Unfreeze] BroadcastUnfreezeIfHost — ClientRpc sent to {sent}/{syncs.Length} PlayerMovementSync instances.", this);
+        }
+
+        /// <summary>
+        /// 0.5초 후 한 번 더 ClientRpc 재송신. NetworkObject Spawn race 대응.
+        /// UnfreezePlayerClientRpc 는 idempotent 라 두 번 호출 무해.
+        /// </summary>
+        private IEnumerator ResendUnfreezeAfterDelayCoroutine(float delay)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) yield break;
+            Debug.Log($"[Unfreeze] Resend after {delay:F2}s — 재송신.", this);
+            BroadcastUnfreezeIfHost();
+        }
+
+        /// <summary>
+        /// watchdog — N초 후 어떤 player Character.ConditionState 가 여전히 Frozen 이면 강제 재 Unfreeze.
+        /// 핵심 안전망 — intro 시퀀스 hang / RPC 미도달 / ownership race 모두 대응.
+        /// </summary>
+        private IEnumerator UnfreezeWatchdogCoroutine(float delay)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) yield break;
+
+            // host 측 모든 Character (Player) 검사 + 게스트 측은 PlayerMovementSync 통해 다시 RPC.
+            Character[] all = UnityEngine.Object.FindObjectsByType<Character>(FindObjectsSortMode.None);
+            int stuckCount = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                Character ch = all[i];
+                if (ch == null) continue;
+                if (ch.CharacterType != Character.CharacterTypes.Player) continue;
+                if (ch.ConditionState != null && ch.ConditionState.CurrentState == CharacterStates.CharacterConditions.Frozen)
+                {
+                    stuckCount++;
+                    Debug.LogWarning($"[Unfreeze][WATCHDOG] Player still Frozen after {delay:F1}s — force UnFreeze. go={ch.gameObject.name}", ch);
+                    ch.UnFreeze();
+                }
+            }
+
+            if (stuckCount > 0)
+            {
+                // 게스트 측 player 도 force unfreeze 위해 다시 broadcast.
+                Debug.LogWarning($"[Unfreeze][WATCHDOG] {stuckCount} stuck — re-broadcast ClientRpc.", this);
+                BroadcastUnfreezeIfHost();
+            }
+            else
+            {
+                Debug.Log($"[Unfreeze][WATCHDOG] All players unfrozen after {delay:F1}s. OK.", this);
             }
         }
 
@@ -690,6 +838,21 @@ namespace LostMemory.Stage
             {
                 Debug.Log("[BossIntroSequence] " + message, this);
             }
+        }
+
+        private void PlayBossStartBgm()
+        {
+            if (bossStartBgmClip == null)
+            {
+                return;
+            }
+
+            StageBgmPlayer.PlayLoop(
+                bossStartBgmClip,
+                bossStartBgmId,
+                bossStartBgmVolume,
+                this,
+                "BossIntro");
         }
     }
 }
