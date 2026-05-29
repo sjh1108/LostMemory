@@ -1,3 +1,4 @@
+using LostMemory.Combat;
 using LostMemory.Data;
 using LostMemory.TestKhi;
 using Unity.Netcode;
@@ -41,7 +42,7 @@ namespace LostMemory.Networking.Player
 
         [Header("Debug (Phase D)")]
         [Tooltip("guest 공격 sync 진단용. 안정화 후 false 권장.")]
-        [SerializeField] private bool verboseLog = true;
+        [SerializeField] private bool verboseLog = false;
 
         private enum AttackEvent : byte
         {
@@ -305,6 +306,13 @@ namespace LostMemory.Networking.Player
                 if (verboseLog) Debug.LogWarning($"[AttackBroadcast] DamageRequest: Health 컴포넌트 누락 — enemyNetObjId={enemyNetObjId} obj={netObj.name}", this);
                 return;
             }
+            // PvP 미상정 — 서버 측 검증. 게스트가 enemyNetObjId 자리에 player NetworkObjectId 를 보내도 차단.
+            if (CombatTargetable.IsFriendlyPlayer(health))
+            {
+                if (verboseLog) Debug.LogWarning($"[AttackBroadcast] FriendlyFire blocked at DamageRequest — target={netObj.name} requester={gameObject.name}", this);
+                return;
+            }
+
             // server-side direct Damage — host 측 enemy.Health 는 DamageDisabled 호출 안 되어 정상 Invulnerable=false.
             // attacker = 본 AttackBroadcast 의 player root GameObject (server 측의 게스트 player NetworkObject instance).
             health.Damage(damage, gameObject, flickerDuration, invincibilityDuration, new Vector3(direction.x, direction.y, 0f));

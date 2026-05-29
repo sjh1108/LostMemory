@@ -38,6 +38,7 @@ public class SecurityConfig {
                     "/patch-notes", "/patch-notes/**",
                     "/faq", "/faq/**",
                     "/feedback", "/feedback/**",
+                    "/downloads", "/downloads/**",
                     "/css/**", "/js/**", "/images/**", "/favicon.ico",
                     loginPath,
                     "/actuator/health"

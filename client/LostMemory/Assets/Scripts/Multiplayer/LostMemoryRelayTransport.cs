@@ -61,7 +61,7 @@ namespace LostMemory.Multiplayer
         [SerializeField] private float handshakeTimeoutSeconds = 5f;
 
         [Tooltip("디버그 로그 출력 여부")]
-        [SerializeField] private bool verboseLog = true;
+        [SerializeField] private bool verboseLog = false;
 
         [Tooltip("Editor 진입 시 relayHost 를 localhost 로 자동 강제. 끄면 Inspector 값 사용 (prod EC2 직접 디버깅 등).")]
         [SerializeField] private bool editorAutoOverride = true;

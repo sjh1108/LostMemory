@@ -1,8 +1,13 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using LostMemory.Audio;
+using LostMemory.Networking.Common;
+using LostMemory.Networking.Player;
 using LostMemory.TestKhi;
 using MoreMountains.Tools;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Stage
@@ -12,6 +17,24 @@ namespace LostMemory.Stage
     [AddComponentMenu("Lost Memory/Stage/Route Node Exit Trigger")]
     public sealed class RouteNodeExitTrigger : MonoBehaviour
     {
+        // === [Multi Ready Gate] static registry ===
+        // 멀티 플레이에서 StageRouteManager.FireLocalTeleportClientRpc 가 triggerId 로 트리거를 찾아
+        // 각 클라이언트가 자기 owned Character 를 워프하기 위해 사용. owner-auth NetworkTransform 제약상
+        // 서버가 게스트 캐릭터를 직접 이동시킬 수 없어 모든 클라이언트가 로컬에서 자기 캐릭터를 옮긴다.
+        private static readonly Dictionary<string, RouteNodeExitTrigger> s_registry =
+            new Dictionary<string, RouteNodeExitTrigger>(StringComparer.Ordinal);
+
+        public static bool TryGetRegistered(string triggerId, out RouteNodeExitTrigger trigger)
+        {
+            return s_registry.TryGetValue(triggerId, out trigger);
+        }
+
+        private bool _registeredInRegistry;
+        // ready 게이트가 ServerRpc 전송됨 — 로컬 F 재누름 차단 + Transitioning 뷰 표시.
+        // ClientRpc fire 도착 또는 cancel 통지 시 false 로 복귀.
+        private bool _multiReadySent;
+        // === ===
+
         [SerializeField] private string triggerId = "default";
         [SerializeField] private StageRouteManager routeManager;
         [SerializeField] private bool unlockedOnStart;
@@ -29,6 +52,11 @@ namespace LostMemory.Stage
         [SerializeField] private string localTeleportTargetRootName = string.Empty;
         [SerializeField] private string localTeleportAnchorTag = "default";
         [SerializeField] private Vector3 localTeleportOffset;
+
+        [Header("Local Teleport BGM (optional)")]
+        [SerializeField] private AudioClip localTeleportBgmClip;
+        [SerializeField] private int localTeleportBgmId = StageBgmPlayer.Stage2DungeonBgmId;
+        [SerializeField, Range(0f, 2f)] private float localTeleportBgmVolume = 1f;
 
         [Header("Portal Animation (optional)")]
         [Tooltip("재생할 게이트/포탈 Animator. 비어있으면 즉시 전환.")]
@@ -71,6 +99,13 @@ namespace LostMemory.Stage
             if (!value)
             {
                 candidates.Clear();
+
+                // 잠금 전환 — 멀티 ready 도 동시에 정리.
+                if (_multiReadySent && HostAuthority.IsNetworkSessionActive && routeManager != null)
+                {
+                    CancelActiveReadyOnRouteManager();
+                }
+                _multiReadySent = false;
             }
 
             if (trigger != null)
@@ -108,10 +143,73 @@ namespace LostMemory.Stage
             SetUnlocked(unlockedOnStart);
         }
 
+        private void OnEnable()
+        {
+            RegisterInRegistry();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterFromRegistry();
+
+            // 멀티: 비활성화/파괴되면 server 의 ready set 에 남은 우리 clientId 정리.
+            // (FireLocalTeleportClientRpc 또는 route advance LoadScene 이 도착했을 때 트리거가 사라져 못 찾는 케이스도 같이 방지.)
+            if (_multiReadySent && HostAuthority.IsNetworkSessionActive)
+            {
+                _multiReadySent = false;
+                RefreshReferences();
+                if (routeManager != null && !string.IsNullOrEmpty(triggerId))
+                {
+                    CancelActiveReadyOnRouteManager();
+                }
+            }
+        }
+
+        private void RegisterInRegistry()
+        {
+            if (_registeredInRegistry || string.IsNullOrEmpty(triggerId))
+            {
+                return;
+            }
+
+            if (s_registry.TryGetValue(triggerId, out RouteNodeExitTrigger existing) &&
+                existing != null && existing != this)
+            {
+                Debug.LogWarning(
+                    $"[RouteNodeExitTrigger] Duplicate triggerId '{triggerId}'. 기존='{existing.gameObject.name}', 신규='{gameObject.name}'. 최신 인스턴스로 덮어씁니다.",
+                    this);
+            }
+
+            s_registry[triggerId] = this;
+            _registeredInRegistry = true;
+        }
+
+        private void UnregisterFromRegistry()
+        {
+            if (!_registeredInRegistry)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(triggerId) &&
+                s_registry.TryGetValue(triggerId, out RouteNodeExitTrigger registered) &&
+                registered == this)
+            {
+                s_registry.Remove(triggerId);
+            }
+
+            _registeredInRegistry = false;
+        }
+
         private void Update()
         {
-            if (!unlocked || requestInProgress)
+            if (!unlocked || requestInProgress || _multiReadySent)
             {
+                if (_multiReadySent)
+                {
+                    // 대기 중에도 뷰 상태는 갱신 (후보가 빠져나가는 등).
+                    ApplyCurrentViewState();
+                }
                 return;
             }
 
@@ -142,11 +240,62 @@ namespace LostMemory.Stage
         private void OnTriggerExit2D(Collider2D other)
         {
             Character character = other != null ? other.GetComponentInParent<Character>() : null;
-            if (character != null)
+            if (character == null)
             {
-                candidates.Remove(character);
+                return;
+            }
+
+            candidates.Remove(character);
+            ApplyCurrentViewState();
+
+            // 멀티 ready 게이트: 로컬 owned 캐릭터가 트리거 영역을 벗어나면 cancel ServerRpc 발사.
+            // 다른 클라(=non-owner AI 캐릭터) 가 빠져나가는 건 무시 — 서버는 그 클라가 직접 보낸 cancel 로만 처리.
+            // useLocalTeleport=1 → LocalTeleportReady, =0 (route advance) → RouteAdvanceReady 양쪽 다 처리.
+            if (_multiReadySent &&
+                HostAuthority.IsNetworkSessionActive &&
+                IsLocalOwnedCharacter(character))
+            {
+                _multiReadySent = false;
+                RefreshReferences();
+                if (routeManager != null)
+                {
+                    CancelActiveReadyOnRouteManager();
+                }
                 ApplyCurrentViewState();
             }
+        }
+
+        // 트리거 인스턴스 설정에 따라 적절한 ready 게이트 취소를 호출.
+        // useLocalTeleport=1 → 같은 씬 워프용 LocalTeleportReady.
+        // useLocalTeleport=0 → 다른 씬 LoadScene 용 RouteAdvanceReady.
+        // (completeRunInsteadOfAdvancingRoute 는 ready 게이트 안 씀 → 호출되어도 noop.)
+        private void CancelActiveReadyOnRouteManager()
+        {
+            if (routeManager == null || string.IsNullOrEmpty(triggerId)) return;
+            if (useLocalTeleport)
+            {
+                routeManager.CancelLocalTeleportReady(triggerId);
+            }
+            else
+            {
+                routeManager.CancelRouteAdvanceReady(triggerId);
+            }
+        }
+
+        // 멀티 모드에서 character 가 "내 클라이언트의 owned Character" 인지 판정.
+        // 싱글에선 항상 true (네트워크 개념 없음).
+        private static bool IsLocalOwnedCharacter(Character character)
+        {
+            if (character == null)
+            {
+                return false;
+            }
+            if (!HostAuthority.IsNetworkSessionActive)
+            {
+                return true;
+            }
+            NetworkObject no = character.GetComponentInParent<NetworkObject>();
+            return no != null && no.IsOwner;
         }
 
         private void TrackCandidate(Collider2D other)
@@ -414,10 +563,31 @@ namespace LostMemory.Stage
                 return false;
             }
 
+            // 멀티: ready 게이트로 위임 — 전원 ready 합의 시 서버가 NGO SceneManager.LoadScene 으로 동기 로드.
+            // 본 클라는 ServerRpc(=CustomMessage) 만 보내고 _multiReadySent=true 로 파랑 표시 + F 재누름 차단.
+            // useLocalTeleport 경로의 RequestLocalTeleport 와 대칭 구조.
+            if (HostAuthority.IsNetworkSessionActive)
+            {
+                bool accepted = routeManager.RequestRouteAdvanceReady(triggerId);
+                if (!accepted)
+                {
+                    requestInProgress = false;
+                    ApplyCurrentViewState();
+                    return false;
+                }
+
+                _multiReadySent = true;
+                requestInProgress = false;
+                ApplyCurrentViewState();
+                Log($"Route advance ready 전송. triggerId='{triggerId}'. 다른 플레이어 ready 대기.");
+                return true;
+            }
+
+            // 싱글: 기존 즉시 동작.
             requestInProgress = true;
             ApplyCurrentViewState();
-            bool accepted = routeManager.RequestAdvanceRouteNode(triggerId, character);
-            if (!accepted)
+            bool acceptedSolo = routeManager.RequestAdvanceRouteNode(triggerId, character);
+            if (!acceptedSolo)
             {
                 requestInProgress = false;
                 ApplyCurrentViewState();
@@ -482,6 +652,46 @@ namespace LostMemory.Stage
 
         private void RequestLocalTeleport(Character character)
         {
+            // 멀티 (네트워크 세션 활성): ready 게이트로 위임.
+            //   - 본 클라이언트는 ServerRpc 로 "내가 준비됐다" 통보만 한다.
+            //   - 실제 워프는 서버가 전원 ready 를 감지해 FireLocalTeleportClientRpc 를 broadcast 하면
+            //     각 클라이언트가 자기 owned Character 를 ExecuteLocalTeleportForLocalCharacter 로 옮긴다.
+            //   - PlayerMovementSync 가 owner-auth NetworkTransform 이라 서버가 직접 게스트 캐릭터를
+            //     움직여도 다음 sync 에 되돌아가므로 ClientRpc 분기가 필수.
+            if (HostAuthority.IsNetworkSessionActive)
+            {
+                RefreshReferences();
+                if (routeManager == null)
+                {
+                    Debug.LogWarning(
+                        $"[RouteNodeExitTrigger] No StageRouteManager for trigger '{triggerId}' — multi ready 게이트 불가, 폴백으로 즉시 워프.",
+                        this);
+                    RequestLocalTeleportImmediate(character);
+                    return;
+                }
+
+                bool accepted = routeManager.RequestLocalTeleportReady(triggerId);
+                if (!accepted)
+                {
+                    // 거부됨 (load 진행 중 등) — 상태 정리.
+                    requestInProgress = false;
+                    ApplyCurrentViewState();
+                    return;
+                }
+
+                _multiReadySent = true;
+                requestInProgress = false; // 코루틴/Animation flow 에서 set 한 값을 정리.
+                ApplyCurrentViewState();
+                Log($"Local teleport ready 전송. triggerId='{triggerId}'. 다른 플레이어 ready 대기.");
+                return;
+            }
+
+            // 싱글: 기존 즉시 동작.
+            RequestLocalTeleportImmediate(character);
+        }
+
+        private void RequestLocalTeleportImmediate(Character character)
+        {
             requestInProgress = true;
             ApplyCurrentViewState();
 
@@ -494,11 +704,110 @@ namespace LostMemory.Stage
                 return;
             }
 
+            // [Loading Panel] 싱글 흐름도 멀티와 시각 일관성 위해 panel fade in/out.
+            StartCoroutine(SoloTeleportWithLoadingPanel(character, target));
+        }
+
+        private IEnumerator SoloTeleportWithLoadingPanel(Character character, Transform target)
+        {
+            const float FadeInWait = 0.25f;
+            const float TravelDelay = 0.6f;
+
+            LostMemory.UI.LoadingFadeOverlay.Show();
+            yield return new WaitForSecondsRealtime(FadeInWait);
+
             TeleportCharacter(character, target.position + localTeleportOffset);
+            PlayLocalTeleportBgm();
             candidates.Clear();
             requestInProgress = false;
             ApplyCurrentViewState();
             Log($"Local teleported '{character.name}' to '{target.name}'.");
+
+            yield return new WaitForSecondsRealtime(TravelDelay);
+            LostMemory.UI.LoadingFadeOverlay.Hide();
+        }
+
+        /// <summary>
+        /// 멀티 모드 FireLocalTeleportClientRpc 가 도착했을 때 각 클라이언트가 호출.
+        /// 자기 owned Character (LocalPlayerResolver.LocalCharacter) 를 target 위치로 이동.
+        /// 모두 ready → 텔레포트 시작 시점에 LoadingFadeOverlay panel 표시,
+        /// 텔레포트 후 짧은 대기 후 panel 내려감.
+        /// </summary>
+        public void ExecuteLocalTeleportForLocalCharacter()
+        {
+            if (!useLocalTeleport)
+            {
+                _multiReadySent = false;
+                requestInProgress = false;
+                ApplyCurrentViewState();
+                return;
+            }
+
+            Character me = LocalPlayerResolver.LocalCharacter;
+            if (me == null)
+            {
+                Debug.LogWarning(
+                    $"[RouteNodeExitTrigger] LocalCharacter null on multi-fire for trigger '{triggerId}'.",
+                    this);
+                _multiReadySent = false;
+                requestInProgress = false;
+                ApplyCurrentViewState();
+                return;
+            }
+
+            Transform target = ResolveLocalTeleportTarget();
+            if (target == null)
+            {
+                Debug.LogWarning(
+                    $"[RouteNodeExitTrigger] Local teleport target not found for trigger '{triggerId}' (multi-fire).",
+                    this);
+                _multiReadySent = false;
+                requestInProgress = false;
+                ApplyCurrentViewState();
+                return;
+            }
+
+            // [Loading Panel] 모두 ready → 텔레포트 시작 시점에 panel fade in.
+            // 텔레포트 즉시 실행, 짧은 대기 후 fade out.
+            StartCoroutine(TeleportWithLoadingPanel(me, target));
+        }
+
+        // 텔레포트 + LoadingFadeOverlay 통합 코루틴. fade in 완료 후 텔레포트, 짧은 "이동 시간" 후 fade out.
+        private IEnumerator TeleportWithLoadingPanel(Character me, Transform target)
+        {
+            const float FadeInWait = 0.25f;   // panel fade in 완료 대기
+            const float TravelDelay = 0.6f;   // "이동 시간" — 캐릭터 워프 후 잠깐 panel 유지
+
+            LostMemory.UI.LoadingFadeOverlay.Show();
+            yield return new WaitForSecondsRealtime(FadeInWait);
+
+            // 실제 텔레포트 — panel 이 화면 가리는 동안 캐릭터 워프
+            TeleportCharacter(me, target.position + localTeleportOffset);
+            PlayLocalTeleportBgm();
+            candidates.Clear();
+            _multiReadySent = false;
+            requestInProgress = false;
+            ApplyCurrentViewState();
+            Log($"Local teleported (multi-fire) '{me.name}' to '{target.name}'.");
+
+            // 이동 시간 — 새 위치 도착 후 panel 살짝 더 유지 → fade out
+            yield return new WaitForSecondsRealtime(TravelDelay);
+            LostMemory.UI.LoadingFadeOverlay.Hide();
+        }
+
+        private void PlayLocalTeleportBgm()
+        {
+            if (localTeleportBgmClip == null)
+            {
+                return;
+            }
+
+            StageBgmPlayer.PlayLoop(
+                localTeleportBgmClip,
+                localTeleportBgmId,
+                localTeleportBgmVolume,
+                this,
+                triggerId);
         }
 
         private Transform ResolveLocalTeleportTarget()
@@ -563,7 +872,8 @@ namespace LostMemory.Stage
                 return;
             }
 
-            if (requestInProgress)
+            // _multiReadySent 도 Transitioning 으로 표현 — 일행 대기 중인 동안 시각적으로 동일하게.
+            if (requestInProgress || _multiReadySent)
             {
                 triggerView.ApplyState(RouteNodeExitTriggerViewState.Transitioning);
                 return;

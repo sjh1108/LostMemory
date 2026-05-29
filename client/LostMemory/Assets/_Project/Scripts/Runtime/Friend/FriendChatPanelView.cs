@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using LostMemory.Networking.Llm;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace LostMemory.Friend
@@ -62,6 +63,8 @@ namespace LostMemory.Friend
         [Header("Settings")]
         [Tooltip("히스토리에서 시스템 프롬프트 외 유지할 최대 메시지 수. 초과 시 오래된 것부터 삭제.")]
         [SerializeField] private int maxHistoryMessages = 20;
+        [Tooltip("백엔드 컨텍스트 char cap(10,000) 보다 보수적인 클라 측 cap. 다음 user msg 추가 후 초과 시 history 자동 리셋 + 안내.")]
+        [SerializeField] private int contextCharCap = 9500;
         [Tooltip("true: 타이핑 효과(스트리밍), false: 응답 완료 후 한 번에 표시(빠른 테스트용)")]
         [SerializeField] private bool useStreaming = true;
 
@@ -80,6 +83,9 @@ namespace LostMemory.Friend
         private void Awake()
         {
             if (sendButton  != null) sendButton.onClick.AddListener(OnSendClicked);
+            // InputField 의 SingleLine onSubmit 은 Return / KeypadEnter 둘 다 자동 처리. focus 일 때만 fire.
+            // 단, 한글 IME 모드에선 첫 Enter 가 IME 확정으로 소비됨 → Update 의 직접 키 감지 path 도 병행.
+            if (inputField  != null) inputField.onSubmit.AddListener(_ => OnSendClicked());
             if (closeButton != null) closeButton.onClick.AddListener(() => OnCloseRequested?.Invoke());
             if (typingIndicator != null) typingIndicator.SetActive(false);
 
@@ -89,22 +95,37 @@ namespace LostMemory.Friend
                 _history.Add(new LlmApiClient.ChatMessage("system", characterContext.BuildSystemPrompt()));
         }
 
-        private void Update()
-        {
-            // Enter(Return) 키로도 전송. InputField 가 focus 상태이고 대기 중이 아닐 때만.
-            if (inputField != null && inputField.isFocused
-                && Input.GetKeyDown(KeyCode.Return)
-                && !_isWaitingForResponse)
-            {
-                OnSendClicked();
-            }
-        }
-
         /// <summary>FriendChatController.Open() 이 패널 활성화 직후 호출.</summary>
         public void OnOpen()
         {
             ScrollToBottom();
             if (inputField != null) inputField.ActivateInputField();
+        }
+
+        /// <summary>
+        /// 한글 IME fix: TMP onSubmit 은 한글 모드에서 첫 Enter 를 IME 확정으로 소비함 → 전송 안 됨.
+        /// Update 에서 InputField focus 시 Enter 키 직접 감지해 OnSendClicked 호출. IME 와 무관하게 작동.
+        ///
+        /// 단, IME 가 조립 중 (compositionString 비어있지 않음) 일 때는 skip — 이때는 OS 가
+        /// Enter 를 글자 확정으로 소비하고 다음 frame 에 onSubmit 발화. 우리 코드가 먼저 발화하면
+        /// 마지막 글자가 빠진 채 전송됨. onSubmit 도 영어/IME 확정 후엔 정상 발화하므로 둘 다 처리.
+        /// 중복 호출은 _isWaitingForResponse 가드로 방지.
+        /// </summary>
+        private void Update()
+        {
+            if (inputField == null || !inputField.isFocused) return;
+            if (_isWaitingForResponse) return;
+
+            // IME 조립 중이면 Enter 는 IME 확정용 → 우리 코드 skip. 다음 frame 의 onSubmit 이 처리.
+            if (!string.IsNullOrEmpty(Input.compositionString)) return;
+
+            Keyboard kb = Keyboard.current;
+            if (kb == null) return;
+
+            if (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)
+            {
+                OnSendClicked();
+            }
         }
 
         /// <summary>
@@ -129,6 +150,15 @@ namespace LostMemory.Friend
 
             string userText = inputField.text.Trim();
             if (string.IsNullOrEmpty(userText)) return;
+
+            // 사전 컨텍스트 가드 — 백엔드 10K char cap 받기 전에 클라에서 차단 + history 자동 리셋.
+            // 입력은 유지 (사용자가 같은 메시지를 새 대화로 보낼 수 있게).
+            if (IsContextOverflowing(userText))
+            {
+                AddSystemLine("(루아나가 머리가 복잡해진 것 같아... 새 대화로 시작할게)");
+                ResetHistory();
+                return;
+            }
 
             inputField.text = string.Empty;
             inputField.ActivateInputField();
@@ -286,16 +316,46 @@ namespace LostMemory.Friend
         /// </summary>
         private void TrimHistory()
         {
-            // 앞쪽 연속된 system 메시지 개수 = 시스템 프롬프트 + (선택) 게임 컨텍스트
-            int systemCount = 0;
-            for (int i = 0; i < _history.Count; i++)
-            {
-                if (_history[i].role == "system") systemCount++;
-                else break;
-            }
-
+            int systemCount = CountLeadingSystemMessages();
             while (_history.Count > systemCount + maxHistoryMessages)
                 _history.RemoveAt(systemCount); // 가장 오래된 유저/어시스턴트 메시지 삭제
+        }
+
+        /// <summary>
+        /// 다음 user 메시지 추가 후 누적 char 가 contextCharCap 을 초과하는지 검사.
+        /// 백엔드 LlmProxyService 의 10,000 char 가드(LLM_CONTEXT_TOO_LONG → 413) 받기 전에 클라에서 사전 차단.
+        /// </summary>
+        private bool IsContextOverflowing(string nextUserText)
+        {
+            long currentChars = 0;
+            foreach (var msg in _history)
+            {
+                if (msg?.content != null) currentChars += msg.content.Length;
+            }
+            return currentChars + (nextUserText?.Length ?? 0) > contextCharCap;
+        }
+
+        /// <summary>
+        /// 시스템 프롬프트(들)는 유지하고 user/assistant 메시지를 모두 삭제 — "새 대화" 의미.
+        /// 컨텍스트 cap 초과 시 자동 호출. (수동 reset 버튼 추가 시 같은 메서드 재사용 가능.)
+        /// </summary>
+        private void ResetHistory()
+        {
+            int systemCount = CountLeadingSystemMessages();
+            if (_history.Count > systemCount)
+                _history.RemoveRange(systemCount, _history.Count - systemCount);
+        }
+
+        /// <summary>앞쪽 연속된 system 메시지 개수 = 시스템 프롬프트 + (선택) 게임 컨텍스트.</summary>
+        private int CountLeadingSystemMessages()
+        {
+            int count = 0;
+            for (int i = 0; i < _history.Count; i++)
+            {
+                if (_history[i].role == "system") count++;
+                else break;
+            }
+            return count;
         }
     }
 }

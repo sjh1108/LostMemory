@@ -186,7 +186,7 @@ namespace LostMemory.TestKhi
             Play(attackSwingClips[index], attackSwingVolume, $"AttackSwing(combo={step.comboStep})");
         }
 
-        private void HandleTargetHit(KhiAttackRequest _, AttackStepData __, Health ___)
+        private void HandleTargetHit(KhiAttackRequest _, AttackStepData __, Health ___, float ____, bool _____)
         {
             // 콤보 step 무관 — 모든 명중에 동일 클립(또는 배열 랜덤) 재생.
             PlayRandom(hitImpactClips, hitImpactVolume, "HitImpact");

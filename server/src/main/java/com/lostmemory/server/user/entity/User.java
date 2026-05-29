@@ -22,6 +22,7 @@ import java.time.Instant;
         name = "users",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_users_login_id", columnNames = "login_id"),
+                @UniqueConstraint(name = "uk_users_email", columnNames = "email"),
                 @UniqueConstraint(name = "uk_users_nickname", columnNames = "nickname")
         }
 )
@@ -37,6 +38,9 @@ public class User {
 
     @Column(name = "login_id", nullable = false, length = 50)
     private String loginId;
+
+    @Column(name = "email", nullable = false, length = 255)
+    private String email;
 
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
@@ -58,20 +62,30 @@ public class User {
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
-    private User(String loginId, String passwordHash, String nickname) {
+    private User(String loginId, String email, String passwordHash, String nickname) {
         this.loginId = loginId;
+        this.email = email;
         this.passwordHash = passwordHash;
         this.nickname = nickname;
         this.status = UserStatus.ACTIVE;
     }
 
-    /** 신규 사용자 생성 — 비밀번호는 호출자가 BCrypt로 해시한 결과를 전달해야 한다. status 는 ACTIVE 로 시작. */
-    public static User create(String loginId, String passwordHash, String nickname) {
-        return new User(loginId, passwordHash, nickname);
+    /**
+     * 신규 사용자 생성. 이메일 인증 통과 후 호출되므로 status 는 ACTIVE 로 시작.
+     * 로그인은 loginId 로, 비밀번호 재설정은 email 로 진행된다.
+     * 비밀번호는 호출자가 BCrypt 로 해시한 결과를 전달해야 한다.
+     */
+    public static User create(String loginId, String email, String passwordHash, String nickname) {
+        return new User(loginId, email, passwordHash, nickname);
     }
 
-    /** 로그인 성공 시 last_login_at 갱신 */
+    /** 로그인 성공 시 last_login_at 갱신. */
     public void markLoggedIn() {
         this.lastLoginAt = Instant.now();
+    }
+
+    /** 비밀번호 변경 — 호출자가 BCrypt 로 해시한 결과를 전달해야 한다. updated_at 은 Auditing 으로 자동 갱신. */
+    public void changePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
     }
 }

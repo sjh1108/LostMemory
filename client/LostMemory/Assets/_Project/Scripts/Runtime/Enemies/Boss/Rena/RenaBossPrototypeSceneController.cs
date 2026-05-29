@@ -1,4 +1,5 @@
 using System.Collections;
+using LostMemory.Audio;
 using LostMemory.Stage;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -17,6 +18,12 @@ namespace LostMemory.Enemies.Boss.Rena
         [SerializeField] private string bossEntryPointId = "Rena";
         [SerializeField] private string bossSceneName = "Dungeon_2F_Boss";
         [SerializeField] private bool autoStartIntro = true;
+
+        [Header("Boss Start BGM (optional)")]
+        [SerializeField] private AudioClip bossStartBgmClip;
+        [SerializeField] private int bossStartBgmId = StageBgmPlayer.Stage2BossBgmId;
+        [SerializeField, Range(0f, 2f)] private float bossStartBgmVolume = 1f;
+
         [SerializeField] private bool debugLogging;
 
         private Coroutine _introRoutine;
@@ -106,7 +113,23 @@ namespace LostMemory.Enemies.Boss.Rena
             _started = true;
             _introRoutine = null;
             Log("Starting Rena intro.");
+            PlayBossStartBgm();
             introController.BeginIntro(context);
+        }
+
+        private void PlayBossStartBgm()
+        {
+            if (bossStartBgmClip == null)
+            {
+                return;
+            }
+
+            StageBgmPlayer.PlayLoop(
+                bossStartBgmClip,
+                bossStartBgmId,
+                bossStartBgmVolume,
+                this,
+                bossRoomId);
         }
 
         private void HandleIntroCompleted(BossRoomTransitionCompletedContext _)

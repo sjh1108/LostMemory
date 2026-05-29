@@ -127,7 +127,7 @@ namespace LostMemory.TestKhi
             Log("ParrySucceeded feedback");
         }
 
-        private void HandleTargetHit(KhiAttackRequest _, AttackStepData step, Health ___)
+        private void HandleTargetHit(KhiAttackRequest _, AttackStepData step, Health ___, float ____, bool _____)
         {
             if (enableFinisherFeedback && step != null && step.comboStep == finisherComboStep)
             {

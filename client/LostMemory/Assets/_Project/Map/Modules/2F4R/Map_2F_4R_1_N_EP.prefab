@@ -1837,6 +1837,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: north
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &1526086043126649584
 GameObject:
   m_ObjectHideFlags: 0
@@ -4593,6 +4595,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: south
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &3765793289030560441
 GameObject:
   m_ObjectHideFlags: 0
@@ -4685,6 +4689,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryZone
   controller: {fileID: 1064848046441803028}
+  verboseLog: 0
 --- !u!1 &4021348656481569891
 GameObject:
   m_ObjectHideFlags: 0
@@ -4902,6 +4907,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: east
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &4784362762908274528
 GameObject:
   m_ObjectHideFlags: 0
@@ -6273,6 +6280,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7567602114999337482}
+  - component: {fileID: 3628158642305865296}
   - component: {fileID: 1064848046441803028}
   - component: {fileID: 6226433339382925121}
   - component: {fileID: 2858573164609050546}
@@ -6308,6 +6316,31 @@ Transform:
   - {fileID: 7656181670522543187}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3628158642305865296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6418301402336183476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 797002954
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &1064848046441803028
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6320,6 +6353,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5f1b47db33bcc5409105e8ded726822, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
+  ShowTopMostFoldoutHeaderGroup: 1
   roomData: {fileID: 11400000, guid: c31a874e603843cd9fe670167f4f6584, type: 2}
   enemyCatalog: {fileID: 11400000, guid: 266ecebe2bc0f8543abc8950f36f4971, type: 2}
   encounterAnchor: {fileID: 6226433339382925121}
@@ -6334,6 +6368,9 @@ MonoBehaviour:
   - {fileID: 8540125889707950233}
   bossTracker: {fileID: 0}
   autoOpenExitsOnCleared: 0
+  roomEntryBgmClip: {fileID: 0}
+  roomEntryBgmId: 1201
+  roomEntryBgmVolume: 1
 --- !u!114 &6226433339382925121
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6497,6 +6534,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomExitWall
   exitTag: west
+  _blockColliders: []
+  _renderers: []
 --- !u!1 &8309308289899588917
 GameObject:
   m_ObjectHideFlags: 0

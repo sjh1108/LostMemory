@@ -15039,6 +15039,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryZone
   controller: {fileID: 1064848046441803028}
+  verboseLog: 0
 --- !u!1 &4228152061670925295
 GameObject:
   m_ObjectHideFlags: 0
@@ -16428,7 +16429,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryRuntimeController
   ShowTopMostFoldoutHeaderGroup: 1
-  roomData: {fileID: 11400000, guid: c11206a1b2c3d4e5f6789012345678ab, type: 2}
+  roomData: {fileID: 11400000, guid: 0765265bccebbbc49af34f76f9353768, type: 2}
   enemyCatalog: {fileID: 0}
   encounterAnchor: {fileID: 6226433339382925121}
   encounterSpawner: {fileID: 2858573164609050546}
@@ -16442,6 +16443,9 @@ MonoBehaviour:
   - {fileID: 8540125889707950233}
   bossTracker: {fileID: 0}
   autoOpenExitsOnCleared: 0
+  roomEntryBgmClip: {fileID: 0}
+  roomEntryBgmId: 1201
+  roomEntryBgmVolume: 1
 --- !u!114 &6226433339382925121
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23452,6 +23456,9 @@ MonoBehaviour:
   localTeleportTargetRootName: 
   localTeleportAnchorTag: default
   localTeleportOffset: {x: 0, y: 0, z: 0}
+  localTeleportBgmClip: {fileID: 0}
+  localTeleportBgmId: 1201
+  localTeleportBgmVolume: 1
   portalAnimator: {fileID: 0}
   portalAnimationDurationOverride: 0
   postAnimationDelay: 0.5

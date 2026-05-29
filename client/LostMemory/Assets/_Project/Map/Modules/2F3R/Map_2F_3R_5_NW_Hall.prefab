@@ -6435,6 +6435,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Stage.RoomEntryZone
   controller: {fileID: 1064848046441803028}
+  verboseLog: 0
 --- !u!1 &4021348656481569891
 GameObject:
   m_ObjectHideFlags: 0
@@ -12575,6 +12576,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7567602114999337482}
+  - component: {fileID: 2222420970522696246}
   - component: {fileID: 1064848046441803028}
   - component: {fileID: 6226433339382925121}
   - component: {fileID: 2858573164609050546}
@@ -12610,6 +12612,31 @@ Transform:
   - {fileID: 7656181670522543187}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2222420970522696246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6418301402336183476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1124447548
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &1064848046441803028
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12637,6 +12664,9 @@ MonoBehaviour:
   - {fileID: 8540125889707950233}
   bossTracker: {fileID: 0}
   autoOpenExitsOnCleared: 0
+  roomEntryBgmClip: {fileID: 0}
+  roomEntryBgmId: 1201
+  roomEntryBgmVolume: 1
 --- !u!114 &6226433339382925121
 MonoBehaviour:
   m_ObjectHideFlags: 0

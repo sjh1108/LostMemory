@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using LostMemory.Networking.Common;
 using LostMemory.Relics;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -29,6 +30,22 @@ namespace LostMemory.Editor.InventoryTest
 
         private PlayerRelicInventory _relicInv;
         private PlayerConsumableInventory _consumeInv;
+
+        // 멀티 selector — FindAnyObjectByType 가 한 인스턴스만 잡던 버그 fix.
+        // 모든 client 의 PlayerRelicInventory mirror 를 enumerate 해서 1P/2P/3P/4P dropdown 제공.
+        // Mirror (다른 client 소유) 는 데이터 비어있고 수정 차단 — Local (자기 client) 만 정상 작동.
+        private readonly List<InventoryEntry> _playerEntries = new();
+        private int _selectedPlayerIndex;
+        private PopupField<int> _playerSelector;
+
+        private class InventoryEntry
+        {
+            public PlayerRelicInventory RelicInv;
+            public PlayerConsumableInventory ConsumeInv;
+            public ulong ClientId;
+            public bool IsLocal;
+            public string Label;
+        }
 
         private VisualElement _bodyContainer;
         private Label _modeHint;
@@ -118,6 +135,24 @@ namespace LostMemory.Editor.InventoryTest
                 });
             }
 
+            // 멀티 player selector — SearchField 의 parent (toolbar) 에 insert.
+            // 라벨 형태: "0P (Local, 수정 가능)" / "1P (Mirror, 데이터 sync 없음)".
+            if (_searchField != null && _searchField.parent != null)
+            {
+                _playerSelector = new PopupField<int>(
+                    label: "P",
+                    choices: new List<int> { 0 },
+                    defaultValue: 0,
+                    formatSelectedValueCallback: i => i >= 0 && i < _playerEntries.Count ? _playerEntries[i].Label : "(none)",
+                    formatListItemCallback:      i => i >= 0 && i < _playerEntries.Count ? _playerEntries[i].Label : "(none)");
+                _playerSelector.RegisterValueChangedCallback(evt =>
+                {
+                    _selectedPlayerIndex = evt.newValue;
+                    RefreshPlayerInstances();
+                });
+                _searchField.parent.Insert(0, _playerSelector);
+            }
+
             _magicalGirlOnlyToggle = root.Q<ToolbarToggle>("MagicalGirlOnlyToggle");
             if (_magicalGirlOnlyToggle != null)
             {
@@ -165,10 +200,106 @@ namespace LostMemory.Editor.InventoryTest
         private void RefreshPlayerInstances()
         {
             UnsubscribeInventoryEvents();
-            _relicInv   = Object.FindAnyObjectByType<PlayerRelicInventory>();
-            _consumeInv = Object.FindAnyObjectByType<PlayerConsumableInventory>();
+            _playerEntries.Clear();
+
+            // 모든 PlayerRelicInventory 인스턴스 enumerate — 멀티에선 client 마다 1개씩.
+            // 호스트 메모리에 mirror inventory 도 spawn 되지만 데이터는 비어있음 (의도된 client-local design).
+            var allRelic = Object.FindObjectsByType<PlayerRelicInventory>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            // 솔로 모드 진단 — NetworkManager 미가동 시엔 모든 NetworkObject 가 IsSpawned=false 라
+            // 자연스럽게 IsOwner=false 가 된다. 이때는 player 1명만 있고 그게 곧 Local 이므로
+            // sessionActive=false 면 무조건 Local 로 취급해야 InventoryTestWindow 가 수정을 허용한다.
+            bool sessionActive = HostAuthority.IsNetworkSessionActive;
+
+            foreach (var inv in allRelic)
+            {
+                // 부모 NetworkObject 에서 OwnerClientId / IsOwner 추출
+                var no = inv.GetComponentInParent<Unity.Netcode.NetworkObject>();
+                bool isLocal = !sessionActive || (no != null && no.IsOwner);
+                ulong clientId = (sessionActive && no != null) ? no.OwnerClientId : 0;
+
+                // 같은 Character 의 PlayerConsumableInventory 페어로 매칭 (없으면 null)
+                var character = inv.GetComponentInParent<MoreMountains.TopDownEngine.Character>();
+                var consumeInv = character != null
+                    ? character.GetComponentInChildren<PlayerConsumableInventory>(includeInactive: true)
+                    : null;
+
+                string label;
+                if (!sessionActive)
+                    label = "Solo (수정 가능)";
+                else if (isLocal)
+                    label = $"{clientId}P (Local, 수정 가능)";
+                else
+                    label = no != null
+                        ? $"{clientId}P (Mirror, 데이터 sync 없음)"
+                        : "(no NetworkObject)";
+
+                _playerEntries.Add(new InventoryEntry
+                {
+                    RelicInv = inv,
+                    ConsumeInv = consumeInv,
+                    ClientId = clientId,
+                    IsLocal = isLocal,
+                    Label = label,
+                });
+            }
+
+            // ClientId 정렬 — 1P/2P/3P/4P 순서 일관성. ulong.MaxValue (NetworkObject 없는 솔로) 는 뒤로.
+            _playerEntries.Sort((a, b) => a.ClientId.CompareTo(b.ClientId));
+
+            _selectedPlayerIndex = Mathf.Clamp(_selectedPlayerIndex, 0, Mathf.Max(0, _playerEntries.Count - 1));
+
+            if (_playerEntries.Count == 0)
+            {
+                _relicInv = null;
+                _consumeInv = null;
+                RebuildPlayerSelectorUI();
+                RefreshInventoryView();
+                return;
+            }
+
+            var entry = _playerEntries[_selectedPlayerIndex];
+            _relicInv = entry.RelicInv;
+            _consumeInv = entry.ConsumeInv;
+
             SubscribeInventoryEvents();
+            RebuildPlayerSelectorUI();
             RefreshInventoryView();
+        }
+
+        // selector dropdown 의 choices/value 갱신. RefreshPlayerInstances 호출 끝마다 실행.
+        private void RebuildPlayerSelectorUI()
+        {
+            if (_playerSelector == null) return;
+            if (_playerEntries.Count == 0)
+            {
+                _playerSelector.choices = new List<int> { 0 };
+                _playerSelector.SetValueWithoutNotify(0);
+                return;
+            }
+            _playerSelector.choices = Enumerable.Range(0, _playerEntries.Count).ToList();
+            _playerSelector.SetValueWithoutNotify(_selectedPlayerIndex);
+        }
+
+        // 현재 선택된 player 가 수정 가능한지 (Local owner 여부).
+        // 멀티에서 mirror 선택 시 false → 추가/제거/Clear 차단 dialog.
+        private bool CanEditCurrent()
+        {
+            if (_playerEntries.Count == 0) return false;
+            if (_selectedPlayerIndex < 0 || _selectedPlayerIndex >= _playerEntries.Count) return false;
+            return _playerEntries[_selectedPlayerIndex].IsLocal;
+        }
+
+        // 수정 차단 dialog — 4개 핸들러 공통.
+        private bool GuardEditOrShowDialog()
+        {
+            if (CanEditCurrent()) return true;
+            EditorUtility.DisplayDialog(
+                "수정 차단",
+                "Mirror inventory 는 수정 불가 (다른 client 가 소유).\nselector 에서 'Local' 표시된 자기 inventory 만 선택하세요.",
+                "OK");
+            return false;
         }
 
         // ── 좌측 트리 ──────────────────────────────────────
@@ -418,6 +549,9 @@ namespace LostMemory.Editor.InventoryTest
             {
                 evt.menu.AppendAction("Remove", _ =>
                 {
+                    // 멀티 mirror 수정 차단.
+                    if (!GuardEditOrShowDialog()) return;
+
                     if (isConsumableSlot)
                     {
                         if (_consumeInv == null) return;
@@ -451,6 +585,9 @@ namespace LostMemory.Editor.InventoryTest
                 return;
             }
 
+            // 멀티 mirror 수정 차단 — Local 만 정상 작동.
+            if (!GuardEditOrShowDialog()) return;
+
             if (relic.IsConsumable)
             {
                 if (relic.IsInstantUse)
@@ -470,6 +607,7 @@ namespace LostMemory.Editor.InventoryTest
         private void OnClearPermanentClicked()
         {
             if (_relicInv == null) return;
+            if (!GuardEditOrShowDialog()) return;
             int filled = _relicInv.OwnedRelics.Count(r => r != null);
             if (!EditorUtility.DisplayDialog(
                     "Clear Permanent Inventory",
@@ -482,6 +620,7 @@ namespace LostMemory.Editor.InventoryTest
         private void OnClearConsumableClicked()
         {
             if (_consumeInv == null) return;
+            if (!GuardEditOrShowDialog()) return;
             int filled = _consumeInv.Slots.Count(s => s != null);
             if (!EditorUtility.DisplayDialog(
                     "Clear Consumable Slots",

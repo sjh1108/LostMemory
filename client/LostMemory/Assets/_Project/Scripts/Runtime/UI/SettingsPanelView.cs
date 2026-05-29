@@ -1,4 +1,5 @@
 using System.Collections;
+using LostMemory.Audio;
 using MoreMountains.Tools;
 using UnityEngine;
 using UnityEngine.UI;
@@ -111,11 +112,24 @@ namespace LostMemory.UI
 
         private static void ApplyBGM(float value)
         {
+            // GameAudioSettings 가 SfxGroup/MusicGroup mixer + MMSoundManager 트랙 양쪽 sync 처리.
+            // KhiSfxBinder 등 GameAudioSettings.SfxGroup 라우팅 컴포넌트도 같이 영향 받음.
+            if (GameAudioSettings.Instance != null)
+            {
+                GameAudioSettings.Instance.SetMusicVolume(value);
+                return;
+            }
+            // fallback: GameAudioSettings 미초기화 시 기존 MMSoundManager 트랙만 조작.
             ApplyTrackVolume(MMSoundManager.MMSoundManagerTracks.Music, value);
         }
 
         private static void ApplySFX(float value)
         {
+            if (GameAudioSettings.Instance != null)
+            {
+                GameAudioSettings.Instance.SetSfxVolume(value);
+                return;
+            }
             ApplyTrackVolume(MMSoundManager.MMSoundManagerTracks.Sfx, value);
         }
 

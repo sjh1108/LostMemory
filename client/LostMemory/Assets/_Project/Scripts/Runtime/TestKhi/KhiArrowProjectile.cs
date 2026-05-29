@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LostMemory.Networking.Player;
+using LostMemory.UI;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -59,6 +60,9 @@ namespace LostMemory.TestKhi
         private Vector2 _direction;
         private float _speed;
         private GameObject _attacker;
+        // 발사 시점에 호출자(KhiBow/Staff) 가 CriticalRoller.Roll() 결과를 _damage 에 반영하고
+        // wasCritical 플래그를 같이 set. popup 색/라벨 표시용.
+        private bool _wasCritical;
         private float _spawnedAt;
         private bool _launched;
         // develop: CircleCast sweep 이 동일 프레임에 중복 hit 발생 방지 + visual-only clone 도
@@ -138,13 +142,15 @@ namespace LostMemory.TestKhi
 
         /// <summary>
         /// 화살 발사. 위치는 호출 전 Instantiate 시 결정. 방향은 정규화 입력.
+        /// damage 는 호출자가 이미 CriticalRoller.Roll() 통과시킨 최종 값. wasCritical 은 popup 표시용.
         /// </summary>
-        public void Launch(Vector2 direction, float speed, float damage, GameObject attacker)
+        public void Launch(Vector2 direction, float speed, float damage, GameObject attacker, bool wasCritical = false)
         {
             _direction = direction.sqrMagnitude > Mathf.Epsilon ? direction.normalized : Vector2.right;
             _speed = Mathf.Max(0f, speed);
             _damage = Mathf.Max(0f, damage);
             _attacker = attacker;
+            _wasCritical = wasCritical;
             _spawnedAt = Time.time;
             _launched = true;
             _hasHit = false;
@@ -350,7 +356,12 @@ namespace LostMemory.TestKhi
             //   - client owner (게스트의 진짜 projectile): MonsterHealthSync 가 Invulnerable=true 영구 set →
             //     본 가드 항상 false. 우회해서 server-relay path 진입해야 함.
             //   - host owner / solo: 정상 가드 적용.
-            bool isClientOwner = !_visualOnly && _despawnBroadcaster != null && !_despawnBroadcaster.IsServer;
+            // 솔로/NGO 비활성 상태에선 broadcaster.IsSpawned=false → 직접 데미지 적용 경로(host/solo) 로 빠지도록 가드.
+            // (KhiMeteor 의 willRelayToServer 와 동일 패턴 — 이 체크 없으면 솔로에서 RelayProjectileDamage 시도하다 적 NGO 도 미spawn 이라 damage skip 됨.)
+            bool isClientOwner = !_visualOnly
+                && _despawnBroadcaster != null
+                && _despawnBroadcaster.IsSpawned
+                && !_despawnBroadcaster.IsServer;
             bool skipCanTakeGuard = _visualOnly || isClientOwner;
             if (!skipCanTakeGuard && !health.CanTakeDamageThisFrame())
             {
@@ -386,6 +397,13 @@ namespace LostMemory.TestKhi
                     // host owner 또는 solo (broadcaster=null) — server-side direct.
                     health.Damage(_damage, _attacker, targetFlickerDuration, targetInvincibilityDuration, _direction);
                     if (diag) Debug.Log($"[Projectile {name}] hit {other.name}(L:{lname}) → damage {_damage} APPLIED (server/solo)");
+                }
+
+                // 본인 발사 화살 hit 시 popup. visual-only clone 은 본인 화살이 아니므로 skip.
+                // 발사 시점 CriticalRoller 판정 결과(_wasCritical) 사용 — 발사자(KhiBow/Staff) 가 set.
+                if (DamagePopupSpawner.Instance != null)
+                {
+                    DamagePopupSpawner.Instance.NotifyArrowDamage(health, _damage, isCritical: _wasCritical);
                 }
             }
             else

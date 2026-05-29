@@ -47,6 +47,8 @@ namespace LostMemory.MagicalGirl
         private MagicalGirlVisual _visual = MagicalGirlVisual.Default;
         private bool _setBonusActive;
         private bool _enhanced;
+        // 멀티 sync (2026-05-28) — owner 측 본체만 set. Init 시 spawner 가 전달. visual-only clone 은 AI 자체가 없음.
+        private MagicalGirlBroadcast _broadcast;
 
         // 검색 임시 버퍼 (heap alloc 방지)
         private static readonly Collider2D[] _searchBuf = new Collider2D[16];
@@ -68,7 +70,7 @@ namespace LostMemory.MagicalGirl
 
         public void Init(PlayerStatModifierContainer stat, KhiMeleeComboController combat, MagicalGirlAttackCatalog catalog)
         {
-            Init(stat, combat, catalog, null);
+            Init(stat, combat, catalog, null, null);
         }
 
         public void Init(
@@ -77,10 +79,21 @@ namespace LostMemory.MagicalGirl
             MagicalGirlAttackCatalog catalog,
             KhiDownController ownerDownController)
         {
+            Init(stat, combat, catalog, ownerDownController, null);
+        }
+
+        public void Init(
+            PlayerStatModifierContainer stat,
+            KhiMeleeComboController combat,
+            MagicalGirlAttackCatalog catalog,
+            KhiDownController ownerDownController,
+            MagicalGirlBroadcast broadcast)
+        {
             _playerStat = stat;
             _playerCombat = combat;
             _catalog = catalog;
             _ownerDownController = ownerDownController;
+            _broadcast = broadcast;
         }
 
         public MagicalGirlVisual Visual => _visual;
@@ -202,6 +215,8 @@ namespace LostMemory.MagicalGirl
             else
             {
                 // fallback (placeholder): 기존 CL-144 즉시 데미지
+                // PvP 미상정 — 다른 player 친아군 skip (CanBeAutoTargetedEnemy 는 위에서 통과했지만 안전벨트).
+                if (CombatTargetable.IsFriendlyPlayer(target)) return;
                 target.Damage(damage, gameObject, 0f, 0f, Vector3.zero);
             }
 
@@ -217,6 +232,18 @@ namespace LostMemory.MagicalGirl
             var proj = go.GetComponent<MagicalGirlProjectile>();
             if (proj == null) proj = go.AddComponent<MagicalGirlProjectile>();
             proj.Init(dir, damage, entry.projectileSpeed, entry.projectileLifetime, entry.hitVfxPrefab, _ownerDownController);
+
+            // 멀티 sync (2026-05-28): owner 측 ID 발급 + broadcast → non-owner clone Instantiate.
+            // broadcast null = 솔로 (NM 비활성) 또는 NGO 미연결 → broadcast 호출 no-op, owner local 만.
+            if (_broadcast != null)
+            {
+                int projectileId = MagicalGirlProjectile.AllocateProjectileId();
+                proj.SetProjectileId(projectileId);
+                proj.SetDespawnBroadcaster(_broadcast);
+                _broadcast.RelayMagicalGirlProjectileSpawn(
+                    (int)_visual, spawnPos, dir.normalized,
+                    entry.projectileSpeed, entry.projectileLifetime, projectileId);
+            }
         }
 
         private void SpawnAOE(MagicalGirlAttackCatalog.Entry entry, float damage, Vector2 dir)

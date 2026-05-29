@@ -1,3 +1,4 @@
+using LostMemory.Combat;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -22,6 +23,8 @@ namespace LostMemory.Tarot
 
                 Character ch = h.GetComponentInParent<Character>();
                 if (ch != null && ch.CharacterType == Character.CharacterTypes.Player) continue;
+                // PvP 미상정 — 4인 안전벨트: AI 변환된 다른 player 도 제외.
+                if (CombatTargetable.IsFriendlyPlayer(h)) continue;
 
                 float dmg = h.MaximumHealth * damageRatio;
                 h.Damage(dmg, ctx.System != null ? ctx.System.gameObject : null, 0f, 0f, Vector3.zero);

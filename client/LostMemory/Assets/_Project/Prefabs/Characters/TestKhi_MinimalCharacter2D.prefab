@@ -100,6 +100,8 @@ GameObject:
   - component: {fileID: 2980106147108647586}
   - component: {fileID: 861105950667537552}
   - component: {fileID: 8162864988335434117}
+  - component: {fileID: 8720626472580316552}
+  - component: {fileID: 7777927783394008796}
   m_Layer: 10
   m_Name: TestKhi_MinimalCharacter2D
   m_TagString: Player
@@ -644,7 +646,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1850019513
+  GlobalObjectIdHash: 3650460580
   InScenePlacedSourceGlobalObjectIdHash: 3650460580
   DeferredDespawnTick: 0
   Ownership: 1
@@ -699,6 +701,7 @@ MonoBehaviour:
   showRuntimePreview: 0
   runtimePreviewColor: {r: 1, g: 0, b: 0, a: 0.28}
   runtimePreviewSortingOrder: 1000
+  verboseLog: 0
 --- !u!114 &114910001000000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -722,6 +725,7 @@ MonoBehaviour:
   bufferAttackDuringDash: 0
   disableTdeHandleWeapon: 1
   logHitsToConsole: 0
+  heldAttackBaseInterval: 0.35
   statContainer: {fileID: 1496170365699431617}
 --- !u!114 &114910001000000005
 MonoBehaviour:
@@ -797,10 +801,26 @@ MonoBehaviour:
   memoryReviveDelay: 1.5
   soloBehavior: 1
   debugReviveKey: 0
+  debugForceDownKey: 286
   logStateTransitions: 1
   downAnimatorTriggerName: Down
   reviveAnimatorTriggerName: Revive
   defeatObjectDisableDelay: 5
+  cooperativeReviveDistance: 1.5
+  cooperativeReviveChargeSeconds: 2
+  cooperativeReviveLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
+  autoSpawnCoopReviveBar: 1
+  coopReviveBarLocalOffset: {x: 0, y: 1.1, z: 0}
+  coopReviveBarWidth: 0.9
+  coopReviveBarHeight: 1
+  coopReviveBarBackgroundColor: {r: 1, g: 0, b: 0, a: 0.75}
+  coopReviveBarFillColor: {r: 0, g: 0.07179642, b: 1, a: 0.95}
+  coopReviveBarReadyColor: {r: 1, g: 0, b: 0.84919024, a: 1}
+  coopReviveBarSortingLayer: UI
+  coopReviveBarSortingOrder: 100
+  coopReviveBarAutoFollowCharacterSortingLayer: 1
 --- !u!114 &1205325766915542333
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -850,7 +870,7 @@ MonoBehaviour:
   allowParryDuringAttack: 1
   allowParryDuringAttackRecovery: 0
   allowParryDuringDash: 0
-  logStateTransitions: 1
+  logStateTransitions: 0
 --- !u!114 &4325928476706910750
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -979,6 +999,7 @@ MonoBehaviour:
   elementCatalog: {fileID: 11400000, guid: 4e8a2c6b9d1f4534a7b8c9d0e1f2a3b4, type: 2}
   elementMaterial: {fileID: 2100000, guid: 7c3e9d2f1a8b4c5e6f7a8b9c0d1e2f3a, type: 2}
   slashRigCenterY: 0.6
+  verboseLog: 0
 --- !u!114 &9123898256926965793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1010,7 +1031,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b39236818e79243478f1a8cd8d709bb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerStatModifierContainer
-  logModifierChanges: 1
+  logModifierChanges: 0
 --- !u!114 &5883894535095913450
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1082,9 +1103,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f8fff6bea52720498662246bfb538f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Relics.PlayerRelicInventory
-  _baseMaxSlots: 25
-  _maxCols: 5
-  _maxRows: 5
+  _baseMaxSlots: 16
+  _maxCols: 4
+  _maxRows: 4
   _consumableInventory: {fileID: 2913988551999795102}
   _debugRelicsToAdd:
   - {fileID: 11400000, guid: 4651ad8d210e68940a60fb9b17f23717, type: 2}
@@ -1106,7 +1127,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b426d2595487b104e92127941d64ee42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerShield
-  logShieldEvents: 1
+  logShieldEvents: 0
 --- !u!114 &1642600212417923945
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1179,7 +1200,7 @@ MonoBehaviour:
   goldWallet: {fileID: 0}
   playerRelicInventory: {fileID: 1736420558605640635}
   tarotSystem: {fileID: 7695798447328655961}
-  _logEffectDispatch: 1
+  _logEffectDispatch: 0
 --- !u!114 &7504139936399824677
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1226,7 +1247,7 @@ MonoBehaviour:
   _burnApplySfx: {fileID: 0}
   _slowApplySfx: {fileID: 0}
   _statusSfxVolume: 0.6
-  _logOnHitDispatch: 1
+  _logOnHitDispatch: 0
   _debugFreezeOverrideSeconds: 0
 --- !u!114 &2592970996598394060
 MonoBehaviour:
@@ -1316,7 +1337,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Combat.PlayerDamageReceiver
   health: {fileID: 0}
   container: {fileID: 1496170365699431617}
-  _logDamageMod: 1
+  _logDamageMod: 0
+  verboseLog: 0
 --- !u!114 &2913988551999795102
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1360,7 +1382,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.Player.PlayerHealthSnapshotter
   health: {fileID: 8256579939838082894}
-  logRestore: 1
+  logRestore: 0
 --- !u!114 &8256579939838082894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1450,7 +1472,7 @@ MonoBehaviour:
   reviveCompleteClip: {fileID: 8300000, guid: 665dcf18550f16f4eab039e2302f0d5f, type: 3}
   defeatClip: {fileID: 8300000, guid: 6872e40aedb5c1246986a4cfe88a2f67, type: 3}
   downVolume: 0.9
-  logSfx: 1
+  logSfx: 0
 --- !u!114 &7404419025855381829
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1482,6 +1504,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiBowController
   aim: {fileID: 0}
   playerMana: {fileID: 0}
+  statContainer: {fileID: 0}
   arrowSpawnPoint: {fileID: 6125469900217745665}
   aimCamera: {fileID: 0}
   attackBroadcast: {fileID: 0}
@@ -1529,7 +1552,7 @@ MonoBehaviour:
   switchKey: 31
   enableMouseWheelSwitch: 1
   wheelSwitchCooldown: 0.15
-  logModeChanges: 1
+  logModeChanges: 0
 --- !u!114 &4206769217897876942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1543,14 +1566,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.KhiStaffController
   playerMana: {fileID: 0}
+  statContainer: {fileID: 0}
   projectileSpawnPoint: {fileID: 3059109095577102960}
   aimCamera: {fileID: 0}
   attackBroadcast: {fileID: 0}
   boltPrefab: {fileID: 114111111111111004, guid: e9022165cc7b4fd5b6163adc6c26b403,
     type: 3}
   boltSpeed: 10
-  boltDamage: 8
+  boltDamage: 50
   boltInterval: 0.15
+  minimumBoltInterval: 0.3
   boltManaCost: 0
   boltHomingTurnRate: 90
   boltHomingRadius: 8
@@ -1570,7 +1595,7 @@ MonoBehaviour:
   chargeBarPrefab: {fileID: 1100000000000000001, guid: 584d8fc8f7cf47d48209acd61fe14b42,
     type: 3}
   chargeBarLocalOffset: {x: 0.1, y: 1.2, z: 0}
-  logSkillsToConsole: 1
+  logSkillsToConsole: 0
 --- !u!114 &7657820661878310821
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1765,6 +1790,7 @@ MonoBehaviour:
   hitAnimatorTrigger: Hit
   syncDown: 1
   downAnimatorTrigger: Down
+  reviveAnimatorTrigger: Revive
   syncDeath: 1
   deathAnimatorTrigger: Down
   inputComponentNamesToDisableOnDeath:
@@ -1812,7 +1838,7 @@ MonoBehaviour:
   weaponData: {fileID: 0}
   staffController: {fileID: 0}
   bowController: {fileID: 0}
-  verboseLog: 1
+  verboseLog: 0
 --- !u!114 &861105950667537552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1841,7 +1867,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LostMemory.MagicalGirl.MagicalGirlBroadcast
   ShowTopMostFoldoutHeaderGroup: 1
   spawner: {fileID: 0}
-  verboseLog: 1
+  verboseLog: 0
+--- !u!114 &8720626472580316552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0733e71a0c3366345b1dc3cc579827d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.AutoPotionController
+  autoEnabled: 0
+  toggleKey: 289
+  hpThresholdPercent: 0.4
+  internalCooldownSeconds: 0.25
+  verboseLog: 0
+  health: {fileID: 0}
+  playerHealing: {fileID: 0}
+  inventory: {fileID: 0}
+  downController: {fileID: 0}
+  networkObject: {fileID: 0}
+--- !u!114 &7777927783394008796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328835693532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9593595771757e748a18a363053c9f64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LostMemory.TestKhi.DemoItemGranter
+  triggerKey: 290
+  itemsToGrant:
+  - {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}
+  - {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}
+  - {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}
+  - {fileID: 11400000, guid: ed406a84f4a32244bbdfcc641885b709, type: 2}
+  internalCooldownSeconds: 0.5
+  verboseLog: 0
+  relicInventory: {fileID: 1736420558605640635}
+  networkObject: {fileID: 9053980675064386983}
 --- !u!1 &1997364199477008
 GameObject:
   m_ObjectHideFlags: 0

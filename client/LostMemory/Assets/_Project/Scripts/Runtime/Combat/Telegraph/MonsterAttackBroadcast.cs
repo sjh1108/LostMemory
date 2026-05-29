@@ -29,7 +29,7 @@ namespace LostMemory.Combat.Telegraph
 
         [Header("Debug")]
         [Tooltip("진단 로그. 안정화 후 false 권장.")]
-        [SerializeField] private bool verboseLog = true;
+        [SerializeField] private bool verboseLog = false;
 
         /// <summary>
         /// 호스트(=server) 측에서 호출. ServerRpc 없이 직접 ClientRpc 발화 → 모든 클라가 visual 재현.
@@ -77,11 +77,14 @@ namespace LostMemory.Combat.Telegraph
         {
             // Bug #31 진단 강화 — 게스트 측에 ClientRpc 가 도착하는지 + 어느 client 가 받는지 명시.
             // localId + netObjId 까지 dump → host/guest 양쪽 콘솔에서 같은 netObjId 의 mob 추적 가능.
-            var nm = Unity.Netcode.NetworkManager.Singleton;
-            Debug.Log(
-                $"[DiagTelegraph-RpcRecv] mob={name} shape={shape} pos={worldPosition} size={size} " +
-                $"IsHost={IsHost} IsServer={IsServer} IsClient={IsClient} " +
-                $"localId={(nm != null ? nm.LocalClientId : 0)} netObjId={NetworkObjectId} 도착", this);
+            if (verboseLog)
+            {
+                var nm = Unity.Netcode.NetworkManager.Singleton;
+                Debug.Log(
+                    $"[DiagTelegraph-RpcRecv] mob={name} shape={shape} pos={worldPosition} size={size} " +
+                    $"IsHost={IsHost} IsServer={IsServer} IsClient={IsClient} " +
+                    $"localId={(nm != null ? nm.LocalClientId : 0)} netObjId={NetworkObjectId} 도착", this);
+            }
 
             // Bug #37: host 측은 enemy controller 의 *원본 telegraphView.Show* 가 visual 이미 표시 중.
             //   ClientRpc 의 SpawnVisualClone 까지 또 작동하면 host 화면에 중복 sprite → skip.

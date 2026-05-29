@@ -117,7 +117,7 @@ namespace LostMemory.Relics
                 Debug.LogError($"[BuildManager] inventory 필드가 null. Inspector에서 PlayerRelicInventory 드래그 필요. (host={gameObject.name})", this);
                 return;
             }
-            Debug.Log($"[BuildManager] OnEnable — inventory 구독 시작. host={gameObject.name}, inventoryHost={inventory.gameObject.name}, ownedCount={inventory.OwnedRelics.Count}", this);
+            if (_logTierChanges) Debug.Log($"[BuildManager] OnEnable — inventory 구독 시작. host={gameObject.name}, inventoryHost={inventory.gameObject.name}, ownedCount={inventory.OwnedRelics.Count}", this);
             inventory.OnRelicAcquired += HandleInventoryChanged;
             inventory.OnRelicRemoved  += HandleInventoryChanged;
             inventory.OnCleared       += HandleInventoryCleared;

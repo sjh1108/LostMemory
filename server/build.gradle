@@ -30,9 +30,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	// WebClient 만 활용 — spring.main.web-application-type=servlet 으로 reactive default 차단 (application.yaml).
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
@@ -50,6 +53,9 @@ dependencies {
 	// 자체 Relay (RelayApplication) 의 UDP 서버 — Netty
 	// (Spring Boot BOM 이 버전 관리: 4.1.x)
 	implementation 'io.netty:netty-handler'
+
+	// 프로메테우스
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 }
 
 tasks.named('test') {

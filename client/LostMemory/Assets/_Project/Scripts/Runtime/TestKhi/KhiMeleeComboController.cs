@@ -54,7 +54,11 @@ namespace LostMemory.TestKhi
         public event Action<KhiAttackRequest, AttackStepData> AttackStarted;
         public event Action<KhiAttackRequest, AttackStepData> AttackActiveStarted;
         public event Action<KhiAttackRequest, AttackStepData> AttackActiveEnded;
-        public event Action<KhiAttackRequest, AttackStepData, Health> TargetHit;
+        /// <summary>
+        /// 대상 1개에 hit 적용 시 발화. finalDamage / wasCritical 포함 — popup UI 등에서 사용.
+        /// 시그니처 변경 시 구독자(OnHitEffectRegistry 등)도 같이 업데이트 필요.
+        /// </summary>
+        public event Action<KhiAttackRequest, AttackStepData, Health, float, bool> TargetHit;
         public event Action<KhiAttackRequest, AttackStepData> FinisherHit;
 
         /// <summary>CL-107: 본 컨트롤러의 공격이 대상을 사망시켰을 때 발화. RelicEffectApplier 의 붉은송곳니 등이 구독.</summary>
@@ -335,18 +339,8 @@ namespace LostMemory.TestKhi
                     ? statContainer.GetTotalMultiplier(StatId.FinisherDamage) : 1f;
                 float finalDamage = capturedBaseDamage * step.damageMultiplier * attackMul * finisherMul;
 
-                // 치명타 — 확률(StatId.Critical)과 피해 보너스(StatId.CriticalDamage) 분리.
-                // 기본 치명타 피해 50%; 보너스는 합연산.
-                float critChance = statContainer != null
-                    ? Mathf.Max(0f, statContainer.GetTotalMultiplier(StatId.Critical) - 1f)
-                    : 0f;
-                if (critChance > 0f && UnityEngine.Random.value < critChance)
-                {
-                    float critDmgBonus = 0.5f;
-                    if (statContainer != null)
-                        critDmgBonus += statContainer.GetTotalMultiplier(StatId.CriticalDamage) - 1f;
-                    finalDamage *= 1f + Mathf.Max(0f, critDmgBonus);
-                }
+                // 치명타 판정 — CriticalRoller 공통 유틸 (모든 무기 공유).
+                finalDamage = LostMemory.Combat.CriticalRoller.Roll(statContainer, finalDamage, out bool wasCritical);
                 int sampledHitCount = hitbox != null
                     ? hitbox.Sample(sampleRequest, step, capturedPostRotationOffset, finalDamage, _alreadyHitThisSwing, _hitsThisSample)
                     : 0;
@@ -355,7 +349,7 @@ namespace LostMemory.TestKhi
                 for (int i = 0; i < _hitsThisSample.Count; i++)
                 {
                     Health hit = _hitsThisSample[i];
-                    TargetHit?.Invoke(sampleRequest, step, hit);
+                    TargetHit?.Invoke(sampleRequest, step, hit, finalDamage, wasCritical);
                     // CL-107: 본 hit 으로 사망한 적 → EnemyKilledByPlayer 발화 (붉은송곳니용).
                     if (hit != null && hit.CurrentHealth <= 0f)
                     {

@@ -77,7 +77,8 @@ namespace LostMemory.TestKhi
                 _syncedDirection.Value = _lastDirection;
 
                 // [DiagAim-Write] 1초 throttle 로 owner 측 write 가시화. non-owner 측 [DiagAim-Read] 와 매칭 비교용.
-                if (Time.unscaledTime >= _diagNextAimWriteAt)
+                // 진단 종료 — _diagAimLogEnabled = true 로 바꾸면 다시 활성화.
+                if (_diagAimLogEnabled && Time.unscaledTime >= _diagNextAimWriteAt)
                 {
                     _diagNextAimWriteAt = Time.unscaledTime + 1f;
                     Debug.Log($"[DiagAim-Write] dir={_lastDirection} angle={Mathf.Atan2(_lastDirection.y, _lastDirection.x) * Mathf.Rad2Deg:F1} IsOwner=True IsSpawned={IsSpawned} OwnerClientId={OwnerClientId}", this);
@@ -89,6 +90,8 @@ namespace LostMemory.TestKhi
 
         // [DiagAim-Write] throttle 상태.
         private float _diagNextAimWriteAt;
+        // 진단 토글 — 재진단 필요 시 true. 평시 false (콘솔 노이즈 차단).
+        private const bool _diagAimLogEnabled = false;
 
         private Vector2 GetCurrentOrFallbackDirection()
         {

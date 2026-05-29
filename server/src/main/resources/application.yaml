@@ -1,6 +1,11 @@
 spring:
   application:
     name: server
+  jackson:
+    deserialization:
+      # ChatRequest 화이트리스트 강제: unknown field 시 UnrecognizedPropertyException → 400.
+      # @JsonIgnoreProperties(ignoreUnknown=false) class annotation 만으로는 record corner case 에서 override 안 됨 — 전역 strict 로 명시.
+      fail-on-unknown-properties: true
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   datasource:
@@ -13,6 +18,18 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
 
 server:
   port: ${SERVER_PORT}
@@ -38,11 +55,27 @@ app:
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS}
 
-# vLLM 채팅 프록시.
-# dev-bypass 는 클라 로그인 미완성 단계 endpoint 검증용 — 정식 단계에서 본 블록 + JwtAuthenticationFilter 분기 제거.
+# Player analytics — Redis 큐에서 PG 로 일괄 적재하는 EventFlushScheduler 설정.
+analytics:
+  flush:
+    interval-ms: ${ANALYTICS_FLUSH_INTERVAL_MS:5000}
+    batch-size: ${ANALYTICS_FLUSH_BATCH_SIZE:200}
+    retry-max: ${ANALYTICS_FLUSH_RETRY_MAX:3}
+
+# LLM 채팅 프록시.
+# - provider: vllm (현재 — RunPod bllossom-8b 등 OpenAI 호환) / anthropic (별도 task 에서 채울 stub)
+# - context-provider: none (운영 default) / hardcoded (시연용 keyword chunk) / vector-db (정식 RAG, 별도 task)
+# - scripted-mode.enabled: 시연용 — true 시 keyword 매치 발화에 미리 정의된 응답 SSE emit (LLM 호출 우회). 운영 default false
+# - dev-bypass: 클라 로그인 미완성 단계 endpoint 검증용 — 정식 단계에서 본 블록 + JwtAuthenticationFilter 분기 제거
 llm:
+  provider: ${LLM_PROVIDER}
+  context-provider: ${LLM_CONTEXT_PROVIDER}
+  scripted-mode:
+    enabled: ${LLM_SCRIPTED_MODE_ENABLED}
   base-url: ${VLLM_BASE_URL}
   api-key: ${VLLM_API_KEY}
   dev-bypass:
     enabled: ${DEV_BYPASS_ENABLED}
     secret: ${DEV_BYPASS_SECRET}
+
+kind: Application

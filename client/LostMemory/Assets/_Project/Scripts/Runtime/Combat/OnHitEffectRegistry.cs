@@ -4,8 +4,10 @@ using System.Linq;
 using LostMemory.Data;
 using LostMemory.Enemies;
 using LostMemory.Networking.Common;
+using LostMemory.Networking.Player;
 using LostMemory.Relics;
 using LostMemory.TestKhi;
+using LostMemory.UI;
 using LostMemory.VFX;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
@@ -115,6 +117,8 @@ namespace LostMemory.Combat
 
         private readonly List<OnHitEntry> _entries = new();
         private float _nextChainAllowedAt;
+        // 멀티: 게스트 owner 측에서 호스트로 데미지 위임 (Chain / WindBlade). OnEnable 시 1회 캐시.
+        private PlayerDamageRelay _cachedRelay;
 
         // 체인 검색 임시 버퍼 (heap alloc 방지)
         private static readonly Collider2D[] _chainBuf = new Collider2D[16];
@@ -127,6 +131,7 @@ namespace LostMemory.Combat
                 return;
             }
             KhiPlayerActionGate.TryResolveDownController(this, out downController);
+            if (_cachedRelay == null) _cachedRelay = GetComponentInParent<PlayerDamageRelay>();
             combat.TargetHit += HandleHit;
         }
 
@@ -152,10 +157,47 @@ namespace LostMemory.Combat
                 Debug.Log($"[OnHit] Unregister {removed} entries by src={source}");
         }
 
+        /// <summary>
+        /// 외부(UI/디버그) 가 보유 중인 OnHit 효과를 읽기 위한 API.
+        /// outBuf 를 Clear 한 뒤 _entries 를 평가 무관 모두 채워 넣는다. private struct 노출 회피.
+        /// </summary>
+        public void CollectActive(List<ActiveOnHitSnapshot> outBuf)
+        {
+            if (outBuf == null) return;
+            outBuf.Clear();
+            foreach (OnHitEntry e in _entries)
+            {
+                outBuf.Add(new ActiveOnHitSnapshot(e.Type, e.Magnitude, e.Duration, e.Source));
+            }
+        }
+
+        /// <summary>CollectActive 가 외부로 노출하는 read-only 스냅샷.</summary>
+        public readonly struct ActiveOnHitSnapshot
+        {
+            public readonly RelicEffectType Type;
+            public readonly float Magnitude;
+            public readonly float Duration;
+            public readonly object Source;
+
+            public ActiveOnHitSnapshot(RelicEffectType type, float magnitude, float duration, object source)
+            {
+                Type = type;
+                Magnitude = magnitude;
+                Duration = duration;
+                Source = source;
+            }
+        }
+
         // ── 메인 디스패처 ───────────────────────────────────
 
-        private void HandleHit(KhiAttackRequest req, AttackStepData step, Health victim)
+        private void HandleHit(KhiAttackRequest req, AttackStepData step, Health victim, float finalDamage, bool wasCritical)
         {
+            // 평타 본 데미지 popup — 호스트 게스트 모두 본인 hit 흐름에서만 발화하므로 owner 체크 불필요.
+            if (DamagePopupSpawner.Instance != null)
+            {
+                DamagePopupSpawner.Instance.NotifyMeleeDamage(victim, finalDamage, wasCritical);
+            }
+
             if (!HostAuthority.IsHost) return;
             if (KhiPlayerActionGate.IsBlocked(downController)) return;
             if (victim == null) return;
@@ -231,7 +273,22 @@ namespace LostMemory.Combat
             foreach (Health t in targets)
             {
                 if (t == null) continue;
-                t.Damage(chainDamage, gameObject, 0f, 0f, Vector3.zero);
+                // PvP 미상정 — chain 후보가 player 면 skip (FindNearbyEnemies 도 가드 있지만 안전벨트).
+                if (CombatTargetable.IsFriendlyPlayer(t)) continue;
+                // 체인 데미지 각 대상별 크리티컬 판정 (평타와 같은 stat 공유).
+                float appliedChainDamage = CriticalRoller.Roll(statContainer, chainDamage, out bool chainCrit);
+                if (_cachedRelay != null)
+                {
+                    _cachedRelay.RelayDamage(t, appliedChainDamage, gameObject, 0f, 0f, Vector2.zero);
+                }
+                else
+                {
+                    t.Damage(appliedChainDamage, gameObject, 0f, 0f, Vector3.zero);
+                }
+                if (DamagePopupSpawner.Instance != null)
+                {
+                    DamagePopupSpawner.Instance.NotifySubEffectDamage(t, appliedChainDamage, chainCrit);
+                }
                 chainTransforms.Add(t.transform);
                 hitCount++;
             }
@@ -318,7 +375,20 @@ namespace LostMemory.Combat
                 // 멀티 가드 — host 측 AI 변환된 게스트 player 제외.
                 if (CombatTargetable.IsAuthoritativePlayer(h)) continue;
 
-                h.Damage(bladeDamage, gameObject, 0f, 0f, Vector3.zero);
+                // 풍속 검기 — 각 대상별 크리티컬 판정.
+                float appliedBladeDamage = CriticalRoller.Roll(statContainer, bladeDamage, out bool bladeCrit);
+                if (_cachedRelay != null)
+                {
+                    _cachedRelay.RelayDamage(h, appliedBladeDamage, gameObject, 0f, 0f, Vector2.zero);
+                }
+                else
+                {
+                    h.Damage(appliedBladeDamage, gameObject, 0f, 0f, Vector3.zero);
+                }
+                if (DamagePopupSpawner.Instance != null)
+                {
+                    DamagePopupSpawner.Instance.NotifySubEffectDamage(h, appliedBladeDamage, bladeCrit);
+                }
                 hitCount++;
             }
 
@@ -492,6 +562,8 @@ namespace LostMemory.Combat
                 if (ch != null && ch.CharacterType == Character.CharacterTypes.Player) continue;
                 // 멀티 가드 — host 측 AI 변환된 게스트 player 제외 (B-2 의 convertNonOwnerToAi 우회).
                 if (CombatTargetable.IsAuthoritativePlayer(h)) continue;
+                // PvP 미상정 — 4인 안전벨트: PlayerHealthSync 명시 체크.
+                if (CombatTargetable.IsFriendlyPlayer(h)) continue;
 
                 float dSq = (h.transform.position - origin).sqrMagnitude;
                 candidates.Add((h, dSq));

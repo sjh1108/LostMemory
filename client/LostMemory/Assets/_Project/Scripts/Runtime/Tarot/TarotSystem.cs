@@ -98,7 +98,7 @@ namespace LostMemory.Tarot
             if (_logTarot) Debug.Log($"[Tarot] EffectMultiplier = {_effectMultiplier:F2}");
         }
 
-        private void HandleHit(KhiAttackRequest req, AttackStepData step, Health victim)
+        private void HandleHit(KhiAttackRequest req, AttackStepData step, Health victim, float finalDamage, bool wasCritical)
         {
             if (_currentTierIndex < 0) return;
             if (victim == null) return;

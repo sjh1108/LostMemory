@@ -18,7 +18,7 @@ namespace LostMemory.Combat
     {
         [SerializeField] private Health health;
         [SerializeField] private PlayerStatModifierContainer container;
-        [SerializeField] private bool _logChanges = true;
+        [SerializeField] private bool _logChanges = false;
 
         private float _baseMaxHealth;
         private float _lastAppliedMax = -1f;

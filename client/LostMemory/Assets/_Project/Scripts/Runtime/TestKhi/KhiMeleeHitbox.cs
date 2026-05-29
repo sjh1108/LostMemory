@@ -28,6 +28,8 @@ namespace LostMemory.TestKhi
         [SerializeField] private bool showRuntimePreview = false;
         [SerializeField] private Color runtimePreviewColor = new Color(1f, 0f, 0f, 0.28f);
         [SerializeField] private int runtimePreviewSortingOrder = 1000;
+        [Tooltip("Phase D 진단용 [KhiMeleeHitbox] Sample 로그. 평타 hit 마다 발화 → 콘솔 도배 방지를 위해 default OFF. 게스트 sync 진단 시만 ON.")]
+        [SerializeField] private bool verboseLog = false;
 
         private Collider2D[] _overlapResults;
         private bool _hasDebugHitbox;
@@ -72,8 +74,8 @@ namespace LostMemory.TestKhi
             int appliedHits = 0;
 
             // Phase D 진단: guest 공격 sync 추적 — hit count 0 이면 guest hitbox 가 host enemy 와 collision 안 잡힘 (씬 차이 의심).
-            // damageRelay 의 verboseLog 와 짝지어 분석.
-            if (hitCount > 0)
+            // damageRelay 의 verboseLog 와 짝지어 분석. 평소엔 inspector verboseLog OFF 로 콘솔 도배 방지.
+            if (hitCount > 0 && verboseLog)
             {
                 Debug.Log($"[KhiMeleeHitbox] Sample combo={request.ComboStep} seq={request.SequenceId} → {hitCount} colliders found (center={center} size={finalSize})", this);
             }

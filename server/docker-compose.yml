@@ -75,10 +75,16 @@ services:
       # CorsConfig 의 allowed-origin-patterns 매핑 — 본 #462 PR 누락분
       CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS}
       # LLM 프록시 — dev-bypass 분기는 클라 로그인 완성 시점 후속 티켓에서 제거
+      LLM_PROVIDER: ${LLM_PROVIDER}
+      LLM_CONTEXT_PROVIDER: ${LLM_CONTEXT_PROVIDER}
+      LLM_SCRIPTED_MODE_ENABLED: ${LLM_SCRIPTED_MODE_ENABLED}
       VLLM_BASE_URL: ${VLLM_BASE_URL}
       VLLM_API_KEY: ${VLLM_API_KEY}
       DEV_BYPASS_ENABLED: ${DEV_BYPASS_ENABLED}
       DEV_BYPASS_SECRET: ${DEV_BYPASS_SECRET}
+      # SMTP — 이메일 인증 코드 / 비밀번호 재설정 메일 발송 (Gmail SMTP + 앱 비밀번호)
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
       TZ: ${TZ}
     depends_on:
       postgres:
@@ -120,6 +126,9 @@ services:
       HANDSHAKE_TIMEOUT_MS: ${HANDSHAKE_TIMEOUT_MS}
       # LlmProperties binding 위한 envvar — Relay 자체는 LLM 안 쓰지만 JwtAuthenticationFilter bean
       # 생성 시 LlmProperties 가 주입돼야 함 (lesson reference_relay_udp_infra.md).
+      LLM_PROVIDER: ${LLM_PROVIDER}
+      LLM_CONTEXT_PROVIDER: ${LLM_CONTEXT_PROVIDER}
+      LLM_SCRIPTED_MODE_ENABLED: ${LLM_SCRIPTED_MODE_ENABLED}
       VLLM_BASE_URL: ${VLLM_BASE_URL}
       VLLM_API_KEY: ${VLLM_API_KEY}
       DEV_BYPASS_ENABLED: ${DEV_BYPASS_ENABLED}

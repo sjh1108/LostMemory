@@ -17,10 +17,10 @@ namespace LostMemory.Stage.Data
 
         private void Awake()
         {
-            if (cachedSpawnPoints == null || cachedSpawnPoints.Length == 0)
-            {
-                RefreshSpawnPoints();
-            }
+            // prefab 직렬화된 cachedSpawnPoints 는 동일 layout prefab 을 여러 방으로 spawn 시 stale fileID 가
+            // 다른 방의 SpawnPoint 를 가리키는 문제 발생 (1F-3R 부터 잘못된 위치 소환 버그).
+            // 런타임엔 항상 자기 자식 chain 에서 fresh 재계산.
+            RefreshSpawnPoints();
         }
 
         // 빈 문자열 filter 면 전체 반환, 아니면 groupTag 정확 일치만 반환.

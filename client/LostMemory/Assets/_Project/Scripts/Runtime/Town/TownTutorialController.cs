@@ -40,6 +40,8 @@ namespace LostMemory.Town
         [Header("Debug")]
         [Tooltip("true 면 PlayerPrefs 무시하고 항상 표시 (에디터 테스트용).")]
         [SerializeField] private bool _alwaysShow = false;
+        [Tooltip("[TownTutorialController] HandleClose / PlayerPrefs 키 삭제 등 진단 로그. 평소 OFF.")]
+        [SerializeField] private bool verboseLog = false;
 
         private GameObject _markerInstance;
         private int _currentIndex;
@@ -133,7 +135,7 @@ namespace LostMemory.Town
         private void HandleClose()
         {
             bool dontShow = _panel.DontShowAgain;
-            Debug.Log($"[TownTutorialController] HandleClose dontShowAgain={dontShow} key='{_seenKey}'", this);
+            if (verboseLog) Debug.Log($"[TownTutorialController] HandleClose dontShowAgain={dontShow} key='{_seenKey}'", this);
             if (dontShow)
             {
                 PlayerPrefs.SetInt(_seenKey, 1);

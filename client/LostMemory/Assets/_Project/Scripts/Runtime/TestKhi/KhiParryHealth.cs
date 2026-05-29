@@ -57,6 +57,12 @@ namespace LostMemory.TestKhi
             Vector3 damageDirection,
             List<TypedDamage> typedDamages = null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // 시연 디버그 F6 — God Mode ON 이면 데미지 path 전체 skip (패링/실드 처리도 안 함).
+            // TDE Invulnerable check 가 OnHit/HitStun 등 일부 event 발화 후 가드라서 진입 차단으로 안전망.
+            if (LostMemory.Networking.Player.PlayerHealthSync.GodModeActive) return;
+#endif
+
             if (damage <= 0f || !CanTakeDamageThisFrame())
             {
                 base.Damage(damage, instigator, flickerDuration, invincibilityDuration, damageDirection, typedDamages);

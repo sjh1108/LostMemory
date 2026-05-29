@@ -26,7 +26,7 @@ namespace LostMemory.Networking.Session
         /// 런타임에 강제로 다른 URL 쓰려면 외부에서 직접 대입 가능 (정적 필드).
         /// </summary>
 #if UNITY_EDITOR
-        public static string BaseUrl = "http://localhost:8080/api";
+        public static string BaseUrl = "https://k14c201.p.ssafy.io/api";
 #else
         public static string BaseUrl = "https://k14c201.p.ssafy.io/api";
 #endif
@@ -49,25 +49,61 @@ namespace LostMemory.Networking.Session
         // 인증
         // ============================================================
 
-        /// <summary>signup 시도. 이미 가입된 계정이면 silent 실패 (login 으로 진행 가능).</summary>
-        public static async Task TrySignupAsync(string loginId, string password, string nickname)
+        /// <summary>
+        /// 회원가입. 가입 직후엔 status=pending 으로 저장되며 토큰은 발급되지 않는다 —
+        /// 이메일 인증(/auth/email/verify) 통과 시점에 토큰을 받는다. 호출자는 envelope.error.code 로
+        /// 중복(USER_LOGIN_ID_DUPLICATED / USER_EMAIL_DUPLICATED / USER_NICKNAME_DUPLICATED) 등을 분기.
+        /// </summary>
+        public static async Task<ApiEnvelope<SignupResponseData>> SignupAsync(
+            string loginId, string password, string email, string nickname)
         {
-            var body = new { loginId, password, nickname };
-            await PostAsync<object>("/auth/signup", body, requireAuth: false);
-            // 결과 무시 — 409 (LOGIN_ID_DUPLICATED / NICKNAME_DUPLICATED) 면 login 으로 진행
+            var body = new { loginId, password, email, nickname };
+            return await PostAsync<SignupResponseData>("/auth/signup", body, requireAuth: false);
         }
 
-        public static async Task<bool> LoginAsync(string loginId, string password)
+        /// <summary>
+        /// 이메일 인증 코드 검증. 성공 시 status=active 전이 + TokenResponse 반환.
+        /// 코드 불일치/만료/시도초과는 envelope.error.code 로 분기.
+        /// </summary>
+        public static async Task<ApiEnvelope<TokenData>> VerifyEmailAsync(string email, string code)
+        {
+            var body = new { email, code };
+            var resp = await PostAsync<TokenData>("/auth/email/verify", body, requireAuth: false);
+            if (resp != null && resp.success && resp.data != null)
+            {
+                AccessToken = resp.data.accessToken;
+                RefreshToken = resp.data.refreshToken;
+            }
+            return resp;
+        }
+
+        /// <summary>
+        /// 인증 코드 재발송. 쿨다운(60초) · 일일 한도(5회) · 이미 ACTIVE 등 정책은 envelope.error.code 로 통지.
+        /// </summary>
+        public static async Task<ApiEnvelope<object>> ResendVerificationCodeAsync(string email)
+        {
+            var body = new { email };
+            return await PostAsync<object>("/auth/email/resend", body, requireAuth: false);
+        }
+
+        /// <summary>
+        /// 로그인. 성공 시 AccessToken/RefreshToken 정적 필드 갱신 + envelope 반환.
+        /// PENDING 상태(이메일 미인증)는 envelope.error.code == "AUTH_EMAIL_NOT_VERIFIED" 로 통지.
+        /// </summary>
+        public static async Task<ApiEnvelope<TokenData>> LoginAsync(string loginId, string password)
         {
             var body = new { loginId, password };
             var resp = await PostAsync<TokenData>("/auth/login", body, requireAuth: false);
-            if (resp == null || !resp.success || resp.data == null)
+            if (resp != null && resp.success && resp.data != null)
             {
-                NetLog.Error("API", $"login 실패: code={resp?.error?.code}");
-                return false;
+                AccessToken = resp.data.accessToken;
+                RefreshToken = resp.data.refreshToken;
             }
-            AccessToken = resp.data.accessToken;
-            return true;
+            else if (resp != null && !resp.success)
+            {
+                NetLog.Warn("API", $"login 실패: code={resp.error?.code}");
+            }
+            return resp;
         }
 
         public static async Task<bool> FetchMyUserIdAsync()
@@ -324,6 +360,14 @@ namespace LostMemory.Networking.Session
             public string accessToken;
             public string refreshToken;
             public long accessTokenExpiresIn;
+        }
+
+        /// <summary>회원가입 응답. 가입 직후엔 토큰 미발급 — userId + status("pending") 만 반환된다.</summary>
+        [Serializable]
+        public class SignupResponseData
+        {
+            public long userId;
+            public string status;
         }
 
         [Serializable]

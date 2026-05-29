@@ -165,7 +165,12 @@ namespace LostMemory.TestKhi
             if (aimDirection.sqrMagnitude <= Mathf.Epsilon) aimDirection = Vector2.right;
 
             KhiArrowProjectile projectile = Instantiate(arrowPrefab, spawnPos, Quaternion.identity);
-            projectile.Launch(aimDirection, arrowSpeed, damage, gameObject);
+            // AttackPower (전사의끈/단단한 주먹 등) 적용 — 평타와 동일 패턴. 이전엔 누락돼서
+            // 상태창 +50% 떠도 화살 데미지가 그대로였음.
+            float attackMul = statContainer != null ? statContainer.GetTotalMultiplier(StatId.AttackPower) : 1f;
+            // 발사 시점 크리티컬 판정 — 모든 무기 공통 CriticalRoller 유틸. AttackPower 곱한 뒤 crit roll.
+            float finalDamage = LostMemory.Combat.CriticalRoller.Roll(statContainer, damage * attackMul, out bool wasCritical);
+            projectile.Launch(aimDirection, arrowSpeed, finalDamage, gameObject, wasCritical);
 
             KhiAttackRequest request = new KhiAttackRequest
             {

@@ -1,4 +1,5 @@
 using LostMemory.Combat;
+using LostMemory.Networking.Player;
 using MoreMountains.TopDownEngine;
 using UnityEngine;
 
@@ -19,6 +20,13 @@ namespace LostMemory.TestKhi
     public class KhiParryDamageOnTouch : DamageOnTouch
     {
         [SerializeField] private bool logParryInteraction = false;
+        // 멀티: 게스트 owner 측에서 호스트로 데미지 위임 (패리 반격 직접 Damage 분기). 첫 호출 시 lazy 캐시.
+        // DamageOverTime 분기는 PlayerDamageRelay 에 대응 API 없음 → 별도 follow-up.
+        private PlayerDamageRelay _cachedRelay;
+        private bool _cachedRelayResolved;
+        // 크리티컬 — parry attacker(=player) 의 stat container lazy resolve.
+        private LostMemory.Combat.PlayerStatModifierContainer _cachedAttackerStats;
+        private bool _cachedAttackerStatsResolved;
 
         protected override void OnCollideWithDamageable(Health health)
         {
@@ -100,10 +108,30 @@ namespace LostMemory.TestKhi
 
         private void ApplyReducedDamage(Health health, float reducedDamage)
         {
+            // PvP 미상정 — 패리 반격은 적에게만. 다른 player 친아군 skip.
+            if (CombatTargetable.IsFriendlyPlayer(health))
+            {
+                return;
+            }
+
             _collidingHealth = health;
             _colliderHealth = health;
 
-            if (!health.CanTakeDamageThisFrame())
+            if (!_cachedRelayResolved)
+            {
+                _cachedRelay = GetComponentInParent<PlayerDamageRelay>();
+                _cachedRelayResolved = true;
+            }
+            if (!_cachedAttackerStatsResolved)
+            {
+                _cachedAttackerStats = GetComponentInParent<LostMemory.Combat.PlayerStatModifierContainer>();
+                _cachedAttackerStatsResolved = true;
+            }
+            // 패리 반격 데미지에도 크리티컬 판정 (평타와 동일 stat).
+            reducedDamage = LostMemory.Combat.CriticalRoller.Roll(_cachedAttackerStats, reducedDamage, out bool parryCrit);
+            // 게스트 ServerRpc 위임 경로면 CanTakeDamageThisFrame 가드 우회 — 게스트 측 target Health 는 DamageDisabled() 호출됨.
+            bool willRelayToServer = _cachedRelay != null && _cachedRelay.IsSpawned && !_cachedRelay.IsServer;
+            if (!willRelayToServer && !health.CanTakeDamageThisFrame())
             {
                 return;
             }
@@ -137,13 +165,33 @@ namespace LostMemory.TestKhi
             }
             else
             {
-                _colliderHealth.Damage(
-                    reducedDamage,
-                    gameObject,
-                    InvincibilityDuration,
-                    InvincibilityDuration,
-                    _damageDirectionVector,
-                    TypedDamages);
+                if (_cachedRelay != null)
+                {
+                    // NOTE: PlayerDamageRelay 는 TypedDamages 인자 미지원. 패리 반격은 단일 damage 만 sync.
+                    _cachedRelay.RelayDamage(
+                        _colliderHealth,
+                        reducedDamage,
+                        gameObject,
+                        InvincibilityDuration,
+                        InvincibilityDuration,
+                        _damageDirectionVector);
+                }
+                else
+                {
+                    _colliderHealth.Damage(
+                        reducedDamage,
+                        gameObject,
+                        InvincibilityDuration,
+                        InvincibilityDuration,
+                        _damageDirectionVector,
+                        TypedDamages);
+                }
+            }
+
+            // 본인 패리 → popup 표시 (NotifyMeleeDamage 재사용 — 평타 카테고리).
+            if (LostMemory.UI.DamagePopupSpawner.Instance != null)
+            {
+                LostMemory.UI.DamagePopupSpawner.Instance.NotifyMeleeDamage(_colliderHealth, reducedDamage, parryCrit);
             }
 
             if (DamageTakenEveryTime + DamageTakenDamageable > 0f && !_colliderHealth.PreventTakeSelfDamage)

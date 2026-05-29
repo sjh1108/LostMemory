@@ -24,7 +24,7 @@ namespace LostMemory.MagicalGirl
         [Tooltip("같은 player 의 MagicalGirlSpawner. 비워두면 자동 resolve.")]
         [SerializeField] private MagicalGirlSpawner spawner;
         [Tooltip("진단 로그 출력. 안정화 후 false 권장.")]
-        [SerializeField] private bool verboseLog = true;
+        [SerializeField] private bool verboseLog = false;
 
         public override void OnNetworkSpawn()
         {
@@ -75,6 +75,63 @@ namespace LostMemory.MagicalGirl
                 return;
             }
             spawner.SpawnVisualOnlyClone(visual);
+        }
+
+        // ── Projectile sync (2026-05-28) — KhiArrowProjectile + AttackBroadcast 패턴 동일 복제 ──
+
+        /// <summary>
+        /// owner 측 MagicalGirlAI.SpawnProjectile 직후 호출. ServerRpc → ClientRpc → non-owner 측이 visual-only clone Instantiate.
+        /// damage 권위는 owner 측 단독, non-owner clone 은 SetVisualOnly(true) 로 시각만 재현.
+        /// projectileId: MagicalGirlProjectile.AllocateProjectileId() 로 owner 발급. owner hit broadcast 시 매칭 key.
+        /// </summary>
+        public void RelayMagicalGirlProjectileSpawn(int visualEnumValue, Vector3 spawnPos, Vector2 direction, float speed, float lifetime, int projectileId)
+        {
+            if (!IsSpawned || !IsOwner) return;
+            if (verboseLog) Debug.Log($"[MagicalGirl-Broadcast] NotifyProjectile visual={(MagicalGirlVisual)visualEnumValue} pos={spawnPos} dir={direction} id={projectileId} → ServerRpc", this);
+            RelayMagicalGirlProjectileSpawnServerRpc(visualEnumValue, spawnPos, direction, speed, lifetime, projectileId);
+        }
+
+        [ServerRpc]
+        private void RelayMagicalGirlProjectileSpawnServerRpc(int visualEnumValue, Vector3 spawnPos, Vector2 direction, float speed, float lifetime, int projectileId)
+        {
+            BroadcastMagicalGirlProjectileSpawnClientRpc(visualEnumValue, spawnPos, direction, speed, lifetime, projectileId);
+        }
+
+        [ClientRpc]
+        private void BroadcastMagicalGirlProjectileSpawnClientRpc(int visualEnumValue, Vector3 spawnPos, Vector2 direction, float speed, float lifetime, int projectileId)
+        {
+            if (verboseLog) Debug.Log($"[MagicalGirl-Broadcast] ProjectileSpawn ClientRpc visual={(MagicalGirlVisual)visualEnumValue} pos={spawnPos} id={projectileId} IsOwner={IsOwner} (skip if owner)", this);
+            if (IsOwner) return;
+
+            ResolveSpawner();
+            if (spawner == null)
+            {
+                if (verboseLog) Debug.LogWarning($"[MagicalGirl-Broadcast] ProjectileSpawn ClientRpc — spawner null 로 skip. id={projectileId}", this);
+                return;
+            }
+            spawner.SpawnVisualOnlyProjectile((MagicalGirlVisual)visualEnumValue, spawnPos, direction, speed, lifetime, projectileId);
+        }
+
+        /// <summary>owner 측 projectile 적중 시 호출. 모든 client (owner 포함) 의 매칭 clone destroy + hit VFX 표시.</summary>
+        public void RelayMagicalGirlProjectileHit(int projectileId)
+        {
+            if (!IsSpawned || !IsOwner) return;
+            if (projectileId <= 0) return;
+            RelayMagicalGirlProjectileHitServerRpc(projectileId);
+        }
+
+        [ServerRpc]
+        private void RelayMagicalGirlProjectileHitServerRpc(int projectileId)
+        {
+            BroadcastMagicalGirlProjectileHitClientRpc(projectileId);
+        }
+
+        [ClientRpc]
+        private void BroadcastMagicalGirlProjectileHitClientRpc(int projectileId)
+        {
+            if (verboseLog) Debug.Log($"[MagicalGirl-Broadcast] ProjectileHit ClientRpc id={projectileId} IsOwner={IsOwner} (skip if owner)", this);
+            if (IsOwner) return;  // owner 는 자기 hit 시점에 이미 local destroy
+            MagicalGirlProjectile.DespawnVisualOnlyCloneById(projectileId);
         }
     }
 }

@@ -1,5 +1,7 @@
+using LostMemory.Networking.Common;
 using LostMemory.TestKhi;
 using MoreMountains.TopDownEngine;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LostMemory.Friend
@@ -44,6 +46,16 @@ namespace LostMemory.Friend
 
         private void Awake()
         {
+            // 멀티에서 host 만 NPC 와 대화 가능. guest 는 컴포넌트 자체를 비활성화해
+            // OnTriggerEnter2D / Update 가 호출되지 않게 한다 (prompt 도 안 뜸).
+            // HostAuthority.IsHost — NetworkManager 가 없거나 비활성(=싱글 실행) 이면 true.
+            if (!HostAuthority.IsHost)
+            {
+                if (logInteraction) Debug.Log("[FriendNpcInteractable] guest — 비활성화.");
+                enabled = false;
+                return;
+            }
+
             if (promptObject != null) promptObject.SetActive(false);
         }
 
@@ -51,6 +63,8 @@ namespace LostMemory.Friend
         {
             if (!_playerInRange) return;
             if (KhiPlayerActionGate.IsBlocked(_playerInRangeCharacter)) return;
+            // 멀티 환경 — trigger 안에 host + guest 가 함께 있어도 host 의 local Player 만 F 발화.
+            if (!IsLocalPlayerInRange()) return;
             if (!Input.GetKeyDown(interactKey)) return;
 
             if (chatController == null)
@@ -59,8 +73,9 @@ namespace LostMemory.Friend
                 return;
             }
 
-            if (logInteraction) Debug.Log("[FriendNpcInteractable] F 입력 → FriendChatController.Toggle.");
-            chatController.Toggle();
+            // F 키는 열기 전용. 닫기는 X 버튼 또는 ESC 키로만 가능 (사용자 요청).
+            if (logInteraction) Debug.Log("[FriendNpcInteractable] F 입력 → FriendChatController.Open.");
+            chatController.Open();
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -90,6 +105,25 @@ namespace LostMemory.Friend
         {
             if (string.IsNullOrEmpty(playerTag)) return true;
             return other.CompareTag(playerTag);
+        }
+
+        /// <summary>
+        /// trigger 안의 _playerInRangeCharacter 가 NGO LocalClient.PlayerObject 인지.
+        /// 싱글 실행(NetworkManager 미동작) 시 항상 true.
+        /// ShopNpcInteractable.IsLocalPlayerInRange 와 동일 패턴.
+        /// </summary>
+        private bool IsLocalPlayerInRange()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening) return true;
+            if (_playerInRangeCharacter == null) return false;
+
+            NetworkClient local = nm.LocalClient;
+            if (local == null || local.PlayerObject == null) return false;
+
+            Transform charRoot = _playerInRangeCharacter.transform.root;
+            Transform localRoot = local.PlayerObject.transform.root;
+            return charRoot == localRoot;
         }
     }
 }

@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using LostMemory.Memory;
+using LostMemory.Networking.Analytics;
 using LostMemory.Networking.Common;
 using LostMemory.Networking.Player;
 using LostMemory.Player;
@@ -59,8 +61,14 @@ namespace LostMemory.Stage
         [SerializeField, Tooltip("RunCleared/RunFailed 도달 후 Resulting 까지의 지연 시간(초)")]
         private float resultingDelaySeconds = 2f;
 
-        [SerializeField, Tooltip("RunFailed 도달 후 Resulting 까지의 지연 시간(초). 사망 애니메이션 확인용.")]
-        private float failureResultingDelaySeconds = 5f;
+        [SerializeField, Tooltip("RunFailed 도달 후 Resulting 까지의 지연 시간(초). 사망 애니메이션 확인용. " +
+            "이 wait 중에는 협력/기억 부활 가능 — wait 종료 시 AnyPlayerAlive 검사하여 부활 성공이면 InRun 복귀, 실패면 Resulting 진입.")]
+        private float failureResultingDelaySeconds = 10f;
+
+        [SerializeField, Tooltip("결과창 표시 후 자동 로비/타운 복귀까지 대기 시간(초). 0 이하면 자동 복귀 안 함 (버튼만 사용). " +
+            "호스트는 NGO LoadScene 으로 모두 끌고 가고, 게스트는 단독 로컬 로드 + Shutdown 으로 fallback (호스트 이탈 케이스). " +
+            "[Auto Return] 결과창 버튼 hide 모드와 짝지어 사용 — 10초 권장 (통계 읽을 시간 + 시연 안 답답).")]
+        private float resultAutoReturnSeconds = 10f;
 
         [SerializeField, Tooltip("결과창의 마을로 버튼을 눌렀을 때 로드할 씬 이름.")]
         private string townSceneName = "Town";
@@ -69,8 +77,18 @@ namespace LostMemory.Stage
         private string townScenePath = "Assets/_Project/Scenes/Town/Town.unity";
 
         [SerializeField, Tooltip("멀티 세션 활성 시 결과창 마을로 버튼을 눌렀을 때 로드할 로비 씬 이름. " +
-            "비워두면 기존 townSceneName 흐름 (솔로 경로) 유지. NGO SceneManager.LoadScene 으로 호스트가 트리거 → 모든 클라 sync, 세션 유지.")]
-        private string lobbySceneName = string.Empty;
+            "비워두면 EffectiveLobbySceneName 의 fallback (Test_MultiLobby_Copy) 자동 사용. " +
+            "NGO SceneManager.LoadScene 으로 호스트가 트리거 → 모든 클라 sync, 세션 유지. " +
+            "솔로/멀티 자동 분기: 솔로 wipe → townSceneName, 멀티 wipe → 이 값 (또는 fallback).")]
+        private string lobbySceneName = "Test_MultiLobby_Copy";
+
+        /// <summary>
+        /// Inspector 의 lobbySceneName 이 빈 문자열로 직렬화돼 코드 default 가 무시되는 경우 대비.
+        /// 명시 wire 됐으면 Inspector 값 사용, 비어있으면 hardcoded "Test_MultiLobby_Copy" fallback.
+        /// 멀티 wipe 시 항상 멀티 로비로 가도록 보장.
+        /// </summary>
+        private string EffectiveLobbySceneName =>
+            string.IsNullOrWhiteSpace(lobbySceneName) ? "Test_MultiLobby_Copy" : lobbySceneName;
 
         [SerializeField, Tooltip("Editor Play Mode 또는 build 안 등록 시 fallback 으로 사용할 로비 씬 경로.")]
         private string lobbyScenePath = string.Empty;
@@ -97,6 +115,12 @@ namespace LostMemory.Stage
         // 멀티 실행 시 호스트(=서버)만 true. 클라이언트는 false 로 진입 차단.
         public bool IsAuthority => HostAuthority.IsHost;
 
+        /// <summary>
+        /// 결과창(Resulting) 진입 상태 여부. 외부 컴포넌트(SessionTownReturnHandler, KhiDownController 부활 게이트)가 조회.
+        /// true 동안: 부활 거부 / 호스트 이탈 시 자동 town 복귀 보류 (결과창의 AutoReturnAfterResult 가 처리).
+        /// </summary>
+        public bool IsResulting => StateMachine != null && StateMachine.Current == RunState.Resulting;
+
         public int CurrentStageIndex { get; private set; }
         public int CurrentStageNumber => CurrentStageIndex + 1;
         public int TotalStageCount => Mathf.Max(1, totalStageCount);
@@ -104,6 +128,9 @@ namespace LostMemory.Stage
 
         /// <summary>CL-234 (A-12): 던전 HUD 타이머가 폴링하는 게터. 런 시작 시각(Time.time 기준).</summary>
         public float RunStartedAt => runStartedAt;
+
+        /// <summary>Player Analytics — 한 런의 고유 ID (UUID v4). ResetRunResultTracking 에서 재발급.</summary>
+        public string CurrentRunId { get; private set; }
 
         /// <summary>CL-234 (A-12): InRun 상태에서의 경과 시간(초). InRun 이 아니면 0.</summary>
         public float ElapsedRunTime
@@ -408,7 +435,7 @@ namespace LostMemory.Stage
 
             if (subscribedRunResultPanelView != null)
             {
-                subscribedRunResultPanelView.OnLobby -= ReturnToTown;
+                subscribedRunResultPanelView.OnLobby -= HandleLobbyButtonClicked;
                 subscribedRunResultPanelView.OnRestart -= HandleRestartRequested;
             }
 
@@ -421,7 +448,9 @@ namespace LostMemory.Stage
             }
 
             subscribedRunResultPanelView = view;
-            subscribedRunResultPanelView.OnLobby += ReturnToTown;
+            // OnLobby — 게스트도 동작하도록 RPC 게이트웨이 경유.
+            // 호스트: 직접 ReturnToTown / 게스트: ServerRpc → 호스트 ReturnToTown / 솔로: 직접 ReturnToTown.
+            subscribedRunResultPanelView.OnLobby += HandleLobbyButtonClicked;
             subscribedRunResultPanelView.OnRestart += HandleRestartRequested;
         }
 
@@ -429,11 +458,20 @@ namespace LostMemory.Stage
         {
             if (subscribedRunResultPanelView != null)
             {
-                subscribedRunResultPanelView.OnLobby -= ReturnToTown;
+                subscribedRunResultPanelView.OnLobby -= HandleLobbyButtonClicked;
                 subscribedRunResultPanelView.OnRestart -= HandleRestartRequested;
             }
 
             subscribedRunResultPanelView = null;
+        }
+
+        /// <summary>
+        /// 결과창 Lobby 버튼 핸들러. 솔로/호스트/게스트 어느 측에서 눌러도 동작.
+        /// PlayerHealthSync 가 NetworkBehaviour RPC 게이트웨이 역할.
+        /// </summary>
+        private void HandleLobbyButtonClicked()
+        {
+            LostMemory.Networking.Player.PlayerHealthSync.RequestReturnFromAnyClient();
         }
 
         private bool TryBeginLoadedRouteRun()
@@ -725,10 +763,12 @@ namespace LostMemory.Stage
                 return;
             }
 
-            // 멀티 분기 — lobbySceneName 이 set 된 경우만 lobby 경로. 솔로 또는 lobby 미지정 시 기존 town 흐름 그대로.
-            bool useLobbyScene = networkSessionActive && !string.IsNullOrWhiteSpace(lobbySceneName);
-            string targetSceneName = useLobbyScene ? lobbySceneName : townSceneName;
+            // 멀티 분기 — EffectiveLobbySceneName 으로 Inspector 빈 값 fallback. 솔로는 townSceneName.
+            string effectiveLobby = EffectiveLobbySceneName;
+            bool useLobbyScene = networkSessionActive && !string.IsNullOrWhiteSpace(effectiveLobby);
+            string targetSceneName = useLobbyScene ? effectiveLobby : townSceneName;
             string targetScenePath = useLobbyScene ? lobbyScenePath : townScenePath;
+            Debug.Log($"[RunManager.ReturnToTown] useLobbyScene={useLobbyScene} target={targetSceneName} (lobbySceneName='{lobbySceneName}' effective='{effectiveLobby}')", this);
 
             if (string.IsNullOrWhiteSpace(targetSceneName))
             {
@@ -955,6 +995,8 @@ namespace LostMemory.Stage
                 // F-1: 호스트 권위 상태(boss 포탈) 는 RoomCleared, 각자 적립은 RoomClearedBroadcast.
                 c.RoomCleared += HandleRoomCleared;
                 c.RoomClearedBroadcast += HandleRoomClearedPerClient;
+                // Player Analytics — stage 진입/클리어 발화. 호스트만 (boss 포탈 같은 권위 분기 아님, 모든 클라가 발화).
+                c.RoomEntered += HandleRoomEnteredForAnalytics;
                 _subscribedControllers.Add(c);
             }
             // [DiagGold-Subscribe] 골드 진단 (host/guest 어느 측 RunManager 가 구독했는지 확인용).
@@ -971,6 +1013,7 @@ namespace LostMemory.Stage
                 {
                     c.RoomCleared -= HandleRoomCleared;
                     c.RoomClearedBroadcast -= HandleRoomClearedPerClient;
+                    c.RoomEntered -= HandleRoomEnteredForAnalytics;
                 }
             }
             _subscribedControllers.Clear();
@@ -978,6 +1021,12 @@ namespace LostMemory.Stage
 
         private void HandleRoomCleared(RoomClearedPayload payload)
         {
+            // Player Analytics — stage_cleared 는 boss 외 일반 방도 포함. 권위 분기 이전에 발화.
+            if (AnalyticsClient.Instance != null && payload.Data != null)
+            {
+                AnalyticsClient.Instance.FireStageCleared(payload.RoomId);
+            }
+
             // F-1: 호스트 권위 상태만 — boss 포탈 ready, kill count. gold/memory 는 HandleRoomClearedPerClient.
             if (StateMachine.Current != RunState.InRun)
             {
@@ -1092,7 +1141,36 @@ namespace LostMemory.Stage
         // 다른 player 가 죽는 경로는 외부 트리거가 필요함.
         public void HandlePlayerDefeatedDirect()
         {
+            // Player Analytics — player_died 발화. 사망 원인은 AnalyticsDamageTracker 가 캐시.
+            if (AnalyticsClient.Instance != null)
+            {
+                AnalyticsClient.Instance.FirePlayerDied(
+                    stageId: AnalyticsClient.Instance.LastStageId,
+                    runId: CurrentRunId,
+                    runElapsedSec: Mathf.Max(0f, Time.time - runStartedAt));
+            }
+
             CheckPartyDefeatNow();
+        }
+
+        /// <summary>Player Analytics — RoomEntered 구독 핸들러. stage_entered 발화.</summary>
+        private void HandleRoomEnteredForAnalytics(RoomEnteredPayload payload)
+        {
+            if (AnalyticsClient.Instance == null) return;
+            string prevStageId = AnalyticsClient.Instance.LastStageId;
+            int partySize = ResolvePartySizeForAnalytics();
+            AnalyticsClient.Instance.FireStageEntered(payload.RoomId, partySize, prevStageId);
+        }
+
+        private static int ResolvePartySizeForAnalytics()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening && nm.ConnectedClientsIds != null)
+            {
+                int n = nm.ConnectedClientsIds.Count;
+                return n > 0 ? n : 1;
+            }
+            return 1;
         }
 
         private bool EnsureRunActiveForDefeat()
@@ -1133,11 +1211,50 @@ namespace LostMemory.Stage
             yield return new WaitForSecondsRealtime(Mathf.Max(0f, delaySeconds));
             resultTransitionRoutine = null;
 
+            // 부활 race 가드 — wait 중에 누가 부활 성공했으면 InRun 으로 복귀하고 결과창 표시 안 함.
+            // 멀티에서는 PlayerHealthSync.AnyPlayerAlive 가 server 측 instance set 만 보므로 호스트에서만 정확.
+            // 솔로에서는 NetworkManager 없어 AnyPlayerAlive 가 false 반환 → KhiDownController 직접 검사로 보완.
+            if (IsAuthority && IsAnyPlayerStillAlive())
+            {
+                Debug.Log("[RunManager] DelayedTransitionToResulting — 부활 성공으로 Resulting 전이 abort. InRun 복귀.");
+                if (!StateMachine.TryTransition(RunState.InRun))
+                {
+                    StateMachine.TryTransition(RunState.None);
+                }
+                LostMemory.Networking.Player.PlayerHealthSync.ResetRunFailedBroadcastGuard();
+                yield break;
+            }
+
             if (!StateMachine.TryTransition(RunState.Resulting))
             {
                 yield break;
             }
             ShowResultingUI();
+        }
+
+        /// <summary>
+        /// 한 명이라도 살아있는지(=Down/Defeated 아닌지) 검사. 멀티+솔로 모두 안전.
+        /// 멀티: PlayerHealthSync.AnyPlayerAlive 사용 (server-authoritative).
+        /// 솔로: KhiDownController 직접 검사.
+        /// </summary>
+        private bool IsAnyPlayerStillAlive()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm != null && nm.IsListening)
+            {
+                return LostMemory.Networking.Player.PlayerHealthSync.AnyPlayerAlive();
+            }
+            // 솔로: KhiDownController 검사. 한 명이라도 IsDown=false && IsDefeated=false 면 alive.
+            KhiDownController[] players = FindObjectsByType<KhiDownController>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < players.Length; i++)
+            {
+                KhiDownController p = players[i];
+                if (p == null) continue;
+                if (!p.IsDown && !p.IsDefeated) return true;
+            }
+            return false;
         }
 
         // public 변경: 멀티 환경에서 PlayerHealthSync 의 ClientRpc 가 게스트 화면에도 결과 패널 표시하도록 외부 호출.
@@ -1149,6 +1266,21 @@ namespace LostMemory.Stage
             {
                 return;
             }
+
+            // 멀티 — RunFailed 경로일 때, 10초 wait 동안 누가 부활하면 결과창 표시 abort.
+            // (DelayedTransitionToResulting 도 같은 검사하지만 PlayerHealthSync ClientRpc 의 코루틴 경로도 막아야 해서 양쪽 가드.)
+            if (StateMachine.Current == RunState.RunFailed && LostMemory.Networking.Player.PlayerHealthSync.AnyPlayerAlive())
+            {
+                Debug.Log("[RunManager] ShowResultingUI aborted — 부활 성공으로 살아있는 플레이어가 있음. InRun 복귀 시도.");
+                // RunFailed → InRun 복귀. StateMachine 이 허용 안 하면 그냥 None 으로 가서 다음 trigger 대기.
+                if (!StateMachine.TryTransition(RunState.InRun))
+                {
+                    StateMachine.TryTransition(RunState.None);
+                }
+                LostMemory.Networking.Player.PlayerHealthSync.ResetRunFailedBroadcastGuard();
+                return;
+            }
+
             _resultingUiShown = true;
 
             // 다시 시작 후 timeScale 이 0 으로 남아있을 가능성 대비 — 결과 패널 표시 직전 1 로 복구.
@@ -1158,17 +1290,62 @@ namespace LostMemory.Stage
             if (resultPanelView == null)
             {
                 Debug.LogWarning("[RunManager] Resulting state — no RunResultPanelView wired (stub).", this);
+                // panel 없어도 자동 복귀는 시도 — 시연 중 panel wiring 누락 방어.
+                BeginAutoReturnAfterResult();
                 return;
             }
 
             resultPanelView.Show(BuildRunResultData());
             Debug.Log("[RunManager] Resulting state — RunResultPanelView shown.");
+
+            // 자동 타임아웃 후 로비/타운 복귀. 호스트가 안 누르면 N초 후 자동 진행. 게스트도 동일.
+            BeginAutoReturnAfterResult();
+        }
+
+        private Coroutine _autoReturnRoutine;
+
+        private void BeginAutoReturnAfterResult()
+        {
+            if (resultAutoReturnSeconds <= 0f) return;  // 자동 복귀 비활성
+            if (_autoReturnRoutine != null) StopCoroutine(_autoReturnRoutine);
+            _autoReturnRoutine = StartCoroutine(AutoReturnAfterResult());
+        }
+
+        private IEnumerator AutoReturnAfterResult()
+        {
+            yield return new WaitForSecondsRealtime(resultAutoReturnSeconds);
+            _autoReturnRoutine = null;
+
+            if (StateMachine.Current != RunState.Resulting)
+            {
+                // 사용자가 이미 버튼 눌러서 다른 상태로 갔음. skip.
+                yield break;
+            }
+
+            Debug.Log($"[RunManager] AutoReturnAfterResult — {resultAutoReturnSeconds}s 경과, 자동 복귀 시작.");
+
+            NetworkManager nm = NetworkManager.Singleton;
+            bool networkSessionActive = nm != null && nm.IsListening;
+
+            if (networkSessionActive && !nm.IsServer)
+            {
+                // 세션 유지 정책: 호스트의 NGO LoadScene 이 게스트를 자동으로 끌고 옴.
+                // 게스트가 자체 Shutdown + 로컬 로드 하면 세션 단절 → 같은 씬이라도 다른 세션이 되어 재도전 불가.
+                // 호스트가 실제 disconnect 한 경우는 SessionTownReturnHandler.HandleClientDisconnect 가
+                // IsResulting 가드 해제 후 별도 처리 (해당 hook 에서 솔로 마을 복귀).
+                Debug.Log("[RunManager] AutoReturnAfterResult guest — 호스트 NGO LoadScene 대기 (세션 유지, fallback skip).");
+                yield break;
+            }
+
+            // 호스트(또는 솔로) — 기존 ReturnToTown 흐름 재사용. 멀티에서는 lobbySceneName 으로 분기됨.
+            ReturnToTown(saveRunRewards: true);
         }
 
         private void ResetRunResultTracking()
         {
             ResolveEconomyRefs();
             runStartedAt = Time.time;
+            CurrentRunId = Guid.NewGuid().ToString();
             killCount = 0;
             bossKillCount = 0;
             totalDamage = 0;

@@ -9,7 +9,7 @@ namespace LostMemory.Stage
     public sealed class BossIntroDebugDialoguePlayer : MonoBehaviour, IBossIntroDialoguePlayer
     {
         [SerializeField, Min(0f)] private float simulatedDialogueDuration = 1.5f;
-        [SerializeField] private bool debugLogging = true;
+        [SerializeField] private bool debugLogging = false;
 
         private Coroutine _playRoutine;
 

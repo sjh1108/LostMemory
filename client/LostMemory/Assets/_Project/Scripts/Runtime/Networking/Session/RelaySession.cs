@@ -22,8 +22,10 @@ namespace LostMemory.Networking.Session
     public static class RelaySession
     {
         // 테스트 씬용 자동 로그인 자격증명. 본 게임에선 별도 로그인 화면으로 교체 예정.
+        // 가입 시점에 본 정적 필드들이 백엔드로 전송되며, 가입 완료(이메일 인증) 이후의 자동 로그인 시도에도 사용된다.
         public static string AutoLoginId = "testuser";
-        public static string AutoLoginPassword = "password123";
+        public static string AutoLoginPassword = "Pass123!";
+        public static string AutoLoginEmail = "testuser@local.test";
         public static string AutoLoginNickname = "테스터";
 
         public static long? ActiveSessionId { get; internal set; }
@@ -131,10 +133,13 @@ namespace LostMemory.Networking.Session
 
             if (SessionApiClient.IsLoggedIn) return;
 
-            // signup (이미 있으면 silent)
+            // signup (이미 가입된 계정이면 409 — 결과 무시하고 다음 login 으로 판정)
+            // 단, 신규 가입의 경우 status=pending 으로 저장되며 이메일 인증 전까지 login 이 실패한다.
+            // 자동 로그인을 쓰려면 사전에 Title 흐름을 통해 한 번 이상 ACTIVE 로 전환해둬야 한다.
             try
             {
-                await SessionApiClient.TrySignupAsync(AutoLoginId, AutoLoginPassword, AutoLoginNickname);
+                await SessionApiClient.SignupAsync(
+                    AutoLoginId, AutoLoginPassword, AutoLoginEmail, AutoLoginNickname);
             }
             catch (Exception ex)
             {
@@ -142,11 +147,15 @@ namespace LostMemory.Networking.Session
             }
 
             // login
-            bool loginOk = await SessionApiClient.LoginAsync(AutoLoginId, AutoLoginPassword);
-            if (!loginOk)
+            var loginResp = await SessionApiClient.LoginAsync(AutoLoginId, AutoLoginPassword);
+            if (loginResp == null || !loginResp.success)
             {
-                RaiseFailed(SessionErrorKind.SignInFailed, "백엔드 로그인 실패");
-                throw new Exception("EnsureInitialized: backend login failed");
+                string code = loginResp?.error?.code;
+                string detail = code == "AUTH_EMAIL_NOT_VERIFIED"
+                    ? "이메일 인증 미완료 — Title 화면에서 인증 후 재시도"
+                    : "백엔드 로그인 실패";
+                RaiseFailed(SessionErrorKind.SignInFailed, detail);
+                throw new Exception($"EnsureInitialized: backend login failed ({code})");
             }
 
             // myUserId

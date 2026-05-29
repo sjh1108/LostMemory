@@ -55,6 +55,28 @@ namespace LostMemory.Enemies.Boss.Rena
         private VisualPhase _visualPhase = VisualPhase.Loop;
         private bool _isResolvingHit;
         private bool _homingEnded;
+        private bool _visualOnly;
+        private float _pendingStartedTimeOffsetSeconds;
+
+        /// <summary>
+        /// 게스트 측 visual-only clone 인지 표시. true 면 ProcessHits / ProcessObstacleCollision skip
+        /// — 데미지 처리 안 함. 이동/애니메이션/lifetime 만료는 진행.
+        /// host 측 RenaBossProjectile 가 권위로 데미지 처리, 게스트는 시각만 재현.
+        /// </summary>
+        public void SetVisualOnly(bool isVisualOnly)
+        {
+            _visualOnly = isVisualOnly;
+        }
+
+        /// <summary>
+        /// 게스트 측 visual-only clone 이 host 의 animation/movement 진행 상태로 즉시 catch-up 하도록 설정.
+        /// host: 0 (현재 시점부터). guest: ClientRpc 도착 시점 (현재 NetworkTime - host 시작 NetworkTime) 초.
+        /// Configure 호출 *전* 에 set.
+        /// </summary>
+        public void SetStartedTimeOffset(float offsetSeconds)
+        {
+            _pendingStartedTimeOffsetSeconds = Mathf.Max(0f, offsetSeconds);
+        }
 
         private void Reset()
         {
@@ -137,8 +159,16 @@ namespace LostMemory.Enemies.Boss.Rena
             visualScale = Mathf.Max(0.01f, configuredVisualScale);
             glowVisualScale = Mathf.Max(0.01f, configuredGlowVisualScale);
             debugLogging = configuredDebugLogging;
-            _elapsedLifetime = 0f;
-            _animationElapsed = 0f;
+            // 멀티 sync — host=0 (현재 시점부터), guest=RTT 만큼 offset 으로 animation/movement catch-up.
+            _elapsedLifetime = _pendingStartedTimeOffsetSeconds;
+            _animationElapsed = _pendingStartedTimeOffsetSeconds;
+            // 시작 위치도 offset 만큼 movement 진행 — host 와 같은 위치에서 출발.
+            if (_pendingStartedTimeOffsetSeconds > 0f)
+            {
+                transform.position += (Vector3)(_direction * (Mathf.Max(0.01f, configuredSpeed) * _pendingStartedTimeOffsetSeconds));
+                // visualPhase 가 casted 라면 elapsed > casted 길이면 Loop 로 전환 — Configure 끝에서 phase 자동 결정 후 ApplyCurrentFrame 처리.
+            }
+            _pendingStartedTimeOffsetSeconds = 0f;  // 일회용 — 다음 Configure 시 다시 set 안 하면 0.
             _isResolvingHit = false;
             homingEnabled = false;
             homingTarget = null;
@@ -187,7 +217,8 @@ namespace LostMemory.Enemies.Boss.Rena
             UpdateHomingDirection(deltaTime);
 
             float movementDistance = speed * deltaTime;
-            if (ProcessObstacleCollision(movementDistance))
+            // visual-only clone 은 obstacle/hit 처리 skip — host 권위가 자기 측에서 처리.
+            if (!_visualOnly && ProcessObstacleCollision(movementDistance))
             {
                 return;
             }
@@ -197,7 +228,10 @@ namespace LostMemory.Enemies.Boss.Rena
 
             ApplyVisualState();
             UpdateAnimation(deltaTime);
-            ProcessHits();
+            if (!_visualOnly)
+            {
+                ProcessHits();
+            }
 
             if (_elapsedLifetime >= lifetime)
             {
@@ -417,6 +451,51 @@ namespace LostMemory.Enemies.Boss.Rena
             {
                 return;
             }
+
+            if (!HasFrames(hitAnimationFrames) && !HasFrames(hitGlowAnimationFrames))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _isResolvingHit = true;
+            SwitchVisualPhase(VisualPhase.Hit);
+
+            // [Multi sync] host 가 폭발 시점에 guest 의 visual clone 으로 broadcast.
+            // _visualOnly=true 인 guest clone 은 collision/lifetime 우회라 자체적으로 이 메서드 도달 안 함 →
+            // ClientRpc 로 명시 trigger 필요. _visualOnly 자체 clone 에선 host 가 아니라 broadcast skip.
+            BroadcastExplosionIfHost();
+        }
+
+        // [Multi sync] host-only — guest 측 visual clone 에 폭발 알림.
+        private void BroadcastExplosionIfHost()
+        {
+            if (_visualOnly) return;
+
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening || !nm.IsServer) return;
+
+            var syncs = UnityEngine.Object.FindObjectsByType<LostMemory.Networking.Player.PlayerMovementSync>(
+                FindObjectsSortMode.None);
+            for (int i = 0; i < syncs.Length; i++)
+            {
+                if (syncs[i] != null && syncs[i].IsSpawned)
+                {
+                    syncs[i].BroadcastBossProjectileExplosionClientRpc(
+                        transform.position,
+                        (int)VisualPhase.Hit);
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// [Multi sync] Guest 측에서 ClientRpc 도착 시 호출 — visual clone 의 폭발 애니메이션 trigger.
+        /// idempotent: 이미 _isResolvingHit=true 면 무시.
+        /// </summary>
+        public void TriggerExplosionAnimation()
+        {
+            if (_isResolvingHit) return;
 
             if (!HasFrames(hitAnimationFrames) && !HasFrames(hitGlowAnimationFrames))
             {

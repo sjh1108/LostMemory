@@ -2,6 +2,7 @@ using LostMemory.Networking.Player;
 using LostMemory.Relics;
 using LostMemory.Stage;
 using LostMemory.TestKhi;
+using LostMemory.UI.Status;
 using UnityEngine;
 
 namespace LostMemory.Shop
@@ -24,6 +25,11 @@ namespace LostMemory.Shop
         [SerializeField] private SetEffectPanelView setEffectPanel;
         [Tooltip("setEffectPanel 데이터 소스. setEffectPanel 이 할당돼 있으면 함께 채워야 함.")]
         [SerializeField] private BuildManager buildManager;
+        [Tooltip("인벤토리 패널 옆에 함께 띄울 플레이어 상태창. null 이면 statusPanelResourcePath 의 Resources prefab 을 자동 Instantiate.")]
+        [SerializeField] private PlayerStatusPanelView statusPanel;
+        [Tooltip("statusPanel 슬롯이 비어있을 때 Awake 에서 Resources.Load 로 가져올 경로 (Assets/_Project/Resources/ 기준, 확장자 제외). " +
+                 "특정 씬에서 자동 생성 비활성하려면 빈 문자열로.")]
+        [SerializeField] private string statusPanelResourcePath = "UI/PlayerStatusPanel";
         [Tooltip("CL-115 C: Shop 열림 중 I/ESC 입력을 무시하기 위한 우선 가드. null 이면 가드 없음 (단독 인벤토리 테스트 씬 호환).")]
         [SerializeField] private ShopController shopController;
         [Tooltip("CL-115: 보상 패널 떠있는 중 I/ESC 입력을 무시하기 위한 가드. RewardController.ShowReward 가 진입 시 본 패널을 강제 Close 도 함. null 이면 가드 없음.")]
@@ -46,11 +52,38 @@ namespace LostMemory.Shop
         {
             if (panel != null) panel.OnCloseRequested += Close;
 
+            // statusPanel 슬롯이 비어있으면 Resources 에서 자동 로드해 Canvas 자식으로 인스턴스화.
+            // 17 개 던전 씬마다 수동 배치/와이어링 회피용. 씬 unload 시 인스턴스도 함께 destroy 되므로 누적 없음.
+            EnsureStatusPanelInstantiated();
+
             if (startHidden)
             {
                 if (panel != null)          panel.gameObject.SetActive(false);
                 if (setEffectPanel != null) setEffectPanel.gameObject.SetActive(false);
+                if (statusPanel != null)    statusPanel.gameObject.SetActive(false);
             }
+        }
+
+        private void EnsureStatusPanelInstantiated()
+        {
+            if (statusPanel != null) return;
+            if (string.IsNullOrEmpty(statusPanelResourcePath)) return;
+
+            PlayerStatusPanelView prefab = Resources.Load<PlayerStatusPanelView>(statusPanelResourcePath);
+            if (prefab == null)
+            {
+                Debug.LogWarning(
+                    $"[InventoryToggleController] Resources.Load 실패: '{statusPanelResourcePath}'. " +
+                    $"파일이 Assets/_Project/Resources/{statusPanelResourcePath}.prefab 에 있는지 확인.",
+                    this);
+                return;
+            }
+
+            // 본 controller GO 의 부모(=Canvas) 자식으로 spawn — 인벤토리/세트효과 패널과 동일 계층.
+            // controller GO 자체에 자식으로 넣으면 100x100 marker rect 안에 끼어버릴 수 있음.
+            Transform parentForPanel = transform.parent != null ? transform.parent : transform;
+            statusPanel = Instantiate(prefab, parentForPanel);
+            statusPanel.name = "PlayerStatusPanel (Auto)";
         }
 
         private void OnDestroy()
@@ -129,6 +162,12 @@ namespace LostMemory.Shop
                 }
             }
 
+            // 상태창 패널 — PlayerStatusPanelPresenter 가 OnEnable 에서 자체 resolve/refresh.
+            if (statusPanel != null)
+            {
+                statusPanel.gameObject.SetActive(true);
+            }
+
             if (logToggle) Debug.Log($"[InventoryToggleController] Opened. gold={gold}");
         }
 
@@ -136,6 +175,7 @@ namespace LostMemory.Shop
         {
             if (panel != null) panel.gameObject.SetActive(false);
             if (setEffectPanel != null) setEffectPanel.gameObject.SetActive(false);
+            if (statusPanel != null) statusPanel.gameObject.SetActive(false);
             // CL-234 (A-1/A-2): Open 에서 Acquire 한 카운터 해제.
             if (_uiBlockerAcquired)
             {

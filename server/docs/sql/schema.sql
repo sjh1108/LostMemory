@@ -19,10 +19,11 @@
 CREATE TABLE users (
     user_id         BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     login_id        VARCHAR(50)  NOT NULL UNIQUE,
+    email           VARCHAR(255) NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
     nickname        VARCHAR(50)  NOT NULL UNIQUE,
-    status          VARCHAR(20)  NOT NULL DEFAULT 'active'
-                                 CHECK (status IN ('active', 'suspended', 'deleted')),
+    status          VARCHAR(20)  NOT NULL DEFAULT 'pending'
+                                 CHECK (status IN ('pending', 'active', 'suspended', 'deleted')),
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at   TIMESTAMPTZ
@@ -30,9 +31,10 @@ CREATE TABLE users (
 
 COMMENT ON TABLE  users                 IS '유저 계정';
 COMMENT ON COLUMN users.user_id         IS '내부 유저 ID (PK)';
-COMMENT ON COLUMN users.login_id        IS '로그인 ID (UNIQUE)';
+COMMENT ON COLUMN users.login_id        IS '로그인 식별자 (UNIQUE)';
+COMMENT ON COLUMN users.email           IS '인증·비밀번호 재설정용 메일 주소 (UNIQUE)';
 COMMENT ON COLUMN users.nickname        IS '인게임 닉네임 (UNIQUE)';
-COMMENT ON COLUMN users.status          IS '계정 상태';
+COMMENT ON COLUMN users.status          IS '계정 상태 — pending(이메일 미인증) / active / suspended / deleted';
 
 
 -- =====================================================================
@@ -283,6 +285,35 @@ CREATE TABLE user_weapon_selection (
 
 COMMENT ON COLUMN user_weapon_selection.selected_weapon_id
     IS '다음 런 시작 시 자동 선택될 무기 ID. 회원가입 시 1 (검).';
+
+
+-- =====================================================================
+-- 16. PLAYER_EVENTS : 플레이어 행동 분석 이벤트
+--   * append-only — UPDATE/DELETE 안 함. 적재만.
+--   * payload 는 event_type 별 자유 JSON.
+--   * analytics_session_id 는 클라 발행 UUID — 매칭룸 sessions.session_id 와 무관.
+-- =====================================================================
+CREATE TABLE player_events (
+    event_id              BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id               BIGINT       NOT NULL
+                                       REFERENCES users(user_id) ON DELETE CASCADE,
+    analytics_session_id  UUID         NOT NULL,
+    event_type            VARCHAR(48)  NOT NULL,
+    event_time            TIMESTAMPTZ  NOT NULL,
+    received_time         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    stage_id              VARCHAR(64),
+    payload               JSONB,
+    client_version        VARCHAR(16)
+);
+
+CREATE INDEX idx_pe_user_time ON player_events(user_id, event_time);
+CREATE INDEX idx_pe_type_time ON player_events(event_type, event_time);
+CREATE INDEX idx_pe_session   ON player_events(analytics_session_id);
+
+COMMENT ON TABLE  player_events                       IS '플레이어 행동 분석 이벤트 (append-only)';
+COMMENT ON COLUMN player_events.analytics_session_id  IS '클라 발행 UUID (한 게임 실행 단위). 매칭룸 sessions.session_id 와 무관';
+COMMENT ON COLUMN player_events.event_time            IS '이벤트 발생 시점 (클라 시계). 집계 기본 컬럼';
+COMMENT ON COLUMN player_events.received_time         IS '서버 수신 시점. lag 분석 / 클라 시계 검증용 fallback';
 
 
 -- =====================================================================
