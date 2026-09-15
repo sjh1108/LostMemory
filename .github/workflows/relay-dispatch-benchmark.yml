@@ -1,12 +1,7 @@
 name: Relay Dispatch Benchmark
 
+# Benchmark-only workflow. Run manually when the relay dispatch benchmark needs to be reproduced.
 on:
-  push:
-    branches:
-      - benchmark/relay-magic-byte
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
