@@ -64,8 +64,10 @@ tasks.named('test') {
 }
 
 jmh {
-	warmupIterations = 5
-	iterations = 10
+	warmupIterations = 3
+	warmup = '1s'
+	iterations = 5
+	timeOnIteration = '1s'
 	fork = 3
 	benchmarkMode = ['avgt']
 	timeUnit = 'ns'
