@@ -1,0 +1,39 @@
+name: Relay Dispatch Benchmark
+
+# Benchmark-only workflow. Run manually when the relay dispatch benchmark needs to be reproduced.
+on:
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Run JMH benchmark
+        run: ./gradlew jmh --no-daemon
+
+      - name: Print benchmark result
+        run: cat build/results/jmh/results.json
+
+      - name: Upload benchmark result
+        uses: actions/upload-artifact@v4
+        with:
+          name: relay-dispatch-jmh-result
+          path: server/build/results/jmh/results.json

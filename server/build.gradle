@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.13'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'me.champeau.jmh' version '0.7.2'
 }
 
 group = 'com.lostmemory'
@@ -60,4 +61,17 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+jmh {
+	warmupIterations = 3
+	warmup = '1s'
+	iterations = 5
+	timeOnIteration = '1s'
+	fork = 3
+	benchmarkMode = ['avgt']
+	timeUnit = 'ns'
+	resultFormat = 'JSON'
+	resultsFile = file("${buildDir}/results/jmh/results.json")
+	includes = ['RelayDispatchBenchmark']
 }
